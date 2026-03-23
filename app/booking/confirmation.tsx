@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   ScrollView,
   Share,
   Alert,
-  Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
@@ -17,6 +17,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
 import { formatAmadeusPriceMRU } from "@/lib/currency";
 import * as Notifications from "expo-notifications";
+import { trpc } from "@/lib/trpc";
 
 // Configure notification handler
 Notifications.setNotificationHandler({
@@ -82,6 +83,7 @@ export default function ConfirmationScreen() {
     checkOut?: string;
     guests?: string;
     roomType?: string;
+    stars?: string;
     currency?: string;
   }>();
 
@@ -89,12 +91,18 @@ export default function ConfirmationScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
 
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+
   const isFlight = params.type === "flight";
   const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
   const formattedTotal = params.total
     ? formatAmadeusPriceMRU(params.total, params.currency ?? "EUR")
     : "—";
+
+  // tRPC mutations
+  const sendFlightEmail = trpc.email.sendFlightTicket.useMutation();
+  const sendHotelEmail = trpc.email.sendHotelConfirmation.useMutation();
 
   useEffect(() => {
     Animated.sequence([
@@ -121,7 +129,111 @@ export default function ConfirmationScreen() {
 
     // Send local notification
     scheduleBookingNotification(params.type ?? "flight", params.reference ?? "RV000");
+
+    // Auto-send email if email is provided
+    if (params.email && params.email.includes("@")) {
+      handleSendEmail(params.email);
+    }
   }, []);
+
+  const handleSendEmail = async (emailAddress?: string) => {
+    const targetEmail = emailAddress ?? params.email;
+    if (!targetEmail || !targetEmail.includes("@")) {
+      Alert.alert("No Email", "No email address was provided for this booking.");
+      return;
+    }
+
+    setEmailStatus("sending");
+
+    try {
+      const adults = parseInt(params.passengers ?? params.guests ?? "1", 10);
+      const children = parseInt(params.children ?? "0", 10);
+
+      if (isFlight) {
+        const result = await sendFlightEmail.mutateAsync({
+          passengerName: params.passengerName ?? "Passenger",
+          passengerEmail: targetEmail,
+          bookingRef: params.reference ?? "RV000",
+          origin: params.originCode ?? "NKC",
+          originCity: params.origin ?? "Nouakchott",
+          destination: params.destinationCode ?? "DST",
+          destinationCity: params.destination ?? "Destination",
+          departureDate: params.returnDate
+            ? params.departureTime?.split("T")[0] ?? today
+            : today,
+          departureTime: params.departureTime ?? "—",
+          arrivalTime: params.arrivalTime ?? "—",
+          airline: params.airline ?? "Royal Air Maroc",
+          flightNumber: params.flightNumber ?? "AT000",
+          cabinClass: params.cabinClass ?? "Economy",
+          passengers: adults,
+          children,
+          totalPrice: formattedTotal,
+          currency: "MRU",
+          tripType: params.tripType === "roundtrip" ? "round-trip" : "one-way",
+          returnDate: params.returnDate,
+        });
+        setEmailStatus(result.success ? "sent" : "failed");
+      } else {
+        const checkIn = params.checkIn ?? today;
+        const checkOut = params.checkOut ?? today;
+        const nights = Math.max(
+          1,
+          Math.round(
+            (new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24)
+          )
+        );
+
+        const result = await sendHotelEmail.mutateAsync({
+          guestName: params.passengerName ?? "Guest",
+          guestEmail: targetEmail,
+          bookingRef: params.reference ?? "RV000",
+          hotelName: params.hotelName ?? "Hotel",
+          hotelCity: params.hotelCity ?? "City",
+          hotelCountry: params.hotelCountry ?? "Mauritania",
+          stars: parseInt(params.stars ?? "3", 10),
+          checkIn,
+          checkOut,
+          nights,
+          roomType: params.roomType ?? "Standard Room",
+          guests: adults,
+          children,
+          totalPrice: formattedTotal,
+          currency: "MRU",
+        });
+        setEmailStatus(result.success ? "sent" : "failed");
+      }
+    } catch (err) {
+      console.error("[Email] Send error:", err);
+      setEmailStatus("failed");
+    }
+  };
+
+  const handleResendEmail = () => {
+    if (!params.email || !params.email.includes("@")) {
+      Alert.prompt(
+        "Send Ticket by Email",
+        "Enter the email address to send the ticket to:",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Send",
+            onPress: (email: string | undefined) => {
+              if (email && email.includes("@")) {
+                handleSendEmail(email);
+              } else {
+                Alert.alert("Invalid Email", "Please enter a valid email address.");
+              }
+            },
+          },
+        ],
+        "plain-text",
+        params.email ?? ""
+      );
+    } else {
+      handleSendEmail(params.email);
+    }
+  };
 
   const getTicketText = (): string => {
     const adults = parseInt(params.passengers ?? params.guests ?? "1", 10);
@@ -199,6 +311,45 @@ export default function ConfirmationScreen() {
     }
   };
 
+  const renderEmailStatus = () => {
+    if (emailStatus === "idle") return null;
+
+    if (emailStatus === "sending") {
+      return (
+        <View style={[styles.emailStatusCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={[styles.emailStatusText, { color: colors.muted }]}>
+            Sending ticket to {params.email ?? "your email"}...
+          </Text>
+        </View>
+      );
+    }
+
+    if (emailStatus === "sent") {
+      return (
+        <View style={[styles.emailStatusCard, { backgroundColor: "#dcfce7", borderColor: "#86efac" }]}>
+          <IconSymbol name="checkmark.circle.fill" size={18} color="#16a34a" />
+          <Text style={[styles.emailStatusText, { color: "#16a34a" }]}>
+            Ticket sent to {params.email ?? "your email"} ✓
+          </Text>
+        </View>
+      );
+    }
+
+    if (emailStatus === "failed") {
+      return (
+        <View style={[styles.emailStatusCard, { backgroundColor: "#fef2f2", borderColor: "#fca5a5" }]}>
+          <IconSymbol name="exclamationmark.circle.fill" size={18} color="#dc2626" />
+          <Text style={[styles.emailStatusText, { color: "#dc2626" }]}>
+            Email delivery failed. Tap to retry.
+          </Text>
+        </View>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -228,6 +379,9 @@ export default function ConfirmationScreen() {
           Your {isFlight ? "flight" : "hotel"} has been successfully booked.
           {"\n"}A ticket has been prepared for you.
         </Text>
+
+        {/* Email Status Banner */}
+        {renderEmailStatus()}
 
         {/* Reference Card */}
         <View style={[styles.refCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -310,6 +464,44 @@ export default function ConfirmationScreen() {
           </Pressable>
         </View>
 
+        {/* Email Ticket Button */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.emailBtn,
+            {
+              backgroundColor: emailStatus === "sent" ? "#dcfce7" : colors.surface,
+              borderColor: emailStatus === "sent" ? "#86efac" : colors.border,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+          onPress={handleResendEmail}
+          disabled={emailStatus === "sending"}
+        >
+          {emailStatus === "sending" ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <IconSymbol
+              name="envelope.fill"
+              size={18}
+              color={emailStatus === "sent" ? "#16a34a" : colors.primary}
+            />
+          )}
+          <Text
+            style={[
+              styles.emailBtnText,
+              { color: emailStatus === "sent" ? "#16a34a" : colors.primary },
+            ]}
+          >
+            {emailStatus === "sent"
+              ? "Ticket Sent by Email ✓"
+              : emailStatus === "sending"
+              ? "Sending..."
+              : emailStatus === "failed"
+              ? "Retry Send Email"
+              : "Send Ticket by Email"}
+          </Text>
+        </Pressable>
+
         {/* Main Actions */}
         <View style={styles.actions}>
           <Pressable
@@ -368,6 +560,16 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 28, fontWeight: "700", textAlign: "center" },
   subtitle: { fontSize: 15, textAlign: "center", lineHeight: 22, paddingHorizontal: 16 },
+  emailStatusCard: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  emailStatusText: { fontSize: 13, fontWeight: "600", flex: 1 },
   refCard: {
     width: "100%",
     borderRadius: 16,
@@ -422,6 +624,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   ticketBtnText: { fontSize: 13, fontWeight: "700" },
+  emailBtn: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  emailBtnText: { fontSize: 14, fontWeight: "700" },
   actions: { width: "100%", gap: 12 },
   primaryBtn: {
     flexDirection: "row",

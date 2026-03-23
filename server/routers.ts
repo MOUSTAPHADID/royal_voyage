@@ -8,6 +8,7 @@ import {
   searchLocations,
   searchHotelsByCity,
 } from "./amadeus";
+import { sendFlightTicket, sendHotelConfirmation } from "./email";
 
 export const appRouter = router({
   system: systemRouter,
@@ -96,6 +97,64 @@ export const appRouter = router({
         }
       }),
   }),
+
+  // ─── Email: Send Tickets & Confirmations ─────────────────────────────────────
+  email: router({
+    sendFlightTicket: publicProcedure
+      .input(
+        z.object({
+          passengerName: z.string(),
+          passengerEmail: z.string().email(),
+          bookingRef: z.string(),
+          origin: z.string(),
+          originCity: z.string(),
+          destination: z.string(),
+          destinationCity: z.string(),
+          departureDate: z.string(),
+          departureTime: z.string(),
+          arrivalTime: z.string(),
+          airline: z.string(),
+          flightNumber: z.string(),
+          cabinClass: z.string(),
+          passengers: z.number(),
+          children: z.number().default(0),
+          totalPrice: z.string(),
+          currency: z.string().default("MRU"),
+          tripType: z.enum(["one-way", "round-trip"]).default("one-way"),
+          returnDate: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const success = await sendFlightTicket(input);
+        return { success };
+      }),
+
+    sendHotelConfirmation: publicProcedure
+      .input(
+        z.object({
+          guestName: z.string(),
+          guestEmail: z.string().email(),
+          bookingRef: z.string(),
+          hotelName: z.string(),
+          hotelCity: z.string(),
+          hotelCountry: z.string().default("Mauritania"),
+          stars: z.number().min(1).max(5).default(3),
+          checkIn: z.string(),
+          checkOut: z.string(),
+          nights: z.number().min(1),
+          roomType: z.string().default("Standard Room"),
+          guests: z.number().min(1),
+          children: z.number().default(0),
+          totalPrice: z.string(),
+          currency: z.string().default("MRU"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const success = await sendHotelConfirmation(input);
+        return { success };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
+

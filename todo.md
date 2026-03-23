@@ -109,19 +109,27 @@
 - [x] تحديث شاشة الدفع لعرض الأسعار بالأوقية
 
 ## ميزات جديدة — أطفال، تاريخ ميلاد، تذاكر، إشعارات
-- [ ] إضافة حقل عدد الأطفال في نموذج البحث (Home)
-- [ ] تمرير عدد الأطفال إلى شاشة نتائج الرحلات
-- [ ] إضافة حقل تاريخ الميلاد في نموذج بيانات المسافر
-- [ ] إنشاء خدمة توليد تذكرة طيران PDF بالإنجليزية
-- [ ] تضمين معلومات الشركة في التذكرة (+22233700000، royal-voyage@gmail.com، Tavragh Zeina - Nouakchott)
-- [ ] إضافة زر "تحميل التذكرة" في شاشة التأكيد
-- [ ] إضافة زر "عرض التذكرة" في شاشة تفاصيل الحجز
-- [ ] إرسال إشعار محلي عند تأكيد الحجز
-- [ ] إضافة صفحة إدارة التطبيق (Admin) مع إحصائيات الحجوزات
+- [x] إضافة حقل عدد الأطفال في نموذج البحث (Home)
+- [x] تمرير عدد الأطفال إلى شاشة نتائج الرحلات
+- [x] إضافة حقل تاريخ الميلاد في نموذج بيانات المسافر
+- [x] إنشاء خدمة توليد تذكرة طيران PDF بالإنجليزية
+- [x] تضمين معلومات الشركة في التذكرة (+22233700000، royal-voyage@gmail.com، Tavragh Zeina - Nouakchott)
+- [x] إضافة زر "تحميل التذكرة" في شاشة التأكيد
+- [x] إضافة زر "عرض التذكرة" في شاشة تفاصيل الحجز
+- [x] إرسال إشعار محلي عند تأكيد الحجز
+- [x] إضافة صفحة إدارة التطبيق (Admin) مع إحصائيات الحجوزات
 
 ## Página de Administração (Admin)
-- [ ] Criar ecrã de administração com estatísticas (total reservas, receita, voos, hotéis)
-- [ ] Adicionar lista de clientes com histórico de reservas
-- [ ] Adicionar gráfico de distribuição de reservas (voos vs hotéis)
-- [ ] Integrar acesso à página admin no perfil
-- [ ] Proteger a página admin com verificação de credenciais
+- [x] Criar ecrã de administração com estatísticas (total reservas, receita, voos, hotéis)
+- [x] Adicionar lista de clientes com histórico de reservas
+- [x] Adicionar gráfico de distribuição de reservas (voos vs hotéis)
+- [x] Integrar acesso à página admin no perfil
+- [x] Proteger a página admin com verificação de credenciais
+
+## إرسال البريد الإلكتروني
+- [x] إعداد خدمة nodemailer في الخادم
+- [x] إنشاء قالب HTML لتذكرة الطيران بالإنجليزية
+- [x] إنشاء قالب HTML لتأكيد حجز الفندق بالإنجليزية
+- [x] إضافة route tRPC لإرسال البريد الإلكتروني
+- [x] ربط شاشة التأكيد بإرسال البريد تلقائياً
+- [x] إضافة زر "إعادة إرسال التذكرة" في شاشة التأكيد

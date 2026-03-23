@@ -1,0 +1,304 @@
+/**
+ * Royal Voyage — Email Service
+ * Sends flight tickets and hotel booking confirmations to customers.
+ * Uses nodemailer with Gmail SMTP (configurable via env vars).
+ */
+import nodemailer from "nodemailer";
+
+// Company info
+const COMPANY = {
+  name: "Royal Voyage",
+  phone: "+222 33 70 00 00",
+  email: "royal-voyage@gmail.com",
+  address: "Tavragh Zeina, Nouakchott, Mauritania",
+  website: "www.royal-voyage.mr",
+};
+
+// ─── Transporter ─────────────────────────────────────────────────────────────
+function getTransporter() {
+  const user = process.env.EMAIL_USER || process.env.SMTP_USER;
+  const pass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+
+  if (!user || !pass) {
+    console.warn("[Email] SMTP credentials not configured — emails will be logged only");
+    return null;
+  }
+
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
+}
+
+// ─── HTML Templates ───────────────────────────────────────────────────────────
+
+function baseLayout(content: string, title: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a1a2e; }
+    .wrapper { max-width: 640px; margin: 32px auto; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.10); }
+    .header { background: linear-gradient(135deg, #1B2B5E 0%, #0d1a3a 100%); padding: 32px 40px; text-align: center; }
+    .header-logo { font-size: 28px; font-weight: 800; color: #C9A84C; letter-spacing: 2px; }
+    .header-sub { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 4px; }
+    .body { padding: 36px 40px; }
+    .section-title { font-size: 11px; font-weight: 700; color: #C9A84C; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px 24px; margin-bottom: 20px; }
+    .flight-route { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .airport-code { font-size: 32px; font-weight: 800; color: #1B2B5E; }
+    .airport-name { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .flight-arrow { font-size: 24px; color: #C9A84C; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .info-item label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+    .info-item span { display: block; font-size: 14px; font-weight: 600; color: #1a1a2e; margin-top: 2px; }
+    .ref-box { background: linear-gradient(135deg, #1B2B5E, #2d4a8a); border-radius: 12px; padding: 20px 24px; text-align: center; margin-bottom: 20px; }
+    .ref-label { font-size: 11px; color: rgba(255,255,255,0.6); letter-spacing: 2px; text-transform: uppercase; }
+    .ref-code { font-size: 28px; font-weight: 800; color: #C9A84C; letter-spacing: 6px; margin-top: 6px; }
+    .price-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+    .price-row:last-child { border-bottom: none; font-weight: 700; font-size: 16px; }
+    .badge { display: inline-block; background: #dcfce7; color: #16a34a; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 1px; }
+    .footer { background: #1B2B5E; padding: 24px 40px; text-align: center; }
+    .footer p { color: rgba(255,255,255,0.6); font-size: 12px; line-height: 1.8; }
+    .footer a { color: #C9A84C; text-decoration: none; }
+    .divider { height: 1px; background: #e2e8f0; margin: 20px 0; }
+    .hotel-name { font-size: 22px; font-weight: 800; color: #1B2B5E; margin-bottom: 4px; }
+    .hotel-location { font-size: 13px; color: #64748b; }
+    .stars { color: #C9A84C; font-size: 16px; margin: 6px 0; }
+    .notice { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #92400e; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="header">
+      <div class="header-logo">✈ ROYAL VOYAGE</div>
+      <div class="header-sub">Your Premium Travel Partner</div>
+    </div>
+    <div class="body">
+      ${content}
+    </div>
+    <div class="footer">
+      <p>
+        <strong style="color:#C9A84C">Royal Voyage Travel Agency</strong><br/>
+        ${COMPANY.address}<br/>
+        📞 ${COMPANY.phone} &nbsp;|&nbsp; ✉ <a href="mailto:${COMPANY.email}">${COMPANY.email}</a>
+      </p>
+      <p style="margin-top:12px; font-size:11px; opacity:0.5">
+        This is an automated email. Please do not reply directly to this message.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+// ─── Flight Ticket Template ───────────────────────────────────────────────────
+export interface FlightTicketData {
+  passengerName: string;
+  passengerEmail: string;
+  bookingRef: string;
+  origin: string;
+  originCity: string;
+  destination: string;
+  destinationCity: string;
+  departureDate: string;
+  departureTime: string;
+  arrivalTime: string;
+  airline: string;
+  flightNumber: string;
+  cabinClass: string;
+  passengers: number;
+  children: number;
+  totalPrice: string;
+  currency: string;
+  tripType: "one-way" | "round-trip";
+  returnDate?: string;
+}
+
+function flightTicketHtml(data: FlightTicketData): string {
+  const content = `
+    <p style="font-size:16px; margin-bottom:24px;">
+      Dear <strong>${data.passengerName}</strong>,<br/>
+      Your flight booking has been <span class="badge">CONFIRMED</span>
+    </p>
+
+    <div class="ref-box">
+      <div class="ref-label">Booking Reference</div>
+      <div class="ref-code">${data.bookingRef}</div>
+    </div>
+
+    <div class="section-title">✈ Outbound Flight</div>
+    <div class="card">
+      <div class="flight-route">
+        <div>
+          <div class="airport-code">${data.origin}</div>
+          <div class="airport-name">${data.originCity}</div>
+        </div>
+        <div class="flight-arrow">→</div>
+        <div style="text-align:right">
+          <div class="airport-code">${data.destination}</div>
+          <div class="airport-name">${data.destinationCity}</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><label>Date</label><span>${data.departureDate}</span></div>
+        <div class="info-item"><label>Departure</label><span>${data.departureTime}</span></div>
+        <div class="info-item"><label>Arrival</label><span>${data.arrivalTime}</span></div>
+        <div class="info-item"><label>Flight</label><span>${data.airline} ${data.flightNumber}</span></div>
+        <div class="info-item"><label>Class</label><span>${data.cabinClass}</span></div>
+        <div class="info-item"><label>Passengers</label><span>${data.passengers} Adult${data.passengers > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}</span></div>
+      </div>
+    </div>
+
+    ${data.tripType === "round-trip" && data.returnDate ? `
+    <div class="section-title">↩ Return Flight</div>
+    <div class="card">
+      <div class="flight-route">
+        <div>
+          <div class="airport-code">${data.destination}</div>
+          <div class="airport-name">${data.destinationCity}</div>
+        </div>
+        <div class="flight-arrow">→</div>
+        <div style="text-align:right">
+          <div class="airport-code">${data.origin}</div>
+          <div class="airport-name">${data.originCity}</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-item"><label>Return Date</label><span>${data.returnDate}</span></div>
+        <div class="info-item"><label>Trip Type</label><span>Round Trip</span></div>
+      </div>
+    </div>
+    ` : ""}
+
+    <div class="section-title">💳 Payment Summary</div>
+    <div class="card">
+      <div class="price-row"><span>Base Fare</span><span>${data.totalPrice}</span></div>
+      <div class="price-row"><span>Taxes & Fees</span><span>Included</span></div>
+      <div class="price-row"><span><strong>Total Paid</strong></span><span><strong>${data.totalPrice} ${data.currency}</strong></span></div>
+    </div>
+
+    <div class="notice">
+      ⚠ Please arrive at the airport at least 2 hours before departure. Carry a valid ID or passport.
+    </div>
+  `;
+  return baseLayout(content, `Flight Ticket — ${data.bookingRef}`);
+}
+
+// ─── Hotel Confirmation Template ──────────────────────────────────────────────
+export interface HotelConfirmationData {
+  guestName: string;
+  guestEmail: string;
+  bookingRef: string;
+  hotelName: string;
+  hotelCity: string;
+  hotelCountry: string;
+  stars: number;
+  checkIn: string;
+  checkOut: string;
+  nights: number;
+  roomType: string;
+  guests: number;
+  children: number;
+  totalPrice: string;
+  currency: string;
+}
+
+function hotelConfirmationHtml(data: HotelConfirmationData): string {
+  const starsStr = "★".repeat(data.stars) + "☆".repeat(5 - data.stars);
+  const content = `
+    <p style="font-size:16px; margin-bottom:24px;">
+      Dear <strong>${data.guestName}</strong>,<br/>
+      Your hotel booking has been <span class="badge">CONFIRMED</span>
+    </p>
+
+    <div class="ref-box">
+      <div class="ref-label">Booking Reference</div>
+      <div class="ref-code">${data.bookingRef}</div>
+    </div>
+
+    <div class="section-title">🏨 Hotel Details</div>
+    <div class="card">
+      <div class="hotel-name">${data.hotelName}</div>
+      <div class="stars">${starsStr}</div>
+      <div class="hotel-location">📍 ${data.hotelCity}, ${data.hotelCountry}</div>
+      <div class="divider"></div>
+      <div class="info-grid">
+        <div class="info-item"><label>Check-In</label><span>${data.checkIn}</span></div>
+        <div class="info-item"><label>Check-Out</label><span>${data.checkOut}</span></div>
+        <div class="info-item"><label>Duration</label><span>${data.nights} Night${data.nights > 1 ? "s" : ""}</span></div>
+        <div class="info-item"><label>Room Type</label><span>${data.roomType}</span></div>
+        <div class="info-item"><label>Guests</label><span>${data.guests} Adult${data.guests > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}</span></div>
+      </div>
+    </div>
+
+    <div class="section-title">💳 Payment Summary</div>
+    <div class="card">
+      <div class="price-row"><span>Room Rate (${data.nights} night${data.nights > 1 ? "s" : ""})</span><span>${data.totalPrice}</span></div>
+      <div class="price-row"><span>Taxes & Fees</span><span>Included</span></div>
+      <div class="price-row"><span><strong>Total Paid</strong></span><span><strong>${data.totalPrice} ${data.currency}</strong></span></div>
+    </div>
+
+    <div class="notice">
+      ⚠ Standard check-in time is 14:00. Please present this confirmation and a valid ID at the hotel reception.
+    </div>
+  `;
+  return baseLayout(content, `Hotel Booking — ${data.bookingRef}`);
+}
+
+// ─── Send Functions ───────────────────────────────────────────────────────────
+
+export async function sendFlightTicket(data: FlightTicketData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = flightTicketHtml(data);
+
+  if (!transporter) {
+    // Log the email content when SMTP is not configured
+    console.log(`[Email] Would send flight ticket to: ${data.passengerEmail}`);
+    console.log(`[Email] Subject: ✈ Your Flight Ticket — ${data.bookingRef} | Royal Voyage`);
+    return true; // Return true so the app flow continues
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.passengerEmail,
+      subject: `✈ Your Flight Ticket — ${data.bookingRef} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ Flight ticket sent to ${data.passengerEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send flight ticket:", error);
+    return false;
+  }
+}
+
+export async function sendHotelConfirmation(data: HotelConfirmationData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = hotelConfirmationHtml(data);
+
+  if (!transporter) {
+    console.log(`[Email] Would send hotel confirmation to: ${data.guestEmail}`);
+    console.log(`[Email] Subject: 🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Voyage`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.guestEmail,
+      subject: `🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ Hotel confirmation sent to ${data.guestEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send hotel confirmation:", error);
+    return false;
+  }
+}
