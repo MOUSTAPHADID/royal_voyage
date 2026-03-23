@@ -15,6 +15,7 @@ import { FLIGHTS, Flight } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
+import { formatAmadeusPriceMRU } from "@/lib/currency";
 
 type SortOption = "price" | "duration" | "departure";
 
@@ -163,8 +164,7 @@ export default function FlightResultsScreen() {
         </View>
         <View style={styles.priceBox}>
           <Text style={[styles.price, { color: colors.primary }]}>
-            {item.currency === "USD" ? "$" : item.currency + " "}
-            {typeof item.price === "number" ? item.price.toFixed(0) : item.price}
+            {formatAmadeusPriceMRU(String(item.price), item.currency || "EUR")}
           </Text>
           <Text style={[styles.perPerson, { color: colors.muted }]}>{t.flights.perPerson}</Text>
         </View>

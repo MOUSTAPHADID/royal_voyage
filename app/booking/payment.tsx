@@ -14,6 +14,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatMRU, toMRU } from "@/lib/currency";
 
 type PaymentMethod = "card" | "paypal" | "apple";
 
@@ -71,7 +72,7 @@ export default function PaymentScreen() {
       ...(isFlight && flight ? { flight, passengers: 1 } : {}),
       ...(hotel ? { hotel, checkIn: "2024-04-20", checkOut: "2024-04-25", guests: 2, rooms: 1 } : {}),
       totalPrice: total,
-      currency: "USD",
+      currency: "MRU",
     };
 
     await addBooking(booking);
@@ -105,8 +106,8 @@ export default function PaymentScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Order Summary</Text>
           {[
-            { label: isFlight ? `Flight: ${flight?.originCode} → ${flight?.destinationCode}` : `Hotel: ${hotel?.name}`, value: `$${basePrice}` },
-            { label: "Taxes & fees (10%)", value: `$${taxes}` },
+            { label: isFlight ? `رحلة: ${flight?.originCode} → ${flight?.destinationCode}` : `فندق: ${hotel?.name}`, value: formatMRU(toMRU(basePrice, "USD")) },
+            { label: "ضرائب ورسوم (10%)", value: formatMRU(toMRU(taxes, "USD")) },
           ].map((item) => (
             <View key={item.label} style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.summaryLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -114,8 +115,8 @@ export default function PaymentScreen() {
             </View>
           ))}
           <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: colors.foreground }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>${total}</Text>
+            <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>{formatMRU(toMRU(total, "USD"))}</Text>
           </View>
         </View>
 
@@ -239,8 +240,8 @@ export default function PaymentScreen() {
       {/* Pay Button */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.payTotal, { color: colors.primary }]}>${total}</Text>
-          <Text style={[styles.payLabel, { color: colors.muted }]}>Total amount</Text>
+          <Text style={[styles.payTotal, { color: colors.primary }]}>{formatMRU(toMRU(total, "USD"))}</Text>
+          <Text style={[styles.payLabel, { color: colors.muted }]}>إجمالي المبلغ</Text>
         </View>
         <Pressable
           style={({ pressed }) => [

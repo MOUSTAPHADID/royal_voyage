@@ -11,6 +11,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatPriceMRU, formatMRU, toMRU } from "@/lib/currency";
 
 export default function FlightDetailScreen() {
   const router = useRouter();
@@ -60,8 +61,8 @@ export default function FlightDetailScreen() {
     : mockFlight;
 
   const isRoundTrip = params.tripType === "roundtrip";
-  const priceSymbol = flight.currency === "USD" ? "$" : flight.currency + " ";
   const totalPrice = isRoundTrip ? flight.price * 2 : flight.price;
+  const currency = flight.currency || "EUR";
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -93,8 +94,8 @@ export default function FlightDetailScreen() {
               <Text style={[styles.flightNum, { color: colors.muted }]}>{flight.flightNumber} · {flight.class}</Text>
             </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.priceText}>${flight.price}</Text>
-              <Text style={styles.priceLabel}>per person</Text>
+              <Text style={styles.priceText}>{formatPriceMRU(flight.price, currency)}</Text>
+              <Text style={styles.priceLabel}>للشخص</Text>
             </View>
           </View>
 
@@ -163,9 +164,9 @@ export default function FlightDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Price Breakdown</Text>
           {[
-            { label: "Base fare", value: `${priceSymbol}${(flight.price * 0.85).toFixed(0)}` },
-            { label: "Taxes & fees", value: `${priceSymbol}${(flight.price * 0.15).toFixed(0)}` },
-            ...(isRoundTrip ? [{ label: "Return flight", value: `${priceSymbol}${flight.price.toFixed(0)}` }] : []),
+            { label: "السعر الأساسي", value: formatMRU(toMRU(flight.price * 0.85, currency)) },
+            { label: "الضرائب والرسوم", value: formatMRU(toMRU(flight.price * 0.15, currency)) },
+            ...(isRoundTrip ? [{ label: "رحلة العودة", value: formatPriceMRU(flight.price, currency) }] : []),
           ].map((item) => (
             <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -174,10 +175,10 @@ export default function FlightDetailScreen() {
           ))}
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
-              Total per person{isRoundTrip ? " (Round Trip)" : ""}
+              الإجمالي للشخص{isRoundTrip ? " (ذهاب وإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {priceSymbol}{totalPrice.toFixed(0)}
+              {formatPriceMRU(totalPrice, currency)}
             </Text>
           </View>
         </View>
@@ -189,10 +190,10 @@ export default function FlightDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {priceSymbol}{totalPrice.toFixed(0)}
+            {formatPriceMRU(totalPrice, currency)}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
-            {isRoundTrip ? "Round Trip · per person" : "One Way · per person"}
+            {isRoundTrip ? "ذهاب وإياب · للشخص" : "ذهاب فقط · للشخص"}
           </Text>
         </View>
         <Pressable

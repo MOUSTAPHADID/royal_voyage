@@ -13,6 +13,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatPriceMRU, formatMRU, toMRU } from "@/lib/currency";
 
 const { width } = Dimensions.get("window");
 
@@ -87,7 +88,7 @@ export default function HotelDetailScreen() {
           </View>
           <View style={[styles.quickDivider, { backgroundColor: colors.border }]} />
           <View style={styles.quickItem}>
-            <Text style={[styles.quickValue, { color: colors.primary }]}>${hotel.pricePerNight}</Text>
+            <Text style={[styles.quickValue, { color: colors.primary }]}>{formatPriceMRU(hotel.pricePerNight, hotel.currency || "USD")}</Text>
             <Text style={[styles.quickLabel, { color: colors.muted }]}>Per night</Text>
           </View>
         </View>
@@ -135,7 +136,7 @@ export default function HotelDetailScreen() {
                   </View>
                   <View>
                     <Text style={[styles.roomPrice, { color: colors.primary }]}>
-                      ${hotel.pricePerNight + room.price}
+                      {formatMRU(toMRU(hotel.pricePerNight + room.price, hotel.currency || "USD"))}
                     </Text>
                     <Text style={[styles.roomPriceLabel, { color: colors.muted }]}>/ night</Text>
                   </View>
@@ -164,7 +165,7 @@ export default function HotelDetailScreen() {
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.bottomPrice, { color: colors.primary }]}>${totalPrice}</Text>
+          <Text style={[styles.bottomPrice, { color: colors.primary }]}>{formatPriceMRU(totalPrice, hotel.currency || "USD")}</Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>per night · {selectedRoomData.name}</Text>
         </View>
         <Pressable

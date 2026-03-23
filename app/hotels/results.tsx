@@ -16,6 +16,7 @@ import { HOTELS, Hotel } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
+import { formatPriceMRU } from "@/lib/currency";
 
 type SortOption = "price" | "rating" | "stars";
 
@@ -147,8 +148,7 @@ export default function HotelResultsScreen() {
             {item.pricePerNight > 0 ? (
               <>
                 <Text style={[styles.hotelPrice, { color: colors.primary }]}>
-                  {item.currency === "USD" ? "$" : (item.currency || "$")}
-                  {item.pricePerNight.toFixed(0)}
+                  {formatPriceMRU(item.pricePerNight, item.currency || "USD")}
                 </Text>
                 <Text style={[styles.perNight, { color: colors.muted }]}>{t.hotels.perNight}</Text>
               </>
