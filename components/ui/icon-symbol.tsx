@@ -58,6 +58,18 @@ const MAPPING = {
   "shield.fill": "security",
   "heart.fill": "favorite",
   "tag.fill": "local-offer",
+  "figure.and.child.holdinghands": "family-restroom",
+  "airplane.arrival": "flight-land",
+  "airplane.departure": "flight-takeoff",
+  "arrow.2.squarepath": "sync",
+  "calendar": "calendar-today",
+  "chart.bar.fill": "bar-chart",
+  "person.3.fill": "groups",
+  "checkmark.seal.fill": "verified",
+  "arrow.down.circle.fill": "download",
+  "ticket.fill": "confirmation-number",
+  "building.columns.fill": "account-balance",
+  "crown.fill": "workspace-premium",
 } as IconMapping;
 
 /**

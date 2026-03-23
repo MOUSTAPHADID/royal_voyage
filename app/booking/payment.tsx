@@ -29,6 +29,32 @@ export default function PaymentScreen() {
     firstName: string;
     lastName: string;
     email: string;
+    phone?: string;
+    passport?: string;
+    nationality?: string;
+    dateOfBirth?: string;
+    price?: string;
+    currency?: string;
+    airline?: string;
+    flightNumber?: string;
+    origin?: string;
+    destination?: string;
+    originCode?: string;
+    destinationCode?: string;
+    departureTime?: string;
+    arrivalTime?: string;
+    duration?: string;
+    cabinClass?: string;
+    passengers?: string;
+    children?: string;
+    tripType?: string;
+    returnDate?: string;
+    hotelName?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: string;
+    roomType?: string;
+    roomPrice?: string;
   }>();
 
   const isFlight = params.type === "flight";
@@ -80,7 +106,39 @@ export default function PaymentScreen() {
 
     router.replace({
       pathname: "/booking/confirmation" as any,
-      params: { reference: ref, total: total.toString(), type: params.type },
+      params: {
+        reference: ref,
+        total: total.toString(),
+        type: params.type,
+        currency: "USD",
+        passengerName: `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim(),
+        dateOfBirth: params.dateOfBirth,
+        passportNumber: params.passport,
+        nationality: params.nationality,
+        email: params.email,
+        phone: params.phone,
+        airline: params.airline ?? flight?.airline ?? "",
+        flightNumber: params.flightNumber ?? flight?.flightNumber ?? "",
+        origin: params.origin ?? flight?.origin ?? "",
+        destination: params.destination ?? flight?.destination ?? "",
+        originCode: params.originCode ?? flight?.originCode ?? "",
+        destinationCode: params.destinationCode ?? flight?.destinationCode ?? "",
+        departureTime: params.departureTime ?? flight?.departureTime ?? "",
+        arrivalTime: params.arrivalTime ?? flight?.arrivalTime ?? "",
+        duration: params.duration ?? flight?.duration ?? "",
+        cabinClass: params.cabinClass ?? "Economy",
+        passengers: params.passengers ?? "1",
+        children: params.children ?? "0",
+        tripType: params.tripType ?? "oneway",
+        returnDate: params.returnDate,
+        hotelName: params.hotelName ?? hotel?.name ?? "",
+        hotelCity: hotel?.city ?? "",
+        hotelCountry: hotel?.country ?? "Mauritania",
+        checkIn: params.checkIn ?? "",
+        checkOut: params.checkOut ?? "",
+        guests: params.guests ?? "1",
+        roomType: params.roomType ?? "",
+      },
     });
   };
 

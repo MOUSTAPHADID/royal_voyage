@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -15,12 +15,39 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatAmadeusPriceMRU } from "@/lib/currency";
 
 export default function PassengerDetailsScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useApp();
-  const params = useLocalSearchParams<{ type: string; id: string; roomId: string }>();
+  const params = useLocalSearchParams<{
+    type: string;
+    id: string;
+    roomId: string;
+    price?: string;
+    currency?: string;
+    airline?: string;
+    flightNumber?: string;
+    origin?: string;
+    destination?: string;
+    originCode?: string;
+    destinationCode?: string;
+    departureTime?: string;
+    arrivalTime?: string;
+    duration?: string;
+    cabinClass?: string;
+    passengers?: string;
+    children?: string;
+    tripType?: string;
+    returnDate?: string;
+    hotelName?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: string;
+    roomType?: string;
+    roomPrice?: string;
+  }>();
 
   const isFlight = params.type === "flight";
   const flight = isFlight ? FLIGHTS.find((f) => f.id === params.id) ?? FLIGHTS[0] : null;
@@ -32,11 +59,28 @@ export default function PassengerDetailsScreen() {
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [passport, setPassport] = useState(user?.passportNumber ?? "");
   const [nationality, setNationality] = useState(user?.nationality ?? "");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [dobError, setDobError] = useState("");
 
-  const handleContinue = () => {
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+  const childrenCount = parseInt(params.children ?? "0", 10);
+
+  const validateDOB = (val: string) => {
+    setDateOfBirth(val);
+    if (!val) { setDobError(""); return; }
+    const regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!regex.test(val)) {
+      setDobError("Format: YYYY-MM-DD");
       return;
     }
+    const d = new Date(val);
+    if (isNaN(d.getTime())) { setDobError("Invalid date"); return; }
+    if (d > new Date()) { setDobError("Date cannot be in the future"); return; }
+    setDobError("");
+  };
+
+  const handleContinue = () => {
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) return;
+    if (dobError) return;
     router.push({
       pathname: "/booking/payment" as any,
       params: {
@@ -47,23 +91,42 @@ export default function PassengerDetailsScreen() {
         lastName,
         email,
         phone,
+        passport,
+        nationality,
+        dateOfBirth,
+        price: params.price,
+        currency: params.currency,
+        airline: params.airline,
+        flightNumber: params.flightNumber,
+        origin: params.origin,
+        destination: params.destination,
+        originCode: params.originCode,
+        destinationCode: params.destinationCode,
+        departureTime: params.departureTime,
+        arrivalTime: params.arrivalTime,
+        duration: params.duration,
+        cabinClass: params.cabinClass,
+        passengers: params.passengers,
+        children: params.children,
+        tripType: params.tripType,
+        returnDate: params.returnDate,
+        hotelName: params.hotelName,
+        checkIn: params.checkIn,
+        checkOut: params.checkOut,
+        guests: params.guests,
+        roomType: params.roomType,
+        roomPrice: params.roomPrice,
       },
     });
   };
 
-  const fields = isFlight ? [
-    { label: "First Name", value: firstName, setter: setFirstName, placeholder: "John", required: true },
-    { label: "Last Name", value: lastName, setter: setLastName, placeholder: "Doe", required: true },
-    { label: "Email Address", value: email, setter: setEmail, placeholder: "john@example.com", required: true, keyboardType: "email-address" as const },
-    { label: "Phone Number", value: phone, setter: setPhone, placeholder: "+212 6 00 00 00 00", keyboardType: "phone-pad" as const },
-    { label: "Passport Number", value: passport, setter: setPassport, placeholder: "AB123456" },
-    { label: "Nationality", value: nationality, setter: setNationality, placeholder: "Moroccan" },
-  ] : [
-    { label: "First Name", value: firstName, setter: setFirstName, placeholder: "John", required: true },
-    { label: "Last Name", value: lastName, setter: setLastName, placeholder: "Doe", required: true },
-    { label: "Email Address", value: email, setter: setEmail, placeholder: "john@example.com", required: true, keyboardType: "email-address" as const },
-    { label: "Phone Number", value: phone, setter: setPhone, placeholder: "+212 6 00 00 00 00", keyboardType: "phone-pad" as const },
-  ];
+  const displayPrice = params.price
+    ? formatAmadeusPriceMRU(params.price, params.currency ?? "EUR")
+    : isFlight && flight
+    ? formatAmadeusPriceMRU(flight.price.toString(), "USD")
+    : hotel
+    ? formatAmadeusPriceMRU(hotel.pricePerNight.toString(), "USD") + "/night"
+    : "";
 
   return (
     <KeyboardAvoidingView
@@ -92,55 +155,168 @@ export default function PassengerDetailsScreen() {
             <Text style={[styles.summaryTitle, { color: colors.muted }]}>
               {isFlight ? "Flight Summary" : "Hotel Summary"}
             </Text>
-            {isFlight && flight ? (
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryMain, { color: colors.foreground }]}>
-                  {flight.originCode} → {flight.destinationCode}
+            <View style={styles.summaryRow}>
+              <Text style={[styles.summaryMain, { color: colors.foreground }]}>
+                {isFlight
+                  ? `${params.originCode ?? flight?.originCode ?? ""} → ${params.destinationCode ?? flight?.destinationCode ?? ""}`
+                  : params.hotelName ?? hotel?.name ?? ""}
+              </Text>
+              <Text style={[styles.summaryPrice, { color: colors.primary }]}>{displayPrice}</Text>
+            </View>
+            {/* Passengers & children badge */}
+            <View style={styles.badgeRow}>
+              <View style={[styles.badge, { backgroundColor: colors.primary + "18" }]}>
+                <IconSymbol name="person.2.fill" size={13} color={colors.primary} />
+                <Text style={[styles.badgeText, { color: colors.primary }]}>
+                  {params.passengers ?? "1"} Adult{parseInt(params.passengers ?? "1") > 1 ? "s" : ""}
                 </Text>
-                <Text style={[styles.summaryPrice, { color: colors.primary }]}>${flight.price}</Text>
               </View>
-            ) : hotel ? (
-              <View style={styles.summaryRow}>
-                <Text style={[styles.summaryMain, { color: colors.foreground }]}>{hotel.name}</Text>
-                <Text style={[styles.summaryPrice, { color: colors.primary }]}>${hotel.pricePerNight}/night</Text>
-              </View>
-            ) : null}
+              {childrenCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.success + "18" }]}>
+                  <IconSymbol name="figure.and.child.holdinghands" size={13} color={colors.success} />
+                  <Text style={[styles.badgeText, { color: colors.success }]}>
+                    {childrenCount} Child{childrenCount > 1 ? "ren" : ""}
+                  </Text>
+                </View>
+              )}
+              {params.tripType === "roundtrip" && (
+                <View style={[styles.badge, { backgroundColor: colors.warning + "18" }]}>
+                  <IconSymbol name="arrow.2.squarepath" size={13} color={colors.warning} />
+                  <Text style={[styles.badgeText, { color: colors.warning }]}>Round Trip</Text>
+                </View>
+              )}
+            </View>
           </View>
 
-          {/* Form */}
+          {/* Primary Passenger Form */}
           <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.formTitle, { color: colors.foreground }]}>
               {isFlight ? "Primary Passenger" : "Primary Guest"}
             </Text>
 
-            {fields.map((field) => (
-              <View key={field.label} style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.foreground }]}>
-                  {field.label}
-                  {field.required && <Text style={{ color: colors.error }}> *</Text>}
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border },
-                  ]}
-                  placeholder={field.placeholder}
-                  placeholderTextColor={colors.muted}
-                  value={field.value}
-                  onChangeText={field.setter}
-                  keyboardType={field.keyboardType ?? "default"}
-                  autoCapitalize={field.keyboardType === "email-address" ? "none" : "words"}
-                  returnKeyType="next"
-                />
-              </View>
-            ))}
+            {/* First Name */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>
+                First Name <Text style={{ color: colors.error }}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="John"
+                placeholderTextColor={colors.muted}
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+            </View>
+
+            {/* Last Name */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>
+                Last Name <Text style={{ color: colors.error }}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="Doe"
+                placeholderTextColor={colors.muted}
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+                returnKeyType="next"
+              />
+            </View>
+
+            {/* Date of Birth */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>
+                Date of Birth <Text style={{ color: colors.error }}>*</Text>
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { backgroundColor: colors.background, color: colors.foreground, borderColor: dobError ? colors.error : colors.border },
+                ]}
+                placeholder="YYYY-MM-DD (e.g. 1990-05-15)"
+                placeholderTextColor={colors.muted}
+                value={dateOfBirth}
+                onChangeText={validateDOB}
+                keyboardType="numbers-and-punctuation"
+                returnKeyType="next"
+              />
+              {dobError ? (
+                <Text style={[styles.errorText, { color: colors.error }]}>{dobError}</Text>
+              ) : null}
+            </View>
+
+            {/* Email */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>
+                Email Address <Text style={{ color: colors.error }}>*</Text>
+              </Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="john@example.com"
+                placeholderTextColor={colors.muted}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                returnKeyType="next"
+              />
+            </View>
+
+            {/* Phone */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>Phone Number</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="+222 XX XX XX XX"
+                placeholderTextColor={colors.muted}
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                returnKeyType="next"
+              />
+            </View>
+
+            {isFlight && (
+              <>
+                {/* Passport */}
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.foreground }]}>Passport Number</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                    placeholder="AB123456"
+                    placeholderTextColor={colors.muted}
+                    value={passport}
+                    onChangeText={setPassport}
+                    autoCapitalize="characters"
+                    returnKeyType="next"
+                  />
+                </View>
+
+                {/* Nationality */}
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.label, { color: colors.foreground }]}>Nationality</Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                    placeholder="Mauritanian"
+                    placeholderTextColor={colors.muted}
+                    value={nationality}
+                    onChangeText={setNationality}
+                    autoCapitalize="words"
+                    returnKeyType="done"
+                  />
+                </View>
+              </>
+            )}
           </View>
 
-          {/* Terms */}
+          {/* Security note */}
           <View style={[styles.termsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <IconSymbol name="shield.fill" size={18} color={colors.success} />
             <Text style={[styles.termsText, { color: colors.muted }]}>
-              Your personal data is protected and will only be used to process your booking.
+              Your personal data is protected and will only be used to process your booking. A ticket will be sent to your email after confirmation.
             </Text>
           </View>
 
@@ -174,11 +350,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   backBtn: { padding: 4 },
-  headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
-  },
+  headerTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "700" },
   summaryCard: {
     margin: 16,
     marginBottom: 0,
@@ -197,15 +369,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 10,
   },
-  summaryMain: {
-    fontSize: 16,
-    fontWeight: "700",
+  summaryMain: { fontSize: 16, fontWeight: "700" },
+  summaryPrice: { fontSize: 18, fontWeight: "700" },
+  badgeRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  badge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
   },
-  summaryPrice: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
+  badgeText: { fontSize: 12, fontWeight: "600" },
   formCard: {
     margin: 16,
     marginBottom: 0,
@@ -214,19 +391,9 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 4,
   },
-  formTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  inputGroup: {
-    marginBottom: 14,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
+  formTitle: { fontSize: 16, fontWeight: "700", marginBottom: 12 },
+  inputGroup: { marginBottom: 14 },
+  label: { fontSize: 13, fontWeight: "600", marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderRadius: 10,
@@ -234,37 +401,29 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 15,
   },
+  errorText: { fontSize: 12, marginTop: 4 },
   termsCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
     margin: 16,
     marginBottom: 0,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 14,
+    flexDirection: "row",
+    alignItems: "flex-start",
     gap: 10,
   },
-  termsText: {
-    flex: 1,
-    fontSize: 13,
-    lineHeight: 20,
-  },
+  termsText: { flex: 1, fontSize: 13, lineHeight: 20 },
   bottomBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    padding: 16,
     borderTopWidth: 1,
   },
   continueBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 8,
     paddingVertical: 16,
     borderRadius: 14,
-    gap: 8,
   },
-  continueBtnText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
-  },
+  continueBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
 });

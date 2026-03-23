@@ -61,6 +61,10 @@ export default function HomeScreen() {
   const [returnDate, setReturnDate] = useState(futureDate(37));
   const [passengers, setPassengers] = useState(1);
 
+  // Children count
+  const [children, setChildren] = useState(0);
+  const [hotelChildren, setHotelChildren] = useState(0);
+
   // Hotel search state
   const [hotelDest, setHotelDest] = useState("");
   const [hotelDestCode, setHotelDestCode] = useState("");
@@ -92,6 +96,7 @@ export default function HomeScreen() {
         returnDate: tripType === "roundtrip" ? returnDate : "",
         tripType,
         passengers: passengers.toString(),
+        children: children.toString(),
         useMock: "false",
       },
     });
@@ -106,6 +111,7 @@ export default function HomeScreen() {
         checkIn,
         checkOut,
         guests: guests.toString(),
+        children: hotelChildren.toString(),
         useMock: "false",
       },
     });
@@ -301,26 +307,38 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              {/* Passengers */}
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.passengers}</Text>
-                  <View style={styles.counterRow}>
-                    <Pressable onPress={() => setPassengers(Math.max(1, passengers - 1))}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
-                    </Pressable>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{passengers}</Text>
-                    <Pressable onPress={() => setPassengers(passengers + 1)}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
-                    </Pressable>
+              {/* Passengers + Children */}
+              <View style={styles.rowFields}>
+                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.passengers}</Text>
+                    <View style={styles.counterRow}>
+                      <Pressable onPress={() => setPassengers(Math.max(1, passengers - 1))}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                      </Pressable>
+                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{passengers}</Text>
+                      <Pressable onPress={() => setPassengers(passengers + 1)}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
-                {tripType === "roundtrip" && (
-                  <View style={[styles.tripBadge, { backgroundColor: colors.secondary + "25" }]}>
-                    <Text style={[styles.tripBadgeText, { color: colors.secondary }]}>{t.home.roundTrip}</Text>
+                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <IconSymbol name="figure.and.child.holdinghands" size={18} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "أطفال" : "Children"}</Text>
+                    <View style={styles.counterRow}>
+                      <Pressable onPress={() => setChildren(Math.max(0, children - 1))}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                      </Pressable>
+                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{children}</Text>
+                      <Pressable onPress={() => setChildren(children + 1)}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                      </Pressable>
+                    </View>
                   </View>
-                )}
+                </View>
               </View>
 
               <Pressable
@@ -372,18 +390,35 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.guests}</Text>
-                  <View style={styles.counterRow}>
-                    <Pressable onPress={() => setGuests(Math.max(1, guests - 1))}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
-                    </Pressable>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{guests} {t.home.guest}</Text>
-                    <Pressable onPress={() => setGuests(guests + 1)}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
-                    </Pressable>
+              <View style={styles.rowFields}>
+                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.guests}</Text>
+                    <View style={styles.counterRow}>
+                      <Pressable onPress={() => setGuests(Math.max(1, guests - 1))}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                      </Pressable>
+                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{guests}</Text>
+                      <Pressable onPress={() => setGuests(guests + 1)}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <IconSymbol name="figure.and.child.holdinghands" size={18} color={colors.primary} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "أطفال" : "Children"}</Text>
+                    <View style={styles.counterRow}>
+                      <Pressable onPress={() => setHotelChildren(Math.max(0, hotelChildren - 1))}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                      </Pressable>
+                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{hotelChildren}</Text>
+                      <Pressable onPress={() => setHotelChildren(hotelChildren + 1)}>
+                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                      </Pressable>
+                    </View>
                   </View>
                 </View>
               </View>
