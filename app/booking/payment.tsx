@@ -14,6 +14,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { toMRU } from "@/lib/currency";
 
 type PaymentMethod = "card" | "paypal" | "apple";
 
@@ -37,6 +38,9 @@ export default function PaymentScreen() {
   const basePrice = isFlight ? (flight?.price ?? 0) : (hotel?.pricePerNight ?? 0);
   const taxes = Math.round(basePrice * 0.1);
   const total = basePrice + taxes;
+  const baseMRU = toMRU(basePrice, "USD");
+  const taxMRU = toMRU(taxes, "USD");
+  const totalMRU = toMRU(total, "USD");
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [cardNumber, setCardNumber] = useState("");
@@ -105,8 +109,8 @@ export default function PaymentScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>Order Summary</Text>
           {[
-            { label: isFlight ? `Flight: ${flight?.originCode} → ${flight?.destinationCode}` : `Hotel: ${hotel?.name}`, value: `$${basePrice}` },
-            { label: "Taxes & fees (10%)", value: `$${taxes}` },
+            { label: isFlight ? `رحلة: ${flight?.originCode} → ${flight?.destinationCode}` : `فندق: ${hotel?.name}`, value: `${baseMRU.toLocaleString("ar-MR")} أوق` },
+            { label: "ضرائب ورسوم (10%)", value: `${taxMRU.toLocaleString("ar-MR")} أوق` },
           ].map((item) => (
             <View key={item.label} style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.summaryLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -114,8 +118,8 @@ export default function PaymentScreen() {
             </View>
           ))}
           <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: colors.foreground }]}>Total</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>${total}</Text>
+            <Text style={[styles.totalLabel, { color: colors.foreground }]}>المجموع</Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>{totalMRU.toLocaleString("ar-MR")} أوق</Text>
           </View>
         </View>
 
@@ -239,8 +243,8 @@ export default function PaymentScreen() {
       {/* Pay Button */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.payTotal, { color: colors.primary }]}>${total}</Text>
-          <Text style={[styles.payLabel, { color: colors.muted }]}>Total amount</Text>
+          <Text style={[styles.payTotal, { color: colors.primary }]}>{totalMRU.toLocaleString("ar-MR")} أوق</Text>
+          <Text style={[styles.payLabel, { color: colors.muted }]}>إجمالي المبلغ</Text>
         </View>
         <Pressable
           style={({ pressed }) => [
@@ -255,7 +259,7 @@ export default function PaymentScreen() {
           ) : (
             <>
               <IconSymbol name="creditcard.fill" size={18} color={colors.primary} />
-              <Text style={[styles.payBtnText, { color: colors.primary }]}>Pay Now</Text>
+              <Text style={[styles.payBtnText, { color: colors.primary }]}>ادفع الآن</Text>
             </>
           )}
         </Pressable>

@@ -13,6 +13,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatPriceMRU, toMRU } from "@/lib/currency";
 
 const { width } = Dimensions.get("window");
 
@@ -32,6 +33,7 @@ export default function HotelDetailScreen() {
 
   const selectedRoomData = ROOM_TYPES.find((r) => r.id === selectedRoom) ?? ROOM_TYPES[0];
   const totalPrice = hotel.pricePerNight + selectedRoomData.price;
+  const totalMRU = toMRU(totalPrice, "USD");
 
   const amenityIcons: Record<string, string> = {
     Pool: "figure.pool.swim",
@@ -87,8 +89,8 @@ export default function HotelDetailScreen() {
           </View>
           <View style={[styles.quickDivider, { backgroundColor: colors.border }]} />
           <View style={styles.quickItem}>
-            <Text style={[styles.quickValue, { color: colors.primary }]}>${hotel.pricePerNight}</Text>
-            <Text style={[styles.quickLabel, { color: colors.muted }]}>Per night</Text>
+            <Text style={[styles.quickValue, { color: colors.primary }]}>{formatPriceMRU(hotel.pricePerNight, "USD")}</Text>
+            <Text style={[styles.quickLabel, { color: colors.muted }]}>الليلة</Text>
           </View>
         </View>
 
@@ -135,9 +137,9 @@ export default function HotelDetailScreen() {
                   </View>
                   <View>
                     <Text style={[styles.roomPrice, { color: colors.primary }]}>
-                      ${hotel.pricePerNight + room.price}
+                      {formatPriceMRU(hotel.pricePerNight + room.price, "USD")}
                     </Text>
-                    <Text style={[styles.roomPriceLabel, { color: colors.muted }]}>/ night</Text>
+                    <Text style={[styles.roomPriceLabel, { color: colors.muted }]}>الليلة</Text>
                   </View>
                 </View>
                 <View style={styles.roomFeatures}>
@@ -164,8 +166,8 @@ export default function HotelDetailScreen() {
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.bottomPrice, { color: colors.primary }]}>${totalPrice}</Text>
-          <Text style={[styles.bottomLabel, { color: colors.muted }]}>per night · {selectedRoomData.name}</Text>
+          <Text style={[styles.bottomPrice, { color: colors.primary }]}>{totalMRU.toLocaleString("ar-MR")} أوق</Text>
+          <Text style={[styles.bottomLabel, { color: colors.muted }]}>الليلة · {selectedRoomData.name}</Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.bookBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
@@ -176,7 +178,7 @@ export default function HotelDetailScreen() {
             })
           }
         >
-          <Text style={styles.bookBtnText}>Book Now</Text>
+          <Text style={styles.bookBtnText}>احجز الآن</Text>
         </Pressable>
       </View>
     </ScreenContainer>

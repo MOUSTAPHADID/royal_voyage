@@ -11,6 +11,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatPriceMRU, toMRU } from "@/lib/currency";
 
 export default function FlightDetailScreen() {
   const router = useRouter();
@@ -60,8 +61,11 @@ export default function FlightDetailScreen() {
     : mockFlight;
 
   const isRoundTrip = params.tripType === "roundtrip";
-  const priceSymbol = flight.currency === "USD" ? "$" : flight.currency + " ";
   const totalPrice = isRoundTrip ? flight.price * 2 : flight.price;
+  const totalMRU = toMRU(totalPrice, flight.currency || "USD");
+  const baseMRU = toMRU(flight.price * 0.85, flight.currency || "USD");
+  const taxMRU = toMRU(flight.price * 0.15, flight.currency || "USD");
+  const returnMRU = toMRU(flight.price, flight.currency || "USD");
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -93,8 +97,8 @@ export default function FlightDetailScreen() {
               <Text style={[styles.flightNum, { color: colors.muted }]}>{flight.flightNumber} · {flight.class}</Text>
             </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.priceText}>${flight.price}</Text>
-              <Text style={styles.priceLabel}>per person</Text>
+              <Text style={styles.priceText}>{formatPriceMRU(flight.price, flight.currency || "USD")}</Text>
+              <Text style={styles.priceLabel}>للشخص الواحد</Text>
             </View>
           </View>
 
@@ -161,11 +165,11 @@ export default function FlightDetailScreen() {
 
         {/* Price breakdown */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Price Breakdown</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>تفصيل السعر</Text>
           {[
-            { label: "Base fare", value: `${priceSymbol}${(flight.price * 0.85).toFixed(0)}` },
-            { label: "Taxes & fees", value: `${priceSymbol}${(flight.price * 0.15).toFixed(0)}` },
-            ...(isRoundTrip ? [{ label: "Return flight", value: `${priceSymbol}${flight.price.toFixed(0)}` }] : []),
+            { label: "التذكرة الأساسية", value: `${baseMRU.toLocaleString("ar-MR")} أوق` },
+            { label: "الضرائب والرسوم", value: `${taxMRU.toLocaleString("ar-MR")} أوق` },
+            ...(isRoundTrip ? [{ label: "رحلة العودة", value: `${returnMRU.toLocaleString("ar-MR")} أوق` }] : []),
           ].map((item) => (
             <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -174,10 +178,10 @@ export default function FlightDetailScreen() {
           ))}
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
-              Total per person{isRoundTrip ? " (Round Trip)" : ""}
+              المجموع للشخص{isRoundTrip ? " (ذهاب وإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {priceSymbol}{totalPrice.toFixed(0)}
+              {totalMRU.toLocaleString("ar-MR")} أوق
             </Text>
           </View>
         </View>
@@ -189,10 +193,10 @@ export default function FlightDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {priceSymbol}{totalPrice.toFixed(0)}
+            {totalMRU.toLocaleString("ar-MR")} أوق
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
-            {isRoundTrip ? "Round Trip · per person" : "One Way · per person"}
+            {isRoundTrip ? "ذهاب وإياب · للشخص" : "ذهاب فقط · للشخص"}
           </Text>
         </View>
         <Pressable
@@ -221,7 +225,7 @@ export default function FlightDetailScreen() {
             })
           }
         >
-          <Text style={styles.bookBtnText}>Book Now</Text>
+          <Text style={styles.bookBtnText}>احجز الآن</Text>
         </Pressable>
       </View>
     </ScreenContainer>
