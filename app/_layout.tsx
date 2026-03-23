@@ -18,6 +18,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
+import { AppProvider } from "@/lib/app-context";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -82,14 +83,31 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
+          <AppProvider>
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
           <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="auth/login" />
+            <Stack.Screen name="auth/register" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="flights/results" />
+            <Stack.Screen name="flights/detail" />
+            <Stack.Screen name="hotels/results" />
+            <Stack.Screen name="hotels/detail" />
+            <Stack.Screen name="booking/passenger-details" />
+            <Stack.Screen name="booking/payment" />
+            <Stack.Screen
+              name="booking/confirmation"
+              options={{ presentation: "fullScreenModal" }}
+            />
+            <Stack.Screen name="booking/detail" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />
+          </AppProvider>
         </QueryClientProvider>
       </trpc.Provider>
     </GestureHandlerRootView>
