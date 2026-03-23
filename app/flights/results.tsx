@@ -14,7 +14,6 @@ import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS, Flight } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
-import { formatPriceMRU, toMRU } from "@/lib/currency";
 
 type SortOption = "price" | "duration" | "departure";
 
@@ -162,9 +161,10 @@ export default function FlightResultsScreen() {
         </View>
         <View style={styles.priceBox}>
           <Text style={[styles.price, { color: colors.primary }]}>
-            {formatPriceMRU(item.price, item.currency || "USD")}
+            {item.currency === "USD" ? "$" : item.currency + " "}
+            {typeof item.price === "number" ? item.price.toFixed(0) : item.price}
           </Text>
-          <Text style={[styles.perPerson, { color: colors.muted }]}>للشخص الواحد</Text>
+          <Text style={[styles.perPerson, { color: colors.muted }]}>per person</Text>
         </View>
       </View>
 
@@ -219,7 +219,7 @@ export default function FlightResultsScreen() {
               { color: item.seatsLeft <= 5 ? colors.error : colors.success },
             ]}
           >
-            {item.seatsLeft} مقعد متاح
+            {item.seatsLeft} seats left
           </Text>
         </View>
         <Pressable
@@ -250,7 +250,7 @@ export default function FlightResultsScreen() {
             })
           }
         >
-          <Text style={styles.selectBtnText}>اختر</Text>
+          <Text style={styles.selectBtnText}>Select</Text>
         </Pressable>
       </View>
     </Pressable>

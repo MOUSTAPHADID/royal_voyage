@@ -15,7 +15,6 @@ import { useColors } from "@/hooks/use-colors";
 import { HOTELS, Hotel } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
-import { formatPriceMRU } from "@/lib/currency";
 
 type SortOption = "price" | "rating" | "stars";
 
@@ -146,12 +145,13 @@ export default function HotelResultsScreen() {
             {item.pricePerNight > 0 ? (
               <>
                 <Text style={[styles.hotelPrice, { color: colors.primary }]}>
-                  {formatPriceMRU(item.pricePerNight, item.currency || "USD")}
+                  {item.currency === "USD" ? "$" : (item.currency || "$")}
+                  {item.pricePerNight.toFixed(0)}
                 </Text>
-                <Text style={[styles.perNight, { color: colors.muted }]}>الليلة</Text>
+                <Text style={[styles.perNight, { color: colors.muted }]}>/ night</Text>
               </>
             ) : (
-              <Text style={[styles.priceNA, { color: colors.muted }]}>السعر عند الطلب</Text>
+              <Text style={[styles.priceNA, { color: colors.muted }]}>Price on request</Text>
             )}
           </View>
         </View>
