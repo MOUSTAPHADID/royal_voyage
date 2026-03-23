@@ -4,6 +4,7 @@
  * Uses nodemailer with Gmail SMTP (configurable via env vars).
  */
 import nodemailer from "nodemailer";
+import { generateFlightTicketPDF, generateHotelConfirmationPDF } from "./pdf";
 
 // Company info
 const COMPANY = {
@@ -101,6 +102,7 @@ export interface FlightTicketData {
   passengerName: string;
   passengerEmail: string;
   bookingRef: string;
+  pnr?: string;
   origin: string;
   originCity: string;
   destination: string;
@@ -130,6 +132,14 @@ function flightTicketHtml(data: FlightTicketData): string {
       <div class="ref-label">Booking Reference</div>
       <div class="ref-code">${data.bookingRef}</div>
     </div>
+
+    ${data.pnr ? `
+    <div style="background:#C9A84C;border-radius:12px;padding:18px 24px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:rgba(0,0,0,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:700;">PNR — Airline Record Locator</div>
+      <div style="font-size:36px;font-weight:900;color:#1B2B5E;letter-spacing:8px;margin-top:6px;font-family:monospace;">${data.pnr}</div>
+      <div style="font-size:11px;color:rgba(0,0,0,0.55);margin-top:6px;">Present this code at the airport check-in counter</div>
+    </div>
+    ` : ""}
 
     <div class="section-title">✈ Outbound Flight</div>
     <div class="card">
@@ -194,6 +204,7 @@ export interface HotelConfirmationData {
   guestName: string;
   guestEmail: string;
   bookingRef: string;
+  pnr?: string;
   hotelName: string;
   hotelCity: string;
   hotelCountry: string;
@@ -220,6 +231,14 @@ function hotelConfirmationHtml(data: HotelConfirmationData): string {
       <div class="ref-label">Booking Reference</div>
       <div class="ref-code">${data.bookingRef}</div>
     </div>
+
+    ${data.pnr ? `
+    <div style="background:#C9A84C;border-radius:12px;padding:18px 24px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:rgba(0,0,0,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:700;">Booking PNR</div>
+      <div style="font-size:36px;font-weight:900;color:#1B2B5E;letter-spacing:8px;margin-top:6px;font-family:monospace;">${data.pnr}</div>
+      <div style="font-size:11px;color:rgba(0,0,0,0.55);margin-top:6px;">Present this code at hotel reception</div>
+    </div>
+    ` : ""}
 
     <div class="section-title">🏨 Hotel Details</div>
     <div class="card">
@@ -256,11 +275,18 @@ export async function sendFlightTicket(data: FlightTicketData): Promise<boolean>
   const transporter = getTransporter();
   const html = flightTicketHtml(data);
 
+  // Generate PDF attachment
+  let pdfBuffer: Buffer | null = null;
+  try {
+    pdfBuffer = await generateFlightTicketPDF(data);
+  } catch (err) {
+    console.warn("[Email] PDF generation failed, sending without attachment:", err);
+  }
+
   if (!transporter) {
-    // Log the email content when SMTP is not configured
     console.log(`[Email] Would send flight ticket to: ${data.passengerEmail}`);
     console.log(`[Email] Subject: ✈ Your Flight Ticket — ${data.bookingRef} | Royal Voyage`);
-    return true; // Return true so the app flow continues
+    return true;
   }
 
   try {
@@ -269,8 +295,13 @@ export async function sendFlightTicket(data: FlightTicketData): Promise<boolean>
       to: data.passengerEmail,
       subject: `✈ Your Flight Ticket — ${data.bookingRef} | Royal Voyage`,
       html,
+      attachments: pdfBuffer ? [{
+        filename: `RoyalVoyage_Ticket_${data.bookingRef}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      }] : [],
     });
-    console.log(`[Email] ✅ Flight ticket sent to ${data.passengerEmail}`);
+    console.log(`[Email] ✅ Flight ticket sent to ${data.passengerEmail} (PDF: ${pdfBuffer ? "attached" : "skipped"})`);
     return true;
   } catch (error) {
     console.error("[Email] ❌ Failed to send flight ticket:", error);
@@ -281,6 +312,14 @@ export async function sendFlightTicket(data: FlightTicketData): Promise<boolean>
 export async function sendHotelConfirmation(data: HotelConfirmationData): Promise<boolean> {
   const transporter = getTransporter();
   const html = hotelConfirmationHtml(data);
+
+  // Generate PDF attachment
+  let pdfBuffer: Buffer | null = null;
+  try {
+    pdfBuffer = await generateHotelConfirmationPDF(data);
+  } catch (err) {
+    console.warn("[Email] PDF generation failed, sending without attachment:", err);
+  }
 
   if (!transporter) {
     console.log(`[Email] Would send hotel confirmation to: ${data.guestEmail}`);
@@ -294,8 +333,13 @@ export async function sendHotelConfirmation(data: HotelConfirmationData): Promis
       to: data.guestEmail,
       subject: `🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Voyage`,
       html,
+      attachments: pdfBuffer ? [{
+        filename: `RoyalVoyage_Hotel_${data.bookingRef}.pdf`,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      }] : [],
     });
-    console.log(`[Email] ✅ Hotel confirmation sent to ${data.guestEmail}`);
+    console.log(`[Email] ✅ Hotel confirmation sent to ${data.guestEmail} (PDF: ${pdfBuffer ? "attached" : "skipped"})`);
     return true;
   } catch (error) {
     console.error("[Email] ❌ Failed to send hotel confirmation:", error);

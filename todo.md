@@ -189,3 +189,15 @@
 - [x] عرض PNR بوضوح في شاشة التأكيد
 - [x] عرض PNR في شاشة تفاصيل الحجز
 - [ ] تضمين PNR في التذكرة المرسلة بالبريد الإلكتروني
+
+## PNR في قالب البريد الإلكتروني
+- [ ] إضافة حقل pnr اختياري إلى FlightTicketData وHotelConfirmationData في server/email.ts
+- [ ] عرض PNR بشكل بارز في قالب HTML للتذكرة
+- [ ] تحديث Zod schema في server/routers.ts لقبول pnr
+- [ ] تمرير pnr من payment.tsx عند استدعاء mutation البريد
+
+## تذكرة PDF مرفقة بالبريد الإلكتروني
+- [x] تثبيت مكتبة pdfkit في الخادم
+- [x] إنشاء server/pdf.ts لتوليد تذكرة رحلة PDF
+- [x] إنشاء دالة توليد تأكيد فندق PDF
+- [x] إرفاق PDF مع البريد الإلكتروني كـ attachment
