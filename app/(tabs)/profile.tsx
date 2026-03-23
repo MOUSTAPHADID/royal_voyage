@@ -8,7 +8,9 @@ import {
   Alert,
   Switch,
   Modal,
+  Linking,
 } from "react-native";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -71,8 +73,8 @@ export default function ProfileScreen() {
     {
       title: t.profile.support,
       items: [
-        { icon: "info.circle.fill", label: t.profile.helpCenter, value: "", onPress: () => {} },
-        { icon: "envelope.fill", label: t.profile.contactUs, value: "", onPress: () => {} },
+        { icon: "phone.fill", label: language === "ar" ? "اتصل بنا" : language === "fr" ? "Appelez-nous" : "Call Us", value: "+222 33 70 00 00", onPress: () => Linking.openURL("tel:+22233700000") },
+        { icon: "envelope.fill", label: t.profile.contactUs, value: "", onPress: () => Linking.openURL("mailto:royal-voyage@gmail.com") },
         { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
         { icon: "shield.fill", label: language === "ar" ? "سياسة الخصوصية" : language === "fr" ? "Politique de Confidentialité" : "Privacy Policy", value: "", onPress: () => router.push("/privacy" as any) },
       ],
@@ -179,6 +181,38 @@ export default function ProfileScreen() {
           </View>
         ))}
 
+        {/* Social Media Buttons */}
+        <View style={styles.socialSection}>
+          <Text style={[styles.sectionTitle, { color: colors.muted }]}>
+            {language === "ar" ? "تواصل معنا" : language === "fr" ? "NOUS CONTACTER" : "CONTACT US"}
+          </Text>
+          <View style={styles.socialRow}>
+            {/* WhatsApp */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.socialBtn,
+                { backgroundColor: "#25D366", opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={() => Linking.openURL("https://wa.me/22233700000")}
+            >
+              <FontAwesome5 name="whatsapp" size={22} color="#fff" />
+              <Text style={styles.socialBtnText}>WhatsApp</Text>
+            </Pressable>
+
+            {/* Facebook */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.socialBtn,
+                { backgroundColor: "#1877F2", opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={() => Linking.openURL("https://www.facebook.com/royalvoyage.mr")}
+            >
+              <FontAwesome5 name="facebook" size={22} color="#fff" />
+              <Text style={styles.socialBtnText}>Facebook</Text>
+            </Pressable>
+          </View>
+        </View>
+
         {/* App Version */}
         <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage v1.0.0</Text>
 
@@ -240,6 +274,29 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  socialSection: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  socialRow: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  socialBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
