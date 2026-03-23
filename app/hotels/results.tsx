@@ -167,7 +167,7 @@ export default function HotelResultsScreen() {
           </View>
           {item.reviewCount ? (
             <Text style={[styles.reviewCount, { color: colors.muted }]}>
-              ({item.reviewCount.toLocaleString()})
+              ({item.reviewCount.toLocaleString("en-US")})
             </Text>
           ) : null}
         </View>

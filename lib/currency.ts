@@ -2,6 +2,8 @@
  * currency.ts — خدمة تحويل العملات
  * العملة الرئيسية: الأوقية الموريتانية (MRU)
  * سعر الصرف التقريبي: 1 USD ≈ 39.5 MRU
+ *
+ * ملاحظة: جميع الأرقام تُعرض باللاتينية (0-9) مع رمز MRU
  */
 
 const USD_TO_MRU = 39.5;
@@ -21,15 +23,20 @@ export function toMRU(amount: number, fromCurrency: string = "USD"): number {
   }
 }
 
+/**
+ * تنسيق المبلغ بالأوقية الموريتانية مع أرقام لاتينية
+ * مثال: 45000 → "45,000 MRU"
+ */
 export function formatMRU(amount: number): string {
   const rounded = Math.round(amount);
-  const formatted = rounded.toLocaleString("ar-MR");
-  return `${formatted} أوق`;
+  // استخدام en-US لضمان الأرقام اللاتينية (0-9) دائماً
+  const formatted = rounded.toLocaleString("en-US");
+  return `${formatted} MRU`;
 }
 
 export function formatAmadeusPriceMRU(priceStr: string, currency: string = "EUR"): string {
   const amount = parseFloat(priceStr);
-  if (isNaN(amount)) return "— أوق";
+  if (isNaN(amount)) return "— MRU";
   return formatMRU(toMRU(amount, currency));
 }
 

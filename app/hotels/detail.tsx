@@ -83,7 +83,7 @@ export default function HotelDetailScreen() {
           </View>
           <View style={[styles.quickDivider, { backgroundColor: colors.border }]} />
           <View style={styles.quickItem}>
-            <Text style={[styles.quickValue, { color: colors.foreground }]}>{hotel.reviewCount.toLocaleString()}</Text>
+            <Text style={[styles.quickValue, { color: colors.foreground }]}>{hotel.reviewCount.toLocaleString("en-US")}</Text>
             <Text style={[styles.quickLabel, { color: colors.muted }]}>Reviews</Text>
           </View>
           <View style={[styles.quickDivider, { backgroundColor: colors.border }]} />
