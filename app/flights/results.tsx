@@ -46,23 +46,29 @@ export default function FlightResultsScreen() {
     destination: string;
     destinationCode: string;
     date: string;
+    returnDate: string;
+    tripType: string;
     passengers: string;
     useMock: string;
   }>();
 
+  const isRoundTrip = params.tripType === "roundtrip" && !!params.returnDate;
+
+  // Sort & Filter
   const [sortBy, setSortBy] = useState<SortOption>("price");
   const [filterClass, setFilterClass] = useState<string>("All");
+  const [activeSection, setActiveSection] = useState<"outbound" | "return">("outbound");
 
   // Always use Amadeus Production API — useMock is kept for emergency fallback only
-  const useMock = false;
-  const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
+  const useMock = false;const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
 
-  // Amadeus Production API query
+  // Amadeus Production API query — outbound
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchFlights.useQuery(
     {
       originCode: params.originCode || "CMN",
       destinationCode: params.destinationCode || "DXB",
       departureDate: params.date || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      returnDate: isRoundTrip ? params.returnDate : undefined,
       adults: parseInt(params.passengers || "1", 10),
       max: 15,
     },
@@ -72,9 +78,24 @@ export default function FlightResultsScreen() {
     }
   );
 
-  const amadeusFlights: AnyFlight[] = (amadeusResult?.data ?? []) as AnyFlight[];
+  // Amadeus Production API query — inbound (return leg)
+  const { data: returnResult, isLoading: returnLoading } = trpc.amadeus.searchFlights.useQuery(
+    {
+      originCode: params.destinationCode || "DXB",
+      destinationCode: params.originCode || "CMN",
+      departureDate: params.returnDate || new Date(Date.now() + 37 * 86400000).toISOString().slice(0, 10),
+      adults: parseInt(params.passengers || "1", 10),
+      max: 10,
+    },
+    {
+      enabled: isRoundTrip,
+      retry: 2,
+    }
+  );
 
-  // Combine real + mock
+  const amadeusFlights: AnyFlight[] = (amadeusResult?.data ?? []) as AnyFlight[];
+  const returnFlights: AnyFlight[] = (returnResult?.data ?? []) as AnyFlight[];
+
   // Use live Amadeus data; fallback to mock only if API fails
   const rawFlights: AnyFlight[] = amadeusResult?.success && amadeusFlights.length > 0
     ? amadeusFlights
@@ -82,15 +103,21 @@ export default function FlightResultsScreen() {
     ? []
     : (FLIGHTS as unknown as AnyFlight[]);
 
+  const rawReturnFlights: AnyFlight[] = returnResult?.success && returnFlights.length > 0
+    ? returnFlights
+    : [];
+
+  const activeFlights = activeSection === "outbound" ? rawFlights : rawReturnFlights;
+
   const filteredFlights = useMemo(() => {
-    return rawFlights
+    return activeFlights
       .filter((f) => filterClass === "All" || f.class === filterClass)
       .sort((a, b) => {
         if (sortBy === "price") return a.price - b.price;
         if (sortBy === "duration") return a.duration.localeCompare(b.duration);
         return a.departureTime.localeCompare(b.departureTime);
       });
-  }, [rawFlights, filterClass, sortBy]);
+  }, [activeFlights, filterClass, sortBy]);
 
   const renderFlight = ({ item }: ListRenderItemInfo<AnyFlight>) => (
     <Pressable
@@ -238,13 +265,19 @@ export default function FlightResultsScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>
-            {params.originCode ?? "CMN"} → {params.destinationCode ?? "DXB"}
+            {params.originCode ?? "CMN"} {isRoundTrip ? "⇄" : "→"} {params.destinationCode ?? "DXB"}
           </Text>
           <Text style={styles.headerSub}>
             {params.date
-              ? new Date(params.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
-              : "Any date"}{" "}
-            · {params.passengers ?? 1} passenger
+              ? new Date(params.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+              : "Any date"}
+            {isRoundTrip && params.returnDate
+              ? ` – ${new Date(params.returnDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+              : params.date
+              ? `, ${new Date(params.date).getFullYear()}`
+              : ""}
+            {" · "}{params.passengers ?? 1} pax
+            {isRoundTrip ? " · Round Trip" : " · One Way"}
           </Text>
         </View>
         <Pressable
@@ -253,6 +286,37 @@ export default function FlightResultsScreen() {
           <IconSymbol name="slider.horizontal.3" size={20} color="#FFFFFF" />
         </Pressable>
       </View>
+
+      {/* Round Trip section tabs */}
+      {isRoundTrip && (
+        <View style={[styles.sectionTabRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <Pressable
+            style={[styles.sectionTab, activeSection === "outbound" && { borderBottomColor: colors.primary }]}
+            onPress={() => setActiveSection("outbound")}
+          >
+            <IconSymbol name="airplane" size={14} color={activeSection === "outbound" ? colors.primary : colors.muted} />
+            <Text style={[styles.sectionTabText, { color: activeSection === "outbound" ? colors.primary : colors.muted }]}>
+              Outbound
+            </Text>
+            <Text style={[styles.sectionTabDate, { color: colors.muted }]}>
+              {params.date ? new Date(params.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.sectionTab, activeSection === "return" && { borderBottomColor: colors.secondary }]}
+            onPress={() => setActiveSection("return")}
+          >
+            <IconSymbol name="airplane.arrival" size={14} color={activeSection === "return" ? colors.secondary : colors.muted} />
+            <Text style={[styles.sectionTabText, { color: activeSection === "return" ? colors.secondary : colors.muted }]}>
+              Return
+            </Text>
+            <Text style={[styles.sectionTabDate, { color: colors.muted }]}>
+              {params.returnDate ? new Date(params.returnDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
+            </Text>
+            {returnLoading && <ActivityIndicator size="small" color={colors.secondary} style={{ marginLeft: 4 }} />}
+          </Pressable>
+        </View>
+      )}
 
       {/* Sort & Filter */}
       <View
@@ -446,4 +510,21 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: "center", padding: 60, gap: 12 },
   emptyTitle: { fontSize: 18, fontWeight: "700" },
   emptyText: { fontSize: 14, textAlign: "center" },
+  // Round Trip section tabs
+  sectionTabRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+  },
+  sectionTab: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 12,
+    gap: 6,
+    borderBottomWidth: 3,
+    borderBottomColor: "transparent",
+  },
+  sectionTabText: { fontSize: 14, fontWeight: "700" },
+  sectionTabDate: { fontSize: 12 },
 });

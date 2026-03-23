@@ -17,6 +17,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 
 type SearchTab = "flights" | "hotels";
+type TripType = "oneway" | "roundtrip";
 
 // Helper: get next date N days from now in YYYY-MM-DD
 function futureDate(days: number): string {
@@ -25,18 +26,37 @@ function futureDate(days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function formatDateShort(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useApp();
   const [activeTab, setActiveTab] = useState<SearchTab>("flights");
 
+  // Trip type
+  const [tripType, setTripType] = useState<TripType>("oneway");
+
   // Flight search state
   const [flightFrom, setFlightFrom] = useState("Casablanca");
   const [flightFromCode, setFlightFromCode] = useState("CMN");
   const [flightTo, setFlightTo] = useState("");
   const [flightToCode, setFlightToCode] = useState("");
-  const [flightDate] = useState(futureDate(30));
+  const [departureDate, setDepartureDate] = useState(futureDate(30));
+  const [returnDate, setReturnDate] = useState(futureDate(37));
   const [passengers, setPassengers] = useState(1);
 
   // Hotel search state
@@ -46,8 +66,17 @@ export default function HomeScreen() {
   const [checkOut] = useState(futureDate(33));
   const [guests, setGuests] = useState(2);
 
+  // Swap origin ↔ destination
+  const handleSwap = () => {
+    const tmpName = flightFrom;
+    const tmpCode = flightFromCode;
+    setFlightFrom(flightTo || "");
+    setFlightFromCode(flightToCode || "");
+    setFlightTo(tmpName);
+    setFlightToCode(tmpCode);
+  };
+
   const handleFlightSearch = () => {
-    // Always use Amadeus Production API
     const destCode = flightToCode || "DXB";
     const destName = flightTo || "Dubai";
     router.push({
@@ -57,7 +86,9 @@ export default function HomeScreen() {
         originCode: flightFromCode || "CMN",
         destination: destName,
         destinationCode: destCode,
-        date: flightDate,
+        date: departureDate,
+        returnDate: tripType === "roundtrip" ? returnDate : "",
+        tripType,
         passengers: passengers.toString(),
         useMock: "false",
       },
@@ -65,7 +96,6 @@ export default function HomeScreen() {
   };
 
   const handleHotelSearch = () => {
-    // Always use Amadeus Production API
     router.push({
       pathname: "/hotels/results" as any,
       params: {
@@ -94,7 +124,9 @@ export default function HomeScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.greeting}>{greeting()},</Text>
-              <Text style={styles.userName}>{user?.name?.split(" ")[0] ?? "Traveller"} 👋</Text>
+              <Text style={styles.userName}>
+                {user?.name?.split(" ")[0] ?? "Traveller"} 👋
+              </Text>
             </View>
             <Pressable
               style={[styles.notifButton, { backgroundColor: "rgba(255,255,255,0.15)" }]}
@@ -108,7 +140,7 @@ export default function HomeScreen() {
 
         {/* Search Widget */}
         <View style={[styles.searchWidget, { backgroundColor: colors.surface }]}>
-          {/* Tabs */}
+          {/* Tabs: Flights / Hotels */}
           <View style={[styles.tabRow, { backgroundColor: colors.background }]}>
             {(["flights", "hotels"] as SearchTab[]).map((tab) => (
               <Pressable
@@ -138,6 +170,35 @@ export default function HomeScreen() {
 
           {activeTab === "flights" ? (
             <View style={styles.searchForm}>
+
+              {/* ── Trip Type Toggle ── */}
+              <View style={[styles.tripTypeRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                {(["oneway", "roundtrip"] as TripType[]).map((type) => (
+                  <Pressable
+                    key={type}
+                    style={[
+                      styles.tripTypeBtn,
+                      tripType === type && { backgroundColor: colors.primary },
+                    ]}
+                    onPress={() => setTripType(type)}
+                  >
+                    <IconSymbol
+                      name={type === "oneway" ? "arrow.right" : "arrow.2.squarepath"}
+                      size={14}
+                      color={tripType === type ? "#FFFFFF" : colors.muted}
+                    />
+                    <Text
+                      style={[
+                        styles.tripTypeText,
+                        { color: tripType === type ? "#FFFFFF" : colors.muted },
+                      ]}
+                    >
+                      {type === "oneway" ? "One Way" : "Round Trip"}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+
               {/* From — with autocomplete */}
               <LocationAutocomplete
                 label="From"
@@ -150,6 +211,18 @@ export default function HomeScreen() {
                 }}
                 iconName="airplane"
               />
+
+              {/* Swap button */}
+              <View style={styles.swapRow}>
+                <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
+                <Pressable
+                  style={[styles.swapBtn, { backgroundColor: colors.primary, borderColor: colors.surface }]}
+                  onPress={handleSwap}
+                >
+                  <IconSymbol name="arrow.up.arrow.down" size={16} color="#FFFFFF" />
+                </Pressable>
+                <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
+              </View>
 
               {/* To — with autocomplete */}
               <LocationAutocomplete
@@ -164,45 +237,109 @@ export default function HomeScreen() {
                 iconName="location.fill"
               />
 
-              <View style={styles.rowFields}>
-                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="clock.fill" size={18} color={colors.primary} />
+              {/* Date fields */}
+              {tripType === "oneway" ? (
+                /* One Way — single date */
+                <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                  <IconSymbol name="calendar" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>Date</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>Departure Date</Text>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                      {new Date(flightDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      {formatDate(departureDate)}
                     </Text>
                   </View>
-                </View>
-
-                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>Passengers</Text>
-                    <View style={styles.counterRow}>
-                      <Pressable onPress={() => setPassengers(Math.max(1, passengers - 1))}>
-                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
-                      </Pressable>
-                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{passengers}</Text>
-                      <Pressable onPress={() => setPassengers(passengers + 1)}>
-                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
-                      </Pressable>
-                    </View>
+                  <View style={[styles.tripBadge, { backgroundColor: colors.primary + "18" }]}>
+                    <Text style={[styles.tripBadgeText, { color: colors.primary }]}>One Way</Text>
                   </View>
                 </View>
+              ) : (
+                /* Round Trip — two dates side by side */
+                <View style={styles.rowFields}>
+                  <Pressable
+                    style={[styles.searchField, { flex: 1, borderColor: colors.primary, backgroundColor: colors.background }]}
+                    onPress={() => {
+                      // Cycle departure date +1 day (simple demo interaction)
+                      const d = new Date(departureDate);
+                      d.setDate(d.getDate() + 1);
+                      // Ensure return is after departure
+                      const r = new Date(returnDate);
+                      if (r <= d) {
+                        r.setDate(d.getDate() + 3);
+                        setReturnDate(r.toISOString().slice(0, 10));
+                      }
+                      setDepartureDate(d.toISOString().slice(0, 10));
+                    }}
+                  >
+                    <IconSymbol name="airplane" size={16} color={colors.primary} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>Departure</Text>
+                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>
+                        {formatDateShort(departureDate)}
+                      </Text>
+                    </View>
+                  </Pressable>
+
+                  <View style={styles.dateArrow}>
+                    <IconSymbol name="arrow.right" size={14} color={colors.muted} />
+                  </View>
+
+                  <Pressable
+                    style={[styles.searchField, { flex: 1, borderColor: colors.secondary, backgroundColor: colors.background }]}
+                    onPress={() => {
+                      const r = new Date(returnDate);
+                      r.setDate(r.getDate() + 1);
+                      setReturnDate(r.toISOString().slice(0, 10));
+                    }}
+                  >
+                    <IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>Return</Text>
+                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>
+                        {formatDateShort(returnDate)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                </View>
+              )}
+
+              {/* Passengers */}
+              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>Passengers</Text>
+                  <View style={styles.counterRow}>
+                    <Pressable onPress={() => setPassengers(Math.max(1, passengers - 1))}>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                    </Pressable>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{passengers}</Text>
+                    <Pressable onPress={() => setPassengers(passengers + 1)}>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                    </Pressable>
+                  </View>
+                </View>
+                {tripType === "roundtrip" && (
+                  <View style={[styles.tripBadge, { backgroundColor: colors.secondary + "25" }]}>
+                    <Text style={[styles.tripBadgeText, { color: colors.secondary }]}>Round Trip</Text>
+                  </View>
+                )}
               </View>
 
               <Pressable
-                style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.secondary, opacity: pressed ? 0.85 : 1 }]}
+                style={({ pressed }) => [
+                  styles.searchButton,
+                  { backgroundColor: colors.secondary, opacity: pressed ? 0.85 : 1 },
+                ]}
                 onPress={handleFlightSearch}
               >
                 <IconSymbol name="magnifyingglass" size={18} color={colors.primary} />
-                <Text style={[styles.searchButtonText, { color: colors.primary }]}>Search Flights</Text>
+                <Text style={[styles.searchButtonText, { color: colors.primary }]}>
+                  Search {tripType === "roundtrip" ? "Round Trip" : "Flights"}
+                </Text>
               </Pressable>
             </View>
           ) : (
+            /* ── Hotels Form ── */
             <View style={styles.searchForm}>
-              {/* Hotel destination — with autocomplete */}
               <LocationAutocomplete
                 label="Destination"
                 placeholder="City or hotel destination"
@@ -221,7 +358,7 @@ export default function HomeScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.fieldLabel, { color: colors.muted }]}>Check-in</Text>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                      {new Date(checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {formatDateShort(checkIn)}
                     </Text>
                   </View>
                 </View>
@@ -230,7 +367,7 @@ export default function HomeScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.fieldLabel, { color: colors.muted }]}>Check-out</Text>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                      {new Date(checkOut).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      {formatDateShort(checkOut)}
                     </Text>
                   </View>
                 </View>
@@ -253,7 +390,10 @@ export default function HomeScreen() {
               </View>
 
               <Pressable
-                style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.secondary, opacity: pressed ? 0.85 : 1 }]}
+                style={({ pressed }) => [
+                  styles.searchButton,
+                  { backgroundColor: colors.secondary, opacity: pressed ? 0.85 : 1 },
+                ]}
                 onPress={handleHotelSearch}
               >
                 <IconSymbol name="magnifyingglass" size={18} color={colors.primary} />
@@ -263,38 +403,32 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Featured Destinations */}
-        <View style={[styles.section, { backgroundColor: colors.background }]}>
+        {/* Popular Destinations */}
+        <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Featured Destinations</Text>
-            <Pressable onPress={() => router.push("/(tabs)/explore" as any)}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Popular Destinations</Text>
+            <Pressable>
               <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
             </Pressable>
           </View>
-
           <FlatList
-            data={DESTINATIONS.slice(0, 5)}
-            keyExtractor={(item) => item.id}
             horizontal
+            data={DESTINATIONS}
+            keyExtractor={(item) => item.id}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingLeft: 20, paddingRight: 4, gap: 14 }}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 14 }}
             renderItem={({ item }) => (
               <Pressable
                 style={({ pressed }) => [styles.destCard, { opacity: pressed ? 0.9 : 1 }]}
-                onPress={() =>
-                  router.push({
-                    pathname: "/hotels/results" as any,
-                    params: { destination: item.city, destinationCode: "", checkIn, checkOut, guests: "2", useMock: "true" },
-                  })
-                }
+                onPress={() => {
+                  setActiveTab("flights");
+                  setFlightTo(item.city);
+                }}
               >
                 <Image source={{ uri: item.image }} style={styles.destImage} />
-                <View style={styles.destGradient} />
-                {item.tag && (
-                  <View style={[styles.destTag, { backgroundColor: colors.secondary }]}>
-                    <Text style={[styles.destTagText, { color: colors.primary }]}>{item.tag}</Text>
-                  </View>
-                )}
+                <View style={[styles.destTag, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.destTagText}>{item.tag}</Text>
+                </View>
                 <View style={styles.destInfo}>
                   <Text style={styles.destCity}>{item.city}</Text>
                   <Text style={styles.destCountry}>{item.country}</Text>
@@ -306,11 +440,13 @@ export default function HomeScreen() {
         </View>
 
         {/* Hot Deals */}
-        <View style={[styles.section, { backgroundColor: colors.background, paddingBottom: 32 }]}>
+        <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Hot Deals ✈</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Hot Deals</Text>
+            <Pressable>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+            </Pressable>
           </View>
-
           {FLIGHTS.slice(0, 3).map((flight) => (
             <Pressable
               key={flight.id}
@@ -318,28 +454,31 @@ export default function HomeScreen() {
                 styles.dealCard,
                 { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
               ]}
-              onPress={() => router.push({ pathname: "/flights/detail" as any, params: { id: flight.id } })}
+              onPress={() =>
+                router.push({
+                  pathname: "/flights/detail" as any,
+                  params: { id: flight.id },
+                })
+              }
             >
               <View style={styles.dealLeft}>
                 <View style={[styles.airlineIcon, { backgroundColor: colors.primary + "15" }]}>
-                  <Text style={{ fontSize: 20 }}>✈</Text>
+                  <Text style={{ fontSize: 22 }}>✈</Text>
                 </View>
                 <View>
                   <Text style={[styles.dealAirline, { color: colors.foreground }]}>{flight.airline}</Text>
                   <Text style={[styles.dealRoute, { color: colors.muted }]}>
                     {flight.originCode} → {flight.destinationCode}
                   </Text>
-                  <Text style={[styles.dealDuration, { color: colors.muted }]}>
-                    {flight.duration} · {flight.stops === 0 ? "Non-stop" : `${flight.stops} stop`}
-                  </Text>
+                  <Text style={[styles.dealDuration, { color: colors.muted }]}>{flight.duration}</Text>
                 </View>
               </View>
               <View style={styles.dealRight}>
                 <Text style={[styles.dealPrice, { color: colors.primary }]}>${flight.price}</Text>
                 <Text style={[styles.dealClass, { color: colors.muted }]}>{flight.class}</Text>
-                <View style={[styles.dealSeats, { backgroundColor: flight.seatsLeft <= 5 ? colors.error + "15" : colors.success + "15" }]}>
-                  <Text style={[styles.dealSeatsText, { color: flight.seatsLeft <= 5 ? colors.error : colors.success }]}>
-                    {flight.seatsLeft} seats left
+                <View style={[styles.dealSeats, { backgroundColor: colors.error + "15" }]}>
+                  <Text style={[styles.dealSeatsText, { color: colors.error }]}>
+                    {flight.seatsLeft} left
                   </Text>
                 </View>
               </View>
@@ -355,50 +494,50 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 28,
+    paddingBottom: 24,
   },
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   greeting: {
-    color: "rgba(255,255,255,0.7)",
+    color: "rgba(255,255,255,0.75)",
     fontSize: 14,
   },
   userName: {
     color: "#FFFFFF",
     fontSize: 22,
     fontWeight: "700",
-  },
-  headerSubtitle: {
-    color: "rgba(255,255,255,0.8)",
-    fontSize: 15,
+    marginTop: 2,
   },
   notifButton: {
     width: 42,
     height: 42,
-    borderRadius: 21,
+    borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+  },
+  headerSubtitle: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 14,
   },
   searchWidget: {
     marginHorizontal: 16,
     marginTop: -16,
     borderRadius: 20,
-    padding: 16,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
-    elevation: 8,
+    elevation: 6,
   },
   tabRow: {
     flexDirection: "row",
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
+    padding: 6,
+    gap: 4,
   },
   tabButton: {
     flex: 1,
@@ -406,7 +545,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     gap: 6,
   },
   tabLabel: {
@@ -414,31 +553,85 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   searchForm: {
+    padding: 16,
+    gap: 10,
+  },
+  // ── Trip Type Toggle ──
+  tripTypeRow: {
+    flexDirection: "row",
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+    padding: 3,
+    gap: 3,
+  },
+  tripTypeBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    borderRadius: 10,
+    gap: 5,
+  },
+  tripTypeText: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  // ── Swap button ──
+  swapRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: -4,
+  },
+  swapDivider: {
+    flex: 1,
+    height: 1,
+  },
+  swapBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    marginHorizontal: 8,
+  },
+  // ── Date arrow ──
+  dateArrow: {
+    paddingHorizontal: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // ── Trip badge ──
+  tripBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  tripBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  rowFields: {
+    flexDirection: "row",
     gap: 10,
   },
   searchField: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
+    gap: 10,
+    padding: 12,
     borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 12,
+    borderWidth: 1,
   },
   fieldLabel: {
     fontSize: 11,
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
     marginBottom: 2,
   },
   fieldValue: {
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  rowFields: {
-    flexDirection: "row",
-    gap: 10,
+    fontSize: 14,
+    fontWeight: "600",
   },
   counterRow: {
     flexDirection: "row",
@@ -466,10 +659,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
   },
   seeAll: {
@@ -478,22 +671,13 @@ const styles = StyleSheet.create({
   },
   destCard: {
     width: 160,
-    height: 220,
+    height: 200,
     borderRadius: 16,
     overflow: "hidden",
   },
   destImage: {
     width: "100%",
     height: "100%",
-    position: "absolute",
-  },
-  destGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 100,
-    backgroundColor: "rgba(0,0,0,0.5)",
   },
   destTag: {
     position: "absolute",
@@ -506,6 +690,7 @@ const styles = StyleSheet.create({
   destTagText: {
     fontSize: 10,
     fontWeight: "700",
+    color: "#FFFFFF",
   },
   destInfo: {
     position: "absolute",

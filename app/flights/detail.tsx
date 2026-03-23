@@ -15,9 +15,53 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 export default function FlightDetailScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{
+    id: string;
+    airline: string;
+    flightNumber: string;
+    originCode: string;
+    origin: string;
+    destinationCode: string;
+    destination: string;
+    departureTime: string;
+    arrivalTime: string;
+    duration: string;
+    stops: string;
+    price: string;
+    currency: string;
+    class: string;
+    seatsLeft: string;
+    tripType: string;
+    returnDate: string;
+  }>();
 
-  const flight = FLIGHTS.find((f) => f.id === id) ?? FLIGHTS[0];
+  // If params have flight data (from Amadeus), use them; otherwise fall back to mock
+  const hasFlight = !!params.airline;
+  const mockFlight = FLIGHTS.find((f) => f.id === params.id) ?? FLIGHTS[0];
+
+  const flight = hasFlight
+    ? {
+        id: params.id,
+        airline: params.airline,
+        flightNumber: params.flightNumber,
+        originCode: params.originCode,
+        origin: params.origin,
+        destinationCode: params.destinationCode,
+        destination: params.destination,
+        departureTime: params.departureTime,
+        arrivalTime: params.arrivalTime,
+        duration: params.duration,
+        stops: parseInt(params.stops || "0", 10),
+        price: parseFloat(params.price || "0"),
+        currency: params.currency || "USD",
+        class: params.class || "ECONOMY",
+        seatsLeft: parseInt(params.seatsLeft || "9", 10),
+      }
+    : mockFlight;
+
+  const isRoundTrip = params.tripType === "roundtrip";
+  const priceSymbol = flight.currency === "USD" ? "$" : flight.currency + " ";
+  const totalPrice = isRoundTrip ? flight.price * 2 : flight.price;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -119,8 +163,9 @@ export default function FlightDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Price Breakdown</Text>
           {[
-            { label: "Base fare", value: `$${flight.price - 50}` },
-            { label: "Taxes & fees", value: "$50" },
+            { label: "Base fare", value: `${priceSymbol}${(flight.price * 0.85).toFixed(0)}` },
+            { label: "Taxes & fees", value: `${priceSymbol}${(flight.price * 0.15).toFixed(0)}` },
+            ...(isRoundTrip ? [{ label: "Return flight", value: `${priceSymbol}${flight.price.toFixed(0)}` }] : []),
           ].map((item) => (
             <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -128,8 +173,12 @@ export default function FlightDetailScreen() {
             </View>
           ))}
           <View style={styles.totalRow}>
-            <Text style={[styles.totalLabel, { color: colors.foreground }]}>Total per person</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>${flight.price}</Text>
+            <Text style={[styles.totalLabel, { color: colors.foreground }]}>
+              Total per person{isRoundTrip ? " (Round Trip)" : ""}
+            </Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>
+              {priceSymbol}{totalPrice.toFixed(0)}
+            </Text>
           </View>
         </View>
 
@@ -139,15 +188,36 @@ export default function FlightDetailScreen() {
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.bottomPrice, { color: colors.primary }]}>${flight.price}</Text>
-          <Text style={[styles.bottomLabel, { color: colors.muted }]}>per person</Text>
+          <Text style={[styles.bottomPrice, { color: colors.primary }]}>
+            {priceSymbol}{totalPrice.toFixed(0)}
+          </Text>
+          <Text style={[styles.bottomLabel, { color: colors.muted }]}>
+            {isRoundTrip ? "Round Trip · per person" : "One Way · per person"}
+          </Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.bookBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
           onPress={() =>
             router.push({
               pathname: "/booking/passenger-details" as any,
-              params: { type: "flight", id: flight.id },
+              params: {
+                type: "flight",
+                id: flight.id,
+                airline: flight.airline,
+                flightNumber: flight.flightNumber,
+                originCode: flight.originCode,
+                origin: flight.origin,
+                destinationCode: flight.destinationCode,
+                destination: flight.destination,
+                departureTime: flight.departureTime,
+                arrivalTime: flight.arrivalTime,
+                duration: flight.duration,
+                price: String(totalPrice),
+                currency: flight.currency,
+                class: flight.class,
+                tripType: isRoundTrip ? "roundtrip" : "oneway",
+                returnDate: params.returnDate || "",
+              },
             })
           }
         >
