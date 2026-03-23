@@ -61,6 +61,9 @@ export type Booking = {
   rooms?: number;
   totalPrice: number;
   currency: string;
+  // Passenger/guest name for search
+  passengerName?: string;
+  guestName?: string;
 };
 
 export const DESTINATIONS: Destination[] = [

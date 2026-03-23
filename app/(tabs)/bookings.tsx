@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   ListRenderItemInfo,
+  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -22,9 +23,37 @@ export default function BookingsScreen() {
   const colors = useColors();
   const { bookings } = useApp();
   const [filter, setFilter] = useState<FilterTab>("all");
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
-  const filtered = bookings.filter((b) => {
+  // حقول البحث
+  const [searchRef, setSearchRef] = useState("");
+  const [searchName, setSearchName] = useState("");
+  const [searchMode, setSearchMode] = useState(false);
+  const [searchResult, setSearchResult] = useState<typeof bookings | null>(null);
+
+  const handleSearch = () => {
+    const ref = searchRef.trim().toUpperCase();
+    const name = searchName.trim().toLowerCase();
+    if (!ref && !name) return;
+
+    const results = bookings.filter((b) => {
+      const refMatch = ref ? b.reference.toUpperCase().includes(ref) : true;
+      const nameMatch = name
+        ? (b.passengerName ?? b.guestName ?? "").toLowerCase().includes(name)
+        : true;
+      return refMatch && nameMatch;
+    });
+    setSearchResult(results);
+  };
+
+  const handleClearSearch = () => {
+    setSearchRef("");
+    setSearchName("");
+    setSearchResult(null);
+    setSearchMode(false);
+  };
+
+  const displayList = searchResult !== null ? searchResult : bookings.filter((b) => {
     if (filter === "all") return true;
     if (filter === "flights") return b.type === "flight";
     return b.type === "hotel";
@@ -125,6 +154,64 @@ export default function BookingsScreen() {
         <Text style={styles.headerSub}>{bookings.length} {t.myBookings.totalReservations}</Text>
       </View>
 
+      {/* Search Bar */}
+      {searchMode ? (
+        <View style={[styles.searchBox, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <TextInput
+            style={[styles.searchInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+            placeholder={isRTL ? "رقم الحجز (RV...)" : "Booking ref (RV...)"}
+            placeholderTextColor={colors.muted}
+            value={searchRef}
+            onChangeText={setSearchRef}
+            autoCapitalize="characters"
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          <TextInput
+            style={[styles.searchInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+            placeholder={isRTL ? "الاسم العائلي" : "Last name"}
+            placeholderTextColor={colors.muted}
+            value={searchName}
+            onChangeText={setSearchName}
+            autoCapitalize="words"
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          <View style={styles.searchActions}>
+            <Pressable
+              style={({ pressed }) => [styles.searchBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+              onPress={handleSearch}
+            >
+              <IconSymbol name="magnifyingglass" size={16} color="#fff" />
+              <Text style={styles.searchBtnText}>{isRTL ? "بحث" : "Search"}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.clearBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+              onPress={handleClearSearch}
+            >
+              <Text style={[styles.clearBtnText, { color: colors.muted }]}>{isRTL ? "إلغاء" : "Cancel"}</Text>
+            </Pressable>
+          </View>
+          {searchResult !== null && (
+            <Text style={[styles.searchResultCount, { color: colors.muted }]}>
+              {isRTL
+                ? `تم العثور على ${searchResult.length} حجز`
+                : `${searchResult.length} booking(s) found`}
+            </Text>
+          )}
+        </View>
+      ) : (
+        <Pressable
+          style={[styles.searchToggle, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}
+          onPress={() => setSearchMode(true)}
+        >
+          <IconSymbol name="magnifyingglass" size={16} color={colors.muted} />
+          <Text style={[styles.searchToggleText, { color: colors.muted }]}>
+            {isRTL ? "بحث برقم الحجز أو الاسم العائلي..." : "Search by booking ref or last name..."}
+          </Text>
+        </Pressable>
+      )}
+
       {/* Filter Tabs */}
       <View style={[styles.filterBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         {(["all", "flights", "hotels"] as FilterTab[]).map((tab) => (
@@ -148,23 +235,31 @@ export default function BookingsScreen() {
         ))}
       </View>
 
-      {filtered.length === 0 ? (
+      {displayList.length === 0 ? (
         <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
-          <Text style={{ fontSize: 48, marginBottom: 16 }}>🗺️</Text>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.myBookings.noBookings}</Text>
-          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            {t.myBookings.noBookingsHint}
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>{searchResult !== null ? "🔍" : "🗺️"}</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
+            {searchResult !== null
+              ? (isRTL ? "لا توجد نتائج" : "No results found")
+              : t.myBookings.noBookings}
           </Text>
-          <Pressable
-            style={({ pressed }) => [styles.exploreBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
-            onPress={() => router.push("/(tabs)" as any)}
-          >
-            <Text style={styles.exploreBtnText}>{t.myBookings.exploreNow}</Text>
-          </Pressable>
+          <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
+            {searchResult !== null
+              ? (isRTL ? "تحقق من رقم الحجز أو الاسم العائلي" : "Check the booking ref or last name")
+              : t.myBookings.noBookingsHint}
+          </Text>
+          {searchResult === null && (
+            <Pressable
+              style={({ pressed }) => [styles.exploreBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+              onPress={() => router.push("/(tabs)" as any)}
+            >
+              <Text style={styles.exploreBtnText}>{t.myBookings.exploreNow}</Text>
+            </Pressable>
+          )}
         </View>
       ) : (
         <FlatList
-          data={filtered}
+          data={displayList}
           keyExtractor={(item) => item.id}
           renderItem={renderBooking}
           contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 32 }}
@@ -312,5 +407,64 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  searchToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  searchToggleText: {
+    fontSize: 14,
+  },
+  searchBox: {
+    padding: 12,
+    gap: 8,
+    borderBottomWidth: 1,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
+  searchActions: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  searchBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  searchBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  clearBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  clearBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  searchResultCount: {
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 2,
   },
 });
