@@ -181,37 +181,7 @@ export default function ProfileScreen() {
           </View>
         ))}
 
-        {/* Social Media Buttons */}
-        <View style={styles.socialSection}>
-          <Text style={[styles.sectionTitle, { color: colors.muted }]}>
-            {language === "ar" ? "تواصل معنا" : language === "fr" ? "NOUS CONTACTER" : "CONTACT US"}
-          </Text>
-          <View style={styles.socialRow}>
-            {/* WhatsApp */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialBtn,
-                { backgroundColor: "#25D366", opacity: pressed ? 0.8 : 1 },
-              ]}
-              onPress={() => Linking.openURL("https://wa.me/22233700000")}
-            >
-              <FontAwesome5 name="whatsapp" size={22} color="#fff" />
-              <Text style={styles.socialBtnText}>WhatsApp</Text>
-            </Pressable>
 
-            {/* Facebook */}
-            <Pressable
-              style={({ pressed }) => [
-                styles.socialBtn,
-                { backgroundColor: "#1877F2", opacity: pressed ? 0.8 : 1 },
-              ]}
-              onPress={() => Linking.openURL("https://www.facebook.com/royalvoyage.mr")}
-            >
-              <FontAwesome5 name="facebook" size={22} color="#fff" />
-              <Text style={styles.socialBtnText}>Facebook</Text>
-            </Pressable>
-          </View>
-        </View>
 
         {/* App Version */}
         <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage v1.0.0</Text>

@@ -29,6 +29,8 @@ import {
   RecordingPresets,
 } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
+import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import { Linking } from "react-native";
 
 type SearchTab = "flights" | "hotels";
 type TripType = "oneway" | "roundtrip";
@@ -789,6 +791,34 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* Social Media Buttons */}
+        <View style={styles.socialSection}>
+          <View style={styles.socialRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.socialBtn,
+                { backgroundColor: "#25D366", opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={() => Linking.openURL("https://wa.me/22233700000")}
+            >
+              <FontAwesome5 name="whatsapp" size={22} color="#fff" />
+              <Text style={styles.socialBtnText}>WhatsApp</Text>
+            </Pressable>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.socialBtn,
+                { backgroundColor: "#1877F2", opacity: pressed ? 0.8 : 1 },
+              ]}
+              onPress={() => Linking.openURL("https://www.facebook.com/royalvoyage.mr")}
+            >
+              <FontAwesome5 name="facebook" size={22} color="#fff" />
+              <Text style={styles.socialBtnText}>Facebook</Text>
+            </Pressable>
+          </View>
+        </View>
+
       </ScrollView>
 
       {/* Voice Search Modal */}
@@ -1111,6 +1141,29 @@ const styles = StyleSheet.create({
   cabinBtnText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+  socialSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingBottom: 32,
+  },
+  socialRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  socialBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+  },
+  socialBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
   },
 });
 
