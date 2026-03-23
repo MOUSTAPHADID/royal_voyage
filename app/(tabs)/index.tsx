@@ -19,6 +19,7 @@ import { useTranslation } from "@/lib/i18n";
 
 type SearchTab = "flights" | "hotels";
 type TripType = "oneway" | "roundtrip";
+type CabinClass = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
 
 // Helper: get next date N days from now in YYYY-MM-DD
 function futureDate(days: number): string {
@@ -51,6 +52,9 @@ export default function HomeScreen() {
 
   // Trip type
   const [tripType, setTripType] = useState<TripType>("oneway");
+
+  // Cabin class
+  const [cabinClass, setCabinClass] = useState<CabinClass>("ECONOMY");
 
   // Flight search state
   const [flightFrom, setFlightFrom] = useState("Casablanca");
@@ -97,6 +101,7 @@ export default function HomeScreen() {
         tripType,
         passengers: passengers.toString(),
         children: children.toString(),
+        cabinClass,
         useMock: "false",
       },
     });
@@ -337,6 +342,45 @@ export default function HomeScreen() {
                         <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
                       </Pressable>
                     </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Cabin Class Selector */}
+              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <IconSymbol name="airplane" size={18} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>
+                    {isRTL ? "درجة السفر" : "Cabin Class"}
+                  </Text>
+                  <View style={styles.cabinRow}>
+                    {([
+                      { key: "ECONOMY", ar: "اقتصادية", en: "Economy" },
+                      { key: "PREMIUM_ECONOMY", ar: "ممتازة", en: "Premium" },
+                      { key: "BUSINESS", ar: "أعمال", en: "Business" },
+                      { key: "FIRST", ar: "أولى", en: "First" },
+                    ] as { key: CabinClass; ar: string; en: string }[]).map((cls) => (
+                      <Pressable
+                        key={cls.key}
+                        onPress={() => setCabinClass(cls.key)}
+                        style={[
+                          styles.cabinBtn,
+                          {
+                            backgroundColor: cabinClass === cls.key ? colors.primary : colors.surface,
+                            borderColor: cabinClass === cls.key ? colors.primary : colors.border,
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.cabinBtnText,
+                            { color: cabinClass === cls.key ? "#fff" : colors.foreground },
+                          ]}
+                        >
+                          {isRTL ? cls.ar : cls.en}
+                        </Text>
+                      </Pressable>
+                    ))}
                   </View>
                 </View>
               </View>
@@ -800,6 +844,22 @@ const styles = StyleSheet.create({
   },
   dealSeatsText: {
     fontSize: 11,
+    fontWeight: "600",
+  },
+  cabinRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: 6,
+  },
+  cabinBtn: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  cabinBtnText: {
+    fontSize: 12,
     fontWeight: "600",
   },
 });
