@@ -70,6 +70,9 @@ const MAPPING = {
   "ticket.fill": "confirmation-number",
   "building.columns.fill": "account-balance",
   "crown.fill": "workspace-premium",
+  "mic.fill": "mic",
+  "stop.fill": "stop",
+  "waveform": "graphic-eq",
 } as IconMapping;
 
 /**
