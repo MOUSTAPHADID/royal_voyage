@@ -49,8 +49,8 @@ const PAYMENT_METHODS: {
   },
   {
     id: "masrvi",
-    label: "مصاري",
-    sublabel: "الدفع عبر تطبيق Masrvi",
+    label: "مصرفي",
+    sublabel: "الدفع عبر تطبيق مصرفي",
     icon: "💳",
     color: "#8B5CF6",
   },
@@ -74,7 +74,7 @@ const BANK_INFO = {
 // أرقام الدفع عبر المحافظ
 const WALLET_NUMBERS: Record<string, string> = {
   bankily: "22 XX XX XX",
-  masrvi: "36 XX XX XX",
+  masrvi: "36 XX XX XX", // مصرفي
   sedad: "sedad.royalvoyage.mr",
 };
 
@@ -415,13 +415,13 @@ export default function PaymentScreen() {
           </View>
         )}
 
-        {/* تعليمات مصاري */}
+        {/* تعليمات مصرفي */}
         {paymentMethod === "masrvi" && (
           <View style={[styles.card, { backgroundColor: "#8B5CF610", borderColor: "#8B5CF630" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>💳 الدفع عبر مصاري</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>💳 الدفع عبر مصرفي</Text>
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
-                "افتح تطبيق Masrvi على هاتفك",
+                "افتح تطبيق مصرفي على هاتفك",
                 `أرسل المبلغ ${formatMRU(toMRU(total, "USD"))} إلى الرقم: ${WALLET_NUMBERS.masrvi}`,
                 "في خانة الملاحظة اكتب رقم حجزك",
                 "أدخل رقم الإيصال أدناه لتأكيد الدفع",
@@ -435,7 +435,7 @@ export default function PaymentScreen() {
               ))}
             </View>
             <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.foreground }]}>رقم إيصال مصاري *</Text>
+              <Text style={[styles.label, { color: colors.foreground }]}>رقم إيصال مصرفي *</Text>
               <TextInput
                 style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
                 placeholder="أدخل رقم الإيصال من التطبيق"
