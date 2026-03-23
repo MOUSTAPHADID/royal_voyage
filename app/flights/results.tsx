@@ -14,6 +14,7 @@ import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS, Flight } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "@/lib/i18n";
 
 type SortOption = "price" | "duration" | "departure";
 
@@ -53,6 +54,7 @@ export default function FlightResultsScreen() {
   }>();
 
   const isRoundTrip = params.tripType === "roundtrip" && !!params.returnDate;
+  const { t } = useTranslation();
 
   // Sort & Filter
   const [sortBy, setSortBy] = useState<SortOption>("price");
@@ -164,7 +166,7 @@ export default function FlightResultsScreen() {
             {item.currency === "USD" ? "$" : item.currency + " "}
             {typeof item.price === "number" ? item.price.toFixed(0) : item.price}
           </Text>
-          <Text style={[styles.perPerson, { color: colors.muted }]}>per person</Text>
+          <Text style={[styles.perPerson, { color: colors.muted }]}>{t.flights.perPerson}</Text>
         </View>
       </View>
 
@@ -191,7 +193,7 @@ export default function FlightResultsScreen() {
               { color: item.stops === 0 ? colors.success : colors.warning },
             ]}
           >
-            {item.stops === 0 ? "Non-stop" : `${item.stops} stop${item.stops > 1 ? "s" : ""}`}
+            {item.stops === 0 ? t.flights.nonStop : `${item.stops} ${item.stops > 1 ? t.flights.stops : t.flights.stop}`}
           </Text>
         </View>
 
@@ -219,7 +221,7 @@ export default function FlightResultsScreen() {
               { color: item.seatsLeft <= 5 ? colors.error : colors.success },
             ]}
           >
-            {item.seatsLeft} seats left
+            {item.seatsLeft} {t.flights.seatsLeft}
           </Text>
         </View>
         <Pressable
@@ -250,7 +252,7 @@ export default function FlightResultsScreen() {
             })
           }
         >
-          <Text style={styles.selectBtnText}>Select</Text>
+          <Text style={styles.selectBtnText}>{t.flights.select}</Text>
         </Pressable>
       </View>
     </Pressable>
@@ -277,7 +279,7 @@ export default function FlightResultsScreen() {
               ? `, ${new Date(params.date).getFullYear()}`
               : ""}
             {" · "}{params.passengers ?? 1} pax
-            {isRoundTrip ? " · Round Trip" : " · One Way"}
+            {isRoundTrip ? ` · ${t.home.roundTrip}` : ` · ${t.home.oneWay}`}
           </Text>
         </View>
         <Pressable
@@ -296,7 +298,7 @@ export default function FlightResultsScreen() {
           >
             <IconSymbol name="airplane" size={14} color={activeSection === "outbound" ? colors.primary : colors.muted} />
             <Text style={[styles.sectionTabText, { color: activeSection === "outbound" ? colors.primary : colors.muted }]}>
-              Outbound
+              {t.flights.outbound}
             </Text>
             <Text style={[styles.sectionTabDate, { color: colors.muted }]}>
               {params.date ? new Date(params.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
@@ -308,7 +310,7 @@ export default function FlightResultsScreen() {
           >
             <IconSymbol name="airplane.arrival" size={14} color={activeSection === "return" ? colors.secondary : colors.muted} />
             <Text style={[styles.sectionTabText, { color: activeSection === "return" ? colors.secondary : colors.muted }]}>
-              Return
+              {t.flights.returnLeg}
             </Text>
             <Text style={[styles.sectionTabDate, { color: colors.muted }]}>
               {params.returnDate ? new Date(params.returnDate).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}
@@ -326,7 +328,7 @@ export default function FlightResultsScreen() {
         ]}
       >
         <View style={styles.sortRow}>
-          <Text style={[styles.sortLabel, { color: colors.muted }]}>Sort:</Text>
+          <Text style={[styles.sortLabel, { color: colors.muted }]}>{t.flights.sortBy}</Text>
           {(["price", "duration", "departure"] as SortOption[]).map((opt) => (
             <Pressable
               key={opt}
@@ -339,7 +341,7 @@ export default function FlightResultsScreen() {
                   { color: sortBy === opt ? "#FFFFFF" : colors.muted },
                 ]}
               >
-                {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                {opt === "price" ? t.flights.price : opt === "duration" ? t.flights.duration : t.flights.departure}
               </Text>
             </Pressable>
           ))}
@@ -360,7 +362,7 @@ export default function FlightResultsScreen() {
                   { color: filterClass === cls ? colors.primary : colors.muted },
                 ]}
               >
-                {cls === "ECONOMY" ? "Economy" : cls === "BUSINESS" ? "Business" : cls === "FIRST" ? "First" : cls}
+                {cls === "ECONOMY" ? t.flights.economy : cls === "BUSINESS" ? t.flights.business : cls === "FIRST" ? t.flights.first : t.flights.all}
               </Text>
             </Pressable>
           ))}
@@ -372,19 +374,19 @@ export default function FlightResultsScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>
-            Searching live flights via Amadeus...
+            {t.flights.searching}
           </Text>
         </View>
       ) : (
         <>
           <View style={[styles.resultsCount, { backgroundColor: colors.background }]}>
             <Text style={[styles.resultsText, { color: colors.muted }]}>
-              {filteredFlights.length} flight{filteredFlights.length !== 1 ? "s" : ""} found
-              {!useMock && amadeusResult?.success ? " · Live data" : " · Sample data"}
+              {filteredFlights.length} {t.flights.flightsFound}
+              {!useMock && amadeusResult?.success ? " · ✅" : " · 📊"}
             </Text>
             {isError && (
               <Text style={[styles.errorNote, { color: colors.warning }]}>
-                ⚠ Live search unavailable, showing sample data
+                {t.flights.liveUnavailable}
               </Text>
             )}
           </View>
@@ -399,9 +401,9 @@ export default function FlightResultsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={{ fontSize: 40 }}>✈</Text>
-                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No flights found</Text>
+                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.flights.noFlights}</Text>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
-                  Try different dates or destinations
+                  {t.flights.noFlightsHint}
                 </Text>
               </View>
             }

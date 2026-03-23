@@ -15,6 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { HOTELS, Hotel } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
+import { useTranslation } from "@/lib/i18n";
 
 type SortOption = "price" | "rating" | "stars";
 
@@ -48,6 +49,7 @@ export default function HotelResultsScreen() {
   }>();
 
   const [sortBy, setSortBy] = useState<SortOption>("rating");
+  const { t } = useTranslation();
 
   // Always use Amadeus Production API
   const useMock = false;
@@ -148,10 +150,10 @@ export default function HotelResultsScreen() {
                   {item.currency === "USD" ? "$" : (item.currency || "$")}
                   {item.pricePerNight.toFixed(0)}
                 </Text>
-                <Text style={[styles.perNight, { color: colors.muted }]}>/ night</Text>
+                <Text style={[styles.perNight, { color: colors.muted }]}>{t.hotels.perNight}</Text>
               </>
             ) : (
-              <Text style={[styles.priceNA, { color: colors.muted }]}>Price on request</Text>
+              <Text style={[styles.priceNA, { color: colors.muted }]}>{t.hotels.priceOnRequest}</Text>
             )}
           </View>
         </View>
@@ -217,7 +219,7 @@ export default function HotelResultsScreen() {
             })
           }
         >
-          <Text style={styles.viewBtnText}>View Rooms</Text>
+          <Text style={styles.viewBtnText}>{t.hotels.viewRooms}</Text>
         </Pressable>
       </View>
     </Pressable>
@@ -257,7 +259,7 @@ export default function HotelResultsScreen() {
           { backgroundColor: colors.surface, borderBottomColor: colors.border },
         ]}
       >
-        <Text style={[styles.sortLabel, { color: colors.muted }]}>Sort by:</Text>
+          <Text style={[styles.sortLabel, { color: colors.muted }]}>{t.flights.sortBy}</Text>
         {(["rating", "price", "stars"] as SortOption[]).map((opt) => (
           <Pressable
             key={opt}
@@ -270,7 +272,7 @@ export default function HotelResultsScreen() {
                 { color: sortBy === opt ? "#FFFFFF" : colors.muted },
               ]}
             >
-              {opt.charAt(0).toUpperCase() + opt.slice(1)}
+              {opt === "rating" ? t.hotels.rating : opt === "price" ? t.flights.price : t.hotels.stars}
             </Text>
           </Pressable>
         ))}
@@ -281,19 +283,19 @@ export default function HotelResultsScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>
-            Searching hotels via Amadeus...
+            {t.hotels.searching}
           </Text>
         </View>
       ) : (
         <>
           <View style={[styles.resultsCount, { backgroundColor: colors.background }]}>
             <Text style={[styles.resultsText, { color: colors.muted }]}>
-              {sortedHotels.length} hotel{sortedHotels.length !== 1 ? "s" : ""} found
-              {!useMock && amadeusResult?.success ? " · Live data" : " · Sample data"}
+              {sortedHotels.length} {t.hotels.hotelsFound}
+              {!useMock && amadeusResult?.success ? " · ✅" : " · 📊"}
             </Text>
             {isError && (
               <Text style={[styles.errorNote, { color: colors.warning }]}>
-                ⚠ Live search unavailable, showing sample data
+                {t.hotels.liveUnavailable}
               </Text>
             )}
           </View>
@@ -308,9 +310,9 @@ export default function HotelResultsScreen() {
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={{ fontSize: 40 }}>🏨</Text>
-                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No hotels found</Text>
+                <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.hotels.noHotels}</Text>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
-                  Try different dates or destination
+                  {t.hotels.noHotelsHint}
                 </Text>
               </View>
             }

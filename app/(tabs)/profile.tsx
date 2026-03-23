@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -7,31 +7,36 @@ import {
   StyleSheet,
   Alert,
   Switch,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useTranslation, useI18n, LANGUAGES, Language } from "@/lib/i18n";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user, logout, bookings } = useApp();
-  const colorScheme = useColorScheme();
+  const { t } = useTranslation();
+  const { language, setLanguage } = useI18n();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [showLangModal, setShowLangModal] = useState(false);
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
 
+  const currentLangLabel = LANGUAGES.find((l) => l.code === language)?.nativeName ?? language;
+
   const handleLogout = () => {
     Alert.alert(
-      "Sign Out",
-      "Are you sure you want to sign out?",
+      t.profile.signOut,
+      t.profile.signOutConfirm,
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t.cancel, style: "cancel" },
         {
-          text: "Sign Out",
+          text: t.profile.signOut,
           style: "destructive",
           onPress: async () => {
             await logout();
@@ -44,26 +49,31 @@ export default function ProfileScreen() {
 
   const menuSections = [
     {
-      title: "Account",
+      title: t.profile.account,
       items: [
-        { icon: "person.fill", label: "Edit Profile", value: "", onPress: () => {} },
-        { icon: "creditcard.fill", label: "Payment Methods", value: "", onPress: () => {} },
-        { icon: "shield.fill", label: "Security & Privacy", value: "", onPress: () => {} },
+        { icon: "person.fill", label: t.profile.editProfile, value: "", onPress: () => {} },
+        { icon: "creditcard.fill", label: t.profile.paymentMethods, value: "", onPress: () => {} },
+        { icon: "shield.fill", label: t.profile.security, value: "", onPress: () => {} },
       ],
     },
     {
-      title: "Preferences",
+      title: t.profile.preferences,
       items: [
-        { icon: "globe", label: "Language", value: "English", onPress: () => {} },
-        { icon: "tag.fill", label: "Currency", value: "USD", onPress: () => {} },
+        {
+          icon: "globe",
+          label: t.profile.language,
+          value: currentLangLabel,
+          onPress: () => setShowLangModal(true),
+        },
+        { icon: "tag.fill", label: t.profile.currency, value: "MRU", onPress: () => {} },
       ],
     },
     {
-      title: "Support",
+      title: t.profile.support,
       items: [
-        { icon: "info.circle.fill", label: "Help Center", value: "", onPress: () => {} },
-        { icon: "envelope.fill", label: "Contact Us", value: "", onPress: () => {} },
-        { icon: "star.fill", label: "Rate the App", value: "", onPress: () => {} },
+        { icon: "info.circle.fill", label: t.profile.helpCenter, value: "", onPress: () => {} },
+        { icon: "envelope.fill", label: t.profile.contactUs, value: "", onPress: () => {} },
+        { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
       ],
     },
   ];
@@ -83,24 +93,24 @@ export default function ProfileScreen() {
               <IconSymbol name="pencil" size={14} color={colors.primary} />
             </Pressable>
           </View>
-          <Text style={styles.userName}>{user?.name ?? "Traveller"}</Text>
+          <Text style={styles.userName}>{user?.name ?? t.profile.traveller}</Text>
           <Text style={styles.userEmail}>{user?.email ?? ""}</Text>
 
           {/* Stats */}
           <View style={[styles.statsRow, { backgroundColor: "rgba(255,255,255,0.12)" }]}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{bookings.length}</Text>
-              <Text style={styles.statLabel}>Bookings</Text>
+              <Text style={styles.statLabel}>{t.myBookings.title}</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.2)" }]} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{confirmedBookings}</Text>
-              <Text style={styles.statLabel}>Confirmed</Text>
+              <Text style={styles.statLabel}>{t.myBookings.confirmed}</Text>
             </View>
             <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.2)" }]} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>Gold</Text>
-              <Text style={styles.statLabel}>Status</Text>
+              <Text style={styles.statLabel}>{t.profile.status}</Text>
             </View>
           </View>
         </View>
@@ -112,8 +122,8 @@ export default function ProfileScreen() {
               <IconSymbol name="bell.fill" size={20} color={colors.primary} />
             </View>
             <View>
-              <Text style={[styles.notifTitle, { color: colors.foreground }]}>Push Notifications</Text>
-              <Text style={[styles.notifSub, { color: colors.muted }]}>Flight updates, deals & offers</Text>
+              <Text style={[styles.notifTitle, { color: colors.foreground }]}>{t.profile.notifications}</Text>
+              <Text style={[styles.notifSub, { color: colors.muted }]}>{t.profile.notificationsHint}</Text>
             </View>
           </View>
           <Switch
@@ -144,9 +154,9 @@ export default function ProfileScreen() {
                   </View>
                   <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
                   <View style={styles.menuRight}>
-                    {item.value && (
+                    {item.value ? (
                       <Text style={[styles.menuValue, { color: colors.muted }]}>{item.value}</Text>
-                    )}
+                    ) : null}
                     <IconSymbol name="chevron.right" size={16} color={colors.muted} />
                   </View>
                 </Pressable>
@@ -167,11 +177,50 @@ export default function ProfileScreen() {
           onPress={handleLogout}
         >
           <IconSymbol name="arrow.left" size={18} color={colors.error} />
-          <Text style={[styles.logoutText, { color: colors.error }]}>Sign Out</Text>
+          <Text style={[styles.logoutText, { color: colors.error }]}>{t.profile.signOut}</Text>
         </Pressable>
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={showLangModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowLangModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowLangModal(false)}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>{t.profile.selectLanguage}</Text>
+            {LANGUAGES.map((lang) => (
+              <Pressable
+                key={lang.code}
+                style={({ pressed }) => [
+                  styles.langOption,
+                  { borderBottomColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                  language === lang.code && { backgroundColor: colors.primary + "12" },
+                ]}
+                onPress={() => {
+                  setLanguage(lang.code as Language);
+                  setShowLangModal(false);
+                }}
+
+              >
+                <Text style={styles.langFlag}>{lang.flag}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.langNative, { color: colors.foreground }]}>{lang.nativeName}</Text>
+                  <Text style={[styles.langEnglish, { color: colors.muted }]}>{lang.name}</Text>
+                </View>
+                {language === lang.code && (
+                  <IconSymbol name="checkmark" size={18} color={colors.primary} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -184,155 +233,59 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: 4,
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: "700",
-  },
+  avatarContainer: { position: "relative", marginBottom: 4 },
+  avatar: { width: 90, height: 90, borderRadius: 45, justifyContent: "center", alignItems: "center" },
+  avatarText: { fontSize: 36, fontWeight: "700" },
   editAvatarBtn: {
-    position: "absolute",
-    bottom: 0,
-    right: 0,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
+    position: "absolute", bottom: 0, right: 0,
+    width: 28, height: 28, borderRadius: 14,
+    justifyContent: "center", alignItems: "center",
   },
-  userName: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "700",
-  },
-  userEmail: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 14,
-  },
+  userName: { color: "#FFFFFF", fontSize: 22, fontWeight: "700" },
+  userEmail: { color: "rgba(255,255,255,0.75)", fontSize: 14 },
   statsRow: {
-    flexDirection: "row",
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 8,
-    width: "100%",
+    flexDirection: "row", borderRadius: 16,
+    paddingVertical: 12, paddingHorizontal: 24,
+    marginTop: 8, gap: 0,
   },
-  statItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  statLabel: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 12,
-  },
-  statDivider: {
-    width: 1,
-    marginVertical: 4,
-  },
+  statItem: { flex: 1, alignItems: "center" },
+  statValue: { color: "#FFFFFF", fontSize: 20, fontWeight: "700" },
+  statLabel: { color: "rgba(255,255,255,0.7)", fontSize: 12, marginTop: 2 },
+  statDivider: { width: 1, marginVertical: 4 },
   notifCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    margin: 16,
-    marginBottom: 0,
-    borderRadius: 14,
-    borderWidth: 1,
-    padding: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    marginHorizontal: 16, marginTop: 16,
+    padding: 16, borderRadius: 16, borderWidth: 1,
   },
-  notifLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  notifIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  notifTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    marginBottom: 2,
-  },
-  notifSub: {
-    fontSize: 12,
-  },
-  menuSection: {
-    marginTop: 20,
-    paddingHorizontal: 16,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 1,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  menuCard: {
-    borderRadius: 14,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    gap: 12,
-  },
-  menuIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  menuLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "500",
-  },
-  menuRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  menuValue: {
-    fontSize: 14,
-  },
-  version: {
-    textAlign: "center",
-    fontSize: 12,
-    marginTop: 24,
-    marginBottom: 8,
-  },
+  notifLeft: { flexDirection: "row", alignItems: "center", gap: 12 },
+  notifIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: "center", alignItems: "center" },
+  notifTitle: { fontSize: 15, fontWeight: "600" },
+  notifSub: { fontSize: 12, marginTop: 2 },
+  menuSection: { marginTop: 20, paddingHorizontal: 16 },
+  sectionTitle: { fontSize: 11, fontWeight: "700", letterSpacing: 1, marginBottom: 8, marginLeft: 4 },
+  menuCard: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
+  menuItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingVertical: 14, gap: 12 },
+  menuIconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: "center", alignItems: "center" },
+  menuLabel: { flex: 1, fontSize: 15 },
+  menuRight: { flexDirection: "row", alignItems: "center", gap: 6 },
+  menuValue: { fontSize: 13 },
+  version: { textAlign: "center", fontSize: 12, marginTop: 24, marginBottom: 8 },
   logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 16,
-    paddingVertical: 14,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    gap: 8,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    marginHorizontal: 16, marginBottom: 8,
+    paddingVertical: 14, borderRadius: 16, borderWidth: 1.5, gap: 8,
   },
-  logoutText: {
-    fontSize: 15,
-    fontWeight: "700",
+  logoutText: { fontSize: 15, fontWeight: "600" },
+  // Modal
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalSheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 40 },
+  modalHandle: { width: 40, height: 4, borderRadius: 2, alignSelf: "center", marginTop: 12, marginBottom: 8 },
+  modalTitle: { fontSize: 18, fontWeight: "700", textAlign: "center", paddingVertical: 16, paddingHorizontal: 20 },
+  langOption: {
+    flexDirection: "row", alignItems: "center", gap: 14,
+    paddingHorizontal: 20, paddingVertical: 16, borderBottomWidth: 0.5,
   },
+  langFlag: { fontSize: 28 },
+  langNative: { fontSize: 16, fontWeight: "600" },
+  langEnglish: { fontSize: 13, marginTop: 2 },
 });

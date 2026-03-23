@@ -13,6 +13,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useTranslation } from "@/lib/i18n";
 
 type FilterTab = "all" | "flights" | "hotels";
 
@@ -21,6 +22,7 @@ export default function BookingsScreen() {
   const colors = useColors();
   const { bookings } = useApp();
   const [filter, setFilter] = useState<FilterTab>("all");
+  const { t } = useTranslation();
 
   const filtered = bookings.filter((b) => {
     if (filter === "all") return true;
@@ -60,7 +62,7 @@ export default function BookingsScreen() {
           </View>
           <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
             <Text style={[styles.statusText, { color: statusStyle.text }]}>
-              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              {item.status === "confirmed" ? t.myBookings.confirmed : item.status === "cancelled" ? t.myBookings.cancelled : t.myBookings.pending}
             </Text>
           </View>
         </View>
@@ -70,30 +72,30 @@ export default function BookingsScreen() {
           {item.type === "flight" ? (
             <>
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>Airline</Text>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.myBookings.airline}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.flight?.airline}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>Date</Text>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.myBookings.date}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.date}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>Passengers</Text>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.myBookings.passengers}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.passengers ?? 1}</Text>
               </View>
             </>
           ) : (
             <>
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>Check-in</Text>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.home.checkIn}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.checkIn}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>Check-out</Text>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.home.checkOut}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.checkOut}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Text style={[styles.detailLabel, { color: colors.muted }]}>Guests</Text>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.home.guests}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.guests ?? 1}</Text>
               </View>
             </>
@@ -107,7 +109,7 @@ export default function BookingsScreen() {
             style={({ pressed }) => [styles.viewBtn, { backgroundColor: colors.primary + "15", opacity: pressed ? 0.7 : 1 }]}
             onPress={() => router.push({ pathname: "/booking/detail" as any, params: { id: item.id } })}
           >
-            <Text style={[styles.viewBtnText, { color: colors.primary }]}>View Details</Text>
+            <Text style={[styles.viewBtnText, { color: colors.primary }]}>{t.myBookings.viewDetails}</Text>
             <IconSymbol name="chevron.right" size={14} color={colors.primary} />
           </Pressable>
         </View>
@@ -119,8 +121,8 @@ export default function BookingsScreen() {
     <ScreenContainer edges={["top", "left", "right"]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <Text style={styles.headerTitle}>My Bookings</Text>
-        <Text style={styles.headerSub}>{bookings.length} total reservations</Text>
+        <Text style={styles.headerTitle}>{t.myBookings.title}</Text>
+        <Text style={styles.headerSub}>{bookings.length} {t.myBookings.totalReservations}</Text>
       </View>
 
       {/* Filter Tabs */}
@@ -140,7 +142,7 @@ export default function BookingsScreen() {
                 { color: filter === tab ? colors.secondary : colors.muted },
               ]}
             >
-              {tab === "all" ? "All" : tab === "flights" ? "✈ Flights" : "🏨 Hotels"}
+              {tab === "all" ? t.myBookings.all : tab === "flights" ? `✈ ${t.home.flights}` : `🏨 ${t.home.hotels}`}
             </Text>
           </Pressable>
         ))}
@@ -149,15 +151,15 @@ export default function BookingsScreen() {
       {filtered.length === 0 ? (
         <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
           <Text style={{ fontSize: 48, marginBottom: 16 }}>🗺️</Text>
-          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>No bookings yet</Text>
+          <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.myBookings.noBookings}</Text>
           <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-            Start your royal journey by searching for flights or hotels
+            {t.myBookings.noBookingsHint}
           </Text>
           <Pressable
             style={({ pressed }) => [styles.exploreBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
             onPress={() => router.push("/(tabs)" as any)}
           >
-            <Text style={styles.exploreBtnText}>Explore Now</Text>
+            <Text style={styles.exploreBtnText}>{t.myBookings.exploreNow}</Text>
           </Pressable>
         </View>
       ) : (

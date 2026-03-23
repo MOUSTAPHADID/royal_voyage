@@ -15,6 +15,7 @@ import { useApp } from "@/lib/app-context";
 import { DESTINATIONS, FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
+import { useTranslation } from "@/lib/i18n";
 
 type SearchTab = "flights" | "hotels";
 type TripType = "oneway" | "roundtrip";
@@ -45,6 +46,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useApp();
+  const { t, isRTL } = useTranslation();
   const [activeTab, setActiveTab] = useState<SearchTab>("flights");
 
   // Trip type
@@ -110,10 +112,7 @@ export default function HomeScreen() {
   };
 
   const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    return t.home.greeting;
   };
 
   return (
@@ -124,8 +123,8 @@ export default function HomeScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.greeting}>{greeting()},</Text>
-              <Text style={styles.userName}>
-                {user?.name?.split(" ")[0] ?? "Traveller"} 👋
+              <Text style={[styles.userName, { textAlign: isRTL ? "right" : "left" }]}>
+                {user?.name?.split(" ")[0] ?? (isRTL ? "مسافر" : "Traveller")} 👋
               </Text>
             </View>
             <Pressable
@@ -135,7 +134,7 @@ export default function HomeScreen() {
               <IconSymbol name="bell.fill" size={20} color="#FFFFFF" />
             </Pressable>
           </View>
-          <Text style={styles.headerSubtitle}>Where would you like to go?</Text>
+          <Text style={[styles.headerSubtitle, { textAlign: isRTL ? "right" : "left" }]}>{t.home.tagline}</Text>
         </View>
 
         {/* Search Widget */}
@@ -162,7 +161,7 @@ export default function HomeScreen() {
                     { color: activeTab === tab ? "#FFFFFF" : colors.muted },
                   ]}
                 >
-                  {tab === "flights" ? "Flights" : "Hotels"}
+                  {tab === "flights" ? t.home.flights : t.home.hotels}
                 </Text>
               </Pressable>
             ))}
@@ -193,7 +192,7 @@ export default function HomeScreen() {
                         { color: tripType === type ? "#FFFFFF" : colors.muted },
                       ]}
                     >
-                      {type === "oneway" ? "One Way" : "Round Trip"}
+                      {type === "oneway" ? t.home.oneWay : t.home.roundTrip}
                     </Text>
                   </Pressable>
                 ))}
@@ -201,8 +200,8 @@ export default function HomeScreen() {
 
               {/* From — with autocomplete */}
               <LocationAutocomplete
-                label="From"
-                placeholder="Origin city or airport"
+                label={t.home.from}
+                placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
                 value={flightFrom}
                 iataCode={flightFromCode}
                 onSelect={(name, code) => {
@@ -226,8 +225,8 @@ export default function HomeScreen() {
 
               {/* To — with autocomplete */}
               <LocationAutocomplete
-                label="To"
-                placeholder="Destination city or airport"
+                label={t.home.to}
+                placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
                 value={flightTo}
                 iataCode={flightToCode}
                 onSelect={(name, code) => {
@@ -243,13 +242,13 @@ export default function HomeScreen() {
                 <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
                   <IconSymbol name="calendar" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>Departure Date</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.departure}</Text>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>
                       {formatDate(departureDate)}
                     </Text>
                   </View>
                   <View style={[styles.tripBadge, { backgroundColor: colors.primary + "18" }]}>
-                    <Text style={[styles.tripBadgeText, { color: colors.primary }]}>One Way</Text>
+                    <Text style={[styles.tripBadgeText, { color: colors.primary }]}>{t.home.oneWay}</Text>
                   </View>
                 </View>
               ) : (
@@ -272,7 +271,7 @@ export default function HomeScreen() {
                   >
                     <IconSymbol name="airplane" size={16} color={colors.primary} />
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>Departure</Text>
+                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.departure}</Text>
                       <Text style={[styles.fieldValue, { color: colors.foreground }]}>
                         {formatDateShort(departureDate)}
                       </Text>
@@ -293,7 +292,7 @@ export default function HomeScreen() {
                   >
                     <IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>Return</Text>
+                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.returnDate}</Text>
                       <Text style={[styles.fieldValue, { color: colors.foreground }]}>
                         {formatDateShort(returnDate)}
                       </Text>
@@ -306,7 +305,7 @@ export default function HomeScreen() {
               <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>Passengers</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.passengers}</Text>
                   <View style={styles.counterRow}>
                     <Pressable onPress={() => setPassengers(Math.max(1, passengers - 1))}>
                       <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
@@ -319,7 +318,7 @@ export default function HomeScreen() {
                 </View>
                 {tripType === "roundtrip" && (
                   <View style={[styles.tripBadge, { backgroundColor: colors.secondary + "25" }]}>
-                    <Text style={[styles.tripBadgeText, { color: colors.secondary }]}>Round Trip</Text>
+                    <Text style={[styles.tripBadgeText, { color: colors.secondary }]}>{t.home.roundTrip}</Text>
                   </View>
                 )}
               </View>
@@ -333,7 +332,7 @@ export default function HomeScreen() {
               >
                 <IconSymbol name="magnifyingglass" size={18} color={colors.primary} />
                 <Text style={[styles.searchButtonText, { color: colors.primary }]}>
-                  Search {tripType === "roundtrip" ? "Round Trip" : "Flights"}
+                  {tripType === "roundtrip" ? t.home.roundTrip : t.home.searchFlights}
                 </Text>
               </Pressable>
             </View>
@@ -341,8 +340,8 @@ export default function HomeScreen() {
             /* ── Hotels Form ── */
             <View style={styles.searchForm}>
               <LocationAutocomplete
-                label="Destination"
-                placeholder="City or hotel destination"
+                label={t.home.destination}
+                placeholder={isRTL ? "مدينة أو وجهة الفندق" : "City or hotel destination"}
                 value={hotelDest}
                 iataCode={hotelDestCode}
                 onSelect={(name, code) => {
@@ -356,7 +355,7 @@ export default function HomeScreen() {
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
                   <IconSymbol name="clock.fill" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>Check-in</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.checkIn}</Text>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>
                       {formatDateShort(checkIn)}
                     </Text>
@@ -365,7 +364,7 @@ export default function HomeScreen() {
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
                   <IconSymbol name="clock.fill" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>Check-out</Text>
+                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.checkOut}</Text>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>
                       {formatDateShort(checkOut)}
                     </Text>
@@ -376,12 +375,12 @@ export default function HomeScreen() {
               <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
                 <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>Guests</Text>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.guests}</Text>
                   <View style={styles.counterRow}>
                     <Pressable onPress={() => setGuests(Math.max(1, guests - 1))}>
                       <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
                     </Pressable>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{guests} guests</Text>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{guests} {t.home.guest}</Text>
                     <Pressable onPress={() => setGuests(guests + 1)}>
                       <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
                     </Pressable>
@@ -397,7 +396,7 @@ export default function HomeScreen() {
                 onPress={handleHotelSearch}
               >
                 <IconSymbol name="magnifyingglass" size={18} color={colors.primary} />
-                <Text style={[styles.searchButtonText, { color: colors.primary }]}>Search Hotels</Text>
+                <Text style={[styles.searchButtonText, { color: colors.primary }]}>{t.home.searchHotels}</Text>
               </Pressable>
             </View>
           )}
@@ -406,9 +405,9 @@ export default function HomeScreen() {
         {/* Popular Destinations */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Popular Destinations</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.home.popularDestinations}</Text>
             <Pressable>
-              <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
             </Pressable>
           </View>
           <FlatList
@@ -432,7 +431,7 @@ export default function HomeScreen() {
                 <View style={styles.destInfo}>
                   <Text style={styles.destCity}>{item.city}</Text>
                   <Text style={styles.destCountry}>{item.country}</Text>
-                  <Text style={styles.destPrice}>from ${item.flightPrice}</Text>
+                  <Text style={styles.destPrice}>{t.home.fromPrice} ${item.flightPrice}</Text>
                 </View>
               </Pressable>
             )}
@@ -442,9 +441,9 @@ export default function HomeScreen() {
         {/* Hot Deals */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Hot Deals</Text>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.home.trendingNow}</Text>
             <Pressable>
-              <Text style={[styles.seeAll, { color: colors.primary }]}>See all</Text>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
             </Pressable>
           </View>
           {FLIGHTS.slice(0, 3).map((flight) => (
@@ -478,7 +477,7 @@ export default function HomeScreen() {
                 <Text style={[styles.dealClass, { color: colors.muted }]}>{flight.class}</Text>
                 <View style={[styles.dealSeats, { backgroundColor: colors.error + "15" }]}>
                   <Text style={[styles.dealSeatsText, { color: colors.error }]}>
-                    {flight.seatsLeft} left
+                    {flight.seatsLeft} {t.flights.seatsLeft}
                   </Text>
                 </View>
               </View>
