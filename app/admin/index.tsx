@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -47,13 +47,17 @@ function deriveClients(bookings: Booking[]): ClientRecord[] {
 export default function AdminScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings } = useApp();
+  const { bookings, user } = useApp();
   const { t } = useTranslation();
 
-  const [authenticated, setAuthenticated] = useState(false);
-  const [pin, setPin] = useState("");
-  const [pinError, setPinError] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "bookings" | "clients">("overview");
+
+  // Redirect non-admin users
+  useEffect(() => {
+    if (!user?.isAdmin) {
+      router.replace("/auth/login" as any);
+    }
+  }, [user]);
 
   // Stats
   const stats = useMemo(() => {
@@ -80,16 +84,6 @@ export default function AdminScreen() {
   }, [bookings]);
 
   const clients = useMemo(() => deriveClients(bookings), [bookings]);
-
-  const handlePinSubmit = () => {
-    if (pin === ADMIN_PIN) {
-      setAuthenticated(true);
-      setPinError(false);
-    } else {
-      setPinError(true);
-      setPin("");
-    }
-  };
 
   const s = StyleSheet.create({
     header: {
@@ -368,42 +362,9 @@ export default function AdminScreen() {
     },
   });
 
-  // PIN Screen
-  if (!authenticated) {
-    return (
-      <ScreenContainer containerClassName="bg-background">
-        <View style={s.header}>
-          <Pressable onPress={() => router.back()} style={{ width: 30 }}>
-            <IconSymbol name="arrow.left" size={22} color="#FFFFFF" />
-          </Pressable>
-          <Text style={s.headerTitle}>{t.admin.adminAccess}</Text>
-          <View style={{ width: 30 }} />
-        </View>
-        <View style={s.pinContainer}>
-          <View style={s.lockIcon}>
-            <IconSymbol name="shield.fill" size={36} color="#C9A84C" />
-          </View>
-          <Text style={s.pinTitle}>{t.admin.enterPin}</Text>
-          <Text style={s.pinHint}>{t.admin.pinHint}</Text>
-          <TextInput
-            style={[s.pinInput, pinError && { borderColor: colors.error }]}
-            value={pin}
-            onChangeText={setPin}
-            keyboardType="numeric"
-            maxLength={4}
-            secureTextEntry
-            placeholder="••••"
-            placeholderTextColor={colors.muted}
-            returnKeyType="done"
-            onSubmitEditing={handlePinSubmit}
-          />
-          {pinError && <Text style={s.pinError}>{t.admin.wrongPin}</Text>}
-          <Pressable style={s.pinBtn} onPress={handlePinSubmit}>
-            <Text style={s.pinBtnText}>{t.confirm}</Text>
-          </Pressable>
-        </View>
-      </ScreenContainer>
-    );
+  // Show loading while checking auth
+  if (!user?.isAdmin) {
+    return null;
   }
 
   const flightPct = stats.total > 0 ? stats.flights / stats.total : 0;

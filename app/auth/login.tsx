@@ -34,14 +34,18 @@ export default function LoginScreen() {
     setIsLoading(true);
     setError("");
     try {
-      const success = await login(email.trim(), password);
-      if (success) {
+      const result = await login(email.trim(), password);
+      if (result === "admin") {
+        // Admin → go directly to admin panel
+        router.replace("/admin" as any);
+      } else if (result === "user") {
+        // Regular customer → go to main tabs
         router.replace("/(tabs)" as any);
       } else {
-        setError("Invalid credentials. Please try again.");
+        setError("بيانات غير صحيحة. حاول مرة أخرى.");
       }
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("حدث خطأ. حاول مرة أخرى.");
     } finally {
       setIsLoading(false);
     }

@@ -10,14 +10,19 @@ export type User = {
   avatar?: string;
   nationality?: string;
   passportNumber?: string;
+  isAdmin?: boolean;
 };
+
+// Admin credentials — stored only in app logic, never shown to customers
+const ADMIN_EMAIL = "admin@royalvoyage.mr";
+const ADMIN_PASSWORD = "RV@Admin2024!";
 
 type AppContextType = {
   // Auth
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<"admin" | "user" | false>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
@@ -85,18 +90,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = useCallback(async (email: string, _password: string): Promise<boolean> => {
-    // Mock login — accept any credentials
+  const login = useCallback(async (email: string, password: string): Promise<"admin" | "user" | false> => {
+    // Admin login check
+    if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+      const adminUser: User = {
+        id: "admin",
+        name: "مدير Royal Voyage",
+        email: ADMIN_EMAIL,
+        isAdmin: true,
+      };
+      setUser(adminUser);
+      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(adminUser));
+      return "admin";
+    }
+    // Regular customer login — accept any credentials
     const mockUser: User = {
-      id: "u1",
+      id: "u" + Date.now(),
       name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
       email,
-      phone: "+212 6 00 00 00 00",
-      nationality: "Moroccan",
     };
     setUser(mockUser);
     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
-    return true;
+    return "user";
   }, []);
 
   const register = useCallback(async (name: string, email: string, _password: string): Promise<boolean> => {

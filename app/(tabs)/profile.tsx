@@ -76,7 +76,8 @@ export default function ProfileScreen() {
         { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
       ],
     },
-    {
+    // Admin section — only shown to admin users
+    ...(user?.isAdmin ? [{
       title: t.admin.adminAccess,
       items: [
         {
@@ -87,7 +88,7 @@ export default function ProfileScreen() {
           highlight: true,
         },
       ],
-    },
+    }] : []),
   ];
 
   return (
