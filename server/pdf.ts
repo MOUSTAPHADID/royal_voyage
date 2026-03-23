@@ -1,10 +1,12 @@
 /**
  * Royal Voyage — Premium PDF Ticket Generator
  * Generates airline-style boarding pass tickets and hotel confirmations.
- * Design inspired by real boarding passes: tear-off stub, QR code, clean layout.
+ * Design inspired by real boarding passes: tear-off stub, QR code, airline logo.
  */
 import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
+import * as fs from "fs";
+import * as path from "path";
 import type { FlightTicketData, HotelConfirmationData } from "./email";
 
 // ── Brand Colors ──────────────────────────────────────────────────────────────
@@ -21,6 +23,22 @@ const GREEN_BG = "#DCFCE7";
 const W = 595.28;
 const H = 841.89;
 const M = 36; // margin
+
+// ── Airline logo directory ────────────────────────────────────────────────────
+const AIRLINES_DIR = path.join(__dirname, "assets", "airlines");
+
+/** Get airline logo buffer if available */
+function getAirlineLogo(airlineCode: string): Buffer | null {
+  try {
+    const logoPath = path.join(AIRLINES_DIR, `${airlineCode.toUpperCase()}.png`);
+    if (fs.existsSync(logoPath)) {
+      return fs.readFileSync(logoPath);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -89,6 +107,10 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       ].join(" | ");
       const qrBuffer = await buildQRBuffer(qrData);
 
+      // Load airline logo
+      const airlineCode = (data.airline ?? "").trim().toUpperCase();
+      const airlineLogo = getAirlineLogo(airlineCode);
+
       const doc = new PDFDocument({ size: "A4", margin: 0, compress: true });
       const chunks: Buffer[] = [];
       doc.on("data", (c) => chunks.push(c));
@@ -108,7 +130,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
         .fill(GOLD);
       doc.restore();
 
-      // Logo
+      // Logo text
       doc.fontSize(20).fillColor(GOLD).font("Helvetica-Bold")
         .text("ROYAL VOYAGE", M, 22, { width: 260 });
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
@@ -129,6 +151,38 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       doc.fontSize(11).fillColor(GREEN).font("Helvetica-Bold")
         .text("✔  BOOKING CONFIRMED", M, y + 8, { width: cW, align: "center" });
       y += 42;
+
+      // ══════════════════════════════════════════════════════════════════════
+      // AIRLINE LOGO STRIP (if logo available)
+      // ══════════════════════════════════════════════════════════════════════
+      if (airlineLogo) {
+        const logoStripH = 50;
+        drawRoundedRect(doc, M, y, cW, logoStripH, 8, WHITE, BORDER);
+
+        // Airline logo on the left
+        try {
+          doc.image(airlineLogo, M + 12, y + 8, { height: 34, fit: [120, 34] });
+        } catch {
+          // fallback: just text
+          doc.fontSize(14).fillColor(NAVY).font("Helvetica-Bold")
+            .text(airlineCode, M + 16, y + 16, { width: 80 });
+        }
+
+        // Airline name + flight number on the right side of logo
+        const airlineName = getAirlineName(airlineCode);
+        doc.fontSize(12).fillColor(NAVY).font("Helvetica-Bold")
+          .text(airlineName, M + 140, y + 10, { width: 200 });
+        doc.fontSize(9).fillColor(GRAY).font("Helvetica")
+          .text(`Flight ${data.airline} ${data.flightNumber}  ·  ${data.cabinClass}`, M + 140, y + 27, { width: 200 });
+
+        // Small "Operated by" label on far right
+        doc.fontSize(7).fillColor(GRAY).font("Helvetica")
+          .text("OPERATED BY", M + cW - 110, y + 10, { width: 100, align: "right" });
+        doc.fontSize(9).fillColor(NAVY).font("Helvetica-Bold")
+          .text(airlineCode, M + cW - 110, y + 22, { width: 100, align: "right" });
+
+        y += logoStripH + 10;
+      }
 
       // ══════════════════════════════════════════════════════════════════════
       // MAIN TICKET BODY
@@ -319,6 +373,34 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       reject(err);
     }
   });
+}
+
+// ── Airline name lookup ───────────────────────────────────────────────────────
+
+function getAirlineName(code: string): string {
+  const names: Record<string, string> = {
+    G9: "Air Arabia",
+    AT: "Royal Air Maroc",
+    TK: "Turkish Airlines",
+    EK: "Emirates",
+    AF: "Air France",
+    MS: "EgyptAir",
+    SV: "Saudia",
+    QR: "Qatar Airways",
+    EY: "Etihad Airways",
+    WY: "Oman Air",
+    KU: "Kuwait Airways",
+    GF: "Gulf Air",
+    FZ: "flydubai",
+    J9: "Jazeera Airways",
+    XY: "flynas",
+    PC: "Pegasus Airlines",
+    LH: "Lufthansa",
+    BA: "British Airways",
+    IB: "Iberia",
+    KL: "KLM",
+  };
+  return names[code] ?? code;
 }
 
 // ── Hotel Confirmation PDF ────────────────────────────────────────────────────
