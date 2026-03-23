@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -6,7 +6,9 @@ import {
   Pressable,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from "react-native";
+import { trpc } from "@/lib/trpc";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -18,6 +20,9 @@ export default function BookingDetailScreen() {
   const colors = useColors();
   const { bookings, cancelBooking } = useApp();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [sendingTicket, setSendingTicket] = useState(false);
+  const sendFlightMutation = trpc.email.sendFlightTicket.useMutation();
+  const sendHotelMutation = trpc.email.sendHotelConfirmation.useMutation();
 
   const booking = bookings.find((b) => b.id === id);
 
@@ -37,6 +42,72 @@ export default function BookingDetailScreen() {
     cancelled: { bg: colors.error + "15", text: colors.error },
   };
   const statusStyle = statusColors[booking.status] ?? statusColors.pending;
+
+  const handleRetrieveTicket = async () => {
+    if (!booking) return;
+    // Ask for email
+    Alert.prompt(
+      "استرداد التذكرة",
+      "أدخل عنوان البريد الإلكتروني لإرسال التذكرة",
+      async (email) => {
+        if (!email) return;
+        setSendingTicket(true);
+        try {
+          if (booking.type === "flight" && booking.flight) {
+            await sendFlightMutation.mutateAsync({
+              passengerName: booking.passengerName ?? "العميل",
+              passengerEmail: email,
+              bookingRef: booking.reference,
+              origin: booking.flight.originCode,
+              originCity: booking.flight.origin,
+              destination: booking.flight.destinationCode,
+              destinationCity: booking.flight.destination,
+              departureDate: booking.date,
+              departureTime: booking.flight.departureTime,
+              arrivalTime: booking.flight.arrivalTime,
+              airline: booking.flight.airline,
+              flightNumber: booking.flight.flightNumber,
+              cabinClass: booking.flight.class ?? "Economy",
+              passengers: booking.passengers ?? 1,
+              totalPrice: `${booking.totalPrice}`,
+            });
+          } else if (booking.type === "hotel" && booking.hotel) {
+            const checkInDate = booking.checkIn ?? "";
+            const checkOutDate = booking.checkOut ?? "";
+            const nights = checkInDate && checkOutDate
+              ? Math.max(1, Math.round((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86400000))
+              : 1;
+            await sendHotelMutation.mutateAsync({
+              guestName: booking.guestName ?? "العميل",
+              guestEmail: email,
+              bookingRef: booking.reference,
+              hotelName: booking.hotel.name,
+              hotelCity: booking.hotel.city,
+              hotelCountry: booking.hotel.country ?? "Mauritania",
+              stars: booking.hotel.stars ?? 3,
+              checkIn: checkInDate,
+              checkOut: checkOutDate,
+              nights,
+              guests: booking.guests ?? 1,
+              totalPrice: `${booking.totalPrice}`,
+            });
+          }
+          Alert.alert("تم الإرسال ✓", `تم إرسال التذكرة إلى ${email}`);
+        } catch {
+          Alert.alert("خطأ", "فشل إرسال التذكرة. تحقق من البريد وحاول مجدداً.");
+        } finally {
+          setSendingTicket(false);
+        }
+      },
+      "plain-text",
+      "",
+      "email-address"
+    );
+  };
+
+  const handleChangeBooking = () => {
+    router.push({ pathname: "/booking/change" as any, params: { id: booking?.id } });
+  };
 
   const handleCancel = () => {
     Alert.alert(
@@ -166,6 +237,44 @@ export default function BookingDetailScreen() {
           </Text>
         </View>
 
+        {/* Action Buttons */}
+        {booking.status !== "cancelled" && (
+          <View style={styles.actionRow}>
+            {/* Retrieve Ticket */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtn,
+                { backgroundColor: colors.primary + "15", borderColor: colors.primary, opacity: pressed ? 0.7 : 1 },
+              ]}
+              onPress={handleRetrieveTicket}
+              disabled={sendingTicket}
+            >
+              {sendingTicket ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <IconSymbol name="envelope.fill" size={16} color={colors.primary} />
+              )}
+              <Text style={[styles.actionBtnText, { color: colors.primary }]}>
+                استرداد التذكرة
+              </Text>
+            </Pressable>
+
+            {/* Change Booking */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtn,
+                { backgroundColor: colors.warning + "15", borderColor: colors.warning, opacity: pressed ? 0.7 : 1 },
+              ]}
+              onPress={handleChangeBooking}
+            >
+              <IconSymbol name="pencil" size={16} color={colors.warning} />
+              <Text style={[styles.actionBtnText, { color: colors.warning }]}>
+                تغيير الحجز
+              </Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Cancel */}
         {booking.status !== "cancelled" && (
           <Pressable
@@ -176,7 +285,7 @@ export default function BookingDetailScreen() {
             onPress={handleCancel}
           >
             <IconSymbol name="xmark" size={16} color={colors.error} />
-            <Text style={[styles.cancelBtnText, { color: colors.error }]}>Cancel Booking</Text>
+            <Text style={[styles.cancelBtnText, { color: colors.error }]}>إلغاء الحجز</Text>
           </Pressable>
         )}
 
@@ -366,6 +475,26 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: {
     fontSize: 15,
+    fontWeight: "700",
+  },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    margin: 16,
+    marginBottom: 0,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 13,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  actionBtnText: {
+    fontSize: 14,
     fontWeight: "700",
   },
 });
