@@ -7,6 +7,7 @@ import {
   StyleSheet,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -16,7 +17,66 @@ import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU, toMRU } from "@/lib/currency";
 
-type PaymentMethod = "card" | "paypal" | "apple";
+type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad";
+
+const PAYMENT_METHODS: {
+  id: PaymentMethod;
+  label: string;
+  sublabel: string;
+  icon: string;
+  color: string;
+}[] = [
+  {
+    id: "cash",
+    label: "دفع نقدي في المكتب",
+    sublabel: "ادفع عند زيارة مكتبنا في نواكشوط",
+    icon: "💵",
+    color: "#22C55E",
+  },
+  {
+    id: "bank_transfer",
+    label: "تحويل بنكي",
+    sublabel: "تحويل مباشر إلى حساب Royal Voyage",
+    icon: "🏦",
+    color: "#3B82F6",
+  },
+  {
+    id: "bankily",
+    label: "بنكيلي",
+    sublabel: "الدفع عبر تطبيق Bankily",
+    icon: "📱",
+    color: "#F59E0B",
+  },
+  {
+    id: "masrvi",
+    label: "مصاري",
+    sublabel: "الدفع عبر تطبيق Masrvi",
+    icon: "💳",
+    color: "#8B5CF6",
+  },
+  {
+    id: "sedad",
+    label: "سداد",
+    sublabel: "الدفع عبر منصة Sedad",
+    icon: "🔐",
+    color: "#EF4444",
+  },
+];
+
+// بيانات التحويل البنكي
+const BANK_INFO = {
+  bankName: "بنك موريتانيا للتجارة الدولية (BMCI)",
+  accountName: "Royal Voyage SARL",
+  accountNumber: "MR46 0002 0001 0123 4567 8901 234",
+  rib: "00020001012345678901234",
+};
+
+// أرقام الدفع عبر المحافظ
+const WALLET_NUMBERS: Record<string, string> = {
+  bankily: "22 XX XX XX",
+  masrvi: "36 XX XX XX",
+  sedad: "sedad.royalvoyage.mr",
+};
 
 export default function PaymentScreen() {
   const router = useRouter();
@@ -64,52 +124,54 @@ export default function PaymentScreen() {
   const adultCount = parseInt(params.passengers ?? "1", 10);
   const childCount = parseInt(params.children ?? "0", 10);
 
-  // سعر البالغ وسعر الطفل (75% من سعر البالغ)
   const unitPrice = isFlight ? (flight?.price ?? 0) : (hotel?.pricePerNight ?? 0);
   const adultUnitPrice = unitPrice;
   const childUnitPrice = Math.round(unitPrice * 0.75);
 
-  // السعر الممرر من صفحة التفاصيل (يتضمن الضرائب بالفعل)
   const passedPrice = parseFloat(params.price ?? "0");
   const basePrice = passedPrice > 0
     ? passedPrice
     : adultUnitPrice * adultCount + childUnitPrice * childCount;
   const taxes = Math.round(basePrice * 0.1);
-  // إذا كان السعر الممرر يتضمن الضرائب بالفعل لا نضيفها مرة أخرى
   const total = passedPrice > 0 ? passedPrice : basePrice + taxes;
 
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardName, setCardName] = useState(`${params.firstName ?? ""} ${params.lastName ?? ""}`.trim());
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [transferRef, setTransferRef] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const formatCardNumber = (text: string) => {
-    const cleaned = text.replace(/\D/g, "").slice(0, 16);
-    return cleaned.replace(/(.{4})/g, "$1 ").trim();
-  };
-
-  const formatExpiry = (text: string) => {
-    const cleaned = text.replace(/\D/g, "").slice(0, 4);
-    if (cleaned.length >= 3) return cleaned.slice(0, 2) + "/" + cleaned.slice(2);
-    return cleaned;
-  };
-
   const handlePay = async () => {
+    // التحقق من رقم مرجع التحويل إن كان مطلوباً
+    if (
+      (paymentMethod === "bank_transfer" ||
+        paymentMethod === "bankily" ||
+        paymentMethod === "masrvi" ||
+        paymentMethod === "sedad") &&
+      transferRef.trim().length < 4
+    ) {
+      Alert.alert("تنبيه", "الرجاء إدخال رقم مرجع العملية أو رقم الإيصال");
+      return;
+    }
+
     setIsProcessing(true);
-    // Simulate payment processing
-    await new Promise((r) => setTimeout(r, 2000));
+    await new Promise((r) => setTimeout(r, 1500));
 
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
-      status: "confirmed",
+      status: paymentMethod === "cash" ? "pending" : "confirmed",
       reference: ref,
       date: new Date().toISOString().split("T")[0],
-      ...(isFlight && flight ? { flight, passengers: 1 } : {}),
-      ...(hotel ? { hotel, checkIn: "2024-04-20", checkOut: "2024-04-25", guests: 2, rooms: 1 } : {}),
+      ...(isFlight && flight ? { flight, passengers: adultCount } : {}),
+      ...(hotel
+        ? {
+            hotel,
+            checkIn: params.checkIn ?? "2025-01-01",
+            checkOut: params.checkOut ?? "2025-01-05",
+            guests: adultCount,
+            rooms: 1,
+          }
+        : {}),
       totalPrice: total,
       currency: "MRU",
     };
@@ -124,6 +186,7 @@ export default function PaymentScreen() {
         total: total.toString(),
         type: params.type,
         currency: "USD",
+        paymentMethod,
         passengerName: `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim(),
         dateOfBirth: params.dateOfBirth,
         passportNumber: params.passport,
@@ -155,11 +218,7 @@ export default function PaymentScreen() {
     });
   };
 
-  const paymentMethods: { id: PaymentMethod; label: string; icon: string }[] = [
-    { id: "card", label: "Credit / Debit Card", icon: "💳" },
-    { id: "paypal", label: "PayPal", icon: "🅿" },
-    { id: "apple", label: "Apple Pay", icon: "🍎" },
-  ];
+  const selectedMethod = PAYMENT_METHODS.find((m) => m.id === paymentMethod)!;
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -168,38 +227,38 @@ export default function PaymentScreen() {
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color="#FFFFFF" />
         </Pressable>
-        <Text style={styles.headerTitle}>Payment</Text>
+        <Text style={styles.headerTitle}>الدفع</Text>
         <View style={{ width: 30 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
-        {/* Order Summary */}
+
+        {/* ملخص الطلب */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>ملخص الطلب</Text>
 
-          {/* عنوان الرحلة / الفندق */}
           <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              {isFlight ? `رحلة: ${flight?.originCode ?? params.originCode} → ${flight?.destinationCode ?? params.destinationCode}` : `فندق: ${hotel?.name ?? params.hotelName}`}
+              {isFlight
+                ? `رحلة: ${flight?.originCode ?? params.originCode} → ${flight?.destinationCode ?? params.destinationCode}`
+                : `فندق: ${hotel?.name ?? params.hotelName}`}
             </Text>
           </View>
 
-          {/* سعر البالغ */}
           <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
-              بالغ × {adultCount}
-            </Text>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>بالغ × {adultCount}</Text>
             <Text style={[styles.summaryValue, { color: colors.foreground }]}>
               {formatMRU(toMRU(adultUnitPrice * adultCount, "USD"))}
             </Text>
           </View>
 
-          {/* سعر الطفل */}
           {childCount > 0 && (
             <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.summaryLabel, { color: colors.muted }]}>طفل × {childCount}</Text>
-                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>خصم 25% • {formatMRU(toMRU(childUnitPrice, "USD"))} / شخص</Text>
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
+                  خصم 25% • {formatMRU(toMRU(childUnitPrice, "USD"))} / شخص
+                </Text>
               </View>
               <Text style={[styles.summaryValue, { color: colors.foreground }]}>
                 {formatMRU(toMRU(childUnitPrice * childCount, "USD"))}
@@ -207,157 +266,259 @@ export default function PaymentScreen() {
             </View>
           )}
 
-          {/* ضرائب */}
           {passedPrice === 0 && (
             <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.summaryLabel, { color: colors.muted }]}>ضرائب ورسوم (10%)</Text>
-              <Text style={[styles.summaryValue, { color: colors.foreground }]}>{formatMRU(toMRU(taxes, "USD"))}</Text>
+              <Text style={[styles.summaryValue, { color: colors.foreground }]}>
+                {formatMRU(toMRU(taxes, "USD"))}
+              </Text>
             </View>
           )}
 
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>{formatMRU(toMRU(total, "USD"))}</Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>
+              {formatMRU(toMRU(total, "USD"))}
+            </Text>
           </View>
         </View>
 
-        {/* Payment Method Selection */}
+        {/* اختيار طريقة الدفع */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Payment Method</Text>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]}>طريقة الدفع</Text>
           <View style={{ gap: 10 }}>
-            {paymentMethods.map((method) => (
-              <Pressable
-                key={method.id}
-                style={[
-                  styles.methodOption,
-                  {
-                    borderColor: paymentMethod === method.id ? colors.primary : colors.border,
-                    backgroundColor: paymentMethod === method.id ? colors.primary + "08" : colors.background,
-                    borderWidth: paymentMethod === method.id ? 2 : 1,
-                  },
-                ]}
-                onPress={() => setPaymentMethod(method.id)}
-              >
-                <Text style={{ fontSize: 22 }}>{method.icon}</Text>
-                <Text style={[styles.methodLabel, { color: colors.foreground }]}>{method.label}</Text>
-                {paymentMethod === method.id && (
-                  <View style={[styles.checkCircle, { backgroundColor: colors.primary }]}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 12 }}>✓</Text>
+            {PAYMENT_METHODS.map((method) => {
+              const isSelected = paymentMethod === method.id;
+              return (
+                <Pressable
+                  key={method.id}
+                  style={[
+                    styles.methodOption,
+                    {
+                      borderColor: isSelected ? method.color : colors.border,
+                      backgroundColor: isSelected ? method.color + "10" : colors.background,
+                      borderWidth: isSelected ? 2 : 1,
+                    },
+                  ]}
+                  onPress={() => setPaymentMethod(method.id)}
+                >
+                  <View style={[styles.methodIconBox, { backgroundColor: method.color + "18" }]}>
+                    <Text style={{ fontSize: 22 }}>{method.icon}</Text>
                   </View>
-                )}
-              </Pressable>
-            ))}
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.methodLabel, { color: colors.foreground }]}>
+                      {method.label}
+                    </Text>
+                    <Text style={[styles.methodSub, { color: colors.muted }]}>
+                      {method.sublabel}
+                    </Text>
+                  </View>
+                  {isSelected && (
+                    <View style={[styles.checkCircle, { backgroundColor: method.color }]}>
+                      <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>✓</Text>
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
           </View>
         </View>
 
-        {/* Card Details */}
-        {paymentMethod === "card" && (
-          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>Card Details</Text>
-
-            {/* Card Preview */}
-            <View style={[styles.cardPreview, { backgroundColor: colors.primary }]}>
-              <Text style={styles.cardPreviewNumber}>
-                {cardNumber || "•••• •••• •••• ••••"}
+        {/* تعليمات الدفع النقدي */}
+        {paymentMethod === "cash" && (
+          <View style={[styles.card, { backgroundColor: "#22C55E10", borderColor: "#22C55E30" }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>📍 عنوان المكتب</Text>
+            <Text style={[styles.infoText, { color: colors.foreground }]}>
+              Royal Voyage — نواكشوط، موريتانيا
+            </Text>
+            <Text style={[styles.infoSub, { color: colors.muted }]}>
+              شارع جمال عبد الناصر، بجانب البنك المركزي
+            </Text>
+            <View style={[styles.infoBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.infoBoxText, { color: colors.muted }]}>
+                🕐 أوقات العمل: السبت – الخميس، 8:00 ص – 6:00 م
               </Text>
-              <View style={styles.cardPreviewBottom}>
-                <View>
-                  <Text style={styles.cardPreviewLabel}>CARD HOLDER</Text>
-                  <Text style={styles.cardPreviewName}>{cardName || "YOUR NAME"}</Text>
-                </View>
-                <View>
-                  <Text style={styles.cardPreviewLabel}>EXPIRES</Text>
-                  <Text style={styles.cardPreviewName}>{expiry || "MM/YY"}</Text>
-                </View>
-              </View>
+              <Text style={[styles.infoBoxText, { color: colors.muted, marginTop: 4 }]}>
+                📞 للاستفسار: +222 XX XX XX XX
+              </Text>
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.foreground }]}>Card Number</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-                placeholder="1234 5678 9012 3456"
-                placeholderTextColor={colors.muted}
-                value={cardNumber}
-                onChangeText={(t) => setCardNumber(formatCardNumber(t))}
-                keyboardType="number-pad"
-                maxLength={19}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.foreground }]}>Cardholder Name</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-                placeholder="John Doe"
-                placeholderTextColor={colors.muted}
-                value={cardName}
-                onChangeText={setCardName}
-                autoCapitalize="characters"
-              />
-            </View>
-
-            <View style={styles.rowInputs}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={[styles.label, { color: colors.foreground }]}>Expiry Date</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-                  placeholder="MM/YY"
-                  placeholderTextColor={colors.muted}
-                  value={expiry}
-                  onChangeText={(t) => setExpiry(formatExpiry(t))}
-                  keyboardType="number-pad"
-                  maxLength={5}
-                />
-              </View>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={[styles.label, { color: colors.foreground }]}>CVV</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-                  placeholder="•••"
-                  placeholderTextColor={colors.muted}
-                  value={cvv}
-                  onChangeText={(t) => setCvv(t.replace(/\D/g, "").slice(0, 3))}
-                  keyboardType="number-pad"
-                  maxLength={3}
-                  secureTextEntry
-                />
-              </View>
+            <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
+              <Text style={[styles.warningText, { color: colors.warning }]}>
+                ⚠️ يُحجز المقعد لمدة 24 ساعة فقط. يرجى الدفع في أقرب وقت لتأكيد الحجز.
+              </Text>
             </View>
           </View>
         )}
 
-        {/* Security note */}
+        {/* تعليمات التحويل البنكي */}
+        {paymentMethod === "bank_transfer" && (
+          <View style={[styles.card, { backgroundColor: "#3B82F610", borderColor: "#3B82F630" }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>🏦 بيانات التحويل البنكي</Text>
+            {[
+              { label: "اسم البنك", value: BANK_INFO.bankName },
+              { label: "اسم الحساب", value: BANK_INFO.accountName },
+              { label: "رقم الحساب (IBAN)", value: BANK_INFO.accountNumber },
+              { label: "رقم RIB", value: BANK_INFO.rib },
+              { label: "المبلغ", value: formatMRU(toMRU(total, "USD")) },
+            ].map((item) => (
+              <View key={item.label} style={[styles.bankRow, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.bankLabel, { color: colors.muted }]}>{item.label}</Text>
+                <Text style={[styles.bankValue, { color: colors.foreground }]}>{item.value}</Text>
+              </View>
+            ))}
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>رقم مرجع التحويل *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="أدخل رقم مرجع العملية البنكية"
+                placeholderTextColor={colors.muted}
+                value={transferRef}
+                onChangeText={setTransferRef}
+                returnKeyType="done"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* تعليمات بنكيلي */}
+        {paymentMethod === "bankily" && (
+          <View style={[styles.card, { backgroundColor: "#F59E0B10", borderColor: "#F59E0B30" }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>📱 الدفع عبر بنكيلي</Text>
+            <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {[
+                "افتح تطبيق Bankily على هاتفك",
+                `أرسل المبلغ ${formatMRU(toMRU(total, "USD"))} إلى الرقم: ${WALLET_NUMBERS.bankily}`,
+                "في خانة الملاحظة اكتب رقم حجزك",
+                "أدخل رقم الإيصال أدناه لتأكيد الدفع",
+              ].map((step, i) => (
+                <View key={i} style={styles.stepRow}>
+                  <View style={[styles.stepNum, { backgroundColor: "#F59E0B" }]}>
+                    <Text style={styles.stepNumText}>{i + 1}</Text>
+                  </View>
+                  <Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>رقم إيصال بنكيلي *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="أدخل رقم الإيصال من التطبيق"
+                placeholderTextColor={colors.muted}
+                value={transferRef}
+                onChangeText={setTransferRef}
+                keyboardType="number-pad"
+                returnKeyType="done"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* تعليمات مصاري */}
+        {paymentMethod === "masrvi" && (
+          <View style={[styles.card, { backgroundColor: "#8B5CF610", borderColor: "#8B5CF630" }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>💳 الدفع عبر مصاري</Text>
+            <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {[
+                "افتح تطبيق Masrvi على هاتفك",
+                `أرسل المبلغ ${formatMRU(toMRU(total, "USD"))} إلى الرقم: ${WALLET_NUMBERS.masrvi}`,
+                "في خانة الملاحظة اكتب رقم حجزك",
+                "أدخل رقم الإيصال أدناه لتأكيد الدفع",
+              ].map((step, i) => (
+                <View key={i} style={styles.stepRow}>
+                  <View style={[styles.stepNum, { backgroundColor: "#8B5CF6" }]}>
+                    <Text style={styles.stepNumText}>{i + 1}</Text>
+                  </View>
+                  <Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>رقم إيصال مصاري *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="أدخل رقم الإيصال من التطبيق"
+                placeholderTextColor={colors.muted}
+                value={transferRef}
+                onChangeText={setTransferRef}
+                keyboardType="number-pad"
+                returnKeyType="done"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* تعليمات سداد */}
+        {paymentMethod === "sedad" && (
+          <View style={[styles.card, { backgroundColor: "#EF444410", borderColor: "#EF444430" }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>🔐 الدفع عبر سداد</Text>
+            <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {[
+                "توجه إلى منصة Sedad الإلكترونية أو التطبيق",
+                `ابحث عن: ${WALLET_NUMBERS.sedad}`,
+                `أدخل المبلغ: ${formatMRU(toMRU(total, "USD"))}`,
+                "أدخل رقم مرجع العملية أدناه بعد إتمام الدفع",
+              ].map((step, i) => (
+                <View key={i} style={styles.stepRow}>
+                  <View style={[styles.stepNum, { backgroundColor: "#EF4444" }]}>
+                    <Text style={styles.stepNumText}>{i + 1}</Text>
+                  </View>
+                  <Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, { color: colors.foreground }]}>رقم مرجع سداد *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                placeholder="أدخل رقم مرجع العملية"
+                placeholderTextColor={colors.muted}
+                value={transferRef}
+                onChangeText={setTransferRef}
+                returnKeyType="done"
+              />
+            </View>
+          </View>
+        )}
+
+        {/* ملاحظة الأمان */}
         <View style={[styles.securityNote, { backgroundColor: colors.success + "10", borderColor: colors.success + "30" }]}>
           <IconSymbol name="shield.fill" size={16} color={colors.success} />
           <Text style={[styles.securityText, { color: colors.success }]}>
-            Your payment is secured with 256-bit SSL encryption
+            جميع بيانات حجزك محمية ومشفرة بالكامل
           </Text>
         </View>
 
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      {/* Pay Button */}
+      {/* زر تأكيد الدفع */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.payTotal, { color: colors.primary }]}>{formatMRU(toMRU(total, "USD"))}</Text>
-          <Text style={[styles.payLabel, { color: colors.muted }]}>إجمالي المبلغ</Text>
+          <Text style={[styles.payTotal, { color: colors.primary }]}>
+            {formatMRU(toMRU(total, "USD"))}
+          </Text>
+          <Text style={[styles.payLabel, { color: colors.muted }]}>
+            {selectedMethod.label}
+          </Text>
         </View>
         <Pressable
           style={({ pressed }) => [
             styles.payBtn,
-            { backgroundColor: colors.secondary, opacity: pressed || isProcessing ? 0.85 : 1 },
+            { backgroundColor: selectedMethod.color, opacity: pressed || isProcessing ? 0.85 : 1 },
           ]}
           onPress={handlePay}
           disabled={isProcessing}
         >
           {isProcessing ? (
-            <ActivityIndicator color={colors.primary} />
+            <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <IconSymbol name="creditcard.fill" size={18} color={colors.primary} />
-              <Text style={[styles.payBtnText, { color: colors.primary }]}>Pay Now</Text>
+              <Text style={{ fontSize: 18 }}>{selectedMethod.icon}</Text>
+              <Text style={styles.payBtnText}>
+                {paymentMethod === "cash" ? "تأكيد الحجز" : "تأكيد الدفع"}
+              </Text>
             </>
           )}
         </Pressable>
@@ -425,53 +586,107 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     gap: 12,
   },
-  methodLabel: {
-    fontSize: 15,
-    fontWeight: "600",
-    flex: 1,
-  },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+  methodIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
   },
-  cardPreview: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    height: 160,
-    justifyContent: "space-between",
+  methodLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
   },
-  cardPreviewNumber: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "600",
-    letterSpacing: 2,
-    marginTop: 20,
+  methodSub: {
+    fontSize: 12,
   },
-  cardPreviewBottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+  checkCircle: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  cardPreviewLabel: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 10,
-    letterSpacing: 1,
+  infoText: {
+    fontSize: 15,
+    fontWeight: "700",
     marginBottom: 4,
   },
-  cardPreviewName: {
-    color: "#FFFFFF",
-    fontSize: 14,
+  infoSub: {
+    fontSize: 13,
+    marginBottom: 12,
+  },
+  infoBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 12,
+  },
+  infoBoxText: {
+    fontSize: 13,
+  },
+  warningBox: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+  },
+  warningText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  bankRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    gap: 8,
+  },
+  bankLabel: {
+    fontSize: 13,
+    flex: 1,
+  },
+  bankValue: {
+    fontSize: 13,
     fontWeight: "600",
-    letterSpacing: 1,
+    flex: 2,
+    textAlign: "right",
+  },
+  stepsBox: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 14,
+    gap: 12,
+    marginBottom: 14,
+  },
+  stepRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+  },
+  stepNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 1,
+  },
+  stepNumText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  stepText: {
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 22,
   },
   inputGroup: {
-    marginBottom: 14,
+    marginTop: 4,
   },
   label: {
     fontSize: 13,
@@ -484,10 +699,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 15,
-  },
-  rowInputs: {
-    flexDirection: "row",
-    gap: 12,
   },
   securityNote: {
     flexDirection: "row",
@@ -512,22 +723,24 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   payTotal: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
   },
   payLabel: {
     fontSize: 12,
+    marginTop: 2,
   },
   payBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 32,
+    paddingHorizontal: 28,
     paddingVertical: 16,
     borderRadius: 14,
     gap: 8,
   },
   payBtnText: {
-    fontSize: 17,
+    color: "#FFFFFF",
+    fontSize: 16,
     fontWeight: "700",
   },
 });
