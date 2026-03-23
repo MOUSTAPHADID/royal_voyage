@@ -58,3 +58,14 @@
 - [x] Mock destination data (6 destinations)
 - [x] Bookings state management (AsyncStorage)
 - [x] User auth state management
+
+## Integração Amadeus API
+- [x] Configurar credenciais AMADEUS_CLIENT_ID e AMADEUS_CLIENT_SECRET
+- [x] Instalar SDK amadeus no servidor
+- [x] Criar rotas tRPC para pesquisa de voos (Flight Offers Search)
+- [x] Criar rotas tRPC para pesquisa de hotéis (Hotel List + Hotel Offers)
+- [x] Criar rotas tRPC para pesquisa de aeroportos/cidades (autocomplete)
+- [x] Atualizar ecrã Home para usar pesquisa real
+- [x] Atualizar ecrã de resultados de voos para usar dados reais
+- [x] Atualizar ecrã de resultados de hotéis para usar dados reais
+- [x] Tratamento de erros e fallback para dados mock

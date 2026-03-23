@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Image,
   FlatList,
-  TextInput,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -15,8 +14,16 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { DESTINATIONS, FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { LocationAutocomplete } from "@/components/location-autocomplete";
 
 type SearchTab = "flights" | "hotels";
+
+// Helper: get next date N days from now in YYYY-MM-DD
+function futureDate(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -25,27 +32,47 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<SearchTab>("flights");
 
   // Flight search state
-  const [flightFrom, setFlightFrom] = useState("Casablanca (CMN)");
+  const [flightFrom, setFlightFrom] = useState("Casablanca");
+  const [flightFromCode, setFlightFromCode] = useState("CMN");
   const [flightTo, setFlightTo] = useState("");
-  const [flightDate, setFlightDate] = useState("Apr 15, 2024");
+  const [flightToCode, setFlightToCode] = useState("");
+  const [flightDate] = useState(futureDate(30));
   const [passengers, setPassengers] = useState(1);
 
   // Hotel search state
   const [hotelDest, setHotelDest] = useState("");
-  const [checkIn, setCheckIn] = useState("Apr 20, 2024");
-  const [checkOut, setCheckOut] = useState("Apr 25, 2024");
+  const [hotelDestCode, setHotelDestCode] = useState("");
+  const [checkIn] = useState(futureDate(30));
+  const [checkOut] = useState(futureDate(33));
   const [guests, setGuests] = useState(2);
 
   const handleFlightSearch = () => {
+    if (!flightToCode) {
+      // If no destination selected, use mock data
+      router.push({
+        pathname: "/flights/results" as any,
+        params: {
+          origin: flightFrom,
+          originCode: flightFromCode,
+          destination: "Dubai",
+          destinationCode: "DXB",
+          date: flightDate,
+          passengers: passengers.toString(),
+          useMock: "true",
+        },
+      });
+      return;
+    }
     router.push({
       pathname: "/flights/results" as any,
       params: {
-        origin: "Casablanca",
-        originCode: "CMN",
-        destination: flightTo || "Dubai",
-        destinationCode: "DXB",
+        origin: flightFrom,
+        originCode: flightFromCode,
+        destination: flightTo,
+        destinationCode: flightToCode,
         date: flightDate,
         passengers: passengers.toString(),
+        useMock: "false",
       },
     });
   };
@@ -55,9 +82,11 @@ export default function HomeScreen() {
       pathname: "/hotels/results" as any,
       params: {
         destination: hotelDest || "Dubai",
+        destinationCode: hotelDestCode || "DXB",
         checkIn,
         checkOut,
         guests: guests.toString(),
+        useMock: hotelDestCode ? "false" : "true",
       },
     });
   };
@@ -121,40 +150,40 @@ export default function HomeScreen() {
 
           {activeTab === "flights" ? (
             <View style={styles.searchForm}>
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <IconSymbol name="airplane" size={18} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>From</Text>
-                  <TextInput
-                    style={[styles.fieldInput, { color: colors.foreground }]}
-                    value={flightFrom}
-                    onChangeText={setFlightFrom}
-                    placeholder="Origin city"
-                    placeholderTextColor={colors.muted}
-                  />
-                </View>
-              </View>
+              {/* From — with autocomplete */}
+              <LocationAutocomplete
+                label="From"
+                placeholder="Origin city or airport"
+                value={flightFrom}
+                iataCode={flightFromCode}
+                onSelect={(name, code) => {
+                  setFlightFrom(name);
+                  setFlightFromCode(code);
+                }}
+                iconName="airplane"
+              />
 
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <IconSymbol name="location.fill" size={18} color={colors.secondary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>To</Text>
-                  <TextInput
-                    style={[styles.fieldInput, { color: colors.foreground }]}
-                    value={flightTo}
-                    onChangeText={setFlightTo}
-                    placeholder="Destination city"
-                    placeholderTextColor={colors.muted}
-                  />
-                </View>
-              </View>
+              {/* To — with autocomplete */}
+              <LocationAutocomplete
+                label="To"
+                placeholder="Destination city or airport"
+                value={flightTo}
+                iataCode={flightToCode}
+                onSelect={(name, code) => {
+                  setFlightTo(name);
+                  setFlightToCode(code);
+                }}
+                iconName="location.fill"
+              />
 
               <View style={styles.rowFields}>
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
                   <IconSymbol name="clock.fill" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.fieldLabel, { color: colors.muted }]}>Date</Text>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{flightDate}</Text>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>
+                      {new Date(flightDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </Text>
                   </View>
                 </View>
 
@@ -185,33 +214,36 @@ export default function HomeScreen() {
             </View>
           ) : (
             <View style={styles.searchForm}>
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <IconSymbol name="location.fill" size={18} color={colors.secondary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>Destination</Text>
-                  <TextInput
-                    style={[styles.fieldInput, { color: colors.foreground }]}
-                    value={hotelDest}
-                    onChangeText={setHotelDest}
-                    placeholder="City or hotel name"
-                    placeholderTextColor={colors.muted}
-                  />
-                </View>
-              </View>
+              {/* Hotel destination — with autocomplete */}
+              <LocationAutocomplete
+                label="Destination"
+                placeholder="City or hotel destination"
+                value={hotelDest}
+                iataCode={hotelDestCode}
+                onSelect={(name, code) => {
+                  setHotelDest(name);
+                  setHotelDestCode(code);
+                }}
+                iconName="location.fill"
+              />
 
               <View style={styles.rowFields}>
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
                   <IconSymbol name="clock.fill" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.fieldLabel, { color: colors.muted }]}>Check-in</Text>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{checkIn}</Text>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>
+                      {new Date(checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </Text>
                   </View>
                 </View>
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
                   <IconSymbol name="clock.fill" size={18} color={colors.primary} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.fieldLabel, { color: colors.muted }]}>Check-out</Text>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{checkOut}</Text>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>
+                      {new Date(checkOut).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -261,7 +293,12 @@ export default function HomeScreen() {
             renderItem={({ item }) => (
               <Pressable
                 style={({ pressed }) => [styles.destCard, { opacity: pressed ? 0.9 : 1 }]}
-                onPress={() => router.push({ pathname: "/hotels/results" as any, params: { destination: item.city } })}
+                onPress={() =>
+                  router.push({
+                    pathname: "/hotels/results" as any,
+                    params: { destination: item.city, destinationCode: "", checkIn, checkOut, guests: "2", useMock: "true" },
+                  })
+                }
               >
                 <Image source={{ uri: item.image }} style={styles.destImage} />
                 <View style={styles.destGradient} />
@@ -406,11 +443,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 2,
-  },
-  fieldInput: {
-    fontSize: 15,
-    fontWeight: "500",
-    padding: 0,
   },
   fieldValue: {
     fontSize: 15,
