@@ -47,29 +47,16 @@ export default function HomeScreen() {
   const [guests, setGuests] = useState(2);
 
   const handleFlightSearch = () => {
-    if (!flightToCode) {
-      // If no destination selected, use mock data
-      router.push({
-        pathname: "/flights/results" as any,
-        params: {
-          origin: flightFrom,
-          originCode: flightFromCode,
-          destination: "Dubai",
-          destinationCode: "DXB",
-          date: flightDate,
-          passengers: passengers.toString(),
-          useMock: "true",
-        },
-      });
-      return;
-    }
+    // Always use Amadeus Production API
+    const destCode = flightToCode || "DXB";
+    const destName = flightTo || "Dubai";
     router.push({
       pathname: "/flights/results" as any,
       params: {
         origin: flightFrom,
-        originCode: flightFromCode,
-        destination: flightTo,
-        destinationCode: flightToCode,
+        originCode: flightFromCode || "CMN",
+        destination: destName,
+        destinationCode: destCode,
         date: flightDate,
         passengers: passengers.toString(),
         useMock: "false",
@@ -78,6 +65,7 @@ export default function HomeScreen() {
   };
 
   const handleHotelSearch = () => {
+    // Always use Amadeus Production API
     router.push({
       pathname: "/hotels/results" as any,
       params: {
@@ -86,7 +74,7 @@ export default function HomeScreen() {
         checkIn,
         checkOut,
         guests: guests.toString(),
-        useMock: hotelDestCode ? "false" : "true",
+        useMock: "false",
       },
     });
   };

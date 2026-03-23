@@ -69,3 +69,11 @@
 - [x] Atualizar ecrã de resultados de voos para usar dados reais
 - [x] Atualizar ecrã de resultados de hotéis para usar dados reais
 - [x] Tratamento de erros e fallback para dados mock
+
+## Amadeus API — تكامل حقيقي كامل
+- [x] تشخيص الاتصال الحالي واختبار كل endpoint
+- [x] إصلاح searchLocations لإرجاع بيانات حقيقية
+- [x] إصلاح searchFlights مع معالجة أخطاء محسّنة
+- [x] إصلاح searchHotels مع بدائل عند عدم توفر العروض
+- [x] إزالة useMock من الواجهة — استخدام Amadeus دائماً
+- [x] إضافة تسجيل الأخطاء التفصيلي في الخادم

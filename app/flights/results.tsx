@@ -53,10 +53,11 @@ export default function FlightResultsScreen() {
   const [sortBy, setSortBy] = useState<SortOption>("price");
   const [filterClass, setFilterClass] = useState<string>("All");
 
-  const useMock = params.useMock === "true" || !params.originCode || !params.destinationCode;
+  // Always use Amadeus Production API — useMock is kept for emergency fallback only
+  const useMock = false;
   const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
 
-  // Real Amadeus query
+  // Amadeus Production API query
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchFlights.useQuery(
     {
       originCode: params.originCode || "CMN",
@@ -66,19 +67,20 @@ export default function FlightResultsScreen() {
       max: 15,
     },
     {
-      enabled: !useMock,
-      retry: 1,
+      enabled: true,
+      retry: 2,
     }
   );
 
   const amadeusFlights: AnyFlight[] = (amadeusResult?.data ?? []) as AnyFlight[];
 
   // Combine real + mock
-  const rawFlights: AnyFlight[] = useMock
-    ? (FLIGHTS as unknown as AnyFlight[])
-    : amadeusResult?.success
+  // Use live Amadeus data; fallback to mock only if API fails
+  const rawFlights: AnyFlight[] = amadeusResult?.success && amadeusFlights.length > 0
     ? amadeusFlights
-    : (FLIGHTS as unknown as AnyFlight[]); // fallback to mock on error
+    : isLoading
+    ? []
+    : (FLIGHTS as unknown as AnyFlight[]);
 
   const filteredFlights = useMemo(() => {
     return rawFlights

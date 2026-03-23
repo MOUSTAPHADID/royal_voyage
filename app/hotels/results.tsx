@@ -49,9 +49,10 @@ export default function HotelResultsScreen() {
 
   const [sortBy, setSortBy] = useState<SortOption>("rating");
 
-  const useMock = params.useMock === "true" || !params.destinationCode;
+  // Always use Amadeus Production API
+  const useMock = false;
 
-  // Real Amadeus hotel search
+  // Amadeus Production API hotel search
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchHotels.useQuery(
     {
       cityCode: params.destinationCode || "DXB",
@@ -61,17 +62,18 @@ export default function HotelResultsScreen() {
       rooms: 1,
     },
     {
-      enabled: !useMock,
-      retry: 1,
+      enabled: true,
+      retry: 2,
     }
   );
 
   const amadeusHotels: AnyHotel[] = (amadeusResult?.data ?? []) as AnyHotel[];
 
-  const rawHotels: AnyHotel[] = useMock
-    ? (HOTELS as unknown as AnyHotel[])
-    : amadeusResult?.success && amadeusHotels.length > 0
+  // Use live Amadeus data; fallback to mock only if API fails
+  const rawHotels: AnyHotel[] = amadeusResult?.success && amadeusHotels.length > 0
     ? amadeusHotels
+    : isLoading
+    ? []
     : (HOTELS as unknown as AnyHotel[]);
 
   const sortedHotels = useMemo(() => {
