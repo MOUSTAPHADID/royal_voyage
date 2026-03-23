@@ -74,6 +74,7 @@ export default function ProfileScreen() {
         { icon: "info.circle.fill", label: t.profile.helpCenter, value: "", onPress: () => {} },
         { icon: "envelope.fill", label: t.profile.contactUs, value: "", onPress: () => {} },
         { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
+        { icon: "shield.fill", label: language === "ar" ? "سياسة الخصوصية" : language === "fr" ? "Politique de Confidentialité" : "Privacy Policy", value: "", onPress: () => router.push("/privacy" as any) },
       ],
     },
     // Admin section — only shown to admin users
