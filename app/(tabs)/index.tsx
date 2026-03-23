@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,10 @@ import {
   StyleSheet,
   Image,
   FlatList,
+  Modal,
+  Animated,
+  Platform,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -16,6 +20,15 @@ import { DESTINATIONS, FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { useTranslation } from "@/lib/i18n";
+import { trpc } from "@/lib/trpc";
+import {
+  useAudioRecorder,
+  useAudioRecorderState,
+  requestRecordingPermissionsAsync,
+  setAudioModeAsync,
+  RecordingPresets,
+} from "expo-audio";
+import * as FileSystem from "expo-file-system/legacy";
 
 type SearchTab = "flights" | "hotels";
 type TripType = "oneway" | "roundtrip";
@@ -43,12 +56,202 @@ function formatDateShort(iso: string): string {
   });
 }
 
+// ── Voice Search Modal ────────────────────────────────────────────────────────
+function VoiceSearchModal({
+  visible,
+  onClose,
+  onResult,
+  isRTL,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onResult: (text: string) => void;
+  isRTL: boolean;
+}) {
+  const colors = useColors();
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
+  const recorderState = useAudioRecorderState(audioRecorder);
+  const [status, setStatus] = useState<"idle" | "recording" | "processing" | "done" | "error">("idle");
+  const [resultText, setResultText] = useState("");
+
+  // Animated wave bars
+  const bars = [useRef(new Animated.Value(0.3)).current, useRef(new Animated.Value(0.3)).current, useRef(new Animated.Value(0.3)).current, useRef(new Animated.Value(0.3)).current, useRef(new Animated.Value(0.3)).current];
+
+  const transcribeMutation = trpc.voice.transcribe.useMutation({
+    onSuccess: (data) => {
+      if (data.success && data.text) {
+        setResultText(data.text);
+        setStatus("done");
+        setTimeout(() => {
+          onResult(data.text);
+          onClose();
+        }, 1200);
+      } else {
+        setStatus("error");
+      }
+    },
+    onError: () => setStatus("error"),
+  });
+
+  // Animate wave bars when recording
+  useEffect(() => {
+    if (status === "recording") {
+      const animations = bars.map((bar, i) =>
+        Animated.loop(
+          Animated.sequence([
+            Animated.timing(bar, { toValue: 0.9, duration: 300 + i * 80, useNativeDriver: true }),
+            Animated.timing(bar, { toValue: 0.3, duration: 300 + i * 80, useNativeDriver: true }),
+          ])
+        )
+      );
+      animations.forEach((a) => a.start());
+      return () => animations.forEach((a) => a.stop());
+    } else {
+      bars.forEach((bar) => bar.setValue(0.3));
+    }
+  }, [status]);
+
+  // Reset when modal opens
+  useEffect(() => {
+    if (visible) {
+      setStatus("idle");
+      setResultText("");
+    }
+  }, [visible]);
+
+  const startRecording = async () => {
+    try {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(
+          isRTL ? "إذن الميكروفون" : "Microphone Permission",
+          isRTL ? "يرجى السماح بالوصول إلى الميكروفون" : "Please allow microphone access"
+        );
+        return;
+      }
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
+      setStatus("recording");
+    } catch (e) {
+      setStatus("error");
+    }
+  };
+
+  const stopRecording = async () => {
+    try {
+      setStatus("processing");
+      await audioRecorder.stop();
+      const uri = audioRecorder.uri;
+      if (!uri) { setStatus("error"); return; }
+
+      // Read file as base64
+      const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+      const mimeType = Platform.OS === "ios" ? "audio/m4a" : "audio/m4a";
+
+      transcribeMutation.mutate({ audioBase64: base64, mimeType, language: isRTL ? "ar" : undefined });
+    } catch (e) {
+      setStatus("error");
+    }
+  };
+
+  const handleMicPress = () => {
+    if (status === "idle") startRecording();
+    else if (status === "recording") stopRecording();
+  };
+
+  const micColor = status === "recording" ? "#EF4444" : status === "processing" ? colors.muted : colors.primary;
+  const micBg = status === "recording" ? "#FEE2E2" : status === "processing" ? colors.border : colors.primary + "18";
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={voiceStyles.overlay}>
+        <Pressable style={voiceStyles.backdrop} onPress={onClose} />
+        <View style={[voiceStyles.sheet, { backgroundColor: colors.surface }]}>
+          {/* Handle */}
+          <View style={[voiceStyles.handle, { backgroundColor: colors.border }]} />
+
+          {/* Title */}
+          <Text style={[voiceStyles.title, { color: colors.foreground }]}>
+            {isRTL ? "البحث الصوتي" : "Voice Search"}
+          </Text>
+          <Text style={[voiceStyles.subtitle, { color: colors.muted }]}>
+            {status === "idle"
+              ? isRTL ? "اضغط للتحدث عن وجهتك" : "Tap to speak your destination"
+              : status === "recording"
+              ? isRTL ? "جاري التسجيل... اضغط للإيقاف" : "Recording... tap to stop"
+              : status === "processing"
+              ? isRTL ? "جاري التعرف على الصوت..." : "Processing your voice..."
+              : status === "done"
+              ? isRTL ? "تم التعرف!" : "Recognized!"
+              : isRTL ? "حدث خطأ، حاول مجدداً" : "Error, please try again"}
+          </Text>
+
+          {/* Wave animation */}
+          <View style={voiceStyles.waveContainer}>
+            {bars.map((bar, i) => (
+              <Animated.View
+                key={i}
+                style={[
+                  voiceStyles.wavebar,
+                  {
+                    backgroundColor: status === "recording" ? "#EF4444" : colors.primary,
+                    transform: [{ scaleY: bar }],
+                  },
+                ]}
+              />
+            ))}
+          </View>
+
+          {/* Mic button */}
+          <Pressable
+            style={({ pressed }) => [
+              voiceStyles.micButton,
+              { backgroundColor: micBg, opacity: pressed ? 0.8 : 1 },
+            ]}
+            onPress={handleMicPress}
+            disabled={status === "processing" || status === "done"}
+          >
+            <IconSymbol
+              name={status === "recording" ? "stop.fill" : "mic.fill"}
+              size={36}
+              color={micColor}
+            />
+          </Pressable>
+
+          {/* Result text */}
+          {resultText ? (
+            <View style={[voiceStyles.resultBox, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "30" }]}>
+              <IconSymbol name="checkmark.circle.fill" size={18} color={colors.success} />
+              <Text style={[voiceStyles.resultText, { color: colors.foreground }]}>{resultText}</Text>
+            </View>
+          ) : null}
+
+          {/* Cancel */}
+          <Pressable style={voiceStyles.cancelBtn} onPress={onClose}>
+            <Text style={[voiceStyles.cancelText, { color: colors.muted }]}>
+              {isRTL ? "إلغاء" : "Cancel"}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+// ── Main Home Screen ──────────────────────────────────────────────────────────
+
 export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useApp();
   const { t, isRTL } = useTranslation();
   const [activeTab, setActiveTab] = useState<SearchTab>("flights");
+
+  // Voice search modal
+  const [voiceModalVisible, setVoiceModalVisible] = useState(false);
+  // Which field is voice targeting: "flightTo" | "flightFrom" | "hotelDest"
+  const [voiceTarget, setVoiceTarget] = useState<"flightTo" | "flightFrom" | "hotelDest">("flightTo");
 
   // Trip type
   const [tripType, setTripType] = useState<TripType>("oneway");
@@ -120,6 +323,27 @@ export default function HomeScreen() {
         useMock: "false",
       },
     });
+  };
+
+  // Handle voice search result
+  const handleVoiceResult = (text: string) => {
+    // The text is a raw transcription — use it as destination name
+    // We set the text as the destination value; user can refine via autocomplete
+    if (voiceTarget === "flightTo") {
+      setFlightTo(text);
+      setFlightToCode(""); // will be resolved when user picks from autocomplete
+    } else if (voiceTarget === "flightFrom") {
+      setFlightFrom(text);
+      setFlightFromCode("");
+    } else if (voiceTarget === "hotelDest") {
+      setHotelDest(text);
+      setHotelDestCode("");
+    }
+  };
+
+  const openVoiceSearch = (target: "flightTo" | "flightFrom" | "hotelDest") => {
+    setVoiceTarget(target);
+    setVoiceModalVisible(true);
   };
 
   const greeting = () => {
@@ -209,18 +433,28 @@ export default function HomeScreen() {
                 ))}
               </View>
 
-              {/* From — with autocomplete */}
-              <LocationAutocomplete
-                label={t.home.from}
-                placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
-                value={flightFrom}
-                iataCode={flightFromCode}
-                onSelect={(name, code) => {
-                  setFlightFrom(name);
-                  setFlightFromCode(code);
-                }}
-                iconName="airplane"
-              />
+              {/* From — with autocomplete + voice */}
+              <View style={styles.fieldWithVoice}>
+                <View style={{ flex: 1 }}>
+                  <LocationAutocomplete
+                    label={t.home.from}
+                    placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
+                    value={flightFrom}
+                    iataCode={flightFromCode}
+                    onSelect={(name, code) => {
+                      setFlightFrom(name);
+                      setFlightFromCode(code);
+                    }}
+                    iconName="airplane"
+                  />
+                </View>
+                <Pressable
+                  style={[styles.voiceBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}
+                  onPress={() => openVoiceSearch("flightFrom")}
+                >
+                  <IconSymbol name="mic.fill" size={18} color={colors.primary} />
+                </Pressable>
+              </View>
 
               {/* Swap button */}
               <View style={styles.swapRow}>
@@ -234,18 +468,28 @@ export default function HomeScreen() {
                 <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
               </View>
 
-              {/* To — with autocomplete */}
-              <LocationAutocomplete
-                label={t.home.to}
-                placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
-                value={flightTo}
-                iataCode={flightToCode}
-                onSelect={(name, code) => {
-                  setFlightTo(name);
-                  setFlightToCode(code);
-                }}
-                iconName="location.fill"
-              />
+              {/* To — with autocomplete + voice */}
+              <View style={styles.fieldWithVoice}>
+                <View style={{ flex: 1 }}>
+                  <LocationAutocomplete
+                    label={t.home.to}
+                    placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
+                    value={flightTo}
+                    iataCode={flightToCode}
+                    onSelect={(name, code) => {
+                      setFlightTo(name);
+                      setFlightToCode(code);
+                    }}
+                    iconName="location.fill"
+                  />
+                </View>
+                <Pressable
+                  style={[styles.voiceBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}
+                  onPress={() => openVoiceSearch("flightTo")}
+                >
+                  <IconSymbol name="mic.fill" size={18} color={colors.primary} />
+                </Pressable>
+              </View>
 
               {/* Date fields */}
               {tripType === "oneway" ? (
@@ -268,10 +512,8 @@ export default function HomeScreen() {
                   <Pressable
                     style={[styles.searchField, { flex: 1, borderColor: colors.primary, backgroundColor: colors.background }]}
                     onPress={() => {
-                      // Cycle departure date +1 day (simple demo interaction)
                       const d = new Date(departureDate);
                       d.setDate(d.getDate() + 1);
-                      // Ensure return is after departure
                       const r = new Date(returnDate);
                       if (r <= d) {
                         r.setDate(d.getDate() + 3);
@@ -401,17 +643,28 @@ export default function HomeScreen() {
           ) : (
             /* ── Hotels Form ── */
             <View style={styles.searchForm}>
-              <LocationAutocomplete
-                label={t.home.destination}
-                placeholder={isRTL ? "مدينة أو وجهة الفندق" : "City or hotel destination"}
-                value={hotelDest}
-                iataCode={hotelDestCode}
-                onSelect={(name, code) => {
-                  setHotelDest(name);
-                  setHotelDestCode(code);
-                }}
-                iconName="location.fill"
-              />
+              {/* Hotel destination + voice */}
+              <View style={styles.fieldWithVoice}>
+                <View style={{ flex: 1 }}>
+                  <LocationAutocomplete
+                    label={t.home.destination}
+                    placeholder={isRTL ? "مدينة أو وجهة الفندق" : "City or hotel destination"}
+                    value={hotelDest}
+                    iataCode={hotelDestCode}
+                    onSelect={(name, code) => {
+                      setHotelDest(name);
+                      setHotelDestCode(code);
+                    }}
+                    iconName="location.fill"
+                  />
+                </View>
+                <Pressable
+                  style={[styles.voiceBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}
+                  onPress={() => openVoiceSearch("hotelDest")}
+                >
+                  <IconSymbol name="mic.fill" size={18} color={colors.primary} />
+                </Pressable>
+              </View>
 
               <View style={styles.rowFields}>
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -564,9 +817,19 @@ export default function HomeScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Voice Search Modal */}
+      <VoiceSearchModal
+        visible={voiceModalVisible}
+        onClose={() => setVoiceModalVisible(false)}
+        onResult={handleVoiceResult}
+        isRTL={isRTL}
+      />
     </ScreenContainer>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   header: {
@@ -655,6 +918,21 @@ const styles = StyleSheet.create({
   tripTypeText: {
     fontSize: 13,
     fontWeight: "600",
+  },
+  // ── Field with voice button ──
+  fieldWithVoice: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  voiceBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
   },
   // ── Swap button ──
   swapRow: {
@@ -861,5 +1139,90 @@ const styles = StyleSheet.create({
   cabinBtnText: {
     fontSize: 12,
     fontWeight: "600",
+  },
+});
+
+// ── Voice Modal Styles ────────────────────────────────────────────────────────
+
+const voiceStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  sheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 20,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 28,
+  },
+  waveContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    height: 60,
+    marginBottom: 28,
+  },
+  wavebar: {
+    width: 5,
+    height: 48,
+    borderRadius: 3,
+  },
+  micButton: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  resultBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 16,
+    maxWidth: "100%",
+  },
+  resultText: {
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  cancelBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+  },
+  cancelText: {
+    fontSize: 15,
   },
 });

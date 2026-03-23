@@ -9,6 +9,8 @@ import {
   searchHotelsByCity,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation } from "./email";
+import { transcribeAudio } from "./_core/voiceTranscription";
+import { storagePut } from "./storage";
 
 export const appRouter = router({
   system: systemRouter,
@@ -94,6 +96,45 @@ export const appRouter = router({
         } catch (err: any) {
           console.error("[Amadeus] searchHotels error:", err?.code || err?.message);
           return { success: false, data: [], error: err?.code || "SEARCH_ERROR" };
+        }
+      }),
+  }),
+
+  // ─── Voice: Speech-to-Text ──────────────────────────────────────────────────
+  voice: router({
+    transcribe: publicProcedure
+      .input(
+        z.object({
+          audioBase64: z.string(),
+          mimeType: z.string().default("audio/m4a"),
+          language: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          // Upload audio buffer to storage to get a URL
+          const audioBuffer = Buffer.from(input.audioBase64, "base64");
+          const ext = input.mimeType.includes("webm") ? "webm"
+            : input.mimeType.includes("wav") ? "wav"
+            : input.mimeType.includes("ogg") ? "ogg"
+            : "m4a";
+          const key = `voice/${Date.now()}.${ext}`;
+          const { url } = await storagePut(key, audioBuffer, input.mimeType);
+
+          // Transcribe using built-in Whisper service
+          const result = await transcribeAudio({
+            audioUrl: url,
+            language: input.language,
+            prompt: "Airport name, city name, or flight destination",
+          });
+
+          if ("error" in result) {
+            return { success: false, text: "", error: result.error };
+          }
+          return { success: true, text: result.text.trim(), language: result.language };
+        } catch (err: any) {
+          console.error("[Voice] transcription error:", err?.message);
+          return { success: false, text: "", error: err?.message ?? "Transcription failed" };
         }
       }),
   }),
