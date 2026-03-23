@@ -118,3 +118,10 @@
 - [ ] إضافة زر "عرض التذكرة" في شاشة تفاصيل الحجز
 - [ ] إرسال إشعار محلي عند تأكيد الحجز
 - [ ] إضافة صفحة إدارة التطبيق (Admin) مع إحصائيات الحجوزات
+
+## Página de Administração (Admin)
+- [ ] Criar ecrã de administração com estatísticas (total reservas, receita, voos, hotéis)
+- [ ] Adicionar lista de clientes com histórico de reservas
+- [ ] Adicionar gráfico de distribuição de reservas (voos vs hotéis)
+- [ ] Integrar acesso à página admin no perfil
+- [ ] Proteger a página admin com verificação de credenciais

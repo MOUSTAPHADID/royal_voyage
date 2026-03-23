@@ -69,7 +69,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useTranslation() {
+export function useTranslation(): I18nContextType {
   return useContext(I18nContext);
 }
 

@@ -76,6 +76,18 @@ export default function ProfileScreen() {
         { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
       ],
     },
+    {
+      title: t.admin.adminAccess,
+      items: [
+        {
+          icon: "shield.fill",
+          label: t.admin.title,
+          value: "",
+          onPress: () => router.push("/admin" as any),
+          highlight: true,
+        },
+      ],
+    },
   ];
 
   return (
@@ -149,10 +161,10 @@ export default function ProfileScreen() {
                   ]}
                   onPress={item.onPress}
                 >
-                  <View style={[styles.menuIconBox, { backgroundColor: colors.primary + "12" }]}>
-                    <IconSymbol name={item.icon as any} size={18} color={colors.primary} />
+                  <View style={[styles.menuIconBox, { backgroundColor: (item as any).highlight ? "#1B2B5E" : colors.primary + "12" }]}>
+                    <IconSymbol name={item.icon as any} size={18} color={(item as any).highlight ? "#C9A84C" : colors.primary} />
                   </View>
-                  <Text style={[styles.menuLabel, { color: colors.foreground }]}>{item.label}</Text>
+                  <Text style={[styles.menuLabel, { color: (item as any).highlight ? "#1B2B5E" : colors.foreground, fontWeight: (item as any).highlight ? "700" : "400" }]}>{item.label}</Text>
                   <View style={styles.menuRight}>
                     {item.value ? (
                       <Text style={[styles.menuValue, { color: colors.muted }]}>{item.value}</Text>
