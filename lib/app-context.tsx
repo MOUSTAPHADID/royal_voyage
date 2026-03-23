@@ -62,7 +62,7 @@ const STORAGE_KEYS = {
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [bookings, setBookings] = useState<Booking[]>(MOCK_BOOKINGS);
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [lastFlightSearch, setLastFlightSearch] = useState<FlightSearch | null>(null);
   const [lastHotelSearch, setLastHotelSearch] = useState<HotelSearch | null>(null);
 
