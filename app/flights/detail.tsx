@@ -34,6 +34,8 @@ export default function FlightDetailScreen() {
     seatsLeft: string;
     tripType: string;
     returnDate: string;
+    passengers: string;
+    children: string;
   }>();
 
   // If params have flight data (from Amadeus), use them; otherwise fall back to mock
@@ -61,8 +63,16 @@ export default function FlightDetailScreen() {
     : mockFlight;
 
   const isRoundTrip = params.tripType === "roundtrip";
-  const totalPrice = isRoundTrip ? flight.price * 2 : flight.price;
+  const adultCount = parseInt(params.passengers || "1", 10);
+  const childCount = parseInt(params.children || "0", 10);
+  const adultPrice = flight.price;
+  const childPrice = Math.round(flight.price * 0.75);
   const currency = flight.currency || "EUR";
+  // الإجمالي = (سعر البالغ × عدد البالغين) + (سعر الطفل × عدد الأطفال)
+  const totalPerPax = adultPrice;
+  const totalPrice = isRoundTrip
+    ? (adultPrice * adultCount + childPrice * childCount) * 2
+    : adultPrice * adultCount + childPrice * childCount;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -162,23 +172,57 @@ export default function FlightDetailScreen() {
 
         {/* Price breakdown */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Price Breakdown</Text>
-          {[
-            { label: "السعر الأساسي", value: formatMRU(toMRU(flight.price * 0.85, currency)) },
-            { label: "الضرائب والرسوم", value: formatMRU(toMRU(flight.price * 0.15, currency)) },
-            ...(isRoundTrip ? [{ label: "رحلة العودة", value: formatPriceMRU(flight.price, currency) }] : []),
-          ].map((item) => (
-            <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
-              <Text style={[styles.infoValue, { color: colors.foreground }]}>{item.value}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>تفصيل الأسعار</Text>
+
+          {/* سعر البالغ */}
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>
+              بالغ × {adultCount}
+            </Text>
+            <Text style={[styles.infoValue, { color: colors.foreground }]}>
+              {formatMRU(toMRU(adultPrice * adultCount, currency))}
+            </Text>
+          </View>
+
+          {/* سعر الطفل (إن وجد) */}
+          {childCount > 0 && (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoLabel, { color: colors.muted }]}>
+                  طفل × {childCount}
+                </Text>
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25%</Text>
+              </View>
+              <Text style={[styles.infoValue, { color: colors.foreground }]}>
+                {formatMRU(toMRU(childPrice * childCount, currency))}
+              </Text>
             </View>
-          ))}
+          )}
+
+          {/* رحلة العودة */}
+          {isRoundTrip && (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>رحلة العودة (×2)</Text>
+              <Text style={[styles.infoValue, { color: colors.foreground }]}>
+                {formatMRU(toMRU(adultPrice * adultCount + childPrice * childCount, currency))}
+              </Text>
+            </View>
+          )}
+
+          {/* الضرائب */}
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>ضرائب ورسوم (10%)</Text>
+            <Text style={[styles.infoValue, { color: colors.foreground }]}>
+              {formatMRU(toMRU(Math.round(totalPrice * 0.1), currency))}
+            </Text>
+          </View>
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
-              الإجمالي للشخص{isRoundTrip ? " (ذهاب وإياب)" : ""}
+              الإجمالي{isRoundTrip ? " (ذهاب وإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatPriceMRU(totalPrice, currency)}
+              {formatMRU(toMRU(Math.round(totalPrice * 1.1), currency))}
             </Text>
           </View>
         </View>
@@ -190,10 +234,10 @@ export default function FlightDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {formatPriceMRU(totalPrice, currency)}
+            {formatMRU(toMRU(Math.round(totalPrice * 1.1), currency))}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
-            {isRoundTrip ? "ذهاب وإياب · للشخص" : "ذهاب فقط · للشخص"}
+            {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""}{isRoundTrip ? " · ذهاب وإياب" : ""}
           </Text>
         </View>
         <Pressable
@@ -213,16 +257,18 @@ export default function FlightDetailScreen() {
                 departureTime: flight.departureTime,
                 arrivalTime: flight.arrivalTime,
                 duration: flight.duration,
-                price: String(totalPrice),
+                price: String(Math.round(totalPrice * 1.1)),
                 currency: flight.currency,
                 class: flight.class,
                 tripType: isRoundTrip ? "roundtrip" : "oneway",
                 returnDate: params.returnDate || "",
+                passengers: String(adultCount),
+                children: String(childCount),
               },
             })
           }
         >
-          <Text style={styles.bookBtnText}>Book Now</Text>
+          <Text style={styles.bookBtnText}>احجز الآن</Text>
         </Pressable>
       </View>
     </ScreenContainer>

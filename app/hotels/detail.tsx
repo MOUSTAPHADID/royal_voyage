@@ -26,13 +26,24 @@ const ROOM_TYPES = [
 export default function HotelDetailScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{
+    id: string;
+    guests?: string;
+    children?: string;
+    checkIn?: string;
+    checkOut?: string;
+  }>();
+  const { id } = params;
 
   const hotel = HOTELS.find((h) => h.id === id) ?? HOTELS[0];
   const [selectedRoom, setSelectedRoom] = useState(ROOM_TYPES[0].id);
 
   const selectedRoomData = ROOM_TYPES.find((r) => r.id === selectedRoom) ?? ROOM_TYPES[0];
-  const totalPrice = hotel.pricePerNight + selectedRoomData.price;
+  const adultCount = parseInt(params.guests ?? "1", 10);
+  const childCount = parseInt(params.children ?? "0", 10);
+  const nightlyRate = hotel.pricePerNight + selectedRoomData.price;
+  const childNightlyRate = Math.round(nightlyRate * 0.75);
+  const totalPrice = nightlyRate * adultCount + childNightlyRate * childCount;
 
   const amenityIcons: Record<string, string> = {
     Pool: "figure.pool.swim",
@@ -112,6 +123,39 @@ export default function HotelDetailScreen() {
           </View>
         </View>
 
+        {/* تفصيل سعر الليلة */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>تفصيل الأسعار / ليلة</Text>
+
+          {/* سعر البالغ */}
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>بالغ × {adultCount}</Text>
+            <Text style={[styles.infoValue, { color: colors.foreground }]}>
+              {formatMRU(toMRU(nightlyRate * adultCount, hotel.currency || "USD"))}
+            </Text>
+          </View>
+
+          {/* سعر الطفل */}
+          {childCount > 0 && (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoLabel, { color: colors.muted }]}>طفل × {childCount}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25% • {formatMRU(toMRU(childNightlyRate, hotel.currency || "USD"))} / شخص</Text>
+              </View>
+              <Text style={[styles.infoValue, { color: colors.foreground }]}>
+                {formatMRU(toMRU(childNightlyRate * childCount, hotel.currency || "USD"))}
+              </Text>
+            </View>
+          )}
+
+          <View style={[styles.totalRow, { marginTop: 8 }]}>
+            <Text style={[styles.totalLabel, { color: colors.foreground }]}>إجمالي / ليلة</Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>
+              {formatMRU(toMRU(totalPrice, hotel.currency || "USD"))}
+            </Text>
+          </View>
+        </View>
+
         {/* Room Types */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Choose Room</Text>
@@ -165,19 +209,34 @@ export default function HotelDetailScreen() {
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.bottomPrice, { color: colors.primary }]}>{formatPriceMRU(totalPrice, hotel.currency || "USD")}</Text>
-          <Text style={[styles.bottomLabel, { color: colors.muted }]}>per night · {selectedRoomData.name}</Text>
+          <Text style={[styles.bottomPrice, { color: colors.primary }]}>
+            {formatMRU(toMRU(totalPrice, hotel.currency || "USD"))}
+          </Text>
+          <Text style={[styles.bottomLabel, { color: colors.muted }]}>
+            {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""} · ليلة
+          </Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.bookBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
           onPress={() =>
             router.push({
               pathname: "/booking/passenger-details" as any,
-              params: { type: "hotel", id: hotel.id, roomId: selectedRoom },
+              params: {
+                type: "hotel",
+                id: hotel.id,
+                roomId: selectedRoom,
+                guests: String(adultCount),
+                children: String(childCount),
+                checkIn: params.checkIn ?? "",
+                checkOut: params.checkOut ?? "",
+                hotelName: hotel.name,
+                roomType: selectedRoomData.name,
+                roomPrice: String(totalPrice),
+              },
             })
           }
         >
-          <Text style={styles.bookBtnText}>Book Now</Text>
+          <Text style={styles.bookBtnText}>احجز الآن</Text>
         </Pressable>
       </View>
     </ScreenContainer>
@@ -374,6 +433,35 @@ const styles = StyleSheet.create({
   bookBtnText: {
     color: "#FFFFFF",
     fontSize: 17,
+    fontWeight: "700",
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+  },
+  infoLabel: {
+    fontSize: 14,
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  totalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: 12,
+  },
+  totalLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  totalValue: {
+    fontSize: 18,
     fontWeight: "700",
   },
 });

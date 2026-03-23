@@ -61,9 +61,22 @@ export default function PaymentScreen() {
   const flight = isFlight ? FLIGHTS.find((f) => f.id === params.id) ?? FLIGHTS[0] : null;
   const hotel = !isFlight ? HOTELS.find((h) => h.id === params.id) ?? HOTELS[0] : null;
 
-  const basePrice = isFlight ? (flight?.price ?? 0) : (hotel?.pricePerNight ?? 0);
+  const adultCount = parseInt(params.passengers ?? "1", 10);
+  const childCount = parseInt(params.children ?? "0", 10);
+
+  // سعر البالغ وسعر الطفل (75% من سعر البالغ)
+  const unitPrice = isFlight ? (flight?.price ?? 0) : (hotel?.pricePerNight ?? 0);
+  const adultUnitPrice = unitPrice;
+  const childUnitPrice = Math.round(unitPrice * 0.75);
+
+  // السعر الممرر من صفحة التفاصيل (يتضمن الضرائب بالفعل)
+  const passedPrice = parseFloat(params.price ?? "0");
+  const basePrice = passedPrice > 0
+    ? passedPrice
+    : adultUnitPrice * adultCount + childUnitPrice * childCount;
   const taxes = Math.round(basePrice * 0.1);
-  const total = basePrice + taxes;
+  // إذا كان السعر الممرر يتضمن الضرائب بالفعل لا نضيفها مرة أخرى
+  const total = passedPrice > 0 ? passedPrice : basePrice + taxes;
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [cardNumber, setCardNumber] = useState("");
@@ -162,16 +175,46 @@ export default function PaymentScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
         {/* Order Summary */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.cardTitle, { color: colors.foreground }]}>Order Summary</Text>
-          {[
-            { label: isFlight ? `رحلة: ${flight?.originCode} → ${flight?.destinationCode}` : `فندق: ${hotel?.name}`, value: formatMRU(toMRU(basePrice, "USD")) },
-            { label: "ضرائب ورسوم (10%)", value: formatMRU(toMRU(taxes, "USD")) },
-          ].map((item) => (
-            <View key={item.label} style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.summaryLabel, { color: colors.muted }]}>{item.label}</Text>
-              <Text style={[styles.summaryValue, { color: colors.foreground }]}>{item.value}</Text>
+          <Text style={[styles.cardTitle, { color: colors.foreground }]}>ملخص الطلب</Text>
+
+          {/* عنوان الرحلة / الفندق */}
+          <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
+              {isFlight ? `رحلة: ${flight?.originCode ?? params.originCode} → ${flight?.destinationCode ?? params.destinationCode}` : `فندق: ${hotel?.name ?? params.hotelName}`}
+            </Text>
+          </View>
+
+          {/* سعر البالغ */}
+          <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.summaryLabel, { color: colors.muted }]}>
+              بالغ × {adultCount}
+            </Text>
+            <Text style={[styles.summaryValue, { color: colors.foreground }]}>
+              {formatMRU(toMRU(adultUnitPrice * adultCount, "USD"))}
+            </Text>
+          </View>
+
+          {/* سعر الطفل */}
+          {childCount > 0 && (
+            <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.summaryLabel, { color: colors.muted }]}>طفل × {childCount}</Text>
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>خصم 25% • {formatMRU(toMRU(childUnitPrice, "USD"))} / شخص</Text>
+              </View>
+              <Text style={[styles.summaryValue, { color: colors.foreground }]}>
+                {formatMRU(toMRU(childUnitPrice * childCount, "USD"))}
+              </Text>
             </View>
-          ))}
+          )}
+
+          {/* ضرائب */}
+          {passedPrice === 0 && (
+            <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.summaryLabel, { color: colors.muted }]}>ضرائب ورسوم (10%)</Text>
+              <Text style={[styles.summaryValue, { color: colors.foreground }]}>{formatMRU(toMRU(taxes, "USD"))}</Text>
+            </View>
+          )}
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>{formatMRU(toMRU(total, "USD"))}</Text>

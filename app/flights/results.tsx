@@ -51,6 +51,7 @@ export default function FlightResultsScreen() {
     returnDate: string;
     tripType: string;
     passengers: string;
+    children: string;
     useMock: string;
   }>();
 
@@ -147,6 +148,10 @@ export default function FlightResultsScreen() {
             currency: item.currency || "USD",
             class: item.class,
             seatsLeft: String(item.seatsLeft),
+            passengers: params.passengers || "1",
+            children: params.children || "0",
+            tripType: params.tripType || "oneway",
+            returnDate: params.returnDate || "",
           },
         })
       }
@@ -248,6 +253,10 @@ export default function FlightResultsScreen() {
                 currency: item.currency || "USD",
                 class: item.class,
                 seatsLeft: String(item.seatsLeft),
+                passengers: params.passengers || "1",
+                children: params.children || "0",
+                tripType: params.tripType || "oneway",
+                returnDate: params.returnDate || "",
               },
             })
           }
