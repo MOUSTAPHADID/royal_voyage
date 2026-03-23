@@ -56,6 +56,7 @@ export default function ConfirmationScreen() {
     reference: string;
     total: string;
     type: string;
+    emailSent?: string;
     passengerName?: string;
     dateOfBirth?: string;
     passportNumber?: string;
@@ -91,7 +92,9 @@ export default function ConfirmationScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(40)).current;
 
-  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  // إذا أرسل payment.tsx التذكرة بالفعل، نبدأ بحالة "sent"
+  const initialEmailStatus = params.emailSent === "true" ? "sent" : "idle";
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">(initialEmailStatus);
 
   const isFlight = params.type === "flight";
   const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -130,10 +133,8 @@ export default function ConfirmationScreen() {
     // Send local notification
     scheduleBookingNotification(params.type ?? "flight", params.reference ?? "RV000");
 
-    // Auto-send email if email is provided
-    if (params.email && params.email.includes("@")) {
-      handleSendEmail(params.email);
-    }
+    // لا نُرسل تلقائياً — payment.tsx أرسل التذكرة بالفعل
+    // إذا فشل الإرسال من payment.tsx، يمكن للمستخدم الضغط على زر إعادة الإرسال
   }, []);
 
   const handleSendEmail = async (emailAddress?: string) => {

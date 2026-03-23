@@ -16,6 +16,7 @@ import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU, toMRU } from "@/lib/currency";
+import { trpc } from "@/lib/trpc";
 
 type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad";
 
@@ -138,6 +139,10 @@ export default function PaymentScreen() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [transferRef, setTransferRef] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+
+  const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
+  const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
 
   const handlePay = async () => {
     // التحقق من رقم مرجع التحويل إن كان مطلوباً
@@ -153,13 +158,13 @@ export default function PaymentScreen() {
     }
 
     setIsProcessing(true);
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 1000));
 
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
-      status: paymentMethod === "cash" ? "pending" : "confirmed",
+      status: "confirmed",
       reference: ref,
       date: new Date().toISOString().split("T")[0],
       ...(isFlight && flight ? { flight, passengers: adultCount } : {}),
@@ -177,6 +182,73 @@ export default function PaymentScreen() {
     };
 
     await addBooking(booking);
+
+    // إرسال التذكرة مباشرةً بعد تأكيد الدفع
+    const passengerEmail = params.email ?? "";
+    const passengerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim();
+    const totalMRU = formatMRU(toMRU(total, "USD"));
+
+    if (passengerEmail) {
+      setEmailStatus("sending");
+      try {
+        if (isFlight) {
+          await sendFlightTicket.mutateAsync({
+            passengerName,
+            passengerEmail,
+            bookingRef: ref,
+            origin: params.originCode ?? flight?.originCode ?? "",
+            originCity: params.origin ?? flight?.origin ?? "",
+            destination: params.destinationCode ?? flight?.destinationCode ?? "",
+            destinationCity: params.destination ?? flight?.destination ?? "",
+            departureDate: params.returnDate
+              ? new Date().toISOString().split("T")[0]
+              : new Date().toISOString().split("T")[0],
+            departureTime: params.departureTime ?? flight?.departureTime ?? "",
+            arrivalTime: params.arrivalTime ?? flight?.arrivalTime ?? "",
+            airline: params.airline ?? flight?.airline ?? "",
+            flightNumber: params.flightNumber ?? flight?.flightNumber ?? "",
+            cabinClass: params.cabinClass ?? "Economy",
+            passengers: adultCount,
+            children: childCount,
+            totalPrice: totalMRU,
+            currency: "MRU",
+            tripType: params.tripType === "roundtrip" ? "round-trip" : "one-way",
+            returnDate: params.returnDate ?? undefined,
+          });
+        } else {
+          const checkInDate = params.checkIn ?? "";
+          const checkOutDate = params.checkOut ?? "";
+          let nights = 1;
+          if (checkInDate && checkOutDate) {
+            const d1 = new Date(checkInDate);
+            const d2 = new Date(checkOutDate);
+            nights = Math.max(1, Math.round((d2.getTime() - d1.getTime()) / 86400000));
+          }
+          await sendHotelConfirmation.mutateAsync({
+            guestName: passengerName,
+            guestEmail: passengerEmail,
+            bookingRef: ref,
+            hotelName: params.hotelName ?? hotel?.name ?? "",
+            hotelCity: hotel?.city ?? "",
+            hotelCountry: hotel?.country ?? "Mauritania",
+            stars: hotel?.stars ?? 3,
+            checkIn: checkInDate,
+            checkOut: checkOutDate,
+            nights,
+            roomType: params.roomType ?? "Standard Room",
+            guests: adultCount,
+            children: childCount,
+            totalPrice: totalMRU,
+            currency: "MRU",
+          });
+        }
+        setEmailStatus("sent");
+      } catch (err) {
+        console.error("[Email] فشل إرسال التذكرة:", err);
+        setEmailStatus("failed");
+      }
+    }
+
     setIsProcessing(false);
 
     router.replace({
@@ -187,11 +259,12 @@ export default function PaymentScreen() {
         type: params.type,
         currency: "USD",
         paymentMethod,
-        passengerName: `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim(),
+        emailSent: passengerEmail ? (emailStatus === "failed" ? "false" : "true") : "false",
+        passengerName,
         dateOfBirth: params.dateOfBirth,
         passportNumber: params.passport,
         nationality: params.nationality,
-        email: params.email,
+        email: passengerEmail,
         phone: params.phone,
         airline: params.airline ?? flight?.airline ?? "",
         flightNumber: params.flightNumber ?? flight?.flightNumber ?? "",
