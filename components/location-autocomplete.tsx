@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -28,6 +28,8 @@ type Props = {
   iataCode: string;
   onSelect: (name: string, iataCode: string) => void;
   iconName?: "airplane" | "location.fill";
+  /** Called when user taps the mic button — pass undefined to hide the button */
+  onVoicePress?: () => void;
 };
 
 export function LocationAutocomplete({
@@ -37,6 +39,7 @@ export function LocationAutocomplete({
   iataCode,
   onSelect,
   iconName = "location.fill",
+  onVoicePress,
 }: Props) {
   const colors = useColors();
   const [query, setQuery] = useState(value);
@@ -76,29 +79,45 @@ export function LocationAutocomplete({
 
   return (
     <>
-      <Pressable
-        style={[styles.field, { borderColor: colors.border, backgroundColor: colors.background }]}
-        onPress={openModal}
-      >
-        <IconSymbol name={iconName} size={18} color={colors.primary} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>{label}</Text>
-          <Text
-            style={[
-              styles.fieldValue,
-              { color: value ? colors.foreground : colors.muted },
-            ]}
-            numberOfLines={1}
-          >
-            {value ? `${value} (${iataCode})` : placeholder}
-          </Text>
-        </View>
-        {iataCode ? (
-          <View style={[styles.iataTag, { backgroundColor: colors.primary + "20" }]}>
-            <Text style={[styles.iataText, { color: colors.primary }]}>{iataCode}</Text>
+      {/* Field row: autocomplete field + optional mic button */}
+      <View style={styles.row}>
+        <Pressable
+          style={[styles.field, { borderColor: colors.border, backgroundColor: colors.background }]}
+          onPress={openModal}
+        >
+          <IconSymbol name={iconName} size={18} color={colors.primary} />
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.fieldLabel, { color: colors.muted }]}>{label}</Text>
+            <Text
+              style={[
+                styles.fieldValue,
+                { color: value ? colors.foreground : colors.muted },
+              ]}
+              numberOfLines={1}
+            >
+              {value ? `${value} (${iataCode})` : placeholder}
+            </Text>
           </View>
+          {iataCode ? (
+            <View style={[styles.iataTag, { backgroundColor: colors.primary + "20" }]}>
+              <Text style={[styles.iataText, { color: colors.primary }]}>{iataCode}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+
+        {/* Mic button — shown only when onVoicePress is provided */}
+        {onVoicePress ? (
+          <Pressable
+            style={({ pressed }) => [
+              styles.micBtn,
+              { backgroundColor: colors.primary + "18", borderColor: colors.primary + "40", opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={onVoicePress}
+          >
+            <IconSymbol name="mic.fill" size={20} color={colors.primary} />
+          </Pressable>
         ) : null}
-      </Pressable>
+      </View>
 
       <Modal
         visible={modalVisible}
@@ -192,7 +211,15 @@ export function LocationAutocomplete({
 }
 
 const styles = StyleSheet.create({
+  // ── Row wrapper ──────────────────────────────────────────────────────────────
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  // ── Autocomplete field ───────────────────────────────────────────────────────
   field: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
@@ -221,6 +248,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  // ── Mic button ───────────────────────────────────────────────────────────────
+  micBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  // ── Modal ────────────────────────────────────────────────────────────────────
   modal: {
     flex: 1,
   },
@@ -275,8 +313,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
   emptyState: {
-    padding: 40,
     alignItems: "center",
+    paddingTop: 60,
+    paddingHorizontal: 40,
   },
   emptyText: {
     fontSize: 15,

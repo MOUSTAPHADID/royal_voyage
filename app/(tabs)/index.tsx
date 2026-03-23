@@ -434,27 +434,18 @@ export default function HomeScreen() {
               </View>
 
               {/* From — with autocomplete + voice */}
-              <View style={styles.fieldWithVoice}>
-                <View style={{ flex: 1 }}>
-                  <LocationAutocomplete
-                    label={t.home.from}
-                    placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
-                    value={flightFrom}
-                    iataCode={flightFromCode}
-                    onSelect={(name, code) => {
-                      setFlightFrom(name);
-                      setFlightFromCode(code);
-                    }}
-                    iconName="airplane"
-                  />
-                </View>
-                <Pressable
-                  style={[styles.voiceBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}
-                  onPress={() => openVoiceSearch("flightFrom")}
-                >
-                  <IconSymbol name="mic.fill" size={18} color={colors.primary} />
-                </Pressable>
-              </View>
+              <LocationAutocomplete
+                label={t.home.from}
+                placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
+                value={flightFrom}
+                iataCode={flightFromCode}
+                onSelect={(name, code) => {
+                  setFlightFrom(name);
+                  setFlightFromCode(code);
+                }}
+                iconName="airplane"
+                onVoicePress={() => openVoiceSearch("flightFrom")}
+              />
 
               {/* Swap button */}
               <View style={styles.swapRow}>
@@ -469,27 +460,18 @@ export default function HomeScreen() {
               </View>
 
               {/* To — with autocomplete + voice */}
-              <View style={styles.fieldWithVoice}>
-                <View style={{ flex: 1 }}>
-                  <LocationAutocomplete
-                    label={t.home.to}
-                    placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
-                    value={flightTo}
-                    iataCode={flightToCode}
-                    onSelect={(name, code) => {
-                      setFlightTo(name);
-                      setFlightToCode(code);
-                    }}
-                    iconName="location.fill"
-                  />
-                </View>
-                <Pressable
-                  style={[styles.voiceBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}
-                  onPress={() => openVoiceSearch("flightTo")}
-                >
-                  <IconSymbol name="mic.fill" size={18} color={colors.primary} />
-                </Pressable>
-              </View>
+              <LocationAutocomplete
+                label={t.home.to}
+                placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
+                value={flightTo}
+                iataCode={flightToCode}
+                onSelect={(name, code) => {
+                  setFlightTo(name);
+                  setFlightToCode(code);
+                }}
+                iconName="location.fill"
+                onVoicePress={() => openVoiceSearch("flightTo")}
+              />
 
               {/* Date fields */}
               {tripType === "oneway" ? (
@@ -644,27 +626,18 @@ export default function HomeScreen() {
             /* ── Hotels Form ── */
             <View style={styles.searchForm}>
               {/* Hotel destination + voice */}
-              <View style={styles.fieldWithVoice}>
-                <View style={{ flex: 1 }}>
-                  <LocationAutocomplete
-                    label={t.home.destination}
-                    placeholder={isRTL ? "مدينة أو وجهة الفندق" : "City or hotel destination"}
-                    value={hotelDest}
-                    iataCode={hotelDestCode}
-                    onSelect={(name, code) => {
-                      setHotelDest(name);
-                      setHotelDestCode(code);
-                    }}
-                    iconName="location.fill"
-                  />
-                </View>
-                <Pressable
-                  style={[styles.voiceBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary + "30" }]}
-                  onPress={() => openVoiceSearch("hotelDest")}
-                >
-                  <IconSymbol name="mic.fill" size={18} color={colors.primary} />
-                </Pressable>
-              </View>
+              <LocationAutocomplete
+                label={t.home.destination}
+                placeholder={isRTL ? "مدينة أو وجهة الفندق" : "City or hotel destination"}
+                value={hotelDest}
+                iataCode={hotelDestCode}
+                onSelect={(name, code) => {
+                  setHotelDest(name);
+                  setHotelDestCode(code);
+                }}
+                iconName="location.fill"
+                onVoicePress={() => openVoiceSearch("hotelDest")}
+              />
 
               <View style={styles.rowFields}>
                 <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
