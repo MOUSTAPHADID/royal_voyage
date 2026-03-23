@@ -160,12 +160,19 @@ export default function PaymentScreen() {
     setIsProcessing(true);
     await new Promise((r) => setTimeout(r, 1000));
 
+    // Generate unique PNR (6 uppercase alphanumeric chars, airline industry standard)
+    const PNR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const pnr = Array.from({ length: 6 }, () =>
+      PNR_CHARS[Math.floor(Math.random() * PNR_CHARS.length)]
+    ).join("");
+
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
       status: "confirmed",
       reference: ref,
+      pnr,
       date: new Date().toISOString().split("T")[0],
       ...(isFlight && flight ? { flight, passengers: adultCount } : {}),
       ...(hotel
@@ -255,6 +262,7 @@ export default function PaymentScreen() {
       pathname: "/booking/confirmation" as any,
       params: {
         reference: ref,
+        pnr,
         total: total.toString(),
         type: params.type,
         currency: "USD",

@@ -86,6 +86,7 @@ export default function ConfirmationScreen() {
     roomType?: string;
     stars?: string;
     currency?: string;
+    pnr?: string;
   }>();
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -386,8 +387,21 @@ export default function ConfirmationScreen() {
 
         {/* Reference Card */}
         <View style={[styles.refCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+
+          {/* PNR - Most prominent */}
+          {params.pnr && (
+            <>
+              <View style={[styles.pnrBox, { backgroundColor: colors.primary + "12", borderColor: colors.primary }]}>
+                <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم الحجز PNR</Text>
+                <Text style={[styles.pnrValue, { color: colors.primary }]}>{params.pnr}</Text>
+                <Text style={[styles.pnrHint, { color: colors.muted }]}>احتفظ بهذا الرقم للمراجعة في المطار</Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            </>
+          )}
+
           <View style={styles.refRow}>
-            <Text style={[styles.refLabel, { color: colors.muted }]}>Booking Reference</Text>
+            <Text style={[styles.refLabel, { color: colors.muted }]}>رقم المرجع</Text>
             <View style={[styles.refBadge, { backgroundColor: colors.primary }]}>
               <Text style={styles.refBadgeText}>{params.reference}</Text>
             </View>
@@ -396,23 +410,23 @@ export default function ConfirmationScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.refRow}>
-            <Text style={[styles.refLabel, { color: colors.muted }]}>Total Paid</Text>
+            <Text style={[styles.refLabel, { color: colors.muted }]}>المبلغ المدفوع</Text>
             <Text style={[styles.refValue, { color: colors.primary }]}>{formattedTotal}</Text>
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.refRow}>
-            <Text style={[styles.refLabel, { color: colors.muted }]}>Status</Text>
+            <Text style={[styles.refLabel, { color: colors.muted }]}>الحالة</Text>
             <View style={[styles.statusBadge, { backgroundColor: colors.success + "15" }]}>
-              <Text style={[styles.statusText, { color: colors.success }]}>✓ Confirmed</Text>
+              <Text style={[styles.statusText, { color: colors.success }]}>✓ مؤكد</Text>
             </View>
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.refRow}>
-            <Text style={[styles.refLabel, { color: colors.muted }]}>Issue Date</Text>
+            <Text style={[styles.refLabel, { color: colors.muted }]}>تاريخ الإصدار</Text>
             <Text style={[styles.refLabel, { color: colors.foreground }]}>{today}</Text>
           </View>
         </View>
@@ -653,4 +667,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   secondaryBtnText: { fontSize: 16, fontWeight: "600" },
+  pnrBox: {
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 4,
+  },
+  pnrLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 },
+  pnrValue: { fontSize: 36, fontWeight: "800", letterSpacing: 6, fontFamily: "monospace" },
+  pnrHint: { fontSize: 11, marginTop: 6, textAlign: "center" },
 });

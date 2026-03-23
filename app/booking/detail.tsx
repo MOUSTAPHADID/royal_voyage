@@ -202,9 +202,19 @@ export default function BookingDetailScreen() {
         {/* Booking Info */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Booking Information</Text>
+
+          {/* PNR Box */}
+          {booking.pnr && (
+            <View style={[styles.pnrBox, { backgroundColor: colors.primary + "10", borderColor: colors.primary }]}>
+              <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم الحجز PNR</Text>
+              <Text style={[styles.pnrValue, { color: colors.primary }]}>{booking.pnr}</Text>
+              <Text style={[styles.pnrHint, { color: colors.muted }]}>احتفظ بهذا الرقم للمراجعة في المطار</Text>
+            </View>
+          )}
+
           {[
-            { label: "Booking Date", value: booking.date },
-            { label: "Reference", value: booking.reference },
+            { label: "تاريخ الحجز", value: booking.date },
+            { label: "رقم المرجع", value: booking.reference },
             ...(booking.type === "flight" ? [
               { label: "Class", value: booking.flight?.class ?? "Economy" },
               { label: "Passengers", value: `${booking.passengers ?? 1}` },
@@ -497,4 +507,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  pnrBox: {
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    marginBottom: 12,
+  },
+  pnrLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 },
+  pnrValue: { fontSize: 34, fontWeight: "800", letterSpacing: 6, fontFamily: "monospace" },
+  pnrHint: { fontSize: 11, marginTop: 6, textAlign: "center" },
 });

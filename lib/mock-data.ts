@@ -49,6 +49,7 @@ export type Booking = {
   type: "flight" | "hotel";
   status: "confirmed" | "pending" | "cancelled";
   reference: string;
+  pnr?: string;  // Passenger Name Record - 6 char alphanumeric code
   date: string;
   // Flight specific
   flight?: Flight;
