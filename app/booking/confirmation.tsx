@@ -16,36 +16,21 @@ import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
 import { formatAmadeusPriceMRU } from "@/lib/currency";
-import * as Notifications from "expo-notifications";
 import { trpc } from "@/lib/trpc";
 
-// Configure notification handler
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
-
+// Booking notification using Alert (compatible with Expo Go SDK 54+)
+// expo-notifications remote push was removed from Expo Go in SDK 53
 async function scheduleBookingNotification(type: string, reference: string) {
+  // Show a local in-app alert as confirmation notification
+  // (Remote push notifications require a development build)
   try {
-    const { status } = await Notifications.requestPermissionsAsync();
-    if (status !== "granted") return;
-
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: type === "flight" ? "✈️ Flight Booking Confirmed!" : "🏨 Hotel Booking Confirmed!",
-        body: `Your booking is confirmed. Reference: ${reference}. Check your tickets in My Bookings.`,
-        data: { reference, type },
-        sound: true,
-      },
-      trigger: null, // immediate
-    });
+    Alert.alert(
+      type === "flight" ? "✈️ حجز الرحلة مؤكد!" : "🏨 حجز الفندق مؤكد!",
+      `تم تأكيد حجزك. رقم المرجع: ${reference}`,
+      [{ text: "حسناً", style: "default" }]
+    );
   } catch (e) {
-    // Notifications not available on web
+    // ignore
   }
 }
 

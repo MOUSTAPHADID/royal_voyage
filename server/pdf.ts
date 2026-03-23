@@ -7,7 +7,12 @@ import PDFDocument from "pdfkit";
 import QRCode from "qrcode";
 import * as fs from "fs";
 import * as path from "path";
+import { fileURLToPath } from "url";
 import type { FlightTicketData, HotelConfirmationData } from "./email";
+
+// ES module compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ── Brand Colors ──────────────────────────────────────────────────────────────
 const NAVY    = "#1B2B5E";
