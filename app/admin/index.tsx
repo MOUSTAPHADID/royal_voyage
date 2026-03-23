@@ -18,7 +18,7 @@ import { useTranslation } from "@/lib/i18n";
 import { Booking } from "@/lib/mock-data";
 import { formatMRU, toMRU } from "@/lib/currency";
 
-const ADMIN_PIN = "1234";
+const ADMIN_PIN = "36380112";
 
 // Derive unique clients from bookings
 type ClientRecord = {
