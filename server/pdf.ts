@@ -138,9 +138,6 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")
         .text("+222 33 70 00 00  ·  royal-voyage@gmail.com", M, 62, { width: 300 });
 
-      // "BOARDING PASS" label top-right
-      doc.fontSize(11).fillColor(NAVY).font("Helvetica-Bold")
-        .text("BOARDING PASS", W - 155, 36, { width: 120, align: "center" });
 
       let y = 106;
 
