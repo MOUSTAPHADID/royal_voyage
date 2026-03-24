@@ -7,9 +7,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "royal_voyage_pricing_settings";
 
+// رموز المطارات الموريتانية للكشف عن الرحلات الداخلية
+const MAURITANIAN_AIRPORTS = ["NKC", "NDB", "ATR", "KFA", "MOM", "OUZ", "SEY", "THI", "TMD", "ZLG", "AEO", "EMN", "LEG", "MBR", "OGJ"];
+
 export interface PricingSettings {
-  /** رسوم الوكالة بالأوقية المضافة على كل حجز */
+  /** رسوم الوكالة للرحلات الدولية بالأوقية */
   agencyFeeMRU: number;
+  /** رسوم الوكالة للرحلات الداخلية بالأوقية */
+  agencyFeeDomesticMRU: number;
   /** سعر صرف الدولار إلى الأوقية */
   usdToMRU: number;
   /** سعر صرف اليورو إلى الأوقية */
@@ -22,16 +27,20 @@ export interface PricingSettings {
   aedToMRU: number;
   /** خصم سعر الطفل (0.75 = 25% خصم) */
   childDiscountRate: number;
+  /** تاريخ آخر تحديث لأسعار الصرف */
+  ratesLastUpdated?: string;
 }
 
 export const DEFAULT_PRICING: PricingSettings = {
   agencyFeeMRU: 1000,
+  agencyFeeDomesticMRU: 500,
   usdToMRU: 39.5,
   eurToMRU: 43.0,
   gbpToMRU: 50.2,
   sarToMRU: 10.5,
   aedToMRU: 10.75,
   childDiscountRate: 0.75,
+  ratesLastUpdated: undefined,
 };
 
 let _cached: PricingSettings | null = null;
@@ -70,6 +79,23 @@ export function subscribePricingSettings(fn: (s: PricingSettings) => void): () =
   };
 }
 
+/** تحديد إذا كانت الرحلة داخلية (كلا المطارين موريتانيان) */
+export function isDomesticFlight(originCode: string, destinationCode: string): boolean {
+  return (
+    MAURITANIAN_AIRPORTS.includes(originCode?.toUpperCase()) &&
+    MAURITANIAN_AIRPORTS.includes(destinationCode?.toUpperCase())
+  );
+}
+
+/** الحصول على رسوم الوكالة المناسبة حسب نوع الرحلة */
+export function getAgencyFee(originCode?: string, destinationCode?: string): number {
+  const s = getPricingSettings();
+  if (originCode && destinationCode && isDomesticFlight(originCode, destinationCode)) {
+    return s.agencyFeeDomesticMRU;
+  }
+  return s.agencyFeeMRU;
+}
+
 /** تحويل مبلغ من عملة معينة إلى الأوقية باستخدام الإعدادات الحالية */
 export function toMRUWithSettings(amount: number, fromCurrency: string = "USD"): number {
   const s = getPricingSettings();
@@ -82,5 +108,30 @@ export function toMRUWithSettings(amount: number, fromCurrency: string = "USD"):
     case "SAR": return Math.round(amount * s.sarToMRU);
     case "AED": return Math.round(amount * s.aedToMRU);
     default: return Math.round(amount * s.usdToMRU);
+  }
+}
+
+/** جلب أسعار الصرف الحية من API مجانية */
+export async function fetchLiveExchangeRates(): Promise<Partial<PricingSettings> | null> {
+  try {
+    // نستخدم exchangerate-api.com (مجاني بدون مفتاح لـ MRO/MRU)
+    const res = await fetch("https://open.er-api.com/v6/latest/USD");
+    if (!res.ok) throw new Error("API error");
+    const data = await res.json();
+    const rates = data.rates as Record<string, number>;
+    
+    // MRU = الأوقية الجديدة (1 USD = X MRU)
+    const usdToMRU = rates["MRU"] ?? 39.5;
+    
+    return {
+      usdToMRU: parseFloat(usdToMRU.toFixed(2)),
+      eurToMRU: parseFloat((usdToMRU / (rates["EUR"] ?? 0.92)).toFixed(2)),
+      gbpToMRU: parseFloat((usdToMRU / (rates["GBP"] ?? 0.79)).toFixed(2)),
+      sarToMRU: parseFloat((usdToMRU / (rates["SAR"] ?? 3.75)).toFixed(2)),
+      aedToMRU: parseFloat((usdToMRU / (rates["AED"] ?? 3.67)).toFixed(2)),
+      ratesLastUpdated: new Date().toISOString(),
+    };
+  } catch {
+    return null;
   }
 }

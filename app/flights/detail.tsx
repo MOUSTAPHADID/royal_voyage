@@ -12,7 +12,7 @@ import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatPriceMRU, formatMRU } from "@/lib/currency";
-import { toMRUWithSettings } from "@/lib/pricing-settings";
+import { toMRUWithSettings, getAgencyFee } from "@/lib/pricing-settings";
 import { usePricingSettings as _usePricingSettings } from "@/hooks/use-pricing-settings";
 
 export default function FlightDetailScreen() {
@@ -74,8 +74,9 @@ export default function FlightDetailScreen() {
   const totalPrice = isRoundTrip
     ? (adultPrice * adultCount + childPrice * childCount) * 2
     : adultPrice * adultCount + childPrice * childCount;
-  // الإجمالي بالأوقية مع رسوم الوكالة (مخفية)
-  const totalMRU = toMRUWithSettings(totalPrice, currency) + pricing.agencyFeeMRU;
+  // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
+  const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
+  const totalMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },

@@ -17,6 +17,7 @@ import { useApp } from "@/lib/app-context";
 import { useTranslation } from "@/lib/i18n";
 import { Booking } from "@/lib/mock-data";
 import { formatMRU, toMRU } from "@/lib/currency";
+import { getPricingSettings } from "@/lib/pricing-settings";
 
 const ADMIN_PIN = "36380112";
 
@@ -50,7 +51,7 @@ export default function AdminScreen() {
   const { bookings, user } = useApp();
   const { t } = useTranslation();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "bookings" | "clients">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "bookings" | "clients" | "profits">("overview");
 
   // Redirect non-admin users
   useEffect(() => {
@@ -84,6 +85,40 @@ export default function AdminScreen() {
   }, [bookings]);
 
   const clients = useMemo(() => deriveClients(bookings), [bookings]);
+
+  // حساب الأرباح الشهرية من رسوم الوكالة
+  const profitStats = useMemo(() => {
+    const pricing = getPricingSettings();
+    const confirmed = bookings.filter((b) => b.status === "confirmed");
+    
+    // تجميع الأرباح حسب الشهر
+    const monthlyMap: Record<string, { month: string; count: number; profit: number }> = {};
+    confirmed.forEach((b) => {
+      // استخراج الشهر من التاريخ (YYYY-MM)
+      const monthKey = (b.date || "").substring(0, 7);
+      if (!monthKey) return;
+      if (!monthlyMap[monthKey]) {
+        const [year, month] = monthKey.split("-");
+        const monthNames = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+        monthlyMap[monthKey] = { month: `${monthNames[parseInt(month) - 1]} ${year}`, count: 0, profit: 0 };
+      }
+      // رسوم الوكالة لكل حجز
+      const fee = b.type === "flight" ? pricing.agencyFeeMRU : pricing.agencyFeeMRU;
+      monthlyMap[monthKey].count += 1;
+      monthlyMap[monthKey].profit += fee;
+    });
+
+    const months = Object.entries(monthlyMap)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 6)
+      .map(([, v]) => v);
+
+    const totalProfit = confirmed.length * pricing.agencyFeeMRU;
+    const avgMonthlyProfit = months.length > 0 ? months.reduce((s, m) => s + m.profit, 0) / months.length : 0;
+    const maxProfit = months.length > 0 ? Math.max(...months.map((m) => m.profit)) : 1;
+
+    return { months, totalProfit, avgMonthlyProfit, maxProfit, confirmedCount: confirmed.length };
+  }, [bookings]);
 
   const s = StyleSheet.create({
     header: {
@@ -385,12 +420,13 @@ export default function AdminScreen() {
 
       {/* Tabs */}
       <View style={s.tabRow}>
-        {(["overview", "bookings", "clients"] as const).map((tab) => {
+        {(["overview", "bookings", "clients", "profits"] as const).map((tab) => {
           const active = activeTab === tab;
           const label =
             tab === "overview" ? t.admin.overview :
             tab === "bookings" ? t.admin.bookings :
-            t.admin.clients;
+            tab === "clients" ? t.admin.clients :
+            "الأرباح";
           return (
             <Pressable
               key={tab}
@@ -586,6 +622,79 @@ export default function AdminScreen() {
                 </View>
               ))
             )}
+          </View>
+        )}
+
+        {/* PROFITS TAB */}
+        {activeTab === "profits" && (
+          <View style={s.section}>
+            {/* بطاقات الملخص */}
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 16 }}>
+              <View style={[s.statCard, { flex: 1, backgroundColor: "#1B2B5E" }]}>
+                <Text style={[s.statLabel, { color: "rgba(255,255,255,0.7)" }]}>إجمالي الأرباح</Text>
+                <Text style={[s.statValue, { color: "#FFFFFF" }]}>{formatMRU(profitStats.totalProfit)}</Text>
+              </View>
+              <View style={[s.statCard, { flex: 1 }]}>
+                <Text style={s.statLabel}>متوسط شهري</Text>
+                <Text style={s.statValue}>{formatMRU(Math.round(profitStats.avgMonthlyProfit))}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", gap: 10, marginBottom: 20 }}>
+              <View style={[s.statCard, { flex: 1 }]}>
+                <Text style={s.statLabel}>حجوزات مؤكدة</Text>
+                <Text style={s.statValue}>{profitStats.confirmedCount}</Text>
+              </View>
+              <View style={[s.statCard, { flex: 1 }]}>
+                <Text style={s.statLabel}>رسوم لكل حجز</Text>
+                <Text style={s.statValue}>{formatMRU(getPricingSettings().agencyFeeMRU)}</Text>
+              </View>
+            </View>
+
+            {/* مخطط الأرباح الشهرية */}
+            <Text style={s.sectionTitle}>الأرباح الشهرية (6 أشهر)</Text>
+            {profitStats.months.length === 0 ? (
+              <Text style={{ color: colors.muted, textAlign: "center", marginTop: 32, marginBottom: 32 }}>
+                لا توجد حجوزات مؤكدة بعد
+              </Text>
+            ) : (
+              profitStats.months.map((m, i) => {
+                const barWidth = profitStats.maxProfit > 0 ? (m.profit / profitStats.maxProfit) * 100 : 0;
+                return (
+                  <View key={i} style={[s.bookingCard, { marginBottom: 10 }]}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
+                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>{m.month}</Text>
+                      <View style={{ alignItems: "flex-end" }}>
+                        <Text style={{ color: "#1B2B5E", fontWeight: "700", fontSize: 15 }}>{formatMRU(m.profit)}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 11 }}>{m.count} حجز</Text>
+                      </View>
+                    </View>
+                    {/* شريط التقدم */}
+                    <View style={{ height: 8, backgroundColor: colors.border, borderRadius: 4 }}>
+                      <View style={{ height: 8, width: `${barWidth}%`, backgroundColor: "#1B2B5E", borderRadius: 4 }} />
+                    </View>
+                  </View>
+                );
+              })
+            )}
+
+            {/* زر الانتقال لإدارة الأسعار */}
+            <Pressable
+              style={({ pressed }) => [{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                padding: 14,
+                borderRadius: 14,
+                backgroundColor: "#0a7ea4",
+                marginTop: 16,
+                opacity: pressed ? 0.85 : 1,
+              }]}
+              onPress={() => router.push("/admin/pricing" as any)}
+            >
+              <IconSymbol name="slider.horizontal.3" size={18} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15 }}>تعديل رسوم الوكالة</Text>
+            </Pressable>
           </View>
         )}
 

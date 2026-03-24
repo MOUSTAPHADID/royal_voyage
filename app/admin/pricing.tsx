@@ -9,6 +9,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -19,6 +20,7 @@ import {
   DEFAULT_PRICING,
   loadPricingSettings,
   savePricingSettings,
+  fetchLiveExchangeRates,
 } from "@/lib/pricing-settings";
 
 interface FieldConfig {
@@ -29,63 +31,83 @@ interface FieldConfig {
   min: number;
   max: number;
   step: number;
+  section?: string;
 }
 
 const FIELDS: FieldConfig[] = [
+  // --- رسوم الوكالة ---
   {
     key: "agencyFeeMRU",
-    label: "رسوم الوكالة",
+    label: "رسوم الوكالة — دولي",
     unit: "MRU",
-    description: "تُضاف على كل حجز (رحلة أو فندق) ولا تظهر للزبون",
+    description: "رسوم الرحلات الدولية (مخفية عن الزبون)",
     min: 0,
     max: 50000,
     step: 100,
+    section: "رسوم الوكالة",
   },
   {
+    key: "agencyFeeDomesticMRU",
+    label: "رسوم الوكالة — داخلي",
+    unit: "MRU",
+    description: "رسوم الرحلات الداخلية الموريتانية (مخفية عن الزبون)",
+    min: 0,
+    max: 50000,
+    step: 100,
+    section: "رسوم الوكالة",
+  },
+  // --- أسعار الصرف ---
+  {
     key: "usdToMRU",
-    label: "سعر الدولار (USD)",
+    label: "الدولار (USD)",
     unit: "MRU",
     description: "1 USD = ؟ MRU",
     min: 1,
     max: 200,
     step: 0.5,
+    section: "أسعار الصرف",
   },
   {
     key: "eurToMRU",
-    label: "سعر اليورو (EUR)",
+    label: "اليورو (EUR)",
     unit: "MRU",
     description: "1 EUR = ؟ MRU",
     min: 1,
     max: 200,
     step: 0.5,
+    section: "أسعار الصرف",
   },
   {
     key: "gbpToMRU",
-    label: "سعر الجنيه (GBP)",
+    label: "الجنيه (GBP)",
     unit: "MRU",
     description: "1 GBP = ؟ MRU",
     min: 1,
     max: 200,
     step: 0.5,
+    section: "أسعار الصرف",
   },
   {
     key: "sarToMRU",
-    label: "سعر الريال (SAR)",
+    label: "الريال (SAR)",
     unit: "MRU",
     description: "1 SAR = ؟ MRU",
     min: 1,
     max: 100,
     step: 0.1,
+    section: "أسعار الصرف",
   },
   {
     key: "aedToMRU",
-    label: "سعر الدرهم (AED)",
+    label: "الدرهم (AED)",
     unit: "MRU",
     description: "1 AED = ؟ MRU",
     min: 1,
     max: 100,
     step: 0.1,
+    section: "أسعار الصرف",
   },
+  // --- أسعار الأطفال ---
   {
     key: "childDiscountRate",
     label: "معدل سعر الطفل",
@@ -94,8 +116,11 @@ const FIELDS: FieldConfig[] = [
     min: 0.1,
     max: 1.0,
     step: 0.05,
+    section: "أسعار الأطفال",
   },
 ];
+
+const SECTIONS = ["رسوم الوكالة", "أسعار الصرف", "أسعار الأطفال"];
 
 export default function PricingAdminScreen() {
   const router = useRouter();
@@ -104,13 +129,14 @@ export default function PricingAdminScreen() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [updatingRates, setUpdatingRates] = useState(false);
 
   useEffect(() => {
     loadPricingSettings().then((s) => {
       setSettings(s);
       const init: Record<string, string> = {};
       FIELDS.forEach((f) => {
-        init[f.key] = String(s[f.key]);
+        init[f.key] = String(s[f.key as keyof PricingSettings] ?? DEFAULT_PRICING[f.key as keyof PricingSettings]);
       });
       setValues(init);
       setLoading(false);
@@ -122,6 +148,39 @@ export default function PricingAdminScreen() {
     setSaved(false);
   };
 
+  const handleUpdateRates = async () => {
+    setUpdatingRates(true);
+    const liveRates = await fetchLiveExchangeRates();
+    setUpdatingRates(false);
+
+    if (!liveRates) {
+      Alert.alert("خطأ", "تعذّر تحديث أسعار الصرف. تحقق من الاتصال بالإنترنت.");
+      return;
+    }
+
+    // تحديث القيم المعروضة
+    const rateKeys: Array<keyof PricingSettings> = ["usdToMRU", "eurToMRU", "gbpToMRU", "sarToMRU", "aedToMRU"];
+    setValues((prev) => {
+      const updated = { ...prev };
+      rateKeys.forEach((k) => {
+        if (liveRates[k] !== undefined) {
+          updated[k] = String(liveRates[k]);
+        }
+      });
+      return updated;
+    });
+
+    // حفظ تلقائي
+    const updatedSettings: PricingSettings = { ...settings, ...liveRates };
+    await savePricingSettings(updatedSettings);
+    setSettings(updatedSettings);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+
+    const dateStr = new Date().toLocaleDateString("ar-SA", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    Alert.alert("✅ تم التحديث", `تم تحديث أسعار الصرف بنجاح\n${dateStr}`);
+  };
+
   const handleSave = async () => {
     const updated: PricingSettings = { ...settings };
     let hasError = false;
@@ -129,10 +188,7 @@ export default function PricingAdminScreen() {
     for (const field of FIELDS) {
       const num = parseFloat(values[field.key]);
       if (isNaN(num) || num < field.min || num > field.max) {
-        Alert.alert(
-          "قيمة غير صحيحة",
-          `${field.label}: يجب أن تكون بين ${field.min} و ${field.max}`
-        );
+        Alert.alert("قيمة غير صحيحة", `${field.label}: يجب أن تكون بين ${field.min} و ${field.max}`);
         hasError = true;
         break;
       }
@@ -161,7 +217,7 @@ export default function PricingAdminScreen() {
             setSettings({ ...DEFAULT_PRICING });
             const init: Record<string, string> = {};
             FIELDS.forEach((f) => {
-              init[f.key] = String(DEFAULT_PRICING[f.key]);
+              init[f.key] = String(DEFAULT_PRICING[f.key as keyof PricingSettings]);
             });
             setValues(init);
             setSaved(true);
@@ -176,16 +232,20 @@ export default function PricingAdminScreen() {
     return (
       <ScreenContainer>
         <View style={styles.loadingContainer}>
-          <Text style={[styles.loadingText, { color: colors.muted }]}>جاري التحميل...</Text>
+          <ActivityIndicator size="large" color="#1B2B5E" />
         </View>
       </ScreenContainer>
     );
   }
 
+  const lastUpdated = settings.ratesLastUpdated
+    ? new Date(settings.ratesLastUpdated).toLocaleDateString("ar-SA", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+    : "لم يتم التحديث بعد";
+
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
+      <View style={[styles.header, { backgroundColor: "#1B2B5E" }]}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color="#FFFFFF" />
         </Pressable>
@@ -195,10 +255,7 @@ export default function PricingAdminScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           showsVerticalScrollIndicator={false}
           style={{ backgroundColor: colors.background }}
@@ -212,57 +269,86 @@ export default function PricingAdminScreen() {
             </Text>
           </View>
 
-          {/* حقول الإعدادات */}
-          {FIELDS.map((field) => (
-            <View
-              key={field.key}
-              style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
-            >
-              <View style={styles.fieldHeader}>
-                <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{field.label}</Text>
-                <Text style={[styles.fieldUnit, { color: colors.primary }]}>{field.unit}</Text>
-              </View>
-              <Text style={[styles.fieldDesc, { color: colors.muted }]}>{field.description}</Text>
-
-              <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <Pressable
-                  style={[styles.stepBtn, { backgroundColor: colors.primary + "15" }]}
-                  onPress={() => {
-                    const cur = parseFloat(values[field.key]) || 0;
-                    const next = Math.max(field.min, parseFloat((cur - field.step).toFixed(4)));
-                    handleChange(field.key, String(next));
-                  }}
-                >
-                  <Text style={[styles.stepBtnText, { color: colors.primary }]}>−</Text>
-                </Pressable>
-
-                <TextInput
-                  style={[styles.input, { color: colors.foreground }]}
-                  value={values[field.key]}
-                  onChangeText={(t) => handleChange(field.key, t)}
-                  keyboardType="decimal-pad"
-                  returnKeyType="done"
-                  selectTextOnFocus
-                />
-
-                <Pressable
-                  style={[styles.stepBtn, { backgroundColor: colors.primary + "15" }]}
-                  onPress={() => {
-                    const cur = parseFloat(values[field.key]) || 0;
-                    const next = Math.min(field.max, parseFloat((cur + field.step).toFixed(4)));
-                    handleChange(field.key, String(next));
-                  }}
-                >
-                  <Text style={[styles.stepBtnText, { color: colors.primary }]}>+</Text>
-                </Pressable>
-              </View>
-
-              {/* القيمة الافتراضية */}
-              <Text style={[styles.defaultHint, { color: colors.muted }]}>
-                القيمة الافتراضية: {DEFAULT_PRICING[field.key]}
+          {/* زر تحديث أسعار الصرف */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.updateRatesBtn,
+              { backgroundColor: "#0a7ea4", opacity: pressed ? 0.85 : 1 },
+            ]}
+            onPress={handleUpdateRates}
+            disabled={updatingRates}
+          >
+            {updatingRates ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <IconSymbol name="arrow.clockwise" size={18} color="#FFFFFF" />
+            )}
+            <View style={{ flex: 1 }}>
+              <Text style={styles.updateRatesBtnText}>
+                {updatingRates ? "جاري التحديث..." : "تحديث أسعار الصرف تلقائياً"}
               </Text>
+              <Text style={styles.updateRatesSubText}>آخر تحديث: {lastUpdated}</Text>
             </View>
-          ))}
+          </Pressable>
+
+          {/* الأقسام */}
+          {SECTIONS.map((section) => {
+            const sectionFields = FIELDS.filter((f) => f.section === section);
+            return (
+              <View key={section}>
+                <Text style={[styles.sectionHeader, { color: colors.muted }]}>{section}</Text>
+                {sectionFields.map((field) => (
+                  <View
+                    key={field.key}
+                    style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                  >
+                    <View style={styles.fieldHeader}>
+                      <Text style={[styles.fieldLabel, { color: colors.foreground }]}>{field.label}</Text>
+                      <Text style={[styles.fieldUnit, { color: colors.primary }]}>{field.unit}</Text>
+                    </View>
+                    <Text style={[styles.fieldDesc, { color: colors.muted }]}>{field.description}</Text>
+
+                    <View style={[styles.inputRow, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                      <Pressable
+                        style={[styles.stepBtn, { backgroundColor: colors.primary + "15" }]}
+                        onPress={() => {
+                          const cur = parseFloat(values[field.key]) || 0;
+                          const next = Math.max(field.min, parseFloat((cur - field.step).toFixed(4)));
+                          handleChange(field.key, String(next));
+                        }}
+                      >
+                        <Text style={[styles.stepBtnText, { color: colors.primary }]}>−</Text>
+                      </Pressable>
+
+                      <TextInput
+                        style={[styles.input, { color: colors.foreground }]}
+                        value={values[field.key]}
+                        onChangeText={(t) => handleChange(field.key, t)}
+                        keyboardType="decimal-pad"
+                        returnKeyType="done"
+                        selectTextOnFocus
+                      />
+
+                      <Pressable
+                        style={[styles.stepBtn, { backgroundColor: colors.primary + "15" }]}
+                        onPress={() => {
+                          const cur = parseFloat(values[field.key]) || 0;
+                          const next = Math.min(field.max, parseFloat((cur + field.step).toFixed(4)));
+                          handleChange(field.key, String(next));
+                        }}
+                      >
+                        <Text style={[styles.stepBtnText, { color: colors.primary }]}>+</Text>
+                      </Pressable>
+                    </View>
+
+                    <Text style={[styles.defaultHint, { color: colors.muted }]}>
+                      الافتراضي: {DEFAULT_PRICING[field.key as keyof PricingSettings]}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })}
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -271,7 +357,7 @@ export default function PricingAdminScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.saveBtn,
-            { backgroundColor: saved ? colors.success : colors.primary, opacity: pressed ? 0.85 : 1 },
+            { backgroundColor: saved ? colors.success : "#1B2B5E", opacity: pressed ? 0.85 : 1 },
           ]}
           onPress={handleSave}
         >
@@ -309,12 +395,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  loadingText: { fontSize: 16 },
   alertBox: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     margin: 16,
+    marginBottom: 8,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
@@ -324,9 +410,37 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  updateRatesBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 14,
+    borderRadius: 14,
+  },
+  updateRatesBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  updateRatesSubText: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 11,
+    marginTop: 2,
+  },
+  sectionHeader: {
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 8,
+  },
   card: {
     marginHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     borderRadius: 16,
     borderWidth: 1,
     padding: 16,
@@ -338,7 +452,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   fieldLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
   },
   fieldUnit: {
