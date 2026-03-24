@@ -424,3 +424,115 @@ export async function sendHotelConfirmation(data: HotelConfirmationData): Promis
     return false;
   }
 }
+
+// ─── Payment Confirmation Email ───────────────────────────────────────────────
+
+export type PaymentConfirmationData = {
+  passengerName: string;
+  passengerEmail: string;
+  bookingRef: string;
+  pnr?: string;
+  bookingType: "flight" | "hotel";
+  // Flight fields
+  origin?: string;
+  destination?: string;
+  airline?: string;
+  flightNumber?: string;
+  departureDate?: string;
+  departureTime?: string;
+  // Hotel fields
+  hotelName?: string;
+  checkIn?: string;
+  checkOut?: string;
+  // Common
+  totalAmount?: string;
+  paymentMethod?: string;
+  confirmedAt?: string;
+};
+
+function paymentConfirmationHtml(data: PaymentConfirmationData): string {
+  const isHotel = data.bookingType === "hotel";
+  const content = `
+    <p style="font-size:16px; margin-bottom:24px;">
+      Dear <strong>${data.passengerName}</strong>,<br/>
+      Great news! Your payment has been <span class="badge" style="background:#22C55E;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">CONFIRMED ✅</span> by Royal Voyage.
+    </p>
+
+    <div class="ref-box">
+      <div class="ref-label">Booking Reference</div>
+      <div class="ref-code">${data.bookingRef}</div>
+      ${data.confirmedAt ? `<div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:6px;">Confirmed on ${data.confirmedAt}</div>` : ""}
+    </div>
+
+    ${data.pnr ? `
+    <div style="background:#C9A84C;border-radius:12px;padding:20px 24px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:rgba(0,0,0,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:700;">PNR — Airline Record Locator</div>
+      <div style="font-size:38px;font-weight:900;color:#1B2B5E;letter-spacing:8px;margin-top:8px;font-family:monospace;">${data.pnr}</div>
+      <div style="font-size:12px;color:rgba(0,0,0,0.6);margin-top:6px;">Present this code at the airport check-in counter</div>
+    </div>` : ""}
+
+    <div class="card">
+      <div class="section-title">${isHotel ? "🏨 Hotel Details" : "✈ Flight Details"}</div>
+      ${isHotel ? `
+        <div class="info-grid">
+          <div class="info-item"><label>Hotel</label><span>${data.hotelName ?? "—"}</span></div>
+          <div class="info-item"><label>Check-In</label><span>${data.checkIn ?? "—"}</span></div>
+          <div class="info-item"><label>Check-Out</label><span>${data.checkOut ?? "—"}</span></div>
+          ${data.totalAmount ? `<div class="info-item"><label>Total Paid</label><span style="color:#22C55E;font-weight:800;">${data.totalAmount}</span></div>` : ""}
+        </div>
+      ` : `
+        <div class="flight-route">
+          <div><div class="airport-code">${data.origin ?? "—"}</div></div>
+          <div class="flight-arrow">→</div>
+          <div style="text-align:right"><div class="airport-code">${data.destination ?? "—"}</div></div>
+        </div>
+        <div class="info-grid">
+          ${data.airline ? `<div class="info-item"><label>Airline</label><span>${data.airline} ${data.flightNumber ?? ""}</span></div>` : ""}
+          ${data.departureDate ? `<div class="info-item"><label>Date</label><span>${data.departureDate}</span></div>` : ""}
+          ${data.departureTime ? `<div class="info-item"><label>Departure</label><span>${data.departureTime}</span></div>` : ""}
+          ${data.totalAmount ? `<div class="info-item"><label>Total Paid</label><span style="color:#22C55E;font-weight:800;">${data.totalAmount}</span></div>` : ""}
+        </div>
+      `}
+    </div>
+
+    ${data.paymentMethod ? `
+    <div class="card" style="background:#f0fdf4;border-color:#bbf7d0;">
+      <div class="section-title" style="color:#22C55E;">💳 Payment Details</div>
+      <div class="info-grid">
+        <div class="info-item"><label>Method</label><span>${data.paymentMethod}</span></div>
+        <div class="info-item"><label>Status</label><span style="color:#22C55E;font-weight:700;">✅ Confirmed</span></div>
+      </div>
+    </div>` : ""}
+
+    <div class="notice">
+      ✅ Your booking is now fully confirmed. Thank you for choosing Royal Voyage!<br/>
+      For assistance: ${COMPANY.phone} | ${COMPANY.email} | ${COMPANY.address}
+    </div>
+  `;
+  return baseLayout(content, `Payment Confirmed — ${data.bookingRef}`);
+}
+
+export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = paymentConfirmationHtml(data);
+
+  if (!transporter) {
+    console.log(`[Email] Would send payment confirmation to: ${data.passengerEmail}`);
+    console.log(`[Email] Booking: ${data.bookingRef} | Type: ${data.bookingType}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.passengerEmail,
+      subject: `✅ Payment Confirmed — ${data.bookingRef} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ Payment confirmation sent to ${data.passengerEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send payment confirmation:", error);
+    return false;
+  }
+}

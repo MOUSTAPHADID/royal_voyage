@@ -69,6 +69,7 @@ export type Booking = {
   passengerName?: string;
   guestName?: string;
   passengerEmail?: string;
+  paymentMethod?: string; // cash | bank_transfer | bankily | masrvi | sedad
   // Expo Push Token for customer notifications
   customerPushToken?: string;
 };

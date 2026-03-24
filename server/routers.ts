@@ -8,7 +8,7 @@ import {
   searchLocations,
   searchHotelsByCity,
 } from "./amadeus";
-import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail } from "./email";
+import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
 
@@ -214,6 +214,60 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const success = await sendPnrUpdateEmail(input);
         return { success };
+      }),
+
+    // Payment confirmation email
+    confirmPayment: publicProcedure
+      .input(
+        z.object({
+          passengerName: z.string(),
+          passengerEmail: z.string().email(),
+          bookingRef: z.string(),
+          pnr: z.string().optional(),
+          bookingType: z.enum(["flight", "hotel"]),
+          origin: z.string().optional(),
+          destination: z.string().optional(),
+          airline: z.string().optional(),
+          flightNumber: z.string().optional(),
+          departureDate: z.string().optional(),
+          departureTime: z.string().optional(),
+          hotelName: z.string().optional(),
+          checkIn: z.string().optional(),
+          checkOut: z.string().optional(),
+          totalAmount: z.string().optional(),
+          paymentMethod: z.string().optional(),
+          confirmedAt: z.string().optional(),
+          // Push notification
+          expoPushToken: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { expoPushToken, ...emailData } = input;
+        // Send email
+        const emailSent = await sendPaymentConfirmationEmail(emailData);
+        // Send push notification if token available
+        let pushSent = false;
+        if (expoPushToken) {
+          try {
+            const response = await fetch("https://exp.host/--/api/v2/push/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({
+                to: expoPushToken,
+                sound: "default",
+                title: "\u2705 \u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u062f\u0641\u0639\u0643",
+                body: `\u062d\u062c\u0632\u0643 ${input.bookingRef} \u062a\u0645 \u062a\u0623\u0643\u064a\u062f\u0647 \u0628\u0646\u062c\u0627\u062d. \u0634\u0643\u0631\u0627\u064b \u0644\u0627\u062e\u062a\u064a\u0627\u0631\u0643 Royal Voyage!`,
+                data: { bookingRef: input.bookingRef, type: "payment_confirmed" },
+              }),
+            });
+            const result = await response.json();
+            pushSent = result?.data?.[0]?.status === "ok";
+            console.log("[Push] Payment confirmation push result:", JSON.stringify(result));
+          } catch (err: any) {
+            console.warn("[Push] Failed to send payment confirmation push:", err?.message);
+          }
+        }
+        return { emailSent, pushSent };
       }),
 
     // Push notification via Expo Push API

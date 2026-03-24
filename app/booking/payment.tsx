@@ -266,6 +266,7 @@ export default function PaymentScreen() {
         : {}),
       totalPrice: total,
       currency: "MRU",
+      paymentMethod,
     };
 
     await addBooking(booking);

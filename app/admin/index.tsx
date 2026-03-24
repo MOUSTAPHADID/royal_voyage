@@ -569,6 +569,34 @@ export default function AdminScreen() {
               <IconSymbol name="chevron.right" size={18} color={colors.muted} />
             </Pressable>
 
+            {/* بطاقة تأكيد الدفع */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/confirm-payment" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#22C55E", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="checkmark.seal.fill" size={22} color="#FFFFFF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>تأكيد الدفع</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>تأكيد دفع الحجوزات وإرسال تأكيد للزبون</Text>
+                </View>
+                {(() => {
+                  const pendingCount = bookings.filter((b) => b.status !== "cancelled" && b.status !== "confirmed").length;
+                  const cashPending = bookings.filter((b) => b.status === "confirmed" && b.paymentDeadline && new Date(b.paymentDeadline).getTime() > Date.now()).length;
+                  const total = pendingCount + cashPending;
+                  if (total === 0) return null;
+                  return (
+                    <View style={{ backgroundColor: "#EF4444", borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, marginRight: 8 }}>
+                      <Text style={{ color: "#fff", fontSize: 12, fontWeight: "700" }}>{total}</Text>
+                    </View>
+                  );
+                })()}
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* Distribution Bar Chart */}
             <Text style={s.sectionTitle}>{t.admin.revenue}</Text>
             <View style={s.barChart}>
