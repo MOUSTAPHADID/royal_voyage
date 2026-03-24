@@ -1,34 +1,44 @@
 /**
  * Royal Voyage — Push Notifications Helper
  * Registers Expo Push Token for customer notifications.
- * Token is stored in AsyncStorage and sent to admin panel for PNR updates.
+ *
+ * NOTE: expo-notifications remote push was removed from Expo Go in SDK 53.
+ * All functions silently no-op in Expo Go to avoid console errors.
+ * They work correctly in development builds (APK).
  */
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
 
-// Configure notification handler for foreground notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+async function getNotifications() {
+  if (Platform.OS === "web") return null;
+  try {
+    const Notifications = await import("expo-notifications");
+    // Set handler only once
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
+    return Notifications;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Register for push notifications and return the Expo Push Token.
- * Returns null if permissions are denied or on web.
+ * Returns null if permissions are denied, on web, or in Expo Go.
  */
 export async function registerForPushNotifications(): Promise<string | null> {
-  // Push notifications are not supported on web
-  if (Platform.OS === "web") {
-    return null;
-  }
+  if (Platform.OS === "web") return null;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return null;
 
   try {
-    // Request permissions
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
 
@@ -38,38 +48,36 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     if (finalStatus !== "granted") {
-      console.log("[Push] Permission not granted for push notifications");
       return null;
     }
 
-    // Get Expo Push Token
     const tokenData = await Notifications.getExpoPushTokenAsync({
-      projectId: "royal-voyage", // Will use default project ID from app config
+      projectId: "royal-voyage",
     });
 
-    const token = tokenData.data;
-    console.log("[Push] Expo Push Token registered:", token.substring(0, 30) + "...");
-    return token;
-  } catch (error: any) {
-    console.warn("[Push] Failed to register push token:", error?.message);
+    return tokenData.data;
+  } catch {
     return null;
   }
 }
 
 /**
  * Schedule a local notification 1 hour before the 24h cash payment deadline.
- * Reminds the customer to visit the office and pay.
  */
 export async function scheduleCashPaymentReminder(
   bookingRef: string,
   deadlineISO: string
 ): Promise<void> {
   if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
   try {
     const deadline = new Date(deadlineISO).getTime();
     const reminderTime = deadline - 60 * 60 * 1000; // 1 hour before deadline
     const now = Date.now();
-    if (reminderTime <= now) return; // already past
+    if (reminderTime <= now) return;
 
     const secondsUntilReminder = Math.floor((reminderTime - now) / 1000);
 
@@ -80,17 +88,19 @@ export async function scheduleCashPaymentReminder(
         sound: true,
         data: { bookingRef, type: "cash_payment_reminder" },
       },
-      trigger: { seconds: secondsUntilReminder, repeats: false } as any,
+      trigger: {
+        type: "timeInterval",
+        seconds: secondsUntilReminder,
+        repeats: false,
+      } as any,
     });
-    console.log(`[Push] Cash payment reminder scheduled in ${Math.round(secondsUntilReminder / 3600)}h for ${bookingRef}`);
-  } catch (error) {
-    console.warn("[Push] Failed to schedule cash payment reminder:", error);
+  } catch {
+    // Silently fail in Expo Go
   }
 }
 
 /**
- * Schedule a local notification (for same device only).
- * Used as fallback when push notification fails.
+ * Schedule an immediate local notification (same device only).
  */
 export async function scheduleLocalNotification(
   title: string,
@@ -98,6 +108,10 @@ export async function scheduleLocalNotification(
   data?: Record<string, string>
 ): Promise<void> {
   if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
   try {
     await Notifications.scheduleNotificationAsync({
       content: {
@@ -106,9 +120,9 @@ export async function scheduleLocalNotification(
         sound: true,
         data: data ?? {},
       },
-      trigger: null, // immediate
+      trigger: null,
     });
-  } catch (error) {
-    console.warn("[Push] Failed to schedule local notification:", error);
+  } catch {
+    // Silently fail in Expo Go
   }
 }

@@ -11,7 +11,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatPriceMRU, formatMRU } from "@/lib/currency";
+import { formatMRU } from "@/lib/currency";
 import { toMRUWithSettings, getAgencyFee } from "@/lib/pricing-settings";
 import { usePricingSettings as _usePricingSettings } from "@/hooks/use-pricing-settings";
 
@@ -77,6 +77,9 @@ export default function FlightDetailScreen() {
   // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
   const totalMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
+  // سعر البالغ للشخص الواحد شاملاً رسوم الوكالة (لعرض في البادج)
+  const totalPersons = adultCount + childCount * pricing.childDiscountRate;
+  const adultUnitMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -108,7 +111,7 @@ export default function FlightDetailScreen() {
               <Text style={[styles.flightNum, { color: colors.muted }]}>{flight.flightNumber} · {flight.class}</Text>
             </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.priceText}>{formatPriceMRU(flight.price, currency)}</Text>
+              <Text style={styles.priceText}>{formatMRU(adultUnitMRU)}</Text>
               <Text style={styles.priceLabel}>للشخص</Text>
             </View>
           </View>

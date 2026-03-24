@@ -386,3 +386,8 @@
 - [x] إصلاح booking/detail.tsx: استبدال $ بـ formatMRU
 - [x] إصلاح admin/index.tsx: إزالة toMRU من القيم المخزّنة بالأوقية
 - [x] إضافة priceCurrency في params لمنع إعادة التحويل في passenger-details.tsx
+
+## إصلاح أخطاء expo-notifications وعرض الأسعار
+- [x] إصلاح daily-profit-notification.ts: dynamic import لتجنب الخطأ في Expo Go
+- [x] إصلاح push-notifications.ts: dynamic import + إصلاح trigger format
+- [x] إصلاح عرض السعر في شاشة تفاصيل الرحلة: البادج يعرض السعر شاملاً رسوم الوكالة
