@@ -15,7 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatAmadeusPriceMRU } from "@/lib/currency";
+import { formatAmadeusPriceMRU, formatMRU } from "@/lib/currency";
 
 export default function PassengerDetailsScreen() {
   const router = useRouter();
@@ -27,6 +27,7 @@ export default function PassengerDetailsScreen() {
     roomId: string;
     price?: string;
     currency?: string;
+    priceCurrency?: string;
     airline?: string;
     flightNumber?: string;
     origin?: string;
@@ -99,6 +100,7 @@ export default function PassengerDetailsScreen() {
         dateOfBirth,
         price: params.price,
         currency: params.currency,
+        priceCurrency: params.priceCurrency,
         airline: params.airline,
         flightNumber: params.flightNumber,
         origin: params.origin,
@@ -127,7 +129,9 @@ export default function PassengerDetailsScreen() {
   };
 
   const displayPrice = params.price
-    ? formatAmadeusPriceMRU(params.price, params.currency ?? "EUR")
+    ? (params.priceCurrency === "MRU"
+        ? formatMRU(parseFloat(params.price))
+        : formatAmadeusPriceMRU(params.price, params.currency ?? "EUR"))
     : isFlight && flight
     ? formatAmadeusPriceMRU(flight.price.toString(), "USD")
     : hotel

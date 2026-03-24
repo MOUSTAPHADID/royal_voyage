@@ -15,7 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatMRU, toMRU } from "@/lib/currency";
+import { formatMRU } from "@/lib/currency";
 import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 
@@ -97,6 +97,7 @@ export default function PaymentScreen() {
     dateOfBirth?: string;
     price?: string;
     currency?: string;
+    priceCurrency?: string;
     airline?: string;
     flightNumber?: string;
     origin?: string;
@@ -129,16 +130,30 @@ export default function PaymentScreen() {
   const adultCount = parseInt(params.passengers ?? "1", 10);
   const childCount = parseInt(params.children ?? "0", 10);
 
+  // السعر المُمرَّر من flights/detail أو hotels/detail هو بالأوقية (MRU) دائماً
+  const passedPrice = parseFloat(params.price ?? "0");
+  const passedRoomPrice = parseFloat(params.roomPrice ?? "0");
+
+  // للفنادق: استخدم roomPrice إذا كان موجوداً، وإلا price
+  const totalMRUPassed = isFlight
+    ? passedPrice
+    : passedRoomPrice > 0 ? passedRoomPrice : passedPrice;
+
+  // إذا لم يُمرَّر سعر (mock data)، احسب من mock بالدولار وحوّل
   const unitPrice = isFlight ? (flight?.price ?? 0) : (hotel?.pricePerNight ?? 0);
   const adultUnitPrice = unitPrice;
   const childUnitPrice = Math.round(unitPrice * 0.75);
+  const mockTotalUSD = adultUnitPrice * adultCount + childUnitPrice * childCount;
 
-  const passedPrice = parseFloat(params.price ?? "0");
-  const basePrice = passedPrice > 0
-    ? passedPrice
-    : adultUnitPrice * adultCount + childUnitPrice * childCount;
-  // الضرائب مشمولة في سعر Amadeus - لا تُضاف منفصلة
-  const total = basePrice;
+  // total دائماً بالأوقية
+  const total = totalMRUPassed > 0
+    ? totalMRUPassed
+    : Math.round(mockTotalUSD * 39.5);
+
+  // وحدة سعر الشخص الواحد بالأوقية (للعرض فقط)
+  const totalPersons = adultCount + childCount * 0.75;
+  const adultUnitMRU = totalPersons > 0 ? Math.round(total / totalPersons) : total;
+  const childUnitMRU = Math.round(adultUnitMRU * 0.75);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [transferRef, setTransferRef] = useState("");
@@ -279,7 +294,7 @@ export default function PaymentScreen() {
     // إرسال التذكرة مباشرةً بعد تأكيد الدفع
     const passengerEmail = params.email ?? "";
     const passengerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim();
-    const totalMRU = formatMRU(toMRU(total, "USD"));
+    const totalMRU = formatMRU(total);
 
     if (passengerEmail) {
       setEmailStatus("sending");
@@ -353,7 +368,7 @@ export default function PaymentScreen() {
         pnr,
         total: total.toString(),
         type: params.type,
-        currency: "USD",
+        currency: "MRU",
         paymentMethod,
         emailSent: passengerEmail ? (emailStatus === "failed" ? "false" : "true") : "false",
         passengerName,
@@ -417,7 +432,7 @@ export default function PaymentScreen() {
           <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>بالغ × {adultCount}</Text>
             <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-              {formatMRU(toMRU(adultUnitPrice * adultCount, "USD"))}
+              {formatMRU(adultUnitMRU * adultCount)}
             </Text>
           </View>
 
@@ -426,11 +441,11 @@ export default function PaymentScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.summaryLabel, { color: colors.muted }]}>طفل × {childCount}</Text>
                 <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
-                  خصم 25% • {formatMRU(toMRU(childUnitPrice, "USD"))} / شخص
+                  خصم 25% • {formatMRU(childUnitMRU)} / شخص
                 </Text>
               </View>
               <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-                {formatMRU(toMRU(childUnitPrice * childCount, "USD"))}
+                {formatMRU(childUnitMRU * childCount)}
               </Text>
             </View>
           )}
@@ -440,7 +455,7 @@ export default function PaymentScreen() {
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatMRU(toMRU(total, "USD"))}
+              {formatMRU(total)}
             </Text>
           </View>
         </View>
@@ -521,7 +536,7 @@ export default function PaymentScreen() {
               { label: "اسم الحساب", value: BANK_INFO.accountName },
               { label: "رقم الحساب (IBAN)", value: BANK_INFO.accountNumber },
               { label: "رقم RIB", value: BANK_INFO.rib },
-              { label: "المبلغ", value: formatMRU(toMRU(total, "USD")) },
+              { label: "المبلغ", value: formatMRU(total) },
             ].map((item) => (
               <View key={item.label} style={[styles.bankRow, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.bankLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -550,7 +565,7 @@ export default function PaymentScreen() {
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "افتح تطبيق Bankily على هاتفك",
-                `أرسل المبلغ ${formatMRU(toMRU(total, "USD"))} إلى الرقم: ${WALLET_NUMBERS.bankily}`,
+                `أرسل المبلغ ${formatMRU(total)} إلى الرقم: ${WALLET_NUMBERS.bankily}`,
                 "في خانة الملاحظة اكتب رقم حجزك",
                 "أدخل رقم الإيصال أدناه لتأكيد الدفع",
               ].map((step, i) => (
@@ -584,7 +599,7 @@ export default function PaymentScreen() {
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "افتح تطبيق مصرفي على هاتفك",
-                `أرسل المبلغ ${formatMRU(toMRU(total, "USD"))} إلى الرقم: ${WALLET_NUMBERS.masrvi}`,
+                `أرسل المبلغ ${formatMRU(total)} إلى الرقم: ${WALLET_NUMBERS.masrvi}`,
                 "في خانة الملاحظة اكتب رقم حجزك",
                 "أدخل رقم الإيصال أدناه لتأكيد الدفع",
               ].map((step, i) => (
@@ -619,7 +634,7 @@ export default function PaymentScreen() {
               {[
                 "توجه إلى منصة Sedad الإلكترونية أو التطبيق",
                 `ابحث عن: ${WALLET_NUMBERS.sedad}`,
-                `أدخل المبلغ: ${formatMRU(toMRU(total, "USD"))}`,
+                `أدخل المبلغ: ${formatMRU(total)}`,
                 "أدخل رقم مرجع العملية أدناه بعد إتمام الدفع",
               ].map((step, i) => (
                 <View key={i} style={styles.stepRow}>
@@ -659,7 +674,7 @@ export default function PaymentScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.payTotal, { color: colors.primary }]}>
-            {formatMRU(toMRU(total, "USD"))}
+            {formatMRU(total)}
           </Text>
           <Text style={[styles.payLabel, { color: colors.muted }]}>
             {selectedMethod.label}

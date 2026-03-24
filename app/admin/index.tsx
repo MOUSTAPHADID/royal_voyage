@@ -16,7 +16,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { useTranslation } from "@/lib/i18n";
 import { Booking } from "@/lib/mock-data";
-import { formatMRU, toMRU } from "@/lib/currency";
+import { formatMRU } from "@/lib/currency";
 import { getPricingSettings } from "@/lib/pricing-settings";
 
 const ADMIN_PIN = "36380112";
@@ -474,9 +474,9 @@ export default function AdminScreen() {
             <View style={s.revenueCard}>
               <View>
                 <Text style={s.revenueLabel}>{t.admin.totalRevenue}</Text>
-                <Text style={s.revenueValue}>{formatMRU(toMRU(stats.revenue, "USD"))}</Text>
+                <Text style={s.revenueValue}>{formatMRU(stats.revenue)}</Text>
                 <Text style={s.revenueSubLabel}>{t.admin.avgRevenuePerBooking}</Text>
-                <Text style={s.revenueSubValue}>{formatMRU(toMRU(stats.avgRevenue, "USD"))}</Text>
+                <Text style={s.revenueSubValue}>{formatMRU(stats.avgRevenue)}</Text>
               </View>
               <View style={{ alignItems: "flex-end" }}>
                 <IconSymbol name="crown.fill" size={40} color="#C9A84C" />
@@ -664,7 +664,7 @@ export default function AdminScreen() {
                     </View>
                     <View style={s.bookingRow}>
                       <Text style={s.bookingDate}>{dest}</Text>
-                      <Text style={s.bookingAmount}>{formatMRU(toMRU(b.totalPrice ?? 0, "USD"))}</Text>
+                      <Text style={s.bookingAmount}>{formatMRU(b.totalPrice ?? 0)}</Text>
                     </View>
                     <Text style={[s.bookingDate, { marginTop: 2 }]}>{b.date}</Text>
                   </View>
@@ -696,7 +696,7 @@ export default function AdminScreen() {
                         {c.bookings.length} {t.admin.bookingsCount}
                       </Text>
                       <Text style={s.clientAmount}>
-                        {formatMRU(toMRU(c.totalSpent, "USD"))}
+                        {formatMRU(c.totalSpent)}
                       </Text>
                     </View>
                     <Text style={[s.clientStatText, { marginTop: 2 }]}>

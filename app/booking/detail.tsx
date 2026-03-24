@@ -14,6 +14,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { formatMRU } from "@/lib/currency";
 
 function useCountdown(deadlineISO?: string) {
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -300,7 +301,7 @@ export default function BookingDetailScreen() {
           ))}
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>Total Paid</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>${booking.totalPrice}</Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>{formatMRU(booking.totalPrice ?? 0)}</Text>
           </View>
         </View>
 

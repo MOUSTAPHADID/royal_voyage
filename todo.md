@@ -372,3 +372,17 @@
 - [x] إضافة رابط "تأكيد الدفع" في لوحة الأدمن
 - [x] عرض badge بعدد الحجوزات المعلقة بجانب بطاقة تأكيد الدفع
 - [x] حفظ paymentMethod في Booking type وpayment.tsx
+
+## إصلاح مشكلة تغير الأسعار بعد الحجز
+- [ ] تشخيص مصدر تغير السعر (pricing-settings، تحويل العملة، params)
+- [ ] تثبيت السعر المعروض في نتائج البحث عبر جميع شاشات الحجز
+- [ ] التأكد من أن السعر المحفوظ في الحجز يطابق ما رآه الزبون
+
+## إصلاح مشكلة تغير الأسعار بعد الحجز
+- [x] تحديد مصدر المشكلة: toMRU مضاعف في payment.tsx وconfirmation.tsx وadmin/index.tsx
+- [x] إصلاح payment.tsx: إزالة toMRU من عرض الأسعار واستخدام total مباشرة بالأوقية
+- [x] إصلاح confirmation.tsx: منع إعادة تحويل السعر عند currency=MRU
+- [x] إصلاح bookings.tsx: استبدال $ بـ formatMRU
+- [x] إصلاح booking/detail.tsx: استبدال $ بـ formatMRU
+- [x] إصلاح admin/index.tsx: إزالة toMRU من القيم المخزّنة بالأوقية
+- [x] إضافة priceCurrency في params لمنع إعادة التحويل في passenger-details.tsx
