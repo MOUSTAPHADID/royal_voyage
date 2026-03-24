@@ -73,8 +73,8 @@ export default function FlightDetailScreen() {
   const totalPrice = isRoundTrip
     ? (adultPrice * adultCount + childPrice * childCount) * 2
     : adultPrice * adultCount + childPrice * childCount;
-  // الإجمالي بالأوقية مع الضرائب ورسوم الوكالة
-  const totalMRU = toMRU(Math.round(totalPrice * 1.1), currency) + AGENCY_FEE_MRU;
+  // الإجمالي بالأوقية مع رسوم الوكالة (بدون ضرائب إضافية لأن سعر Amadeus يشملها)
+  const totalMRU = toMRU(totalPrice, currency) + AGENCY_FEE_MRU;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -211,15 +211,7 @@ export default function FlightDetailScreen() {
             </View>
           )}
 
-          {/* الضرائب */}
-          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.infoLabel, { color: colors.muted }]}>ضرائب ورسوم (10%)</Text>
-            <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {formatMRU(toMRU(Math.round(totalPrice * 0.1), currency))}
-            </Text>
-          </View>
-
-          {/* رسوم الوكالة */}
+          {/* رسوم الوكالة */
           <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.infoLabel, { color: colors.muted }]}>رسوم الخدمة</Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
