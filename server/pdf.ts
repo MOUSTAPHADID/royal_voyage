@@ -141,7 +141,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
         .text("Your Premium Travel Partner", M, 46, { width: 260 });
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")
-        .text("+222 33 70 00 00  ·  royal-voyage@gmail.com", M, 62, { width: 300 });
+        .text("+222 33 70 00 00  ·  suporte@royalvoyage.online", M, 62, { width: 300 });
 
 
       let y = 106;
@@ -367,7 +367,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       // ══════════════════════════════════════════════════════════════════════
       doc.rect(0, H - 56, W, 56).fill(NAVY);
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)").font("Helvetica")
-        .text("Royal Voyage Travel Agency  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  +222 33 70 00 00  ·  royal-voyage@gmail.com", M, H - 38, { width: cW, align: "center" })
+        .text("Royal Voyage Travel Agency (Since 2023)  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  +222 33 70 00 00  ·  suporte@royalvoyage.online", M, H - 38, { width: cW, align: "center" })
         .text("This is an automated ticket. Please do not reply to this email.", M, H - 22, { width: cW, align: "center" });
 
       doc.end();
@@ -438,7 +438,7 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
         .text("Hotel Booking Confirmation", M, 46, { width: 260 });
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")
-        .text("+222 33 70 00 00  ·  royal-voyage@gmail.com", M, 62, { width: 300 });
+        .text("+222 33 70 00 00  ·  suporte@royalvoyage.online", M, 62, { width: 300 });
       doc.fontSize(11).fillColor(NAVY).font("Helvetica-Bold")
         .text("HOTEL VOUCHER", W - 155, 36, { width: 120, align: "center" });
 
@@ -588,7 +588,7 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       // ── Footer ─────────────────────────────────────────────────────────────
       doc.rect(0, H - 56, W, 56).fill(NAVY);
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)").font("Helvetica")
-        .text("Royal Voyage Travel Agency  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  +222 33 70 00 00  ·  royal-voyage@gmail.com", M, H - 38, { width: cW, align: "center" })
+        .text("Royal Voyage Travel Agency (Since 2023)  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  +222 33 70 00 00  ·  suporte@royalvoyage.online", M, H - 38, { width: cW, align: "center" })
         .text("This is an automated confirmation. Please do not reply to this email.", M, H - 22, { width: cW, align: "center" });
 
       doc.end();

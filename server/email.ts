@@ -10,7 +10,7 @@ import { generateFlightTicketPDF, generateHotelConfirmationPDF } from "./pdf";
 const COMPANY = {
   name: "Royal Voyage",
   phone: "+222 33 70 00 00",
-  email: "royal-voyage@gmail.com",
+  email: "suporte@royalvoyage.online",
   address: "Tavragh Zeina, Nouakchott, Mauritania",
   website: "www.royal-voyage.mr",
 };

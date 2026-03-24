@@ -664,7 +664,7 @@ export default function PaymentScreen() {
                 {[
                   "افتح تطبيق PayPal أو الموقع الرسمي paypal.com",
                   `أرسل المبلغ ${ppFormatted} إلى البريد الإلكتروني:`,
-                  "royal-voyage@gmail.com",
+                  "suporte@royalvoyage.online",
                   "في خانة الملاحظة اكتب: اسمك الكامل + رقم حجزك",
                   "أدخل رقم معرّف العملية (Transaction ID) أدناه",
                 ].map((step, i) => (

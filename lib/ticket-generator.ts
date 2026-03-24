@@ -5,14 +5,14 @@
  *
  * Company info:
  *   Phone   : +222 33 70 00 00
- *   Email   : royal-voyage@gmail.com
+ *   Email   : suporte@royalvoyage.online
  *   Address : Tavragh Zeina, Nouakchott, Mauritania
  */
 
 export const COMPANY_INFO = {
   name: "Royal Voyage",
   phone: "+222 33 70 00 00",
-  email: "royal-voyage@gmail.com",
+  email: "suporte@royalvoyage.online",
   address: "Tavragh Zeina, Nouakchott, Mauritania",
   website: "www.royal-voyage.mr",
 };
