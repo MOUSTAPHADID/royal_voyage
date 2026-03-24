@@ -15,12 +15,14 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatAmadeusPriceMRU, formatMRU } from "@/lib/currency";
+import { formatAmadeusPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 
 export default function PassengerDetailsScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useApp();
+  const { fmt } = useCurrency();
   const params = useLocalSearchParams<{
     type: string;
     id: string;
@@ -129,13 +131,13 @@ export default function PassengerDetailsScreen() {
   };
 
   const displayPrice = params.price
-    ? (params.priceCurrency === "MRU"
-        ? formatMRU(parseFloat(params.price))
-        : formatAmadeusPriceMRU(params.price, params.currency ?? "EUR"))
+    ? fmt(params.priceCurrency === "MRU"
+        ? parseFloat(params.price)
+        : toMRU(parseFloat(params.price), params.currency ?? "EUR"))
     : isFlight && flight
-    ? formatAmadeusPriceMRU(flight.price.toString(), "USD")
+    ? fmt(toMRU(flight.price, "USD"))
     : hotel
-    ? formatAmadeusPriceMRU(hotel.pricePerNight.toString(), "USD") + "/night"
+    ? fmt(toMRU(hotel.pricePerNight, "USD")) + "/night"
     : "";
 
   return (

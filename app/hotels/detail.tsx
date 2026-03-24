@@ -14,6 +14,7 @@ import { useColors } from "@/hooks/use-colors";
 import { HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 import { toMRUWithSettings } from "@/lib/pricing-settings";
 import { usePricingSettings } from "@/hooks/use-pricing-settings";
 
@@ -28,6 +29,7 @@ const ROOM_TYPES = [
 export default function HotelDetailScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { fmt } = useCurrency();
   const params = useLocalSearchParams<{
     id: string;
     name?: string;
@@ -134,7 +136,7 @@ export default function HotelDetailScreen() {
           </View>
           <View style={[styles.quickDivider, { backgroundColor: colors.border }]} />
           <View style={styles.quickItem}>
-            <Text style={[styles.quickValue, { color: colors.primary }]}>{formatPriceMRU(hotel.pricePerNight, hotel.currency || "USD")}</Text>
+            <Text style={[styles.quickValue, { color: colors.primary }]}>{fmt(toMRU(hotel.pricePerNight, hotel.currency || "USD"))}</Text>
             <Text style={[styles.quickLabel, { color: colors.muted }]}>Per night</Text>
           </View>
         </View>
@@ -149,7 +151,7 @@ export default function HotelDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Amenities</Text>
           <View style={styles.amenitiesGrid}>
-            {hotel.amenities.map((a) => (
+            {hotel.amenities.map((a: string) => (
               <View key={a} style={[styles.amenityItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 <IconSymbol name={(amenityIcons[a] ?? "checkmark.circle.fill") as any} size={20} color={colors.primary} />
                 <Text style={[styles.amenityLabel, { color: colors.foreground }]}>{a}</Text>
@@ -166,7 +168,7 @@ export default function HotelDetailScreen() {
           <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.infoLabel, { color: colors.muted }]}>بالغ × {adultCount}</Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {formatMRU(toMRU(nightlyRate * adultCount, hotel.currency || "USD"))}
+              {fmt(toMRU(nightlyRate * adultCount, hotel.currency || "USD"))}
             </Text>
           </View>
 
@@ -175,10 +177,10 @@ export default function HotelDetailScreen() {
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.infoLabel, { color: colors.muted }]}>طفل × {childCount}</Text>
-                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25% • {formatMRU(toMRU(childNightlyRate, hotel.currency || "USD"))} / شخص</Text>
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25% • {fmt(toMRU(childNightlyRate, hotel.currency || "USD"))} / شخص</Text>
               </View>
               <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {formatMRU(toMRU(childNightlyRate * childCount, hotel.currency || "USD"))}
+                {fmt(toMRU(childNightlyRate * childCount, hotel.currency || "USD"))}
               </Text>
             </View>
           )}
@@ -186,7 +188,7 @@ export default function HotelDetailScreen() {
           <View style={[styles.totalRow, { marginTop: 8 }]}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>إجمالي / ليلة</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatMRU(totalMRU)}
+              {fmt(totalMRU)}
             </Text>
           </View>
         </View>
@@ -215,7 +217,7 @@ export default function HotelDetailScreen() {
                   </View>
                   <View>
                     <Text style={[styles.roomPrice, { color: colors.primary }]}>
-                      {formatMRU(toMRU(hotel.pricePerNight + room.price, hotel.currency || "USD"))}
+                      {fmt(toMRU(hotel.pricePerNight + room.price, hotel.currency || "USD"))}
                     </Text>
                     <Text style={[styles.roomPriceLabel, { color: colors.muted }]}>/ night</Text>
                   </View>
@@ -245,7 +247,7 @@ export default function HotelDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {formatMRU(totalMRU)}
+            {fmt(totalMRU)}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
             {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""} · ليلة

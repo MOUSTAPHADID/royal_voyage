@@ -17,6 +17,8 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTranslation, useI18n, LANGUAGES, Language } from "@/lib/i18n";
+import { useCurrency } from "@/lib/currency-context";
+import { CURRENCIES, AppCurrency } from "@/lib/currency";
 import {
   scheduleDailyProfitNotification,
   cancelDailyProfitNotification,
@@ -30,8 +32,10 @@ export default function ProfileScreen() {
   const { user, logout, bookings } = useApp();
   const { t } = useTranslation();
   const { language, setLanguage } = useI18n();
+  const { currency, setCurrency } = useCurrency();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showLangModal, setShowLangModal] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [dailyProfitNotif, setDailyProfitNotif] = useState(false);
 
   // تحميل حالة الإشعار اليومي
@@ -95,7 +99,12 @@ export default function ProfileScreen() {
           value: currentLangLabel,
           onPress: () => setShowLangModal(true),
         },
-        { icon: "tag.fill", label: t.profile.currency, value: "MRU", onPress: () => {} },
+        {
+          icon: "tag.fill",
+          label: t.profile.currency,
+          value: CURRENCIES.find((c) => c.code === currency)?.flag + " " + currency,
+          onPress: () => setShowCurrencyModal(true),
+        },
       ],
     },
     {
@@ -254,6 +263,46 @@ export default function ProfileScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Currency Picker Modal */}
+      <Modal
+        visible={showCurrencyModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowCurrencyModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowCurrencyModal(false)}>
+          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.modalTitle, { color: colors.foreground }]}>
+              {language === "ar" ? "اختر العملة" : language === "fr" ? "Choisir la devise" : "Select Currency"}
+            </Text>
+            {CURRENCIES.map((c) => (
+              <Pressable
+                key={c.code}
+                style={({ pressed }) => [
+                  styles.langOption,
+                  { borderBottomColor: colors.border, opacity: pressed ? 0.7 : 1 },
+                  currency === c.code && { backgroundColor: colors.primary + "12" },
+                ]}
+                onPress={() => {
+                  setCurrency(c.code as AppCurrency);
+                  setShowCurrencyModal(false);
+                }}
+              >
+                <Text style={styles.langFlag}>{c.flag}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.langNative, { color: colors.foreground }]}>{c.code}</Text>
+                  <Text style={[styles.langEnglish, { color: colors.muted }]}>{c.name}</Text>
+                </View>
+                {currency === c.code && (
+                  <IconSymbol name="checkmark" size={18} color={colors.primary} />
+                )}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
 
       {/* Language Picker Modal */}
       <Modal

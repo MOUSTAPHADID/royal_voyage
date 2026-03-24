@@ -16,6 +16,7 @@ import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 
@@ -84,6 +85,7 @@ export default function PaymentScreen() {
   const router = useRouter();
   const colors = useColors();
   const { addBooking, expoPushToken } = useApp();
+  const { fmt } = useCurrency();
   const params = useLocalSearchParams<{
     type: string;
     id: string;
@@ -294,7 +296,7 @@ export default function PaymentScreen() {
     // إرسال التذكرة مباشرةً بعد تأكيد الدفع
     const passengerEmail = params.email ?? "";
     const passengerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim();
-    const totalMRU = formatMRU(total);
+    const totalMRU = fmt(total);
 
     if (passengerEmail) {
       setEmailStatus("sending");
@@ -432,7 +434,7 @@ export default function PaymentScreen() {
           <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>بالغ × {adultCount}</Text>
             <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-              {formatMRU(adultUnitMRU * adultCount)}
+              {fmt(adultUnitMRU * adultCount)}
             </Text>
           </View>
 
@@ -441,11 +443,11 @@ export default function PaymentScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.summaryLabel, { color: colors.muted }]}>طفل × {childCount}</Text>
                 <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>
-                  خصم 25% • {formatMRU(childUnitMRU)} / شخص
+                  خصم 25% • {fmt(childUnitMRU)} / شخص
                 </Text>
               </View>
               <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-                {formatMRU(childUnitMRU * childCount)}
+                {fmt(childUnitMRU * childCount)}
               </Text>
             </View>
           )}
@@ -455,7 +457,7 @@ export default function PaymentScreen() {
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatMRU(total)}
+              {fmt(total)}
             </Text>
           </View>
         </View>
@@ -536,7 +538,7 @@ export default function PaymentScreen() {
               { label: "اسم الحساب", value: BANK_INFO.accountName },
               { label: "رقم الحساب (IBAN)", value: BANK_INFO.accountNumber },
               { label: "رقم RIB", value: BANK_INFO.rib },
-              { label: "المبلغ", value: formatMRU(total) },
+              { label: "المبلغ", value: fmt(total) },
             ].map((item) => (
               <View key={item.label} style={[styles.bankRow, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.bankLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -565,7 +567,7 @@ export default function PaymentScreen() {
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "افتح تطبيق Bankily على هاتفك",
-                `أرسل المبلغ ${formatMRU(total)} إلى الرقم: ${WALLET_NUMBERS.bankily}`,
+                `أرسل المبلغ ${fmt(total)} إلى الرقم: ${WALLET_NUMBERS.bankily}`,
                 "في خانة الملاحظة اكتب رقم حجزك",
                 "أدخل رقم الإيصال أدناه لتأكيد الدفع",
               ].map((step, i) => (
@@ -599,7 +601,7 @@ export default function PaymentScreen() {
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "افتح تطبيق مصرفي على هاتفك",
-                `أرسل المبلغ ${formatMRU(total)} إلى الرقم: ${WALLET_NUMBERS.masrvi}`,
+                `أرسل المبلغ ${fmt(total)} إلى الرقم: ${WALLET_NUMBERS.masrvi}`,
                 "في خانة الملاحظة اكتب رقم حجزك",
                 "أدخل رقم الإيصال أدناه لتأكيد الدفع",
               ].map((step, i) => (
@@ -634,7 +636,7 @@ export default function PaymentScreen() {
               {[
                 "توجه إلى منصة Sedad الإلكترونية أو التطبيق",
                 `ابحث عن: ${WALLET_NUMBERS.sedad}`,
-                `أدخل المبلغ: ${formatMRU(total)}`,
+                `أدخل المبلغ: ${fmt(total)}`,
                 "أدخل رقم مرجع العملية أدناه بعد إتمام الدفع",
               ].map((step, i) => (
                 <View key={i} style={styles.stepRow}>
@@ -674,7 +676,7 @@ export default function PaymentScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.payTotal, { color: colors.primary }]}>
-            {formatMRU(total)}
+            {fmt(total)}
           </Text>
           <Text style={[styles.payLabel, { color: colors.muted }]}>
             {selectedMethod.label}

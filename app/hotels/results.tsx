@@ -16,7 +16,8 @@ import { HOTELS, Hotel } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
-import { formatPriceMRU } from "@/lib/currency";
+import { formatPriceMRU, toMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 
 type SortOption = "price" | "rating" | "stars";
 
@@ -51,6 +52,7 @@ export default function HotelResultsScreen() {
 
   const [sortBy, setSortBy] = useState<SortOption>("rating");
   const { t } = useTranslation();
+  const { fmt } = useCurrency();
 
   // Always use Amadeus Production API
   const useMock = false;
@@ -148,7 +150,7 @@ export default function HotelResultsScreen() {
             {item.pricePerNight > 0 ? (
               <>
                 <Text style={[styles.hotelPrice, { color: colors.primary }]}>
-                  {formatPriceMRU(item.pricePerNight, item.currency || "USD")}
+                  {fmt(toMRU(item.pricePerNight, item.currency || "USD"))}
                 </Text>
                 <Text style={[styles.perNight, { color: colors.muted }]}>{t.hotels.perNight}</Text>
               </>

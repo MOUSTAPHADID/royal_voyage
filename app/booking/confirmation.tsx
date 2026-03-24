@@ -15,7 +15,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
-import { formatAmadeusPriceMRU, formatMRU } from "@/lib/currency";
+import { formatAmadeusPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 
 // Booking notification using Alert (compatible with Expo Go SDK 54+)
@@ -37,6 +38,7 @@ async function scheduleBookingNotification(type: string, reference: string) {
 export default function ConfirmationScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { fmt } = useCurrency();
   const params = useLocalSearchParams<{
     reference: string;
     total: string;
@@ -88,9 +90,9 @@ export default function ConfirmationScreen() {
   // السعر المُمرَّر من payment.tsx هو دائماً بالأوقية (MRU)
   // إذا كانت العملة MRU، نعرض مباشرة بدون تحويل
   const formattedTotal = params.total
-    ? (params.currency === "MRU"
-        ? formatMRU(parseFloat(params.total))
-        : formatAmadeusPriceMRU(params.total, params.currency ?? "EUR"))
+    ? fmt(params.currency === "MRU"
+        ? parseFloat(params.total)
+        : toMRU(parseFloat(params.total), params.currency ?? "EUR"))
     : "—";
 
   // tRPC mutations

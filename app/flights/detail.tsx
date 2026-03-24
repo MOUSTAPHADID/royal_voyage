@@ -12,12 +12,14 @@ import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 import { toMRUWithSettings, getAgencyFee } from "@/lib/pricing-settings";
 import { usePricingSettings as _usePricingSettings } from "@/hooks/use-pricing-settings";
 
 export default function FlightDetailScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { fmt } = useCurrency();
   const params = useLocalSearchParams<{
     id: string;
     airline: string;
@@ -111,7 +113,7 @@ export default function FlightDetailScreen() {
               <Text style={[styles.flightNum, { color: colors.muted }]}>{flight.flightNumber} · {flight.class}</Text>
             </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.priceText}>{formatMRU(adultUnitMRU)}</Text>
+              <Text style={styles.priceText}>{fmt(adultUnitMRU)}</Text>
               <Text style={styles.priceLabel}>للشخص</Text>
             </View>
           </View>
@@ -187,7 +189,7 @@ export default function FlightDetailScreen() {
               بالغ × {adultCount}
             </Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {formatMRU(toMRUWithSettings(adultPrice * adultCount, currency))}
+              {fmt(toMRUWithSettings(adultPrice * adultCount, currency))}
             </Text>
           </View>
 
@@ -201,7 +203,7 @@ export default function FlightDetailScreen() {
                 <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25%</Text>
               </View>
               <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {formatMRU(toMRUWithSettings(childPrice * childCount, currency))}
+                {fmt(toMRUWithSettings(childPrice * childCount, currency))}
               </Text>
             </View>
           )}
@@ -211,7 +213,7 @@ export default function FlightDetailScreen() {
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>رحلة العودة (×2)</Text>
               <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {formatMRU(toMRUWithSettings(adultPrice * adultCount + childPrice * childCount, currency))}
+                {fmt(toMRUWithSettings(adultPrice * adultCount + childPrice * childCount, currency))}
               </Text>
             </View>
           )}
@@ -221,19 +223,20 @@ export default function FlightDetailScreen() {
               الإجمالي{isRoundTrip ? " (ذهاب وإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatMRU(totalMRU)}
+              {fmt(totalMRU)}
             </Text>
           </View>
-        </View>
+          </View>
 
-        <View style={{ height: 120 }} />
+          {/* Book Button */}
+          <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {formatMRU(totalMRU)}
+            {fmt(totalMRU)}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
             {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""}{isRoundTrip ? " · ذهاب وإياب" : ""}

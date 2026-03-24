@@ -15,6 +15,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 
 function useCountdown(deadlineISO?: string) {
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -35,6 +36,7 @@ export default function BookingDetailScreen() {
   const router = useRouter();
   const colors = useColors();
   const { bookings, cancelBooking } = useApp();
+  const { fmt } = useCurrency();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [sendingTicket, setSendingTicket] = useState(false);
   const sendFlightMutation = trpc.email.sendFlightTicket.useMutation();
@@ -301,7 +303,7 @@ export default function BookingDetailScreen() {
           ))}
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>Total Paid</Text>
-            <Text style={[styles.totalValue, { color: colors.primary }]}>{formatMRU(booking.totalPrice ?? 0)}</Text>
+            <Text style={[styles.totalValue, { color: colors.primary }]}>{fmt(booking.totalPrice ?? 0)}</Text>
           </View>
         </View>
 

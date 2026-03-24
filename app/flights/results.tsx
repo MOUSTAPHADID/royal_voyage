@@ -15,7 +15,8 @@ import { FLIGHTS, Flight } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
-import { formatAmadeusPriceMRU } from "@/lib/currency";
+import { formatAmadeusPriceMRU, toMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 
 type SortOption = "price" | "duration" | "departure";
 
@@ -57,6 +58,7 @@ export default function FlightResultsScreen() {
 
   const isRoundTrip = params.tripType === "roundtrip" && !!params.returnDate;
   const { t } = useTranslation();
+  const { fmt } = useCurrency();
 
   // Sort & Filter
   const [sortBy, setSortBy] = useState<SortOption>("price");
@@ -169,7 +171,7 @@ export default function FlightResultsScreen() {
         </View>
         <View style={styles.priceBox}>
           <Text style={[styles.price, { color: colors.primary }]}>
-            {formatAmadeusPriceMRU(String(item.price), item.currency || "EUR")}
+            {fmt(toMRU(item.price, item.currency || "EUR"))}
           </Text>
           <Text style={[styles.perPerson, { color: colors.muted }]}>{t.flights.perPerson}</Text>
         </View>

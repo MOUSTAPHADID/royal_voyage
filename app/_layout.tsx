@@ -19,6 +19,7 @@ import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { AppProvider } from "@/lib/app-context";
+import { CurrencyProvider } from "@/lib/currency-context";
 import { I18nProvider } from "@/lib/i18n";
 import { loadPricingSettings } from "@/lib/pricing-settings";
 
@@ -88,6 +89,7 @@ export default function RootLayout() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <I18nProvider>
+          <CurrencyProvider>
           <AppProvider>
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
@@ -114,6 +116,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="auto" />
           </AppProvider>
+          </CurrencyProvider>
           </I18nProvider>
         </QueryClientProvider>
       </trpc.Provider>

@@ -16,6 +16,7 @@ import { Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTranslation } from "@/lib/i18n";
 import { formatMRU } from "@/lib/currency";
+import { useCurrency } from "@/lib/currency-context";
 
 type FilterTab = "all" | "flights" | "hotels";
 
@@ -25,6 +26,7 @@ export default function BookingsScreen() {
   const { bookings } = useApp();
   const [filter, setFilter] = useState<FilterTab>("all");
   const { t, isRTL } = useTranslation();
+  const { fmt } = useCurrency();
 
   // حقول البحث
   const [searchRef, setSearchRef] = useState("");
@@ -146,7 +148,7 @@ export default function BookingsScreen() {
 
         {/* Footer */}
         <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
-          <Text style={[styles.totalPrice, { color: colors.primary }]}>{formatMRU(item.totalPrice ?? 0)}</Text>
+          <Text style={[styles.totalPrice, { color: colors.primary }]}>{fmt(item.totalPrice ?? 0)}</Text>
           <Pressable
             style={({ pressed }) => [styles.viewBtn, { backgroundColor: colors.primary + "15", opacity: pressed ? 0.7 : 1 }]}
             onPress={() => router.push({ pathname: "/booking/detail" as any, params: { id: item.id } })}
