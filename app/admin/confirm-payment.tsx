@@ -27,6 +27,7 @@ const PAYMENT_LABELS: PaymentMethodLabel = {
   bankily: "بنكيلي",
   masrvi: "مصرفي",
   sedad: "سداد",
+  paypal: "PayPal (عملة أجنبية)",
 };
 
 export default function ConfirmPaymentScreen() {

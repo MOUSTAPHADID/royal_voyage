@@ -439,3 +439,9 @@
 - [x] تطبيق DatePicker في حقل تاريخ المغادرة للفندق (شاشة Home)
 - [x] تطبيق DatePicker في حقل تاريخ الميلاد (passenger-details.tsx)
 - [x] تطبيق DatePicker في شاشة تعديل الحجز (booking/change.tsx)
+
+## الدفع عبر PayPal (للدفع بالعملة الأجنبية)
+- [x] إضافة PayPal كخيار دفع في شاشة payment.tsx
+- [x] عرض السعر بالدولار أو اليورو عند اختيار PayPal
+- [x] عرض بريد PayPal وتعليمات الدفع الخطوة بخطوة
+- [x] تحديث تسمية PayPal في شاشات الأدمن (confirm-payment + booking-detail)

@@ -15,12 +15,12 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatMRU } from "@/lib/currency";
+import { formatMRU, fromMRU, formatCurrency } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 
-type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad";
+type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal";
 
 const PAYMENT_METHODS: {
   id: PaymentMethod;
@@ -64,6 +64,13 @@ const PAYMENT_METHODS: {
     icon: "🔐",
     color: "#EF4444",
   },
+  {
+    id: "paypal",
+    label: "PayPal",
+    sublabel: "ادفع بالدولار أو اليورو عبر PayPal",
+    icon: "🌐",
+    color: "#003087",
+  },
 ];
 
 // بيانات التحويل البنكي
@@ -85,7 +92,7 @@ export default function PaymentScreen() {
   const router = useRouter();
   const colors = useColors();
   const { addBooking, expoPushToken } = useApp();
-  const { fmt } = useCurrency();
+  const { fmt, currency } = useCurrency();
   const params = useLocalSearchParams<{
     type: string;
     id: string;
@@ -627,6 +634,79 @@ export default function PaymentScreen() {
             </View>
           </View>
         )}
+
+        {/* تعليمات PayPal */}
+        {paymentMethod === "paypal" && (() => {
+          // عرض السعر بالدولار أولاً ثم اليورو إذا كانت العملة EUR
+          const ppCurrency = currency === "EUR" ? "EUR" : "USD";
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const ppAmount = fromMRU(total, ppCurrency);
+          const ppFormatted = formatCurrency(total, ppCurrency);
+          return (
+            <View style={[styles.card, { backgroundColor: "#003087" + "10", borderColor: "#003087" + "30" }]}>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>🌐 الدفع عبر PayPal</Text>
+
+              {/* بطاقة السعر بالعملة الأجنبية */}
+              <View style={[styles.infoBox, { backgroundColor: "#003087" + "15", borderColor: "#003087" + "40", marginBottom: 14 }]}>
+                <Text style={{ color: "#003087", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  المبلغ المطلوب بالعملة الأجنبية
+                </Text>
+                <Text style={{ color: "#003087", fontSize: 26, fontWeight: "800", textAlign: "center", marginTop: 4 }}>
+                  {ppFormatted}
+                </Text>
+                <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 2 }}>
+                  (يعادل {fmt(total)} بسعر صرف ثابت)
+                </Text>
+              </View>
+
+              {/* خطوات الدفع */}
+              <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                {[
+                  "افتح تطبيق PayPal أو الموقع الرسمي paypal.com",
+                  `أرسل المبلغ ${ppFormatted} إلى البريد الإلكتروني:`,
+                  "royal-voyage@gmail.com",
+                  "في خانة الملاحظة اكتب: اسمك الكامل + رقم حجزك",
+                  "أدخل رقم معرّف العملية (Transaction ID) أدناه",
+                ].map((step, i) => (
+                  <View key={i} style={[styles.stepRow, i === 2 && { paddingRight: 32 }]}>
+                    {i !== 2 ? (
+                      <View style={[styles.stepNum, { backgroundColor: "#003087" }]}>
+                        <Text style={styles.stepNumText}>{i < 2 ? i + 1 : i}</Text>
+                      </View>
+                    ) : (
+                      <View style={{ width: 28 }} />
+                    )}
+                    <Text style={[
+                      styles.stepText,
+                      { color: i === 2 ? "#003087" : colors.foreground, fontWeight: i === 2 ? "700" : "400", fontSize: i === 2 ? 15 : 13 }
+                    ]}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* حقل رقم العملية */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: colors.foreground }]}>رقم معرّف العملية (Transaction ID) *</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                  placeholder="مثال: 5AB12345CD678901E"
+                  placeholderTextColor={colors.muted}
+                  value={transferRef}
+                  onChangeText={setTransferRef}
+                  autoCapitalize="characters"
+                  returnKeyType="done"
+                />
+              </View>
+
+              {/* تحذير سعر الصرف */}
+              <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
+                <Text style={[styles.warningText, { color: colors.warning }]}>
+                  ⚠️ سعر الصرف المستخدم ثابت (1 USD = 39.5 MRU). قد يختلف السعر الفعلي في PayPal بحسب يوم التحويل.
+                </Text>
+              </View>
+            </View>
+          );
+        })()}
 
         {/* تعليمات سداد */}
         {paymentMethod === "sedad" && (

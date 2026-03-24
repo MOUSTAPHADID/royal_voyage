@@ -147,6 +147,7 @@ export default function AdminBookingDetailScreen() {
     bankily: "📱 Bankily",
     masrvi: "📱 Masrvi",
     sedad: "📱 Sedad",
+    paypal: "🌐 PayPal (عملة أجنبية)",
   };
 
   return (
