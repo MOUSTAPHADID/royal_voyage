@@ -167,6 +167,26 @@ export default function PaymentScreen() {
     ).join("");
 
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
+    // Build flight data from params (real Amadeus data) with fallback to local FLIGHTS
+    const flightData = isFlight ? {
+      id: params.id ?? flight?.id ?? "unknown",
+      airline: params.airline ?? flight?.airline ?? "",
+      flightNumber: params.flightNumber ?? flight?.flightNumber ?? "",
+      origin: params.origin ?? flight?.origin ?? "",
+      originCode: params.originCode ?? flight?.originCode ?? "",
+      destination: params.destination ?? flight?.destination ?? "",
+      destinationCode: params.destinationCode ?? flight?.destinationCode ?? "",
+      departureTime: params.departureTime ?? flight?.departureTime ?? "",
+      arrivalTime: params.arrivalTime ?? flight?.arrivalTime ?? "",
+      duration: params.duration ?? flight?.duration ?? "",
+      price: (parseFloat(params.price ?? "0") || 0) || (flight?.price ?? 0),
+      currency: params.currency ?? flight?.currency ?? "MRU",
+      class: (params.cabinClass ?? flight?.class ?? "Economy") as "Economy" | "Business" | "First",
+      stops: flight?.stops ?? 0,
+      airlineLogo: flight?.airlineLogo ?? "✈️",
+      seatsLeft: flight?.seatsLeft ?? 9,
+    } : null;
+
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
@@ -174,7 +194,7 @@ export default function PaymentScreen() {
       reference: ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
-      ...(isFlight && flight ? { flight, passengers: adultCount } : {}),
+      ...(isFlight && flightData ? { flight: flightData, passengers: adultCount } : {}),
       ...(hotel
         ? {
             hotel,
