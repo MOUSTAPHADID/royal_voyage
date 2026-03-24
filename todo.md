@@ -251,3 +251,12 @@
 ## نقل أزرار التواصل الاجتماعي
 - [x] إزالة أزرار WhatsApp وFacebook من شاشة Profile
 - [x] إضافة أزرار WhatsApp وFacebook في الشاشة الرئيسية Home
+
+## إصلاح خطأ المصادقة
+- [ ] تشخيص وإصلاح خطأ "تعذر المصادقة" عند تسجيل الدخول
+
+## تكامل Amadeus API
+- [x] إنشاء خدمة Amadeus في الخادم (مصادقة، بحث الرحلات، الأسعار)
+- [x] إضافة tRPC routes لـ Amadeus (flightSearch, flightPrice, flightBook)
+- [x] تحديث شاشة نتائج الرحلات لاستخدام بيانات Amadeus الحقيقية
+- [x] إضافة متغيرات AMADEUS_CLIENT_ID و AMADEUS_CLIENT_SECRET الصحيحة
