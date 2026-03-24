@@ -11,7 +11,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { formatPriceMRU, formatMRU, toMRU, AGENCY_FEE_MRU } from "@/lib/currency";
 
 export default function FlightDetailScreen() {
   const router = useRouter();
@@ -73,6 +73,8 @@ export default function FlightDetailScreen() {
   const totalPrice = isRoundTrip
     ? (adultPrice * adultCount + childPrice * childCount) * 2
     : adultPrice * adultCount + childPrice * childCount;
+  // الإجمالي بالأوقية مع الضرائب ورسوم الوكالة
+  const totalMRU = toMRU(Math.round(totalPrice * 1.1), currency) + AGENCY_FEE_MRU;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -217,12 +219,20 @@ export default function FlightDetailScreen() {
             </Text>
           </View>
 
+          {/* رسوم الوكالة */}
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>رسوم الخدمة</Text>
+            <Text style={[styles.infoValue, { color: colors.foreground }]}>
+              {formatMRU(AGENCY_FEE_MRU)}
+            </Text>
+          </View>
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
               الإجمالي{isRoundTrip ? " (ذهاب وإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatMRU(toMRU(Math.round(totalPrice * 1.1), currency))}
+              {formatMRU(totalMRU)}
             </Text>
           </View>
         </View>
@@ -234,7 +244,7 @@ export default function FlightDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {formatMRU(toMRU(Math.round(totalPrice * 1.1), currency))}
+            {formatMRU(totalMRU)}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
             {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""}{isRoundTrip ? " · ذهاب وإياب" : ""}
@@ -257,7 +267,8 @@ export default function FlightDetailScreen() {
                 departureTime: flight.departureTime,
                 arrivalTime: flight.arrivalTime,
                 duration: flight.duration,
-                price: String(Math.round(totalPrice * 1.1)),
+                price: String(totalMRU),
+                priceCurrency: "MRU",
                 currency: flight.currency,
                 class: flight.class,
                 tripType: isRoundTrip ? "roundtrip" : "oneway",

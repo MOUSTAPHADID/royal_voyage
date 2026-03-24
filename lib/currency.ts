@@ -9,6 +9,12 @@
 const USD_TO_MRU = 39.5;
 const EUR_TO_MRU = 43.0;
 
+/**
+ * رسوم الوكالة الثابتة بالأوقية الموريتانية
+ * تُضاف على كل حجز (رحلة أو فندق)
+ */
+export const AGENCY_FEE_MRU = 1000;
+
 export function toMRU(amount: number, fromCurrency: string = "USD"): number {
   const currency = fromCurrency.toUpperCase();
   switch (currency) {

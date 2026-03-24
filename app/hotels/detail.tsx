@@ -13,7 +13,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { formatPriceMRU, formatMRU, toMRU, AGENCY_FEE_MRU } from "@/lib/currency";
 
 const { width } = Dimensions.get("window");
 
@@ -44,6 +44,8 @@ export default function HotelDetailScreen() {
   const nightlyRate = hotel.pricePerNight + selectedRoomData.price;
   const childNightlyRate = Math.round(nightlyRate * 0.75);
   const totalPrice = nightlyRate * adultCount + childNightlyRate * childCount;
+  // الإجمالي بالأوقية مع رسوم الوكالة
+  const totalMRU = toMRU(totalPrice, hotel.currency || "USD") + AGENCY_FEE_MRU;
 
   const amenityIcons: Record<string, string> = {
     Pool: "figure.pool.swim",
@@ -148,10 +150,18 @@ export default function HotelDetailScreen() {
             </View>
           )}
 
+          {/* رسوم الوكالة */}
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.infoLabel, { color: colors.muted }]}>رسوم الخدمة</Text>
+            <Text style={[styles.infoValue, { color: colors.foreground }]}>
+              {formatMRU(AGENCY_FEE_MRU)}
+            </Text>
+          </View>
+
           <View style={[styles.totalRow, { marginTop: 8 }]}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>إجمالي / ليلة</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {formatMRU(toMRU(totalPrice, hotel.currency || "USD"))}
+              {formatMRU(totalMRU)}
             </Text>
           </View>
         </View>
@@ -210,7 +220,7 @@ export default function HotelDetailScreen() {
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
           <Text style={[styles.bottomPrice, { color: colors.primary }]}>
-            {formatMRU(toMRU(totalPrice, hotel.currency || "USD"))}
+            {formatMRU(totalMRU)}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
             {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""} · ليلة
@@ -231,7 +241,8 @@ export default function HotelDetailScreen() {
                 checkOut: params.checkOut ?? "",
                 hotelName: hotel.name,
                 roomType: selectedRoomData.name,
-                roomPrice: String(totalPrice),
+                roomPrice: String(totalMRU),
+                priceCurrency: "MRU",
               },
             })
           }
