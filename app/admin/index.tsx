@@ -552,6 +552,23 @@ export default function AdminScreen() {
               <IconSymbol name="chevron.right" size={18} color={colors.muted} />
             </Pressable>
 
+            {/* بطاقة تتبع الطلبات */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/update-status" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#3B82F6", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="checkmark.circle.fill" size={22} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>تتبع الطلبات</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>تحديث حالة الحجوزات وإشعار الزبائن</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* Distribution Bar Chart */}
             <Text style={s.sectionTitle}>{t.admin.revenue}</Text>
             <View style={s.barChart}>

@@ -47,11 +47,12 @@ export type Destination = {
 export type Booking = {
   id: string;
   type: "flight" | "hotel";
-  status: "confirmed" | "pending" | "cancelled";
+  status: "confirmed" | "pending" | "cancelled" | "processing" | "airline_confirmed";
   reference: string;
   pnr?: string;  // Passenger Name Record - 6 char alphanumeric code (auto-generated)
   realPnr?: string; // Real PNR entered manually by agent from airline system
   realPnrUpdatedAt?: string; // ISO timestamp when realPnr was last updated
+  paymentDeadline?: string; // ISO timestamp - 24h deadline for cash payment bookings
   date: string;
   // Flight specific
   flight?: Flight;

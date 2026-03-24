@@ -13,11 +13,12 @@ import {
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
+import { registerForPushNotifications } from "@/lib/push-notifications";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { register } = useApp();
+  const { register, saveExpoPushToken } = useApp();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -44,6 +45,10 @@ export default function RegisterScreen() {
     try {
       const success = await register(name.trim(), email.trim(), password);
       if (success) {
+        // Register push token in background
+        registerForPushNotifications()
+          .then((token) => { if (token) saveExpoPushToken(token); })
+          .catch(() => {});
         router.replace("/(tabs)" as any);
       }
     } catch {

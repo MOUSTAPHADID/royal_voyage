@@ -1,0 +1,331 @@
+import React, { useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { useRouter } from "expo-router";
+import { ScreenContainer } from "@/components/screen-container";
+import { useColors } from "@/hooks/use-colors";
+import { useApp } from "@/lib/app-context";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Booking } from "@/lib/mock-data";
+import { trpc } from "@/lib/trpc";
+
+type BookingStatus = Booking["status"];
+
+const STATUS_OPTIONS: {
+  id: BookingStatus;
+  label: string;
+  labelAr: string;
+  color: string;
+  icon: string;
+  description: string;
+}[] = [
+  {
+    id: "pending",
+    label: "Pending",
+    labelAr: "معلق",
+    color: "#F59E0B",
+    icon: "⏳",
+    description: "الحجز في انتظار الدفع أو التأكيد",
+  },
+  {
+    id: "processing",
+    label: "Processing",
+    labelAr: "قيد المعالجة",
+    color: "#3B82F6",
+    icon: "🔄",
+    description: "جاري معالجة الحجز مع شركة الطيران/الفندق",
+  },
+  {
+    id: "confirmed",
+    label: "Confirmed",
+    labelAr: "مؤكد",
+    color: "#22C55E",
+    icon: "✅",
+    description: "تم تأكيد الحجز بنجاح",
+  },
+  {
+    id: "airline_confirmed",
+    label: "Airline Confirmed",
+    labelAr: "مؤكد من شركة الطيران",
+    color: "#10B981",
+    icon: "✈️",
+    description: "تم التأكيد الرسمي من شركة الطيران",
+  },
+  {
+    id: "cancelled",
+    label: "Cancelled",
+    labelAr: "ملغى",
+    color: "#EF4444",
+    icon: "❌",
+    description: "تم إلغاء الحجز",
+  },
+];
+
+const STATUS_PUSH_MESSAGES: Record<BookingStatus, { title: string; body: string }> = {
+  pending: {
+    title: "⏳ حجزك في انتظار التأكيد",
+    body: "سيتم تأكيد حجزك قريباً. شكراً لصبرك.",
+  },
+  processing: {
+    title: "🔄 جاري معالجة حجزك",
+    body: "نعمل على تأكيد حجزك مع شركة الطيران. سنُبلغك فور الانتهاء.",
+  },
+  confirmed: {
+    title: "✅ تم تأكيد حجزك!",
+    body: "تهانينا! تم تأكيد حجزك بنجاح. رحلة موفقة! ✈️",
+  },
+  airline_confirmed: {
+    title: "✈️ تأكيد رسمي من شركة الطيران",
+    body: "تم التأكيد الرسمي من شركة الطيران. يمكنك الآن إتمام تسجيل الوصول.",
+  },
+  cancelled: {
+    title: "❌ تم إلغاء الحجز",
+    body: "للأسف تم إلغاء حجزك. تواصل معنا لمزيد من المعلومات.",
+  },
+};
+
+export default function UpdateStatusScreen() {
+  const router = useRouter();
+  const colors = useColors();
+  const { bookings, updateBookingStatus } = useApp();
+  const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const sendPushNotification = trpc.email.sendPushNotification.useMutation();
+
+  const filteredBookings = useMemo(() => {
+    if (!search.trim()) return bookings;
+    const q = search.toLowerCase();
+    return bookings.filter(
+      (b) =>
+        b.reference.toLowerCase().includes(q) ||
+        (b.passengerName && b.passengerName.toLowerCase().includes(q)) ||
+        (b.flight?.airline && b.flight.airline.toLowerCase().includes(q)) ||
+        (b.hotel?.name && b.hotel.name.toLowerCase().includes(q))
+    );
+  }, [bookings, search]);
+
+  const handleStatusChange = async (booking: Booking, newStatus: BookingStatus) => {
+    if (booking.status === newStatus) return;
+
+    Alert.alert(
+      "تغيير الحالة",
+      `تغيير حالة الحجز ${booking.reference} إلى "${STATUS_OPTIONS.find(s => s.id === newStatus)?.labelAr}"؟`,
+      [
+        { text: "إلغاء", style: "cancel" },
+        {
+          text: "تأكيد",
+          onPress: async () => {
+            setSaving(booking.id);
+            try {
+              await updateBookingStatus(booking.id, newStatus);
+
+              // Send Push Notification if customer has token
+              if (booking.customerPushToken) {
+                const msg = STATUS_PUSH_MESSAGES[newStatus];
+                try {
+                  await sendPushNotification.mutateAsync({
+                    expoPushToken: booking.customerPushToken,
+                    title: msg.title,
+                    body: `${msg.body} (${booking.reference})`,
+                    data: { bookingRef: booking.reference, status: newStatus, type: "status_update" },
+                  });
+                } catch (err) {
+                  console.error("[Status] Push failed:", err);
+                }
+              }
+
+              Alert.alert("✅ تم التحديث", `تم تغيير الحالة إلى "${STATUS_OPTIONS.find(s => s.id === newStatus)?.labelAr}"${booking.customerPushToken ? "\n🔔 تم إرسال إشعار Push للزبون" : ""}`);
+            } catch (err) {
+              Alert.alert("خطأ", "فشل تحديث الحالة");
+            } finally {
+              setSaving(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getStatusInfo = (status: BookingStatus) =>
+    STATUS_OPTIONS.find((s) => s.id === status) ?? STATUS_OPTIONS[0];
+
+  return (
+    <ScreenContainer edges={["top", "left", "right"]}>
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: "#1B2B5E" }]}>
+        <Pressable
+          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.7 : 1 }]}
+          onPress={() => router.back()}
+        >
+          <IconSymbol name="chevron.left.forwardslash.chevron.right" size={20} color="#FFFFFF" />
+        </Pressable>
+        <View style={styles.headerText}>
+          <Text style={styles.headerTitle}>تتبع الطلبات</Text>
+          <Text style={styles.headerSub}>تحديث حالة الحجوزات</Text>
+        </View>
+        <View style={[styles.badge, { backgroundColor: "#C9A84C" }]}>
+          <Text style={styles.badgeText}>{bookings.length}</Text>
+        </View>
+      </View>
+
+      {/* Status Legend */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.legendScroll}
+        contentContainerStyle={styles.legendContent}
+      >
+        {STATUS_OPTIONS.map((s) => (
+          <View key={s.id} style={[styles.legendItem, { backgroundColor: s.color + "15", borderColor: s.color + "40" }]}>
+            <Text style={{ fontSize: 14 }}>{s.icon}</Text>
+            <Text style={[styles.legendText, { color: s.color }]}>{s.labelAr}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Search */}
+        <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <IconSymbol name="paperplane.fill" size={16} color={colors.muted} />
+          <TextInput
+            style={[styles.searchInput, { color: colors.foreground }]}
+            placeholder="بحث بالمرجع أو الاسم..."
+            placeholderTextColor={colors.muted}
+            value={search}
+            onChangeText={setSearch}
+          />
+        </View>
+
+        {filteredBookings.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={[styles.emptyText, { color: colors.muted }]}>لا توجد حجوزات</Text>
+          </View>
+        ) : (
+          filteredBookings.map((booking) => {
+            const currentStatus = getStatusInfo(booking.status);
+            const isSaving = saving === booking.id;
+
+            return (
+              <View
+                key={booking.id}
+                style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              >
+                {/* Card Header */}
+                <View style={styles.cardHeader}>
+                  <View style={styles.cardLeft}>
+                    <Text style={[styles.cardRef, { color: colors.foreground }]}>
+                      {booking.reference}
+                    </Text>
+                    <Text style={[styles.cardName, { color: colors.muted }]}>
+                      {booking.type === "flight"
+                        ? `${booking.flight?.airline ?? "—"} · ${booking.flight?.originCode ?? ""} → ${booking.flight?.destinationCode ?? ""}`
+                        : `🏨 ${booking.hotel?.name ?? "—"}`}
+                    </Text>
+                    {booking.passengerName && (
+                      <Text style={[styles.cardPassenger, { color: colors.muted }]}>
+                        👤 {booking.passengerName}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={[styles.currentStatus, { backgroundColor: currentStatus.color + "20" }]}>
+                    <Text style={{ fontSize: 16 }}>{currentStatus.icon}</Text>
+                    <Text style={[styles.currentStatusText, { color: currentStatus.color }]}>
+                      {currentStatus.labelAr}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Push Token Indicator */}
+                <View style={[styles.tokenRow, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.tokenText, { color: colors.muted }]}>
+                    {booking.customerPushToken ? "🔔 Push مسجّل — سيصل إشعار للزبون" : "🔕 Push غير مسجّل"}
+                  </Text>
+                </View>
+
+                {/* Status Buttons */}
+                <View style={[styles.statusButtons, { borderTopColor: colors.border }]}>
+                  <Text style={[styles.changeLabel, { color: colors.muted }]}>تغيير الحالة:</Text>
+                  <View style={styles.buttonsRow}>
+                    {STATUS_OPTIONS.filter((s) => s.id !== booking.status).map((s) => (
+                      <Pressable
+                        key={s.id}
+                        style={({ pressed }) => [
+                          styles.statusBtn,
+                          { backgroundColor: s.color + "15", borderColor: s.color + "50", opacity: pressed || isSaving ? 0.6 : 1 },
+                        ]}
+                        onPress={() => handleStatusChange(booking, s.id)}
+                        disabled={isSaving}
+                      >
+                        <Text style={{ fontSize: 12 }}>{s.icon}</Text>
+                        <Text style={[styles.statusBtnText, { color: s.color }]}>{s.labelAr}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            );
+          })
+        )}
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </ScreenContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  backBtn: { padding: 4 },
+  headerText: { flex: 1 },
+  headerTitle: { fontSize: 18, fontWeight: "700", color: "#FFFFFF" },
+  headerSub: { fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 },
+  badge: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  badgeText: { fontSize: 12, fontWeight: "700", color: "#1B2B5E" },
+  legendScroll: { maxHeight: 52 },
+  legendContent: { paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: "row" },
+  legendItem: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
+  legendText: { fontSize: 11, fontWeight: "600" },
+  content: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  searchInput: { flex: 1, fontSize: 14 },
+  empty: { alignItems: "center", paddingVertical: 40 },
+  emptyText: { fontSize: 14 },
+  card: { borderRadius: 12, borderWidth: 1, marginBottom: 12, overflow: "hidden" },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", padding: 14, paddingBottom: 10 },
+  cardLeft: { flex: 1 },
+  cardRef: { fontSize: 14, fontWeight: "700" },
+  cardName: { fontSize: 12, marginTop: 2 },
+  cardPassenger: { fontSize: 12, marginTop: 2 },
+  currentStatus: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  currentStatusText: { fontSize: 11, fontWeight: "700" },
+  tokenRow: { borderTopWidth: 1, paddingHorizontal: 14, paddingVertical: 6 },
+  tokenText: { fontSize: 11 },
+  statusButtons: { borderTopWidth: 1, padding: 12 },
+  changeLabel: { fontSize: 11, fontWeight: "600", marginBottom: 8 },
+  buttonsRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  statusBtn: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, borderWidth: 1 },
+  statusBtnText: { fontSize: 11, fontWeight: "600" },
+});

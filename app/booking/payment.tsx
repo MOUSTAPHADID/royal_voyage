@@ -17,6 +17,7 @@ import { FLIGHTS, HOTELS, Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU, toMRU } from "@/lib/currency";
 import { trpc } from "@/lib/trpc";
+import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 
 type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad";
 
@@ -82,7 +83,7 @@ const WALLET_NUMBERS: Record<string, string> = {
 export default function PaymentScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { addBooking } = useApp();
+  const { addBooking, expoPushToken } = useApp();
   const params = useLocalSearchParams<{
     type: string;
     id: string;
@@ -236,6 +237,12 @@ export default function PaymentScreen() {
       address: hotel?.address ?? "",
     } : null;
 
+    // For cash payments, set 24h deadline and schedule a reminder notification
+    const isCashPayment = paymentMethod === "cash";
+    const paymentDeadline = isCashPayment
+      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      : undefined;
+
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
@@ -243,8 +250,10 @@ export default function PaymentScreen() {
       reference: ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
+      ...(paymentDeadline ? { paymentDeadline } : {}),
       passengerName: `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim(),
       passengerEmail: params.email ?? "",
+      customerPushToken: expoPushToken ?? undefined,
       ...(isFlight && flightData ? { flight: flightData, passengers: adultCount } : {}),
       ...(hotelData
         ? {
@@ -260,6 +269,11 @@ export default function PaymentScreen() {
     };
 
     await addBooking(booking);
+
+    // Schedule cash payment reminder (1h before 24h deadline)
+    if (isCashPayment && paymentDeadline) {
+      scheduleCashPaymentReminder(ref, paymentDeadline).catch(() => {});
+    }
 
     // إرسال التذكرة مباشرةً بعد تأكيد الدفع
     const passengerEmail = params.email ?? "";

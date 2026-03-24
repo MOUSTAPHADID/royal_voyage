@@ -57,6 +57,38 @@ export async function registerForPushNotifications(): Promise<string | null> {
 }
 
 /**
+ * Schedule a local notification 1 hour before the 24h cash payment deadline.
+ * Reminds the customer to visit the office and pay.
+ */
+export async function scheduleCashPaymentReminder(
+  bookingRef: string,
+  deadlineISO: string
+): Promise<void> {
+  if (Platform.OS === "web") return;
+  try {
+    const deadline = new Date(deadlineISO).getTime();
+    const reminderTime = deadline - 60 * 60 * 1000; // 1 hour before deadline
+    const now = Date.now();
+    if (reminderTime <= now) return; // already past
+
+    const secondsUntilReminder = Math.floor((reminderTime - now) / 1000);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "⏰ تذكير بالدفع النقدي",
+        body: `تبقى ساعة واحدة فقط لدفع حجزك ${bookingRef}. يرجى زيارة مكتبنا في تفرغ زين نواكشوط.`,
+        sound: true,
+        data: { bookingRef, type: "cash_payment_reminder" },
+      },
+      trigger: { seconds: secondsUntilReminder, repeats: false } as any,
+    });
+    console.log(`[Push] Cash payment reminder scheduled in ${Math.round(secondsUntilReminder / 3600)}h for ${bookingRef}`);
+  } catch (error) {
+    console.warn("[Push] Failed to schedule cash payment reminder:", error);
+  }
+}
+
+/**
  * Schedule a local notification (for same device only).
  * Used as fallback when push notification fails.
  */

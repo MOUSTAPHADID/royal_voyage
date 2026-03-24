@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,21 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+
+function useCountdown(deadlineISO?: string) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    if (!deadlineISO) return;
+    const update = () => {
+      const diff = new Date(deadlineISO).getTime() - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+    update();
+    const timer = setInterval(update, 60000);
+    return () => clearInterval(timer);
+  }, [deadlineISO]);
+  return remaining;
+}
 
 export default function BookingDetailScreen() {
   const router = useRouter();
@@ -40,6 +55,15 @@ export default function BookingDetailScreen() {
     confirmed: { bg: colors.success + "15", text: colors.success },
     pending: { bg: colors.warning + "15", text: colors.warning },
     cancelled: { bg: colors.error + "15", text: colors.error },
+    processing: { bg: "#3B82F615", text: "#3B82F6" },
+    airline_confirmed: { bg: "#10B98115", text: "#10B981" },
+  };
+  const statusLabels: Record<string, string> = {
+    confirmed: "Confirmed ✅",
+    pending: "Pending ⏳",
+    cancelled: "Cancelled ❌",
+    processing: "قيد المعالجة 🔄",
+    airline_confirmed: "مؤكد من شركة الطيران ✈️",
   };
   const statusStyle = statusColors[booking.status] ?? statusColors.pending;
 
@@ -146,10 +170,35 @@ export default function BookingDetailScreen() {
         <View style={[styles.statusBanner, { backgroundColor: statusStyle.bg, borderColor: statusStyle.text + "30" }]}>
           <View style={[styles.statusDot, { backgroundColor: statusStyle.text }]} />
           <Text style={[styles.statusText, { color: statusStyle.text }]}>
-            Booking {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+            {statusLabels[booking.status] ?? booking.status}
           </Text>
           <Text style={[styles.refText, { color: statusStyle.text }]}>{booking.reference}</Text>
         </View>
+
+        {/* Cash Payment Countdown */}
+        {booking.paymentDeadline && (() => {
+          const diff = new Date(booking.paymentDeadline).getTime() - Date.now();
+          if (diff <= 0) return (
+            <View style={[styles.countdownBanner, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}>
+              <Text style={{ fontSize: 18 }}>⚠️</Text>
+              <Text style={{ color: "#EF4444", fontWeight: "700", flex: 1 }}>انتهت مهلة الدفع النقدي</Text>
+            </View>
+          );
+          const hours = Math.floor(diff / 3600000);
+          const minutes = Math.floor((diff % 3600000) / 60000);
+          const isUrgent = hours < 2;
+          return (
+            <View style={[styles.countdownBanner, { backgroundColor: isUrgent ? "#EF444415" : "#F59E0B15", borderColor: isUrgent ? "#EF444430" : "#F59E0B30" }]}>
+              <Text style={{ fontSize: 18 }}>{isUrgent ? "⚠️" : "⏰"}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: isUrgent ? "#EF4444" : "#F59E0B", fontWeight: "700", fontSize: 13 }}>مهلة الدفع النقدي</Text>
+                <Text style={{ color: isUrgent ? "#EF4444" : "#F59E0B", fontSize: 12, marginTop: 2 }}>
+                  {hours > 0 ? `${hours} ساعة و${minutes} دقيقة` : `${minutes} دقيقة`} متبقية — يرجى الدفع في مكتبنا
+                </Text>
+              </View>
+            </View>
+          );
+        })()}
 
         {/* Main Info */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -537,4 +586,14 @@ const styles = StyleSheet.create({
   pnrLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 },
   pnrValue: { fontSize: 34, fontWeight: "800", letterSpacing: 6, fontFamily: "monospace" },
   pnrHint: { fontSize: 11, marginTop: 6, textAlign: "center" },
+  countdownBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
 });

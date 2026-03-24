@@ -346,3 +346,21 @@
 - [x] حفظ passengerEmail في بيانات الحجز (Booking type + payment.tsx)
 - [x] إصلاح حفظ بيانات الفندق الحقيقية بدلاً من mock data (payment.tsx + hotels/detail.tsx)
 - [x] إزالة سطر الضرائب 10% من شاشة الدفع (payment.tsx)
+
+## تسجيل Push Token عند تسجيل الدخول
+- [x] استدعاء registerForPushNotifications() في شاشة تسجيل الدخول بعد النجاح
+- [x] حفظ Push Token في app-context عبر saveExpoPushToken()
+- [x] تضمين customerPushToken في بيانات الحجز عند الدفع
+
+## حالات تتبع الطلب
+- [x] إضافة حالات جديدة: "processing" و"airline_confirmed" في Booking type
+- [x] إضافة شاشة admin/update-status.tsx لتغيير حالة الحجز
+- [x] إرسال Push Notification عند تغيير الحالة (إذا كان للزبون token)
+- [x] عرض الحالة بشكل واضح في شاشة تفاصيل الحجز (ألوان + أيقونات)
+- [x] إضافة رابط "تتبع الطلبات" في لوحة الأدمن
+
+## تنبيه انتهاء 24 ساعة للحجز النقدي
+- [x] إضافة حقل paymentDeadline في Booking type
+- [x] جدولة إشعار محلي قبل ساعة من انتهاء المهلة (23 ساعة من الحجز)
+- [x] عرض عداد تنازلي في شاشة تفاصيل الحجز النقدي
+- [x] إضافة تنبيه مرئي (برتقالي/أحمر) عند اقتراب الموعد النهائي

@@ -15,11 +15,12 @@ import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
+import { registerForPushNotifications } from "@/lib/push-notifications";
 
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { login } = useApp();
+  const { login, saveExpoPushToken } = useApp();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +40,10 @@ export default function LoginScreen() {
         // Admin → go directly to admin panel
         router.replace("/admin" as any);
       } else if (result === "user") {
-        // Regular customer → go to main tabs
+        // Regular customer → register push token in background
+        registerForPushNotifications()
+          .then((token) => { if (token) saveExpoPushToken(token); })
+          .catch(() => {});
         router.replace("/(tabs)" as any);
       } else {
         setError("بيانات غير صحيحة. حاول مرة أخرى.");

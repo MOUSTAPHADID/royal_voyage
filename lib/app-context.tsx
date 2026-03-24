@@ -32,6 +32,7 @@ type AppContextType = {
   addBooking: (booking: Booking) => void;
   cancelBooking: (id: string) => void;
   updateBookingPnr: (id: string, realPnr: string) => void;
+  updateBookingStatus: (id: string, status: Booking["status"]) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
   // Search state
@@ -168,6 +169,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const updateBookingStatus = useCallback(async (id: string, status: Booking["status"]) => {
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, status } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
   const saveExpoPushToken = useCallback(async (token: string) => {
     setExpoPushToken(token);
     await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
@@ -187,6 +196,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addBooking,
         cancelBooking,
         updateBookingPnr,
+        updateBookingStatus,
         saveExpoPushToken,
         expoPushToken,
         lastFlightSearch,
