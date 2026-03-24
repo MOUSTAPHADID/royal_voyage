@@ -327,6 +327,59 @@ export const appRouter = router({
         return { emailSent, pushSent };
       }),
 
+    // Airline Confirmed Hotel: send PDF hotel voucher + push notification
+    sendAirlineConfirmedHotelTicket: publicProcedure
+      .input(
+        z.object({
+          guestName: z.string(),
+          guestEmail: z.string().email(),
+          bookingRef: z.string(),
+          pnr: z.string().optional(),
+          hotelName: z.string(),
+          hotelCity: z.string(),
+          hotelCountry: z.string().default("Mauritania"),
+          stars: z.number().min(1).max(5).default(3),
+          checkIn: z.string(),
+          checkOut: z.string(),
+          nights: z.number().min(1),
+          roomType: z.string().default("Standard Room"),
+          guests: z.number().min(1),
+          children: z.number().default(0),
+          totalPrice: z.string(),
+          currency: z.string().default("MRU"),
+          // Push notification
+          expoPushToken: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { expoPushToken, ...hotelData } = input;
+        // Send PDF hotel voucher via email
+        const emailSent = await sendHotelConfirmation(hotelData);
+        // Send push notification
+        let pushSent = false;
+        if (expoPushToken) {
+          try {
+            const response = await fetch("https://exp.host/--/api/v2/push/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({
+                to: expoPushToken,
+                sound: "default",
+                title: "\u{1F3E8} \u062a\u0623\u0643\u064a\u062f \u062d\u062c\u0632 \u0627\u0644\u0641\u0646\u062f\u0642!",
+                body: `\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u062d\u062c\u0632 \u0641\u0646\u062f\u0642\u0643 ${input.bookingRef} \u0631\u0633\u0645\u064a\u0627\u064b. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0646\u0632\u064a\u0644 \u0627\u0644\u0642\u0633\u064a\u0645\u0629.`,
+                data: { bookingRef: input.bookingRef, type: "airline_confirmed_hotel" },
+              }),
+            });
+            const result = await response.json();
+            pushSent = result?.data?.[0]?.status === "ok";
+            console.log("[Push] Airline confirmed hotel push result:", JSON.stringify(result));
+          } catch (err: any) {
+            console.warn("[Push] Failed to send hotel confirmed push:", err?.message);
+          }
+        }
+        return { emailSent, pushSent };
+      }),
+
     // Push notification via Expo Push API
     sendPushNotification: publicProcedure
       .input(

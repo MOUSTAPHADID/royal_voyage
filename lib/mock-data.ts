@@ -72,6 +72,9 @@ export type Booking = {
   paymentMethod?: string; // cash | bank_transfer | bankily | masrvi | sedad
   // Expo Push Token for customer notifications
   customerPushToken?: string;
+  // Ticket delivery tracking
+  ticketSent?: boolean; // true when PDF ticket has been sent to customer
+  ticketSentAt?: string; // ISO timestamp when ticket was last sent
 };
 
 export const DESTINATIONS: Destination[] = [

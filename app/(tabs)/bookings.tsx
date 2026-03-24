@@ -90,10 +90,22 @@ export default function BookingsScreen() {
             </Text>
             <Text style={[styles.bookingRef, { color: colors.muted }]}>{item.reference}</Text>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>
-              {item.status === "confirmed" ? t.myBookings.confirmed : item.status === "cancelled" ? t.myBookings.cancelled : t.myBookings.pending}
-            </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {item.ticketSent && (
+              <View style={[styles.ticketSentBadge, { backgroundColor: "#10B98115" }]}>
+                <Text style={{ fontSize: 12 }}>✉️</Text>
+                <Text style={{ fontSize: 10, color: "#10B981", fontWeight: "700" }}>تذكرة</Text>
+              </View>
+            )}
+            <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+              <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                {item.status === "confirmed" ? t.myBookings.confirmed :
+                 item.status === "cancelled" ? t.myBookings.cancelled :
+                 item.status === "airline_confirmed" ? "مؤكد ✈️" :
+                 item.status === "processing" ? "معالجة 🔄" :
+                 t.myBookings.pending}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -332,6 +344,14 @@ const styles = StyleSheet.create({
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
+    borderRadius: 8,
+  },
+  ticketSentBadge: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
     borderRadius: 8,
   },
   statusText: {

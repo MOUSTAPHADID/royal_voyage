@@ -408,3 +408,11 @@
 - [x] تحديث admin/update-status.tsx لاستدعاء الـ endpoint عند airline_confirmed
 - [x] إضافة Push Notification للزبون مع رسالة "تذكرتك جاهزة" عند airline_confirmed
 - [x] رسائل Alert تُظهر ما تم: إرسال PDF + Push
+
+## تذكرة فندق PDF وزر إعادة الإرسال وحالة الإرسال
+- [x] إرسال تذكرة فندق PDF عند airline_confirmed لحجوزات الفنادق في update-status.tsx
+- [x] إضافة endpoint sendAirlineConfirmedHotelTicket في server/routers.ts
+- [x] إضافة حقل ticketSent في Booking type لتتبع حالة الإرسال
+- [x] إنشاء شاشة admin/booking-detail.tsx مع زر إعادة إرسال التذكرة للأدمن
+- [x] ربط بطاقات الحجوزات في لوحة الأدمن بشاشة التفاصيل الجديدة
+- [x] عرض أيقونة ✉️ في بطاقة الحجز عند ticketSent = true (شاشة الزبون والأدمن)

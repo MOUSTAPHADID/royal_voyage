@@ -649,16 +649,25 @@ export default function AdminScreen() {
                   ? `${b.flight.originCode} → ${b.flight.destinationCode}`
                   : b.hotel?.name ?? "—";
                 return (
-                  <View key={b.id} style={s.bookingCard}>
+                  <Pressable
+                    key={b.id}
+                    style={({ pressed }) => [s.bookingCard, { opacity: pressed ? 0.85 : 1 }]}
+                    onPress={() => router.push({ pathname: "/admin/booking-detail" as any, params: { id: b.id } })}
+                  >
                     <View style={s.bookingRow}>
                       <Text style={s.bookingRef}>{b.reference}</Text>
-                      <View style={{ flexDirection: "row", gap: 6 }}>
+                      <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                        {b.ticketSent && (
+                          <Text style={{ fontSize: 14 }}>✉️</Text>
+                        )}
                         <Text style={[s.bookingType, { backgroundColor: typeColor + "20", color: typeColor }]}>
                           {b.type === "flight" ? t.admin.flight : t.admin.hotel}
                         </Text>
                         <Text style={[s.statusBadge, { backgroundColor: statusColor + "20", color: statusColor }]}>
                           {b.status === "confirmed" ? t.admin.confirmed :
-                           b.status === "cancelled" ? t.admin.cancelled : t.admin.pending}
+                           b.status === "cancelled" ? t.admin.cancelled :
+                           b.status === "processing" ? "معالجة" :
+                           b.status === "airline_confirmed" ? "مؤكد ✈️" : t.admin.pending}
                         </Text>
                       </View>
                     </View>
@@ -666,8 +675,11 @@ export default function AdminScreen() {
                       <Text style={s.bookingDate}>{dest}</Text>
                       <Text style={s.bookingAmount}>{formatMRU(b.totalPrice ?? 0)}</Text>
                     </View>
-                    <Text style={[s.bookingDate, { marginTop: 2 }]}>{b.date}</Text>
-                  </View>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
+                      <Text style={s.bookingDate}>{b.date}</Text>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>اضغط للتفاصيل ›</Text>
+                    </View>
+                  </Pressable>
                 );
               })
             )}

@@ -109,6 +109,7 @@ export default function RootLayout() {
               options={{ presentation: "fullScreenModal" }}
             />
             <Stack.Screen name="booking/detail" />
+            <Stack.Screen name="admin/booking-detail" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />

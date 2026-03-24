@@ -95,12 +95,13 @@ const STATUS_PUSH_MESSAGES: Record<BookingStatus, { title: string; body: string 
 export default function UpdateStatusScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingStatus } = useApp();
+  const { bookings, updateBookingStatus, updateBookingTicketSent } = useApp();
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
 
   const sendPushNotification = trpc.email.sendPushNotification.useMutation();
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
+  const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
 
   const filteredBookings = useMemo(() => {
     if (!search.trim()) return bookings;
@@ -129,35 +130,68 @@ export default function UpdateStatusScreen() {
             try {
               await updateBookingStatus(booking.id, newStatus);
 
-              // If airline_confirmed and booking is a flight → send PDF ticket
-              if (newStatus === "airline_confirmed" && booking.type === "flight") {
-                const passengerEmail = booking.passengerEmail;
-                const passengerName = booking.passengerName ?? booking.guestName ?? "Passenger";
-                if (passengerEmail) {
+              // If airline_confirmed → send PDF ticket (flight or hotel)
+              if (newStatus === "airline_confirmed") {
+                const email = booking.passengerEmail;
+                const name = booking.passengerName ?? booking.guestName ?? "Guest";
+                if (email) {
                   try {
-                    await sendAirlineConfirmedTicket.mutateAsync({
-                      passengerName,
-                      passengerEmail,
-                      bookingRef: booking.reference,
-                      pnr: booking.realPnr ?? booking.pnr,
-                      origin: booking.flight?.originCode ?? booking.flight?.origin ?? "NKC",
-                      originCity: booking.flight?.origin ?? "Nouakchott",
-                      destination: booking.flight?.destinationCode ?? booking.flight?.destination ?? "",
-                      destinationCity: booking.flight?.destination ?? "",
-                      departureDate: booking.date ?? "",
-                      departureTime: booking.flight?.departureTime ?? "",
-                      arrivalTime: booking.flight?.arrivalTime ?? "",
-                      airline: booking.flight?.airline ?? "",
-                      flightNumber: booking.flight?.flightNumber ?? "",
-                      cabinClass: booking.flight?.class ?? "ECONOMY",
-                      passengers: booking.passengers ?? 1,
-                      children: 0,
-                      totalPrice: formatMRU(booking.totalPrice ?? 0),
-                      currency: "MRU",
-                      tripType: "one-way",
-                      expoPushToken: booking.customerPushToken,
-                    });
-                    console.log("[Status] ✈️ Airline confirmed ticket sent to", passengerEmail);
+                    if (booking.type === "flight") {
+                      await sendAirlineConfirmedTicket.mutateAsync({
+                        passengerName: name,
+                        passengerEmail: email,
+                        bookingRef: booking.reference,
+                        pnr: booking.realPnr ?? booking.pnr,
+                        origin: booking.flight?.originCode ?? booking.flight?.origin ?? "NKC",
+                        originCity: booking.flight?.origin ?? "Nouakchott",
+                        destination: booking.flight?.destinationCode ?? booking.flight?.destination ?? "",
+                        destinationCity: booking.flight?.destination ?? "",
+                        departureDate: booking.date ?? "",
+                        departureTime: booking.flight?.departureTime ?? "",
+                        arrivalTime: booking.flight?.arrivalTime ?? "",
+                        airline: booking.flight?.airline ?? "",
+                        flightNumber: booking.flight?.flightNumber ?? "",
+                        cabinClass: booking.flight?.class ?? "ECONOMY",
+                        passengers: booking.passengers ?? 1,
+                        children: 0,
+                        totalPrice: formatMRU(booking.totalPrice ?? 0),
+                        currency: "MRU",
+                        tripType: "one-way",
+                        expoPushToken: booking.customerPushToken,
+                      });
+                      console.log("[Status] ✈️ Flight ticket sent to", email);
+                    } else if (booking.type === "hotel" && booking.hotel) {
+                      // Calculate nights
+                      let nights = 1;
+                      if (booking.checkIn && booking.checkOut) {
+                        const d1 = new Date(booking.checkIn);
+                        const d2 = new Date(booking.checkOut);
+                        const diff = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diff > 0) nights = diff;
+                      }
+                      await sendAirlineConfirmedHotelTicket.mutateAsync({
+                        guestName: name,
+                        guestEmail: email,
+                        bookingRef: booking.reference,
+                        pnr: booking.realPnr ?? booking.pnr,
+                        hotelName: booking.hotel.name,
+                        hotelCity: booking.hotel.city,
+                        hotelCountry: booking.hotel.country ?? "Mauritania",
+                        stars: booking.hotel.stars ?? 3,
+                        checkIn: booking.checkIn ?? "",
+                        checkOut: booking.checkOut ?? "",
+                        nights,
+                        roomType: "Standard Room",
+                        guests: booking.guests ?? 1,
+                        children: 0,
+                        totalPrice: formatMRU(booking.totalPrice ?? 0),
+                        currency: "MRU",
+                        expoPushToken: booking.customerPushToken,
+                      });
+                      console.log("[Status] 🏨 Hotel voucher sent to", email);
+                    }
+                    // Mark ticket as sent
+                    await updateBookingTicketSent(booking.id);
                   } catch (err) {
                     console.error("[Status] Ticket email failed:", err);
                   }
@@ -177,11 +211,12 @@ export default function UpdateStatusScreen() {
                 }
               }
 
-              const isAirlineConfirmed = newStatus === "airline_confirmed" && booking.type === "flight" && booking.passengerEmail;
+              const isAirlineConfirmed = newStatus === "airline_confirmed" && booking.passengerEmail;
+              const docLabel = booking.type === "flight" ? "✈️ تذكرة PDF" : "🏨 قسيمة الفندق PDF";
               Alert.alert(
                 "✅ تم التحديث",
                 `تم تغيير الحالة إلى "${STATUS_OPTIONS.find(s => s.id === newStatus)?.labelAr}"` +
-                (isAirlineConfirmed ? `\n✈️ تم إرسال التذكرة PDF إلى ${booking.passengerEmail}` : "") +
+                (isAirlineConfirmed ? `\n${docLabel} أُرسل إلى ${booking.passengerEmail}` : "") +
                 (booking.customerPushToken ? "\n🔔 تم إرسال إشعار Push للزبون" : "")
               );
             } catch (err) {
