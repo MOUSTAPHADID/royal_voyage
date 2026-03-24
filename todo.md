@@ -449,3 +449,8 @@
 ## تحديثات معلومات الوكالة
 - [x] تغيير إيميل التواصل إلى suporte@royalvoyage.online في جميع الملفات
 - [x] إضافة "Since 2023" في صفحة Profile وملفات PDF
+
+## Email Forwarding وصفحة About وWhatsApp في PDF
+- [x] إعداد Email Forwarding في Resend لـ suporte@royalvoyage.online (يحتاج Cloudflare)
+- [x] إنشاء/تحديث صفحة About بتاريخ الوكالة منذ 2023 وخدماتها
+- [x] إضافة رقم WhatsApp في تذاكر PDF
