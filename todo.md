@@ -329,3 +329,20 @@
 ## إصلاح خطأ وجهة الرحلة
 - [x] تشخيص سبب ظهور DXB بدلاً من CMN: كان يحفظ بيانات FLIGHTS المحلية بدلاً من params
 - [x] إصلاح منطق payment.tsx لحفظ بيانات الرحلة الحقيقية من Amadeus
+
+## تحسينات بيانات الحجز
+- [x] فحص بيانات التذكرة: بيانات الرحلة تُمرَّر صحيحاً من params
+- [x] إصلاح حفظ بيانات الفندق: إضافة hotelCity/hotelCountry/hotelStars في params من detail.tsx
+- [x] إضافة تحقق من صحة بيانات الرحلة والفندق قبل معالجة الدفع
+
+## إصلاح إشعار تحديث PNR
+- [x] تشخيص سبب عدم وصول الإشعار للزبون عند تحديث PNR
+- [x] إصلاح منطق الإشعار في شاشة manage-pnr.tsx
+
+## بريد إلكتروني وPush عند تحديث PNR
+- [x] إضافة tRPC endpoint sendPnrUpdateEmail في الخادم (server/email.ts + server/routers.ts)
+- [x] إضافة Push Notification عبر Expo Push API للزبون (server/routers.ts sendPushNotification)
+- [x] تحديث manage-pnr.tsx لاستدعاء الخدمتين عند حفظ PNR
+- [x] حفظ passengerEmail في بيانات الحجز (Booking type + payment.tsx)
+- [x] إصلاح حفظ بيانات الفندق الحقيقية بدلاً من mock data (payment.tsx + hotels/detail.tsx)
+- [x] إزالة سطر الضرائب 10% من شاشة الدفع (payment.tsx)

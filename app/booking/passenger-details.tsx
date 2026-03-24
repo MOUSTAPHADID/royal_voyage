@@ -42,6 +42,9 @@ export default function PassengerDetailsScreen() {
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
+    hotelCity?: string;
+    hotelCountry?: string;
+    hotelStars?: string;
     checkIn?: string;
     checkOut?: string;
     guests?: string;
@@ -111,6 +114,9 @@ export default function PassengerDetailsScreen() {
         tripType: params.tripType,
         returnDate: params.returnDate,
         hotelName: params.hotelName,
+        hotelCity: params.hotelCity,
+        hotelCountry: params.hotelCountry,
+        hotelStars: params.hotelStars,
         checkIn: params.checkIn,
         checkOut: params.checkOut,
         guests: params.guests,

@@ -269,6 +269,84 @@ function hotelConfirmationHtml(data: HotelConfirmationData): string {
   return baseLayout(content, `Hotel Booking — ${data.bookingRef}`);
 }
 
+// ─── PNR Update Email ────────────────────────────────────────────────────────
+
+export interface PnrUpdateData {
+  passengerName: string;
+  passengerEmail: string;
+  bookingRef: string;
+  pnr: string;
+  origin?: string;
+  destination?: string;
+  departureDate?: string;
+  airline?: string;
+  flightNumber?: string;
+}
+
+function pnrUpdateHtml(data: PnrUpdateData): string {
+  const content = `
+    <p style="font-size:16px; margin-bottom:24px;">
+      Dear <strong>${data.passengerName}</strong>,<br/>
+      Your flight booking PNR has been <span class="badge">UPDATED</span>
+    </p>
+
+    <div class="ref-box">
+      <div class="ref-label">Booking Reference</div>
+      <div class="ref-code">${data.bookingRef}</div>
+    </div>
+
+    <div style="background:#C9A84C;border-radius:12px;padding:24px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:rgba(0,0,0,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:700;">PNR — Airline Record Locator</div>
+      <div style="font-size:42px;font-weight:900;color:#1B2B5E;letter-spacing:10px;margin-top:8px;font-family:monospace;">${data.pnr}</div>
+      <div style="font-size:12px;color:rgba(0,0,0,0.6);margin-top:8px;">Present this code at the airport check-in counter</div>
+    </div>
+
+    ${data.origin && data.destination ? `
+    <div class="card">
+      <div class="flight-route">
+        <div><div class="airport-code">${data.origin}</div></div>
+        <div class="flight-arrow">→</div>
+        <div style="text-align:right"><div class="airport-code">${data.destination}</div></div>
+      </div>
+      ${data.airline ? `<div class="info-grid">
+        <div class="info-item"><label>Airline</label><span>${data.airline} ${data.flightNumber ?? ""}</span></div>
+        ${data.departureDate ? `<div class="info-item"><label>Date</label><span>${data.departureDate}</span></div>` : ""}
+      </div>` : ""}
+    </div>
+    ` : ""}
+
+    <div class="notice">
+      ⚠ Please save this PNR code. You will need it for check-in at the airport. If you have any questions, contact us at ${COMPANY.phone}.
+    </div>
+  `;
+  return baseLayout(content, `PNR Updated — ${data.bookingRef}`);
+}
+
+export async function sendPnrUpdateEmail(data: PnrUpdateData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = pnrUpdateHtml(data);
+
+  if (!transporter) {
+    console.log(`[Email] Would send PNR update to: ${data.passengerEmail}`);
+    console.log(`[Email] PNR: ${data.pnr} for booking ${data.bookingRef}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.passengerEmail,
+      subject: `✈ PNR Updated — ${data.bookingRef} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ PNR update email sent to ${data.passengerEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send PNR update email:", error);
+    return false;
+  }
+}
+
 // ─── Send Functions ───────────────────────────────────────────────────────────
 
 export async function sendFlightTicket(data: FlightTicketData): Promise<boolean> {

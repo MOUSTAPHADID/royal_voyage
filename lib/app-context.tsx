@@ -11,6 +11,7 @@ export type User = {
   nationality?: string;
   passportNumber?: string;
   isAdmin?: boolean;
+  expoPushToken?: string;
 };
 
 // Admin credentials — stored only in app logic, never shown to customers
@@ -31,6 +32,8 @@ type AppContextType = {
   addBooking: (booking: Booking) => void;
   cancelBooking: (id: string) => void;
   updateBookingPnr: (id: string, realPnr: string) => void;
+  saveExpoPushToken: (token: string) => void;
+  expoPushToken: string | null;
   // Search state
   lastFlightSearch: FlightSearch | null;
   lastHotelSearch: HotelSearch | null;
@@ -63,6 +66,7 @@ const AppContext = createContext<AppContextType | null>(null);
 const STORAGE_KEYS = {
   USER: "@royal_voyage_user",
   BOOKINGS: "@royal_voyage_bookings",
+  EXPO_PUSH_TOKEN: "@royal_voyage_expo_push_token",
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -71,6 +75,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [lastFlightSearch, setLastFlightSearch] = useState<FlightSearch | null>(null);
   const [lastHotelSearch, setLastHotelSearch] = useState<HotelSearch | null>(null);
+  const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
 
   useEffect(() => {
     loadStoredData();
@@ -78,12 +83,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loadStoredData = async () => {
     try {
-      const [storedUser, storedBookings] = await Promise.all([
+      const [storedUser, storedBookings, storedToken] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER),
         AsyncStorage.getItem(STORAGE_KEYS.BOOKINGS),
+        AsyncStorage.getItem(STORAGE_KEYS.EXPO_PUSH_TOKEN),
       ]);
       if (storedUser) setUser(JSON.parse(storedUser));
       if (storedBookings) setBookings(JSON.parse(storedBookings));
+      if (storedToken) setExpoPushToken(storedToken);
     } catch (e) {
       // ignore
     } finally {
@@ -161,6 +168,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const saveExpoPushToken = useCallback(async (token: string) => {
+    setExpoPushToken(token);
+    await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
+  }, []);
+
   return (
     <AppContext.Provider
       value={{
@@ -175,6 +187,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         addBooking,
         cancelBooking,
         updateBookingPnr,
+        saveExpoPushToken,
+        expoPushToken,
         lastFlightSearch,
         lastHotelSearch,
         setLastFlightSearch,

@@ -64,9 +64,12 @@ export type Booking = {
   rooms?: number;
   totalPrice: number;
   currency: string;
-  // Passenger/guest name for search
+  // Passenger/guest name and email for search and notifications
   passengerName?: string;
   guestName?: string;
+  passengerEmail?: string;
+  // Expo Push Token for customer notifications
+  customerPushToken?: string;
 };
 
 export const DESTINATIONS: Destination[] = [

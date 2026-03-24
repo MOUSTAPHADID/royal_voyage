@@ -8,7 +8,7 @@ import {
   searchLocations,
   searchHotelsByCity,
 } from "./amadeus";
-import { sendFlightTicket, sendHotelConfirmation } from "./email";
+import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
 
@@ -195,6 +195,61 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const success = await sendHotelConfirmation(input);
         return { success };
+      }),
+
+    sendPnrUpdate: publicProcedure
+      .input(
+        z.object({
+          passengerName: z.string(),
+          passengerEmail: z.string().email(),
+          bookingRef: z.string(),
+          pnr: z.string(),
+          origin: z.string().optional(),
+          destination: z.string().optional(),
+          departureDate: z.string().optional(),
+          airline: z.string().optional(),
+          flightNumber: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const success = await sendPnrUpdateEmail(input);
+        return { success };
+      }),
+
+    // Push notification via Expo Push API
+    sendPushNotification: publicProcedure
+      .input(
+        z.object({
+          expoPushToken: z.string(),
+          title: z.string(),
+          body: z.string(),
+          data: z.record(z.string(), z.unknown()).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const response = await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+              "Accept-Encoding": "gzip, deflate",
+            },
+            body: JSON.stringify({
+              to: input.expoPushToken,
+              sound: "default",
+              title: input.title,
+              body: input.body,
+              data: input.data ?? {},
+            }),
+          });
+          const result = await response.json();
+          console.log("[Push] Expo push result:", JSON.stringify(result));
+          return { success: true, result };
+        } catch (err: any) {
+          console.error("[Push] Failed to send push notification:", err?.message);
+          return { success: false, error: err?.message };
+        }
       }),
   }),
 });

@@ -111,6 +111,9 @@ export default function PaymentScreen() {
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
+    hotelCity?: string;
+    hotelCountry?: string;
+    hotelStars?: string;
     checkIn?: string;
     checkOut?: string;
     guests?: string;
@@ -133,8 +136,8 @@ export default function PaymentScreen() {
   const basePrice = passedPrice > 0
     ? passedPrice
     : adultUnitPrice * adultCount + childUnitPrice * childCount;
-  const taxes = Math.round(basePrice * 0.1);
-  const total = passedPrice > 0 ? passedPrice : basePrice + taxes;
+  // الضرائب مشمولة في سعر Amadeus - لا تُضاف منفصلة
+  const total = basePrice;
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
   const [transferRef, setTransferRef] = useState("");
@@ -145,6 +148,35 @@ export default function PaymentScreen() {
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
 
   const handlePay = async () => {
+    // التحقق من اكتمال بيانات الرحلة
+    if (isFlight) {
+      const missingFields: string[] = [];
+      if (!params.originCode && !params.origin) missingFields.push("مطار المغادرة");
+      if (!params.destinationCode && !params.destination) missingFields.push("مطار الوصول");
+      if (!params.airline) missingFields.push("شركة الطيران");
+      if (!params.price || parseFloat(params.price) === 0) missingFields.push("السعر");
+      if (missingFields.length > 0) {
+        Alert.alert(
+          "بيانات ناقصة",
+          `يرجى العودة واختيار الرحلة مجدداً. البيانات الناقصة: ${missingFields.join("، ")}`,
+          [{ text: "حسناً" }]
+        );
+        return;
+      }
+    }
+
+    // التحقق من اكتمال بيانات الفندق
+    if (!isFlight) {
+      if (!params.hotelName) {
+        Alert.alert(
+          "بيانات ناقصة",
+          "يرجى العودة واختيار الفندق مجدداً.",
+          [{ text: "حسناً" }]
+        );
+        return;
+      }
+    }
+
     // التحقق من رقم مرجع التحويل إن كان مطلوباً
     if (
       (paymentMethod === "bank_transfer" ||
@@ -187,6 +219,23 @@ export default function PaymentScreen() {
       seatsLeft: flight?.seatsLeft ?? 9,
     } : null;
 
+    // Build hotel data from params (real Amadeus data) with fallback to local HOTELS
+    const hotelData = !isFlight ? {
+      id: params.id ?? hotel?.id ?? "unknown",
+      name: params.hotelName ?? hotel?.name ?? "",
+      city: params.hotelCity ?? hotel?.city ?? "",
+      country: params.hotelCountry ?? hotel?.country ?? "Mauritania",
+      image: hotel?.image ?? "",
+      rating: hotel?.rating ?? 4,
+      reviewCount: hotel?.reviewCount ?? 0,
+      pricePerNight: parseFloat(params.roomPrice ?? "0") || (hotel?.pricePerNight ?? 0),
+      currency: params.currency ?? hotel?.currency ?? "MRU",
+      stars: parseInt(params.hotelStars ?? "0") || (hotel?.stars ?? 3),
+      amenities: hotel?.amenities ?? [],
+      description: hotel?.description ?? "",
+      address: hotel?.address ?? "",
+    } : null;
+
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
@@ -194,10 +243,12 @@ export default function PaymentScreen() {
       reference: ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
+      passengerName: `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim(),
+      passengerEmail: params.email ?? "",
       ...(isFlight && flightData ? { flight: flightData, passengers: adultCount } : {}),
-      ...(hotel
+      ...(hotelData
         ? {
-            hotel,
+            hotel: hotelData,
             checkIn: params.checkIn ?? "2025-01-01",
             checkOut: params.checkOut ?? "2025-01-05",
             guests: adultCount,
@@ -258,9 +309,9 @@ export default function PaymentScreen() {
             bookingRef: ref,
             pnr,
             hotelName: params.hotelName ?? hotel?.name ?? "",
-            hotelCity: hotel?.city ?? "",
-            hotelCountry: hotel?.country ?? "Mauritania",
-            stars: hotel?.stars ?? 3,
+            hotelCity: params.hotelCity ?? hotel?.city ?? "",
+            hotelCountry: params.hotelCountry ?? hotel?.country ?? "Mauritania",
+            stars: (parseInt(params.hotelStars ?? "0") || 0) || (hotel?.stars ?? 3),
             checkIn: checkInDate,
             checkOut: checkOutDate,
             nights,
@@ -311,8 +362,8 @@ export default function PaymentScreen() {
         tripType: params.tripType ?? "oneway",
         returnDate: params.returnDate,
         hotelName: params.hotelName ?? hotel?.name ?? "",
-        hotelCity: hotel?.city ?? "",
-        hotelCountry: hotel?.country ?? "Mauritania",
+        hotelCity: params.hotelCity ?? hotel?.city ?? "",
+        hotelCountry: params.hotelCountry ?? hotel?.country ?? "Mauritania",
         checkIn: params.checkIn ?? "",
         checkOut: params.checkOut ?? "",
         guests: params.guests ?? "1",
@@ -369,14 +420,7 @@ export default function PaymentScreen() {
             </View>
           )}
 
-          {passedPrice === 0 && (
-            <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.summaryLabel, { color: colors.muted }]}>ضرائب ورسوم (10%)</Text>
-              <Text style={[styles.summaryValue, { color: colors.foreground }]}>
-                {formatMRU(toMRU(taxes, "USD"))}
-              </Text>
-            </View>
-          )}
+          {/* الضرائب مشمولة في سعر Amadeus - لا تُعرض منفصلة */}
 
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>

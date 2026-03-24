@@ -10,11 +10,11 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import * as Notifications from "expo-notifications";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { trpc } from "@/lib/trpc";
 
 export default function ManagePnrScreen() {
   const router = useRouter();
@@ -24,6 +24,9 @@ export default function ManagePnrScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pnrInput, setPnrInput] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const sendPnrUpdate = trpc.email.sendPnrUpdate.useMutation();
+  const sendPushNotification = trpc.email.sendPushNotification.useMutation();
 
   // Only show flight bookings (PNR is for flights only)
   const flightBookings = useMemo(() => {
@@ -40,25 +43,6 @@ export default function ManagePnrScreen() {
     );
   }, [bookings, search]);
 
-  const sendPnrNotification = async (pnr: string, bookingRef: string) => {
-    if (Platform.OS === "web") return;
-    try {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== "granted") return;
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "✈️ تم تحديث رمز حجزك",
-          body: `رمز PNR الحقيقي لحجزك ${bookingRef} هو: ${pnr}\nاحتفظ به للمطار`,
-          sound: true,
-          data: { bookingRef, pnr },
-        },
-        trigger: null, // immediate
-      });
-    } catch {
-      // ignore notification errors
-    }
-  };
-
   const handleSavePnr = async (bookingId: string) => {
     const pnr = pnrInput.trim().toUpperCase();
     if (!pnr) {
@@ -71,15 +55,71 @@ export default function ManagePnrScreen() {
     }
     const booking = flightBookings.find((b) => b.id === bookingId);
     setSaving(true);
+
     try {
+      // 1. Update PNR in local storage
       await updateBookingPnr(bookingId, pnr);
-      // Send local notification to customer
-      if (booking) {
-        await sendPnrNotification(pnr, booking.reference);
+
+      let emailSent = false;
+      let pushSent = false;
+
+      // 2. Send email notification to customer
+      if (booking?.passengerEmail) {
+        try {
+          const emailResult = await sendPnrUpdate.mutateAsync({
+            passengerName: booking.passengerName ?? "العميل الكريم",
+            passengerEmail: booking.passengerEmail,
+            bookingRef: booking.reference,
+            pnr,
+            origin: booking.flight?.originCode,
+            destination: booking.flight?.destinationCode,
+            departureDate: booking.date,
+            airline: booking.flight?.airline,
+            flightNumber: booking.flight?.flightNumber,
+          });
+          emailSent = emailResult.success;
+          console.log("[PNR] Email sent:", emailSent);
+        } catch (err) {
+          console.error("[PNR] Email failed:", err);
+        }
       }
+
+      // 3. Send Push Notification to customer (works in APK, not Expo Go)
+      if (booking?.customerPushToken && Platform.OS !== "web") {
+        try {
+          const pushResult = await sendPushNotification.mutateAsync({
+            expoPushToken: booking.customerPushToken,
+            title: "✈️ تم تحديث رمز حجزك",
+            body: `رمز PNR لحجزك ${booking.reference} هو: ${pnr}`,
+            data: { bookingRef: booking.reference, pnr, type: "pnr_update" },
+          });
+          pushSent = pushResult.success;
+          console.log("[PNR] Push sent:", pushSent);
+        } catch (err) {
+          console.error("[PNR] Push failed:", err);
+        }
+      }
+
       setEditingId(null);
       setPnrInput("");
-      Alert.alert("✅ تم", `تم تحديث PNR إلى ${pnr} بنجاح\nتم إرسال إشعار للزبون`);
+
+      // Show success message with details
+      const details: string[] = [`✅ تم تحديث PNR إلى: ${pnr}`];
+      if (booking?.passengerEmail) {
+        details.push(emailSent
+          ? `📧 تم إرسال بريد إلكتروني إلى: ${booking.passengerEmail}`
+          : `⚠️ فشل إرسال البريد الإلكتروني`
+        );
+      } else {
+        details.push("ℹ️ لا يوجد بريد إلكتروني للزبون");
+      }
+      if (booking?.customerPushToken) {
+        details.push(pushSent ? "🔔 تم إرسال إشعار Push" : "⚠️ فشل إرسال إشعار Push");
+      }
+
+      Alert.alert("تم التحديث", details.join("\n"));
+    } catch (err) {
+      Alert.alert("خطأ", "فشل تحديث PNR. يرجى المحاولة مجدداً.");
     } finally {
       setSaving(false);
     }
@@ -125,7 +165,8 @@ export default function ManagePnrScreen() {
         <View style={[styles.infoBanner, { backgroundColor: "#1B2B5E15", borderColor: "#1B2B5E30" }]}>
           <IconSymbol name="paperplane.fill" size={16} color="#1B2B5E" />
           <Text style={[styles.infoText, { color: "#1B2B5E" }]}>
-            بعد الحجز اليدوي مع شركة الطيران، أدخل رمز PNR الحقيقي هنا ليظهر على تذكرة الزبون
+            بعد الحجز اليدوي مع شركة الطيران، أدخل رمز PNR الحقيقي هنا.
+            سيُرسل تلقائياً بريد إلكتروني للزبون وإشعار Push (في APK).
           </Text>
         </View>
 
@@ -173,7 +214,12 @@ export default function ManagePnrScreen() {
                     </Text>
                     {booking.passengerName && (
                       <Text style={[styles.cardPassenger, { color: colors.muted }]}>
-                        {booking.passengerName}
+                        👤 {booking.passengerName}
+                      </Text>
+                    )}
+                    {booking.passengerEmail && (
+                      <Text style={[styles.cardPassenger, { color: colors.muted }]}>
+                        📧 {booking.passengerEmail}
                       </Text>
                     )}
                   </View>
@@ -190,6 +236,20 @@ export default function ManagePnrScreen() {
                   <IconSymbol name="paperplane.fill" size={14} color={colors.muted} />
                   <Text style={[styles.routeCode, { color: "#1B2B5E" }]}>{booking.flight?.destinationCode ?? "—"}</Text>
                   <Text style={[styles.routeDate, { color: colors.muted }]}>{booking.date}</Text>
+                </View>
+
+                {/* Notification Status */}
+                <View style={[styles.notifRow, { borderTopColor: colors.border }]}>
+                  <View style={styles.notifItem}>
+                    <Text style={[styles.notifLabel, { color: colors.muted }]}>
+                      {booking.passengerEmail ? `📧 ${booking.passengerEmail}` : "📧 لا يوجد بريد"}
+                    </Text>
+                  </View>
+                  <View style={styles.notifItem}>
+                    <Text style={[styles.notifLabel, { color: colors.muted }]}>
+                      {booking.customerPushToken ? "🔔 Push مسجّل" : "🔔 Push غير مسجّل"}
+                    </Text>
+                  </View>
                 </View>
 
                 {/* PNR Section */}
@@ -213,6 +273,11 @@ export default function ManagePnrScreen() {
                             </View>
                           )}
                         </View>
+                        {booking.realPnrUpdatedAt && (
+                          <Text style={[styles.updatedAt, { color: colors.muted }]}>
+                            آخر تحديث: {new Date(booking.realPnrUpdatedAt).toLocaleString("ar-MR")}
+                          </Text>
+                        )}
                       </View>
                       <Pressable
                         style={({ pressed }) => [
@@ -259,7 +324,7 @@ export default function ManagePnrScreen() {
                           onPress={() => handleSavePnr(booking.id)}
                           disabled={saving}
                         >
-                          <Text style={styles.saveBtnText}>{saving ? "جاري الحفظ..." : "حفظ PNR"}</Text>
+                          <Text style={styles.saveBtnText}>{saving ? "جاري الإرسال..." : "حفظ وإرسال"}</Text>
                         </Pressable>
                       </View>
                     </View>
@@ -342,6 +407,15 @@ const styles = StyleSheet.create({
   },
   routeCode: { fontSize: 16, fontWeight: "700" },
   routeDate: { fontSize: 12, marginLeft: "auto" },
+  notifRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    gap: 12,
+  },
+  notifItem: { flex: 1 },
+  notifLabel: { fontSize: 11 },
   pnrSection: { borderTopWidth: 1, padding: 14 },
   pnrRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   pnrLeft: { flex: 1 },
@@ -350,6 +424,7 @@ const styles = StyleSheet.create({
   pnrValue: { fontSize: 20, fontWeight: "800", letterSpacing: 2 },
   realBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   realBadgeText: { fontSize: 10, fontWeight: "600" },
+  updatedAt: { fontSize: 10, marginTop: 4 },
   editBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,

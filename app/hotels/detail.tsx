@@ -30,6 +30,17 @@ export default function HotelDetailScreen() {
   const colors = useColors();
   const params = useLocalSearchParams<{
     id: string;
+    name?: string;
+    city?: string;
+    country?: string;
+    rating?: string;
+    stars?: string;
+    pricePerNight?: string;
+    currency?: string;
+    amenities?: string;
+    description?: string;
+    address?: string;
+    image?: string;
     guests?: string;
     children?: string;
     checkIn?: string;
@@ -37,7 +48,26 @@ export default function HotelDetailScreen() {
   }>();
   const { id } = params;
 
-  const hotel = HOTELS.find((h) => h.id === id) ?? HOTELS[0];
+  // Build hotel object from params (real Amadeus data) with fallback to local HOTELS
+  const mockHotel = HOTELS.find((h) => h.id === id);
+  const parsedAmenities = (() => {
+    try { return params.amenities ? JSON.parse(params.amenities) : undefined; } catch { return undefined; }
+  })();
+  const hotel = {
+    id,
+    name: params.name ?? mockHotel?.name ?? "Hotel",
+    city: params.city ?? mockHotel?.city ?? "",
+    country: params.country ?? mockHotel?.country ?? "Mauritania",
+    image: params.image ?? mockHotel?.image ?? "",
+    rating: parseFloat(params.rating ?? "0") || (mockHotel?.rating ?? 4),
+    reviewCount: mockHotel?.reviewCount ?? 0,
+    pricePerNight: parseFloat(params.pricePerNight ?? "0") || (mockHotel?.pricePerNight ?? 0),
+    currency: params.currency ?? mockHotel?.currency ?? "USD",
+    stars: parseInt(params.stars ?? "0") || (mockHotel?.stars ?? 3),
+    amenities: parsedAmenities ?? mockHotel?.amenities ?? [],
+    description: params.description ?? mockHotel?.description ?? "",
+    address: params.address ?? mockHotel?.address ?? "",
+  };
   const [selectedRoom, setSelectedRoom] = useState(ROOM_TYPES[0].id);
 
   const pricing = usePricingSettings();
@@ -235,6 +265,9 @@ export default function HotelDetailScreen() {
                 checkIn: params.checkIn ?? "",
                 checkOut: params.checkOut ?? "",
                 hotelName: hotel.name,
+                hotelCity: hotel.city ?? "",
+                hotelCountry: hotel.country ?? "Mauritania",
+                hotelStars: String(hotel.stars ?? 3),
                 roomType: selectedRoomData.name,
                 roomPrice: String(totalMRU),
                 priceCurrency: "MRU",
