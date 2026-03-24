@@ -535,6 +535,23 @@ export default function AdminScreen() {
               <IconSymbol name="chevron.right" size={18} color={colors.muted} />
             </Pressable>
 
+            {/* بطاقة إدارة PNR */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/manage-pnr" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#C9A84C", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="paperplane.fill" size={22} color="#1B2B5E" />
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>إدارة PNR</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>تحديث رموز الحجز الحقيقية للزبائن</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* Distribution Bar Chart */}
             <Text style={s.sectionTitle}>{t.admin.revenue}</Text>
             <View style={s.barChart}>

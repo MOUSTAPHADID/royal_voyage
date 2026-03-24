@@ -49,7 +49,8 @@ export type Booking = {
   type: "flight" | "hotel";
   status: "confirmed" | "pending" | "cancelled";
   reference: string;
-  pnr?: string;  // Passenger Name Record - 6 char alphanumeric code
+  pnr?: string;  // Passenger Name Record - 6 char alphanumeric code (auto-generated)
+  realPnr?: string; // Real PNR entered manually by agent from airline system
   date: string;
   // Flight specific
   flight?: Flight;

@@ -30,6 +30,7 @@ type AppContextType = {
   bookings: Booking[];
   addBooking: (booking: Booking) => void;
   cancelBooking: (id: string) => void;
+  updateBookingPnr: (id: string, realPnr: string) => void;
   // Search state
   lastFlightSearch: FlightSearch | null;
   lastHotelSearch: HotelSearch | null;
@@ -151,6 +152,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const updateBookingPnr = useCallback(async (id: string, realPnr: string) => {
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, realPnr: realPnr.toUpperCase().trim() } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
   return (
     <AppContext.Provider
       value={{
@@ -164,6 +173,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         bookings,
         addBooking,
         cancelBooking,
+        updateBookingPnr,
         lastFlightSearch,
         lastHotelSearch,
         setLastFlightSearch,

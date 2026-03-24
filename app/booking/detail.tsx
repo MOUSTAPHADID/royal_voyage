@@ -204,11 +204,22 @@ export default function BookingDetailScreen() {
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Booking Information</Text>
 
           {/* PNR Box */}
-          {booking.pnr && (
-            <View style={[styles.pnrBox, { backgroundColor: colors.primary + "10", borderColor: colors.primary }]}>
+          {(booking.realPnr || booking.pnr) && (
+            <View style={[
+              styles.pnrBox,
+              booking.realPnr
+                ? { backgroundColor: colors.success + "10", borderColor: colors.success }
+                : { backgroundColor: colors.primary + "10", borderColor: colors.primary }
+            ]}>
               <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم الحجز PNR</Text>
-              <Text style={[styles.pnrValue, { color: colors.primary }]}>{booking.pnr}</Text>
-              <Text style={[styles.pnrHint, { color: colors.muted }]}>احتفظ بهذا الرقم للمراجعة في المطار</Text>
+              <Text style={[styles.pnrValue, { color: booking.realPnr ? colors.success : colors.primary }]}>
+                {booking.realPnr || booking.pnr}
+              </Text>
+              {booking.realPnr ? (
+                <Text style={[styles.pnrHint, { color: colors.success }]}>✓ رمز مؤكد من شركة الطيران — استخدمه في المطار</Text>
+              ) : (
+                <Text style={[styles.pnrHint, { color: colors.muted }]}>سيتم تحديث هذا الرمز بعد تأكيد الحجز مع شركة الطيران</Text>
+              )}
             </View>
           )}
 
