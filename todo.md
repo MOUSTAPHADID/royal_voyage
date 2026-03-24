@@ -260,3 +260,4 @@
 - [x] إضافة tRPC routes لـ Amadeus (flightSearch, flightPrice, flightBook)
 - [x] تحديث شاشة نتائج الرحلات لاستخدام بيانات Amadeus الحقيقية
 - [x] إضافة متغيرات AMADEUS_CLIENT_ID و AMADEUS_CLIENT_SECRET الصحيحة
+- [x] تفعيل Amadeus Production API (AMADEUS_PROD_CLIENT_ID و AMADEUS_PROD_CLIENT_SECRET) للبيانات الحقيقية
