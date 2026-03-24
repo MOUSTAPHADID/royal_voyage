@@ -292,15 +292,27 @@ export default function HomeScreen() {
   };
 
   const handleFlightSearch = () => {
-    const destCode = flightToCode || "DXB";
-    const destName = flightTo || "Dubai";
+    if (!flightToCode || !flightTo) {
+      Alert.alert(
+        isRTL ? "خطأ" : "Missing Destination",
+        isRTL ? "يرجى اختيار وجهة السفر" : "Please select a destination airport."
+      );
+      return;
+    }
+    if (!flightFromCode || !flightFrom) {
+      Alert.alert(
+        isRTL ? "خطأ" : "Missing Origin",
+        isRTL ? "يرجى اختيار مطار المغادرة" : "Please select a departure airport."
+      );
+      return;
+    }
     router.push({
       pathname: "/flights/results" as any,
       params: {
         origin: flightFrom,
-        originCode: flightFromCode || "CMN",
-        destination: destName,
-        destinationCode: destCode,
+        originCode: flightFromCode,
+        destination: flightTo,
+        destinationCode: flightToCode,
         date: departureDate,
         returnDate: tripType === "roundtrip" ? returnDate : "",
         tripType,
@@ -313,11 +325,18 @@ export default function HomeScreen() {
   };
 
   const handleHotelSearch = () => {
+    if (!hotelDestCode || !hotelDest) {
+      Alert.alert(
+        isRTL ? "خطأ" : "Missing Destination",
+        isRTL ? "يرجى اختيار مدينة الوجهة" : "Please select a destination city."
+      );
+      return;
+    }
     router.push({
       pathname: "/hotels/results" as any,
       params: {
-        destination: hotelDest || "Dubai",
-        destinationCode: hotelDestCode || "DXB",
+        destination: hotelDest,
+        destinationCode: hotelDestCode,
         checkIn,
         checkOut,
         guests: guests.toString(),

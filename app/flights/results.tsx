@@ -69,8 +69,8 @@ export default function FlightResultsScreen() {
   // Amadeus Production API query — outbound
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchFlights.useQuery(
     {
-      originCode: params.originCode || "CMN",
-      destinationCode: params.destinationCode || "DXB",
+      originCode: params.originCode || "",
+      destinationCode: params.destinationCode || "",
       departureDate: params.date || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       returnDate: isRoundTrip ? params.returnDate : undefined,
       adults: parseInt(params.passengers || "1", 10),
@@ -85,8 +85,8 @@ export default function FlightResultsScreen() {
   // Amadeus Production API query — inbound (return leg)
   const { data: returnResult, isLoading: returnLoading } = trpc.amadeus.searchFlights.useQuery(
     {
-      originCode: params.destinationCode || "DXB",
-      destinationCode: params.originCode || "CMN",
+      originCode: params.destinationCode || "",
+      destinationCode: params.originCode || "",
       departureDate: params.returnDate || new Date(Date.now() + 37 * 86400000).toISOString().slice(0, 10),
       adults: parseInt(params.passengers || "1", 10),
       max: 10,
@@ -276,7 +276,7 @@ export default function FlightResultsScreen() {
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.headerTitle}>
-            {params.originCode ?? "CMN"} {isRoundTrip ? "⇄" : "→"} {params.destinationCode ?? "DXB"}
+            {params.originCode ?? ""} {isRoundTrip ? "⇄" : "→"} {params.destinationCode ?? ""}
           </Text>
           <Text style={styles.headerSub}>
             {params.date

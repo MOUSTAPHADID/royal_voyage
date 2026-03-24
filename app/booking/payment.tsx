@@ -424,8 +424,8 @@ export default function PaymentScreen() {
           <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.summaryLabel, { color: colors.muted }]}>
               {isFlight
-                ? `رحلة: ${flight?.originCode ?? params.originCode} → ${flight?.destinationCode ?? params.destinationCode}`
-                : `فندق: ${hotel?.name ?? params.hotelName}`}
+                ? `رحلة: ${params.originCode ?? flight?.originCode} → ${params.destinationCode ?? flight?.destinationCode}`
+                : `فندق: ${params.hotelName ?? hotel?.name}`}
             </Text>
           </View>
 

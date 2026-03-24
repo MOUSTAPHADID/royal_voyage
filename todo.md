@@ -391,3 +391,13 @@
 - [x] إصلاح daily-profit-notification.ts: dynamic import لتجنب الخطأ في Expo Go
 - [x] إصلاح push-notifications.ts: dynamic import + إصلاح trigger format
 - [x] إصلاح عرض السعر في شاشة تفاصيل الرحلة: البادج يعرض السعر شاملاً رسوم الوكالة
+
+## إصلاح شامل لتمرير بيانات الرحلة وعرض الأسعار
+- [x] تتبع تدفق بيانات الرحلة: results → detail → passenger-details → payment
+- [x] إصلاح خطأ CMN→DXB: عكس أولوية params على mock data في payment.tsx
+- [x] توحيد عرض السعر: البادج = الإجمالي شامل رسوم الوكالة
+- [x] إصلاح index.tsx: منع البحث بدون وجهة + Alert وإزالة DXB/CMN hardcoded fallbacks
+- [x] إصلاح flights/results.tsx: إزالة CMN/DXB hardcoded من Amadeus queries
+- [x] إصلاح hotels/results.tsx: إزالة DXB/Dubai hardcoded
+- [x] إصلاح confirmation.tsx: إزالة NKC/DST hardcoded fallbacks من البريد والتذكرة
+- [x] إصلاح push-notifications.ts: trigger format لتوافق Expo SDK 54

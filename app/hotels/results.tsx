@@ -58,7 +58,7 @@ export default function HotelResultsScreen() {
   // Amadeus Production API hotel search
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchHotels.useQuery(
     {
-      cityCode: params.destinationCode || "DXB",
+      cityCode: params.destinationCode || "",
       checkInDate: params.checkIn || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       checkOutDate: params.checkOut || new Date(Date.now() + 33 * 86400000).toISOString().slice(0, 10),
       adults: parseInt(params.guests || "2", 10),
@@ -233,7 +233,7 @@ export default function HotelResultsScreen() {
           <IconSymbol name="arrow.left" size={22} color="#FFFFFF" />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={styles.headerTitle}>{params.destination ?? "Dubai"}</Text>
+          <Text style={styles.headerTitle}>{params.destination ?? ""}</Text>
           <Text style={styles.headerSub}>
             {params.checkIn
               ? new Date(params.checkIn).toLocaleDateString("en-US", { month: "short", day: "numeric" })

@@ -89,7 +89,6 @@ export async function scheduleCashPaymentReminder(
         data: { bookingRef, type: "cash_payment_reminder" },
       },
       trigger: {
-        type: "timeInterval",
         seconds: secondsUntilReminder,
         repeats: false,
       } as any,
