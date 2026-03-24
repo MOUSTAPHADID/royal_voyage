@@ -13,7 +13,9 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatPriceMRU, formatMRU, toMRU, AGENCY_FEE_MRU } from "@/lib/currency";
+import { formatPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { toMRUWithSettings } from "@/lib/pricing-settings";
+import { usePricingSettings } from "@/hooks/use-pricing-settings";
 
 const { width } = Dimensions.get("window");
 
@@ -38,14 +40,15 @@ export default function HotelDetailScreen() {
   const hotel = HOTELS.find((h) => h.id === id) ?? HOTELS[0];
   const [selectedRoom, setSelectedRoom] = useState(ROOM_TYPES[0].id);
 
+  const pricing = usePricingSettings();
   const selectedRoomData = ROOM_TYPES.find((r) => r.id === selectedRoom) ?? ROOM_TYPES[0];
   const adultCount = parseInt(params.guests ?? "1", 10);
   const childCount = parseInt(params.children ?? "0", 10);
   const nightlyRate = hotel.pricePerNight + selectedRoomData.price;
-  const childNightlyRate = Math.round(nightlyRate * 0.75);
+  const childNightlyRate = Math.round(nightlyRate * pricing.childDiscountRate);
   const totalPrice = nightlyRate * adultCount + childNightlyRate * childCount;
-  // الإجمالي بالأوقية مع رسوم الوكالة
-  const totalMRU = toMRU(totalPrice, hotel.currency || "USD") + AGENCY_FEE_MRU;
+  // الإجمالي بالأوقية مع رسوم الوكالة (مخفية)
+  const totalMRU = toMRUWithSettings(totalPrice, hotel.currency || "USD") + pricing.agencyFeeMRU;
 
   const amenityIcons: Record<string, string> = {
     Pool: "figure.pool.swim",

@@ -11,7 +11,9 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatPriceMRU, formatMRU, toMRU, AGENCY_FEE_MRU } from "@/lib/currency";
+import { formatPriceMRU, formatMRU } from "@/lib/currency";
+import { toMRUWithSettings } from "@/lib/pricing-settings";
+import { usePricingSettings as _usePricingSettings } from "@/hooks/use-pricing-settings";
 
 export default function FlightDetailScreen() {
   const router = useRouter();
@@ -61,20 +63,19 @@ export default function FlightDetailScreen() {
         seatsLeft: parseInt(params.seatsLeft || "9", 10),
       }
     : mockFlight;
-
+  const pricing = _usePricingSettings();
   const isRoundTrip = params.tripType === "roundtrip";
   const adultCount = parseInt(params.passengers || "1", 10);
   const childCount = parseInt(params.children || "0", 10);
   const adultPrice = flight.price;
-  const childPrice = Math.round(flight.price * 0.75);
+  const childPrice = Math.round(flight.price * pricing.childDiscountRate);
   const currency = flight.currency || "EUR";
   // الإجمالي = (سعر البالغ × عدد البالغين) + (سعر الطفل × عدد الأطفال)
-  const totalPerPax = adultPrice;
   const totalPrice = isRoundTrip
     ? (adultPrice * adultCount + childPrice * childCount) * 2
     : adultPrice * adultCount + childPrice * childCount;
-  // الإجمالي بالأوقية مع رسوم الوكالة (بدون ضرائب إضافية لأن سعر Amadeus يشملها)
-  const totalMRU = toMRU(totalPrice, currency) + AGENCY_FEE_MRU;
+  // الإجمالي بالأوقية مع رسوم الوكالة (مخفية)
+  const totalMRU = toMRUWithSettings(totalPrice, currency) + pricing.agencyFeeMRU;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -182,7 +183,7 @@ export default function FlightDetailScreen() {
               بالغ × {adultCount}
             </Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {formatMRU(toMRU(adultPrice * adultCount, currency))}
+              {formatMRU(toMRUWithSettings(adultPrice * adultCount, currency))}
             </Text>
           </View>
 
@@ -196,7 +197,7 @@ export default function FlightDetailScreen() {
                 <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25%</Text>
               </View>
               <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {formatMRU(toMRU(childPrice * childCount, currency))}
+                {formatMRU(toMRUWithSettings(childPrice * childCount, currency))}
               </Text>
             </View>
           )}
@@ -206,7 +207,7 @@ export default function FlightDetailScreen() {
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>رحلة العودة (×2)</Text>
               <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {formatMRU(toMRU(adultPrice * adultCount + childPrice * childCount, currency))}
+                {formatMRU(toMRUWithSettings(adultPrice * adultCount + childPrice * childCount, currency))}
               </Text>
             </View>
           )}

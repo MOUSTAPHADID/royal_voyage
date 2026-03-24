@@ -460,6 +460,23 @@ export default function AdminScreen() {
               </View>
             </View>
 
+            {/* بطاقة إدارة الأسعار */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/pricing" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#1B2B5E", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="tag.fill" size={22} color="#C9A84C" />
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>إدارة الأسعار</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>رسوم الوكالة وأسعار الصرف</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* Distribution Bar Chart */}
             <Text style={s.sectionTitle}>{t.admin.revenue}</Text>
             <View style={s.barChart}>

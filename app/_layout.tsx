@@ -20,6 +20,7 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { AppProvider } from "@/lib/app-context";
 import { I18nProvider } from "@/lib/i18n";
+import { loadPricingSettings } from "@/lib/pricing-settings";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -38,6 +39,8 @@ export default function RootLayout() {
   // Initialize Manus runtime for cookie injection from parent container
   useEffect(() => {
     initManusRuntime();
+    // تحميل إعدادات الأسعار عند بدء التطبيق
+    loadPricingSettings();
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
