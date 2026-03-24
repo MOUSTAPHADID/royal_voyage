@@ -270,6 +270,63 @@ export const appRouter = router({
         return { emailSent, pushSent };
       }),
 
+    // Airline Confirmed: send PDF ticket + push notification
+    sendAirlineConfirmedTicket: publicProcedure
+      .input(
+        z.object({
+          passengerName: z.string(),
+          passengerEmail: z.string().email(),
+          bookingRef: z.string(),
+          pnr: z.string().optional(),
+          origin: z.string().default("NKC"),
+          originCity: z.string().default("Nouakchott"),
+          destination: z.string().default(""),
+          destinationCity: z.string().default(""),
+          departureDate: z.string().default(""),
+          departureTime: z.string().default(""),
+          arrivalTime: z.string().default(""),
+          airline: z.string().default(""),
+          flightNumber: z.string().default(""),
+          cabinClass: z.string().default("ECONOMY"),
+          passengers: z.number().default(1),
+          children: z.number().default(0),
+          totalPrice: z.string().default(""),
+          currency: z.string().default("MRU"),
+          tripType: z.enum(["one-way", "round-trip"]).default("one-way"),
+          returnDate: z.string().optional(),
+          // Push notification
+          expoPushToken: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { expoPushToken, ...ticketData } = input;
+        // Send PDF ticket via email
+        const emailSent = await sendFlightTicket(ticketData);
+        // Send push notification
+        let pushSent = false;
+        if (expoPushToken) {
+          try {
+            const response = await fetch("https://exp.host/--/api/v2/push/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({
+                to: expoPushToken,
+                sound: "default",
+                title: "\u2708\uFE0F \u062a\u0630\u0643\u0631\u062a\u0643 \u062c\u0627\u0647\u0632\u0629!",
+                body: `\u062a\u0645 \u0625\u0635\u062f\u0627\u0631 \u062a\u0630\u0643\u0631\u0629 \u0631\u062d\u0644\u062a\u0643 ${input.bookingRef} \u0628\u0646\u062c\u0627\u062d. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u0644\u062a\u0646\u0632\u064a\u0644.`,
+                data: { bookingRef: input.bookingRef, type: "airline_confirmed_ticket" },
+              }),
+            });
+            const result = await response.json();
+            pushSent = result?.data?.[0]?.status === "ok";
+            console.log("[Push] Airline confirmed ticket push result:", JSON.stringify(result));
+          } catch (err: any) {
+            console.warn("[Push] Failed to send airline confirmed push:", err?.message);
+          }
+        }
+        return { emailSent, pushSent };
+      }),
+
     // Push notification via Expo Push API
     sendPushNotification: publicProcedure
       .input(

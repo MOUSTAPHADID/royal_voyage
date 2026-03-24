@@ -15,6 +15,7 @@ import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Booking } from "@/lib/mock-data";
 import { trpc } from "@/lib/trpc";
+import { formatMRU } from "@/lib/currency";
 
 type BookingStatus = Booking["status"];
 
@@ -99,6 +100,7 @@ export default function UpdateStatusScreen() {
   const [saving, setSaving] = useState<string | null>(null);
 
   const sendPushNotification = trpc.email.sendPushNotification.useMutation();
+  const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
 
   const filteredBookings = useMemo(() => {
     if (!search.trim()) return bookings;
@@ -127,8 +129,41 @@ export default function UpdateStatusScreen() {
             try {
               await updateBookingStatus(booking.id, newStatus);
 
-              // Send Push Notification if customer has token
-              if (booking.customerPushToken) {
+              // If airline_confirmed and booking is a flight → send PDF ticket
+              if (newStatus === "airline_confirmed" && booking.type === "flight") {
+                const passengerEmail = booking.passengerEmail;
+                const passengerName = booking.passengerName ?? booking.guestName ?? "Passenger";
+                if (passengerEmail) {
+                  try {
+                    await sendAirlineConfirmedTicket.mutateAsync({
+                      passengerName,
+                      passengerEmail,
+                      bookingRef: booking.reference,
+                      pnr: booking.realPnr ?? booking.pnr,
+                      origin: booking.flight?.originCode ?? booking.flight?.origin ?? "NKC",
+                      originCity: booking.flight?.origin ?? "Nouakchott",
+                      destination: booking.flight?.destinationCode ?? booking.flight?.destination ?? "",
+                      destinationCity: booking.flight?.destination ?? "",
+                      departureDate: booking.date ?? "",
+                      departureTime: booking.flight?.departureTime ?? "",
+                      arrivalTime: booking.flight?.arrivalTime ?? "",
+                      airline: booking.flight?.airline ?? "",
+                      flightNumber: booking.flight?.flightNumber ?? "",
+                      cabinClass: booking.flight?.class ?? "ECONOMY",
+                      passengers: booking.passengers ?? 1,
+                      children: 0,
+                      totalPrice: formatMRU(booking.totalPrice ?? 0),
+                      currency: "MRU",
+                      tripType: "one-way",
+                      expoPushToken: booking.customerPushToken,
+                    });
+                    console.log("[Status] ✈️ Airline confirmed ticket sent to", passengerEmail);
+                  } catch (err) {
+                    console.error("[Status] Ticket email failed:", err);
+                  }
+                }
+              } else if (booking.customerPushToken) {
+                // For other statuses, send regular push notification
                 const msg = STATUS_PUSH_MESSAGES[newStatus];
                 try {
                   await sendPushNotification.mutateAsync({
@@ -142,7 +177,13 @@ export default function UpdateStatusScreen() {
                 }
               }
 
-              Alert.alert("✅ تم التحديث", `تم تغيير الحالة إلى "${STATUS_OPTIONS.find(s => s.id === newStatus)?.labelAr}"${booking.customerPushToken ? "\n🔔 تم إرسال إشعار Push للزبون" : ""}`);
+              const isAirlineConfirmed = newStatus === "airline_confirmed" && booking.type === "flight" && booking.passengerEmail;
+              Alert.alert(
+                "✅ تم التحديث",
+                `تم تغيير الحالة إلى "${STATUS_OPTIONS.find(s => s.id === newStatus)?.labelAr}"` +
+                (isAirlineConfirmed ? `\n✈️ تم إرسال التذكرة PDF إلى ${booking.passengerEmail}` : "") +
+                (booking.customerPushToken ? "\n🔔 تم إرسال إشعار Push للزبون" : "")
+              );
             } catch (err) {
               Alert.alert("خطأ", "فشل تحديث الحالة");
             } finally {

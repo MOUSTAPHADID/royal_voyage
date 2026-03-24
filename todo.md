@@ -401,3 +401,10 @@
 - [x] إصلاح hotels/results.tsx: إزالة DXB/Dubai hardcoded
 - [x] إصلاح confirmation.tsx: إزالة NKC/DST hardcoded fallbacks من البريد والتذكرة
 - [x] إصلاح push-notifications.ts: trigger format لتوافق Expo SDK 54
+
+## إرسال تذكرة PDF عند تأكيد شركة الطيران
+- [x] قراءة server/pdf.ts وserver/email.ts لفهم بنية توليد PDF وإرساله
+- [x] إضافة endpoint sendAirlineConfirmedTicket في server/routers.ts (يولّد PDF + Push)
+- [x] تحديث admin/update-status.tsx لاستدعاء الـ endpoint عند airline_confirmed
+- [x] إضافة Push Notification للزبون مع رسالة "تذكرتك جاهزة" عند airline_confirmed
+- [x] رسائل Alert تُظهر ما تم: إرسال PDF + Push
