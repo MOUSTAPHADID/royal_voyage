@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,12 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTranslation, useI18n, LANGUAGES, Language } from "@/lib/i18n";
+import {
+  scheduleDailyProfitNotification,
+  cancelDailyProfitNotification,
+  getDailyNotificationStatus,
+  DEFAULT_NOTIFICATION_HOUR,
+} from "@/lib/daily-profit-notification";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -26,6 +32,28 @@ export default function ProfileScreen() {
   const { language, setLanguage } = useI18n();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showLangModal, setShowLangModal] = useState(false);
+  const [dailyProfitNotif, setDailyProfitNotif] = useState(false);
+
+  // تحميل حالة الإشعار اليومي
+  useEffect(() => {
+    getDailyNotificationStatus().then(({ enabled }) => setDailyProfitNotif(enabled));
+  }, []);
+
+  const toggleDailyProfitNotif = async (value: boolean) => {
+    setDailyProfitNotif(value);
+    if (value) {
+      const success = await scheduleDailyProfitNotification(DEFAULT_NOTIFICATION_HOUR);
+      if (!success) {
+        setDailyProfitNotif(false);
+        Alert.alert(
+          language === "ar" ? "لا يمكن تفعيل الإشعارات" : "Cannot enable notifications",
+          language === "ar" ? "يرجى السماح بالإشعارات من إعدادات الجهاز" : "Please allow notifications in device settings"
+        );
+      }
+    } else {
+      await cancelDailyProfitNotification();
+    }
+  };
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
 
@@ -79,6 +107,21 @@ export default function ProfileScreen() {
         { icon: "shield.fill", label: language === "ar" ? "سياسة الخصوصية" : language === "fr" ? "Politique de Confidentialité" : "Privacy Policy", value: "", onPress: () => router.push("/privacy" as any) },
       ],
     },
+    // Admin notification section — only for admins
+    ...(user?.isAdmin ? [{
+      title: language === "ar" ? "إشعارات الأدمن" : language === "fr" ? "Notifications Admin" : "Admin Notifications",
+      items: [
+        {
+          icon: "chart.bar.fill",
+          label: language === "ar" ? "تقرير الأرباح اليومي (8م)" : language === "fr" ? "Rapport journalier (20h)" : "Daily Profit Report (8PM)",
+          value: "",
+          onPress: () => {},
+          isSwitch: true,
+          switchValue: dailyProfitNotif,
+          onSwitchChange: toggleDailyProfitNotif,
+        },
+      ],
+    }] : []),
     // Admin section — only shown to admin users
     ...(user?.isAdmin ? [{
       title: t.admin.adminAccess,
@@ -170,10 +213,21 @@ export default function ProfileScreen() {
                   </View>
                   <Text style={[styles.menuLabel, { color: (item as any).highlight ? "#1B2B5E" : colors.foreground, fontWeight: (item as any).highlight ? "700" : "400" }]}>{item.label}</Text>
                   <View style={styles.menuRight}>
-                    {item.value ? (
-                      <Text style={[styles.menuValue, { color: colors.muted }]}>{item.value}</Text>
-                    ) : null}
-                    <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+                    {(item as any).isSwitch ? (
+                      <Switch
+                        value={(item as any).switchValue ?? false}
+                        onValueChange={(item as any).onSwitchChange}
+                        trackColor={{ false: colors.border, true: "#1B2B5E" }}
+                        thumbColor="#FFFFFF"
+                      />
+                    ) : (
+                      <>
+                        {item.value ? (
+                          <Text style={[styles.menuValue, { color: colors.muted }]}>{item.value}</Text>
+                        ) : null}
+                        <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+                      </>
+                    )}
                   </View>
                 </Pressable>
               ))}

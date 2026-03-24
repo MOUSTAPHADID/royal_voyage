@@ -90,11 +90,25 @@ export default function AdminScreen() {
   const profitStats = useMemo(() => {
     const pricing = getPricingSettings();
     const confirmed = bookings.filter((b) => b.status === "confirmed");
-    
+
+    // تصنيف الحجوزات حسب النوع
+    const domesticFlights = confirmed.filter((b) => {
+      if (b.type !== "flight") return false;
+      const origin = b.flight?.originCode || "";
+      const dest = b.flight?.destinationCode || "";
+      const MR_AIRPORTS = ["NKC","NDB","ATR","KFA","MOM","OUZ","SEY","THI","TMD","ZLG","AEO","EMN","LEG","MBR","OGJ"];
+      return MR_AIRPORTS.includes(origin.toUpperCase()) && MR_AIRPORTS.includes(dest.toUpperCase());
+    });
+    const internationalFlights = confirmed.filter((b) => b.type === "flight" && !domesticFlights.includes(b));
+    const hotels = confirmed.filter((b) => b.type === "hotel");
+
+    const domesticProfit = domesticFlights.length * pricing.agencyFeeDomesticMRU;
+    const intlProfit = internationalFlights.length * pricing.agencyFeeMRU;
+    const hotelProfit = hotels.length * pricing.agencyFeeMRU;
+
     // تجميع الأرباح حسب الشهر
     const monthlyMap: Record<string, { month: string; count: number; profit: number }> = {};
     confirmed.forEach((b) => {
-      // استخراج الشهر من التاريخ (YYYY-MM)
       const monthKey = (b.date || "").substring(0, 7);
       if (!monthKey) return;
       if (!monthlyMap[monthKey]) {
@@ -102,8 +116,10 @@ export default function AdminScreen() {
         const monthNames = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
         monthlyMap[monthKey] = { month: `${monthNames[parseInt(month) - 1]} ${year}`, count: 0, profit: 0 };
       }
-      // رسوم الوكالة لكل حجز
-      const fee = b.type === "flight" ? pricing.agencyFeeMRU : pricing.agencyFeeMRU;
+      const isDomestic = domesticFlights.includes(b);
+      const fee = b.type === "flight"
+        ? (isDomestic ? pricing.agencyFeeDomesticMRU : pricing.agencyFeeMRU)
+        : pricing.agencyFeeMRU;
       monthlyMap[monthKey].count += 1;
       monthlyMap[monthKey].profit += fee;
     });
@@ -113,11 +129,17 @@ export default function AdminScreen() {
       .slice(0, 6)
       .map(([, v]) => v);
 
-    const totalProfit = confirmed.length * pricing.agencyFeeMRU;
+    const totalProfit = domesticProfit + intlProfit + hotelProfit;
     const avgMonthlyProfit = months.length > 0 ? months.reduce((s, m) => s + m.profit, 0) / months.length : 0;
     const maxProfit = months.length > 0 ? Math.max(...months.map((m) => m.profit)) : 1;
 
-    return { months, totalProfit, avgMonthlyProfit, maxProfit, confirmedCount: confirmed.length };
+    const breakdown = [
+      { label: "رحلات داخلية", count: domesticFlights.length, profit: domesticProfit, color: "#0a7ea4" },
+      { label: "رحلات دولية", count: internationalFlights.length, profit: intlProfit, color: "#1B2B5E" },
+      { label: "فنادق", count: hotels.length, profit: hotelProfit, color: "#C4973A" },
+    ];
+
+    return { months, totalProfit, avgMonthlyProfit, maxProfit, confirmedCount: confirmed.length, breakdown };
   }, [bookings]);
 
   const s = StyleSheet.create({
@@ -677,24 +699,68 @@ export default function AdminScreen() {
               })
             )}
 
-            {/* زر الانتقال لإدارة الأسعار */}
-            <Pressable
-              style={({ pressed }) => [{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                padding: 14,
-                borderRadius: 14,
-                backgroundColor: "#0a7ea4",
-                marginTop: 16,
-                opacity: pressed ? 0.85 : 1,
-              }]}
-              onPress={() => router.push("/admin/pricing" as any)}
-            >
-              <IconSymbol name="slider.horizontal.3" size={18} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 15 }}>تعديل رسوم الوكالة</Text>
-            </Pressable>
+            {/* تفصيل حسب نوع الحجز */}
+            <Text style={[s.sectionTitle, { marginTop: 20 }]}>تفصيل حسب نوع الحجز</Text>
+            {profitStats.breakdown.map((item, i) => (
+              <View key={i} style={[s.bookingCard, { marginBottom: 10 }]}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: item.color }} />
+                    <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>{item.label}</Text>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ color: item.color, fontWeight: "700", fontSize: 15 }}>{formatMRU(item.profit)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11 }}>{item.count} حجز</Text>
+                  </View>
+                </View>
+                <View style={{ height: 6, backgroundColor: colors.border, borderRadius: 3 }}>
+                  <View style={{
+                    height: 6,
+                    width: profitStats.totalProfit > 0 ? `${(item.profit / profitStats.totalProfit) * 100}%` : "0%",
+                    backgroundColor: item.color,
+                    borderRadius: 3
+                  }} />
+                </View>
+              </View>
+            ))}
+
+            {/* أزرار الإجراءات */}
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+              <Pressable
+                style={({ pressed }) => [{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: 14,
+                  borderRadius: 14,
+                  backgroundColor: "#22C55E",
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+                onPress={() => router.push("/admin/profit-report" as any)}
+              >
+                <IconSymbol name="doc.text.fill" size={18} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>تصدير PDF</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 6,
+                  padding: 14,
+                  borderRadius: 14,
+                  backgroundColor: "#0a7ea4",
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+                onPress={() => router.push("/admin/pricing" as any)}
+              >
+                <IconSymbol name="slider.horizontal.3" size={18} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 14 }}>إدارة الأسعار</Text>
+              </Pressable>
+            </View>
           </View>
         )}
 
