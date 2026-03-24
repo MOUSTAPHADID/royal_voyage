@@ -17,6 +17,7 @@ import { FLIGHTS, HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatAmadeusPriceMRU, formatMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 export default function PassengerDetailsScreen() {
   const router = useRouter();
@@ -241,23 +242,18 @@ export default function PassengerDetailsScreen() {
             {/* Date of Birth */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.foreground }]}>
-                Date of Birth <Text style={{ color: colors.error }}>*</Text>
+                تاريخ الميلاد <Text style={{ color: colors.error }}>*</Text>
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  { backgroundColor: colors.background, color: colors.foreground, borderColor: dobError ? colors.error : colors.border },
-                ]}
-                placeholder="YYYY-MM-DD (e.g. 1990-05-15)"
-                placeholderTextColor={colors.muted}
+              <DatePickerField
                 value={dateOfBirth}
-                onChangeText={validateDOB}
-                keyboardType="numbers-and-punctuation"
-                returnKeyType="next"
+                onChange={(d) => {
+                  setDateOfBirth(d);
+                  setDobError("");
+                }}
+                placeholder="اختر تاريخ الميلاد"
+                maximumDate={new Date()}
+                backgroundColor={colors.background}
               />
-              {dobError ? (
-                <Text style={[styles.errorText, { color: colors.error }]}>{dobError}</Text>
-              ) : null}
             </View>
 
             {/* Email */}

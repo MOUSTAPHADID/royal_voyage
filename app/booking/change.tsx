@@ -13,6 +13,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 
 type ChangeType = "date" | "passengers" | "class" | "other";
 
@@ -175,14 +176,13 @@ export default function ChangeBookingScreen() {
 
           {changeType === "date" && (
             <View style={styles.fieldGroup}>
-              <Text style={[styles.fieldLabel, { color: colors.muted }]}>التاريخ الجديد المطلوب</Text>
-              <TextInput
-                style={[styles.input, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder="مثال: 2024-06-15"
-                placeholderTextColor={colors.muted}
+              <DatePickerField
+                label="التاريخ الجديد المطلوب"
                 value={newDate}
-                onChangeText={setNewDate}
-                returnKeyType="done"
+                onChange={(d) => setNewDate(d)}
+                placeholder="اختر تاريخاً"
+                minimumDate={new Date()}
+                backgroundColor={colors.background}
               />
             </View>
           )}

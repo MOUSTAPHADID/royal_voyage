@@ -19,6 +19,7 @@ import { useApp } from "@/lib/app-context";
 import { DESTINATIONS, FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
+import { DatePickerField } from "@/components/ui/date-picker-field";
 import { useTranslation } from "@/lib/i18n";
 import { trpc } from "@/lib/trpc";
 import {
@@ -277,8 +278,8 @@ export default function HomeScreen() {
   // Hotel search state
   const [hotelDest, setHotelDest] = useState("");
   const [hotelDestCode, setHotelDestCode] = useState("");
-  const [checkIn] = useState(futureDate(30));
-  const [checkOut] = useState(futureDate(33));
+  const [checkIn, setCheckIn] = useState(futureDate(30));
+  const [checkOut, setCheckOut] = useState(futureDate(33));
   const [guests, setGuests] = useState(2);
 
   // Swap origin ↔ destination
@@ -497,63 +498,48 @@ export default function HomeScreen() {
               {/* Date fields */}
               {tripType === "oneway" ? (
                 /* One Way — single date */
-                <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="calendar" size={18} color={colors.primary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.departure}</Text>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                      {formatDate(departureDate)}
-                    </Text>
-                  </View>
-                  <View style={[styles.tripBadge, { backgroundColor: colors.primary + "18" }]}>
-                    <Text style={[styles.tripBadgeText, { color: colors.primary }]}>{t.home.oneWay}</Text>
-                  </View>
-                </View>
+                <DatePickerField
+                  label={t.home.departure}
+                  value={departureDate}
+                  onChange={(d) => setDepartureDate(d)}
+                  minimumDate={new Date()}
+                  backgroundColor={colors.background}
+                  icon={<IconSymbol name="calendar" size={18} color={colors.primary} />}
+                />
               ) : (
                 /* Round Trip — two dates side by side */
                 <View style={styles.rowFields}>
-                  <Pressable
-                    style={[styles.searchField, { flex: 1, borderColor: colors.primary, backgroundColor: colors.background }]}
-                    onPress={() => {
-                      const d = new Date(departureDate);
-                      d.setDate(d.getDate() + 1);
-                      const r = new Date(returnDate);
-                      if (r <= d) {
-                        r.setDate(d.getDate() + 3);
-                        setReturnDate(r.toISOString().slice(0, 10));
-                      }
-                      setDepartureDate(d.toISOString().slice(0, 10));
-                    }}
-                  >
-                    <IconSymbol name="airplane" size={16} color={colors.primary} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.departure}</Text>
-                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                        {formatDateShort(departureDate)}
-                      </Text>
-                    </View>
-                  </Pressable>
-
-                  <View style={styles.dateArrow}>
+                  <View style={{ flex: 1 }}>
+                    <DatePickerField
+                      label={t.home.departure}
+                      value={departureDate}
+                      onChange={(d) => {
+                        setDepartureDate(d);
+                        const dep = new Date(d);
+                        const ret = new Date(returnDate);
+                        if (ret <= dep) {
+                          dep.setDate(dep.getDate() + 3);
+                          setReturnDate(dep.toISOString().slice(0, 10));
+                        }
+                      }}
+                      minimumDate={new Date()}
+                      backgroundColor={colors.background}
+                      icon={<IconSymbol name="airplane" size={16} color={colors.primary} />}
+                    />
+                  </View>
+                  <View style={[styles.dateArrow, { marginTop: 20 }]}>
                     <IconSymbol name="arrow.right" size={14} color={colors.muted} />
                   </View>
-
-                  <Pressable
-                    style={[styles.searchField, { flex: 1, borderColor: colors.secondary, backgroundColor: colors.background }]}
-                    onPress={() => {
-                      const r = new Date(returnDate);
-                      r.setDate(r.getDate() + 1);
-                      setReturnDate(r.toISOString().slice(0, 10));
-                    }}
-                  >
-                    <IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.returnDate}</Text>
-                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                        {formatDateShort(returnDate)}
-                      </Text>
-                    </View>
-                  </Pressable>
+                  <View style={{ flex: 1 }}>
+                    <DatePickerField
+                      label={t.home.returnDate}
+                      value={returnDate}
+                      onChange={(d) => setReturnDate(d)}
+                      minimumDate={new Date(departureDate)}
+                      backgroundColor={colors.background}
+                      icon={<IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />}
+                    />
+                  </View>
                 </View>
               )}
 
@@ -661,23 +647,36 @@ export default function HomeScreen() {
               />
 
               <View style={styles.rowFields}>
-                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="clock.fill" size={18} color={colors.primary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.checkIn}</Text>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                      {formatDateShort(checkIn)}
-                    </Text>
-                  </View>
+                <View style={{ flex: 1 }}>
+                  <DatePickerField
+                    label={t.home.checkIn}
+                    value={checkIn}
+                    onChange={(d) => {
+                      setCheckIn(d);
+                      const ci = new Date(d);
+                      const co = new Date(checkOut);
+                      if (co <= ci) {
+                        ci.setDate(ci.getDate() + 1);
+                        setCheckOut(ci.toISOString().slice(0, 10));
+                      }
+                    }}
+                    minimumDate={new Date()}
+                    backgroundColor={colors.background}
+                    icon={<IconSymbol name="clock.fill" size={18} color={colors.primary} />}
+                  />
                 </View>
-                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="clock.fill" size={18} color={colors.primary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.checkOut}</Text>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>
-                      {formatDateShort(checkOut)}
-                    </Text>
-                  </View>
+                <View style={[styles.dateArrow, { marginTop: 20 }]}>
+                  <IconSymbol name="arrow.right" size={14} color={colors.muted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <DatePickerField
+                    label={t.home.checkOut}
+                    value={checkOut}
+                    onChange={(d) => setCheckOut(d)}
+                    minimumDate={new Date(checkIn)}
+                    backgroundColor={colors.background}
+                    icon={<IconSymbol name="clock.fill" size={18} color={colors.primary} />}
+                  />
                 </View>
               </View>
 

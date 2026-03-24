@@ -429,3 +429,13 @@
 - [x] تطبيق العملة المختارة في شاشة الدفع
 - [x] تطبيق العملة المختارة في شاشة تفاصيل الحجز
 - [x] تطبيق العملة المختارة في قائمة الحجوزات
+
+## منتقي التاريخ بالتقويم (Date Picker)
+- [x] تثبيت @react-native-community/datetimepicker
+- [x] إنشاء مكون DatePickerField مشترك في components/ui/date-picker-field.tsx
+- [x] تطبيق DatePicker في حقل تاريخ الذهاب (شاشة Home)
+- [x] تطبيق DatePicker في حقل تاريخ الإياب (شاشة Home)
+- [x] تطبيق DatePicker في حقل تاريخ الوصول للفندق (شاشة Home)
+- [x] تطبيق DatePicker في حقل تاريخ المغادرة للفندق (شاشة Home)
+- [x] تطبيق DatePicker في حقل تاريخ الميلاد (passenger-details.tsx)
+- [x] تطبيق DatePicker في شاشة تعديل الحجز (booking/change.tsx)
