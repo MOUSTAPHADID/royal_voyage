@@ -58,6 +58,7 @@ export default function BookingDetailScreen() {
               passengerName: booking.passengerName ?? "العميل",
               passengerEmail: email,
               bookingRef: booking.reference,
+              pnr: booking.realPnr || booking.pnr,
               origin: booking.flight.originCode,
               originCity: booking.flight.origin,
               destination: booking.flight.destinationCode,
@@ -216,7 +217,14 @@ export default function BookingDetailScreen() {
                 {booking.realPnr || booking.pnr}
               </Text>
               {booking.realPnr ? (
-                <Text style={[styles.pnrHint, { color: colors.success }]}>✓ رمز مؤكد من شركة الطيران — استخدمه في المطار</Text>
+                <View style={{ alignItems: 'center' }}>
+                  <Text style={[styles.pnrHint, { color: colors.success }]}>✓ رمز مؤكد من شركة الطيران — استخدمه في المطار</Text>
+                  {booking.realPnrUpdatedAt && (
+                    <Text style={[styles.pnrHint, { color: colors.muted, fontSize: 10, marginTop: 2 }]}>
+                      تحديث: {new Date(booking.realPnrUpdatedAt).toLocaleString('ar-MR', { dateStyle: 'short', timeStyle: 'short' })}
+                    </Text>
+                  )}
+                </View>
               ) : (
                 <Text style={[styles.pnrHint, { color: colors.muted }]}>سيتم تحديث هذا الرمز بعد تأكيد الحجز مع شركة الطيران</Text>
               )}

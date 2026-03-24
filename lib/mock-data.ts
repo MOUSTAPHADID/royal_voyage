@@ -51,6 +51,7 @@ export type Booking = {
   reference: string;
   pnr?: string;  // Passenger Name Record - 6 char alphanumeric code (auto-generated)
   realPnr?: string; // Real PNR entered manually by agent from airline system
+  realPnrUpdatedAt?: string; // ISO timestamp when realPnr was last updated
   date: string;
   // Flight specific
   flight?: Flight;

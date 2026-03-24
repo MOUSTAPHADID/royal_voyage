@@ -153,8 +153,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [bookings]);
 
   const updateBookingPnr = useCallback(async (id: string, realPnr: string) => {
+    const now = new Date().toISOString();
     const updated = bookings.map((b) =>
-      b.id === id ? { ...b, realPnr: realPnr.toUpperCase().trim() } : b
+      b.id === id ? { ...b, realPnr: realPnr.toUpperCase().trim(), realPnrUpdatedAt: now } : b
     );
     setBookings(updated);
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));

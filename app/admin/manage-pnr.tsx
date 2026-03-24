@@ -7,9 +7,10 @@ import {
   Pressable,
   StyleSheet,
   Alert,
-  FlatList,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
+import * as Notifications from "expo-notifications";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
@@ -39,6 +40,25 @@ export default function ManagePnrScreen() {
     );
   }, [bookings, search]);
 
+  const sendPnrNotification = async (pnr: string, bookingRef: string) => {
+    if (Platform.OS === "web") return;
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") return;
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "✈️ تم تحديث رمز حجزك",
+          body: `رمز PNR الحقيقي لحجزك ${bookingRef} هو: ${pnr}\nاحتفظ به للمطار`,
+          sound: true,
+          data: { bookingRef, pnr },
+        },
+        trigger: null, // immediate
+      });
+    } catch {
+      // ignore notification errors
+    }
+  };
+
   const handleSavePnr = async (bookingId: string) => {
     const pnr = pnrInput.trim().toUpperCase();
     if (!pnr) {
@@ -46,15 +66,20 @@ export default function ManagePnrScreen() {
       return;
     }
     if (pnr.length < 5 || pnr.length > 8) {
-      Alert.alert("خطأ", "رمز PNR يجب أن يكون بين 5 و8 أحرف");
+      Alert.alert("خطأ", "رمز PNR يجب أن يكون بين 5 و 8 أحرف");
       return;
     }
+    const booking = flightBookings.find((b) => b.id === bookingId);
     setSaving(true);
     try {
       await updateBookingPnr(bookingId, pnr);
+      // Send local notification to customer
+      if (booking) {
+        await sendPnrNotification(pnr, booking.reference);
+      }
       setEditingId(null);
       setPnrInput("");
-      Alert.alert("✅ تم", `تم تحديث PNR إلى ${pnr} بنجاح`);
+      Alert.alert("✅ تم", `تم تحديث PNR إلى ${pnr} بنجاح\nتم إرسال إشعار للزبون`);
     } finally {
       setSaving(false);
     }

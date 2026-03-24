@@ -19,6 +19,7 @@ export const COMPANY_INFO = {
 
 export interface FlightTicketData {
   reference: string;
+  pnr?: string; // Real PNR from airline (if available)
   passengerName: string;
   dateOfBirth?: string;
   passportNumber?: string;
@@ -87,6 +88,7 @@ export function generateFlightTicket(data: FlightTicketData): string {
     line("═"),
     "",
     `  BOOKING REFERENCE : ${data.reference}`,
+    ...(data.pnr ? [`  AIRLINE PNR        : ${data.pnr}`] : []),
     `  ISSUE DATE         : ${data.issueDate}`,
     `  TRIP TYPE          : ${data.tripType === "roundtrip" ? "Round Trip" : "One Way"}`,
     "",
