@@ -150,14 +150,6 @@ export default function HotelDetailScreen() {
             </View>
           )}
 
-          {/* رسوم الوكالة */}
-          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.infoLabel, { color: colors.muted }]}>رسوم الخدمة</Text>
-            <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {formatMRU(AGENCY_FEE_MRU)}
-            </Text>
-          </View>
-
           <View style={[styles.totalRow, { marginTop: 8 }]}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>إجمالي / ليلة</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>

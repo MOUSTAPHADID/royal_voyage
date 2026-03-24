@@ -211,14 +211,6 @@ export default function FlightDetailScreen() {
             </View>
           )}
 
-          {/* رسوم الوكالة */
-          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.infoLabel, { color: colors.muted }]}>رسوم الخدمة</Text>
-            <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {formatMRU(AGENCY_FEE_MRU)}
-            </Text>
-          </View>
-
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
               الإجمالي{isRoundTrip ? " (ذهاب وإياب)" : ""}
