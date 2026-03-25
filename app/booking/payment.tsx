@@ -28,6 +28,7 @@ import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 import { addAdminNotification } from "@/lib/admin-notifications";
 import { getPricingSettings } from "@/lib/pricing-settings";
+import { getApiBaseUrl } from "@/constants/oauth";
 
 type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal" | "multicaixa";
 
@@ -780,35 +781,15 @@ export default function PaymentScreen() {
                   opacity: pressed ? 0.85 : 1,
                 }]}
                 onPress={async () => {
-                  const paypalMeUrl = `https://paypal.me/angolamir/${ppAmount.toFixed(2)}${ppCurrency}`;
-
-                  if (Platform.OS === "android") {
-                    // Android: محاولة فتح تطبيق PayPal مباشرة ثم fallback إلى المتصفح
-                    const intentUri = `intent://#Intent;package=com.paypal.android.p2pmobile;scheme=paypal;S.browser_fallback_url=${encodeURIComponent(paypalMeUrl)};end`;
-                    try {
-                      await Linking.openURL(intentUri);
-                    } catch {
-                      try {
-                        await Linking.openURL(paypalMeUrl);
-                      } catch {
-                        await Linking.openURL("https://www.paypal.com");
-                      }
-                    }
-                  } else if (Platform.OS === "ios") {
-                    // iOS: محاولة فتح تطبيق PayPal أولاً ثم paypal.me
-                    try {
-                      const canOpen = await Linking.canOpenURL("paypal://");
-                      if (canOpen) {
-                        await Linking.openURL("paypal://");
-                      } else {
-                        await Linking.openURL(paypalMeUrl);
-                      }
-                    } catch {
-                      await Linking.openURL(paypalMeUrl);
-                    }
-                  } else {
-                    // Web: فتح paypal.me مباشرة
-                    await Linking.openURL(paypalMeUrl);
+                  // فتح صفحة الدفع المستضافة على السيرفر مع زر PayPal الرسمي
+                  const baseUrl = getApiBaseUrl();
+                  const customerFullName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim();
+                  const checkoutUrl = `${baseUrl}/api/paypal-checkout?amount=${ppAmount.toFixed(2)}&currency=${ppCurrency}&name=${encodeURIComponent(customerFullName)}&booking=${encodeURIComponent("Royal Voyage")}`;
+                  try {
+                    await Linking.openURL(checkoutUrl);
+                  } catch {
+                    // Fallback: فتح paypal.me مباشرة
+                    await Linking.openURL(`https://paypal.me/angolamir/${ppAmount.toFixed(2)}${ppCurrency}`);
                   }
                 }}
               >

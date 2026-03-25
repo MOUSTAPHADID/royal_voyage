@@ -633,3 +633,8 @@
 ## إصلاح رابط الدفع عبر PayPal
 - [x] استبدال رابط webscr المعطل بـ paypal.me/angolamir مع فتح التطبيق مباشرة
 - [x] Fallback سلس: تطبيق PayPal (Android intent/iOS scheme) → paypal.me → paypal.com
+
+## دمج أزرار PayPal المستضافة (Hosted Buttons)
+- [x] إنشاء صفحة ويب على السيرفر /api/paypal-checkout مع PayPal Hosted Button (HS2AES3UYJHQA)
+- [x] تحديث زر PayPal في شاشة الدفع لفتح الصفحة المستضافة مع fallback إلى paypal.me/angolamir
+- [x] تمرير المبلغ والعملة واسم الزبون كمعاملات URL
