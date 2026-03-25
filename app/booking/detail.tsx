@@ -510,6 +510,28 @@ export default function BookingDetailScreen() {
           </Pressable>
         )}
 
+        {/* Online Check-in */}
+        {booking.type === "flight" && booking.status !== "cancelled" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.checkinBtn,
+              {
+                backgroundColor: booking.checkedIn ? colors.success + "15" : colors.success,
+                borderColor: colors.success,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            onPress={() => router.push({ pathname: "/online-checkin" as any, params: { id: booking.id } })}
+          >
+            <IconSymbol name="person.badge.clock" size={18} color={booking.checkedIn ? colors.success : "#FFF"} />
+            <Text style={[styles.checkinBtnText, { color: booking.checkedIn ? colors.success : "#FFF" }]}>
+              {booking.checkedIn
+                ? `\u2713 \u062A\u0645 \u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0648\u0635\u0648\u0644 - ${booking.seatNumber}`
+                : "\u062A\u0633\u062C\u064A\u0644 \u0627\u0644\u0648\u0635\u0648\u0644 \u0627\u0644\u0625\u0644\u0643\u062A\u0631\u0648\u0646\u064A"}
+            </Text>
+          </Pressable>
+        )}
+
         {/* Track Flight Status */}
         {booking.type === "flight" && booking.status !== "cancelled" && (
           <Pressable
@@ -520,7 +542,7 @@ export default function BookingDetailScreen() {
             onPress={() => router.push({ pathname: "/flight-status" as any, params: { id: booking.id } })}
           >
             <IconSymbol name="airplane.circle.fill" size={18} color={colors.primary} />
-            <Text style={[styles.trackFlightText, { color: colors.primary }]}>تتبع حالة الرحلة</Text>
+            <Text style={[styles.trackFlightText, { color: colors.primary }]}>\u062A\u062A\u0628\u0639 \u062D\u0627\u0644\u0629 \u0627\u0644\u0631\u062D\u0644\u0629</Text>
           </Pressable>
         )}
 
@@ -784,6 +806,21 @@ const styles = StyleSheet.create({
   },
   whatsappTicketText: {
     color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  checkinBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 10,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  checkinBtnText: {
     fontSize: 15,
     fontWeight: "700",
   },

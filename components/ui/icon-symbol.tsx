@@ -86,6 +86,10 @@ const MAPPING = {
   "door.left.hand.open": "meeting-room",
   "chair.fill": "event-seat",
   "paperclip": "attach-file",
+  "person.badge.clock": "how-to-reg",
+  "rectangle.portrait.and.arrow.right": "login",
+  "hand.raised.fill": "pan-tool",
+  "number": "tag",
 } as IconMapping;
 
 /**

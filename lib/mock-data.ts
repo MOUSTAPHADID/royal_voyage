@@ -88,6 +88,12 @@ export type Booking = {
   // Payment receipt image
   receiptImage?: string; // Base64 or URI of payment receipt image uploaded by customer
   receiptImageAt?: string; // ISO timestamp when receipt was uploaded
+  // Online Check-in
+  checkedIn?: boolean; // true when passenger completed online check-in
+  checkedInAt?: string; // ISO timestamp when check-in was completed
+  seatNumber?: string; // Selected seat (e.g. "12A")
+  seatPreference?: "window" | "middle" | "aisle"; // Seat preference
+  boardingGroup?: string; // Boarding group (e.g. "A", "B", "C")
 };
 
 export const DESTINATIONS: Destination[] = [

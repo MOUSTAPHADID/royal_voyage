@@ -43,6 +43,7 @@ type AppContextType = {
   confirmBookingPayment: (id: string) => void;
   rejectBookingPayment: (id: string, reason: string) => void;
   updateBookingReceipt: (id: string, receiptImage: string) => void;
+  updateBookingCheckin: (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
   saveAdminPushToken: (token: string) => void;
@@ -292,6 +293,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const updateBookingCheckin = useCallback(async (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string) => {
+    const now = new Date().toISOString();
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, checkedIn: true, checkedInAt: now, seatNumber, seatPreference, boardingGroup } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
   const saveExpoPushToken = useCallback(async (token: string) => {
     setExpoPushToken(token);
     await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
@@ -326,6 +336,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         confirmBookingPayment,
         rejectBookingPayment,
         updateBookingReceipt,
+        updateBookingCheckin,
         saveExpoPushToken,
         expoPushToken,
         saveAdminPushToken,
