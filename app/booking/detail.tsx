@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Linking,
+  Share,
 } from "react-native";
 import { trpc } from "@/lib/trpc";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -17,6 +19,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { addAdminNotification } from "@/lib/admin-notifications";
+import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
 
 function useCountdown(deadlineISO?: string) {
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -437,6 +440,90 @@ export default function BookingDetailScreen() {
           </View>
         )}
 
+        {/* Send Ticket via WhatsApp */}
+        {booking.status !== "cancelled" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.whatsappTicketBtn,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => {
+              const ticketText = booking.type === "flight" && booking.flight
+                ? generateFlightTicket({
+                    reference: booking.reference,
+                    pnr: booking.realPnr || booking.pnr,
+                    passengerName: booking.passengerName || "---",
+                    email: booking.passengerEmail || "",
+                    airline: booking.flight.airline,
+                    flightNumber: booking.flight.flightNumber,
+                    origin: booking.flight.origin,
+                    originCode: booking.flight.originCode,
+                    destination: booking.flight.destination,
+                    destinationCode: booking.flight.destinationCode,
+                    departureTime: booking.flight.departureTime,
+                    arrivalTime: booking.flight.arrivalTime,
+                    duration: booking.flight.duration,
+                    cabinClass: booking.flight.class ?? "Economy",
+                    adults: booking.passengers ?? 1,
+                    children: 0,
+                    tripType: "oneway",
+                    totalPrice: fmt(booking.totalPrice ?? 0),
+                    currency: booking.currency || "MRU",
+                    issueDate: new Date(booking.date).toLocaleDateString("en-US"),
+                  })
+                : booking.type === "hotel" && booking.hotel
+                  ? generateHotelVoucher({
+                      reference: booking.reference,
+                      guestName: booking.guestName || "---",
+                      email: booking.passengerEmail || "",
+                      hotelName: booking.hotel.name,
+                      hotelCity: booking.hotel.city,
+                      hotelCountry: booking.hotel.country ?? "Mauritania",
+                      checkIn: booking.checkIn ?? "",
+                      checkOut: booking.checkOut ?? "",
+                      roomType: "Standard",
+                      adults: booking.guests ?? 1,
+                      children: 0,
+                      totalPrice: fmt(booking.totalPrice ?? 0),
+                      currency: booking.currency || "MRU",
+                      issueDate: new Date(booking.date).toLocaleDateString("en-US"),
+                    })
+                  : "";
+
+              if (!ticketText) {
+                Alert.alert("تنبيه", "لا توجد بيانات كافية لإنشاء التذكرة");
+                return;
+              }
+
+              const encoded = encodeURIComponent(ticketText);
+              const url = `https://wa.me/?text=${encoded}`;
+              Linking.openURL(url).catch(() => {
+                // Fallback: use native share
+                Share.share({ message: ticketText }).catch(() => {
+                  Alert.alert("تنبيه", "لم يتم العثور على تطبيق WhatsApp");
+                });
+              });
+            }}
+          >
+            <Text style={styles.whatsappTicketIcon}>{"\uD83D\uDCE8"}</Text>
+            <Text style={styles.whatsappTicketText}>إرسال التذكرة عبر WhatsApp</Text>
+          </Pressable>
+        )}
+
+        {/* Track Flight Status */}
+        {booking.type === "flight" && booking.status !== "cancelled" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.trackFlightBtn,
+              { borderColor: colors.primary, opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => router.push({ pathname: "/flight-status" as any, params: { id: booking.id } })}
+          >
+            <IconSymbol name="airplane.circle.fill" size={18} color={colors.primary} />
+            <Text style={[styles.trackFlightText, { color: colors.primary }]}>تتبع حالة الرحلة</Text>
+          </Pressable>
+        )}
+
         {/* Cancel */}
         {booking.status !== "cancelled" && (
           <Pressable
@@ -680,5 +767,39 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
+  },
+  whatsappTicketBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 10,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#25D366",
+  },
+  whatsappTicketIcon: {
+    fontSize: 20,
+  },
+  whatsappTicketText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  trackFlightBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginHorizontal: 16,
+    marginTop: 10,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  trackFlightText: {
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

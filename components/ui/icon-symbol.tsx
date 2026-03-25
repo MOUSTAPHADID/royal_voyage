@@ -76,6 +76,16 @@ const MAPPING = {
   "camera.fill": "camera-alt",
   "photo.fill": "photo",
   "eye.fill": "visibility",
+  "flame.fill": "local-fire-department",
+  "percent": "percent",
+  "timer": "timer",
+  "bolt.fill": "bolt",
+  "mappin.and.ellipse": "pin-drop",
+  "airplane.circle.fill": "connecting-airports",
+  "exclamationmark.triangle.fill": "warning",
+  "door.left.hand.open": "meeting-room",
+  "chair.fill": "event-seat",
+  "paperclip": "attach-file",
 } as IconMapping;
 
 /**

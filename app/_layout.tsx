@@ -112,6 +112,8 @@ export default function RootLayout() {
             />
             <Stack.Screen name="booking/detail" />
             <Stack.Screen name="admin/booking-detail" />
+            <Stack.Screen name="deals" />
+            <Stack.Screen name="flight-status" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />

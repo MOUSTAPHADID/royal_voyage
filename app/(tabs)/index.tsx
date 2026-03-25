@@ -763,11 +763,36 @@ export default function HomeScreen() {
           />
         </View>
 
+        {/* Today's Deals Banner */}
+        <Pressable
+          style={({ pressed }) => [{
+            flexDirection: "row",
+            alignItems: "center",
+            marginHorizontal: 20,
+            marginBottom: 16,
+            padding: 14,
+            borderRadius: 14,
+            backgroundColor: "#EF4444" + "12",
+            borderWidth: 1,
+            borderColor: "#EF4444" + "25",
+            gap: 12,
+            opacity: pressed ? 0.85 : 1,
+          }]}
+          onPress={() => router.push("/deals" as any)}
+        >
+          <Text style={{ fontSize: 28 }}>{"\uD83D\uDD25"}</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{"\u0639\u0631\u0648\u0636 \u0627\u0644\u064A\u0648\u0645 \u2014 Today's Deals"}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{"\u062E\u0635\u0648\u0645\u0627\u062A \u062A\u0635\u0644 \u0625\u0644\u0649 30% \u0639\u0644\u0649 \u0631\u062D\u0644\u0627\u062A \u0648\u0641\u0646\u0627\u062F\u0642 \u0645\u062E\u062A\u0627\u0631\u0629"}</Text>
+          </View>
+          <IconSymbol name="chevron.right" size={18} color={"#EF4444"} />
+        </Pressable>
+
         {/* Hot Deals */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.home.trendingNow}</Text>
-            <Pressable>
+            <Pressable onPress={() => router.push("/deals" as any)}>
               <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
             </Pressable>
           </View>
