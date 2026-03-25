@@ -20,7 +20,7 @@ import { registerForPushNotifications } from "@/lib/push-notifications";
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { login, saveExpoPushToken } = useApp();
+  const { login, saveExpoPushToken, saveAdminPushToken } = useApp();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +37,10 @@ export default function LoginScreen() {
     try {
       const result = await login(email.trim(), password);
       if (result === "admin") {
-        // Admin → go directly to admin panel
+        // Admin → register push token for admin notifications
+        registerForPushNotifications()
+          .then((token) => { if (token) saveAdminPushToken(token); })
+          .catch(() => {});
         router.replace("/admin" as any);
       } else if (result === "user") {
         // Regular customer → register push token in background

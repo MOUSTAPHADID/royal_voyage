@@ -91,7 +91,7 @@ const WALLET_NUMBERS: Record<string, string> = {
 export default function PaymentScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { addBooking, expoPushToken } = useApp();
+  const { addBooking, expoPushToken, adminPushToken } = useApp();
   const { fmt, currency } = useCurrency();
   const params = useLocalSearchParams<{
     type: string;
@@ -171,6 +171,7 @@ export default function PaymentScreen() {
 
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
+  const sendAdminPush = trpc.email.sendPushNotification.useMutation();
 
   const handlePay = async () => {
     // التحقق من اكتمال بيانات الرحلة
@@ -294,6 +295,21 @@ export default function PaymentScreen() {
     };
 
     await addBooking(booking);
+
+    // إرسال إشعار Push للمدير عند إنشاء حجز جديد
+    if (adminPushToken) {
+      const customerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "زبون";
+      const bookingType = isFlight ? "✈️ رحلة" : "🏨 فندق";
+      const dest = isFlight
+        ? `${params.originCode ?? ""} → ${params.destinationCode ?? ""}`
+        : params.hotelName ?? "";
+      sendAdminPush.mutateAsync({
+        expoPushToken: adminPushToken,
+        title: `🔔 حجز جديد! ${bookingType}`,
+        body: `${customerName} • ${dest} • ${fmt(total)} • ${ref}`,
+        data: { bookingRef: ref, type: "new_booking" },
+      }).catch((err) => console.error("[Payment] Admin push failed:", err));
+    }
 
     // Schedule cash payment reminder (1h before 24h deadline)
     if (isCashPayment && paymentDeadline) {
