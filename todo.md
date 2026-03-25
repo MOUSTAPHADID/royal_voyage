@@ -616,3 +616,8 @@
 - [x] تحديث currency.ts لاستخدام سعر AOA الديناميكي من PricingSettings
 - [x] تحديث شاشة إعدادات المدير لعرض حقل سعر صرف AOA + تحديث تلقائي من API
 - [x] إضافة زر فتح تطبيق Multicaixa Express مباشرة (deep link + fallback إلى Play Store)
+
+## تحسينات Multicaixa Express - الجولة الثانية
+- [x] إضافة زر نسخ رقم IBAN بنقرة واحدة مع haptic feedback وتغيير اللون عند النسخ
+- [x] إضافة إشعار تلقائي للمدير عند استلام دفعة Multicaixa Express (محلي + push)
+- [x] عرض سعر الصرف الحالي (1 AOA = X MRU) وتاريخ آخر تحديث في شاشة الدفع

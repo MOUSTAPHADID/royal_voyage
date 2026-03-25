@@ -14,6 +14,8 @@ import {
   Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -25,6 +27,7 @@ import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 import { addAdminNotification } from "@/lib/admin-notifications";
+import { getPricingSettings } from "@/lib/pricing-settings";
 
 type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal" | "multicaixa";
 
@@ -184,6 +187,7 @@ export default function PaymentScreen() {
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [receiptImage, setReceiptImage] = useState<string | null>(null);
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
+  const [ibanCopied, setIbanCopied] = useState(false);
 
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
@@ -343,6 +347,32 @@ export default function PaymentScreen() {
           sound: "new_booking.wav",
           channelId: "new_booking",
         }).catch((err) => console.error("[Payment] Admin push failed:", err));
+      }
+    }
+
+    // إشعار خاص بدفعة Multicaixa Express
+    if (paymentMethod === "multicaixa") {
+      const mcxFormatted = formatCurrency(total, "AOA");
+      const mcxTitle = "🇦🇴 دفعة Multicaixa Express جديدة!";
+      const mcxCustomer = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "زبون";
+      const mcxBody = `${mcxCustomer} • ${mcxFormatted} • Ref: ${transferRef.trim()} • ${ref}`;
+      addAdminNotification({
+        type: "new_booking",
+        title: mcxTitle,
+        body: mcxBody,
+        bookingRef: ref,
+        bookingId: booking.id,
+      }).catch(() => {});
+
+      if (adminPushToken) {
+        sendAdminPush.mutateAsync({
+          expoPushToken: adminPushToken,
+          title: mcxTitle,
+          body: mcxBody,
+          data: { bookingRef: ref, type: "multicaixa_payment" },
+          sound: "new_booking.wav",
+          channelId: "new_booking",
+        }).catch((err) => console.error("[Payment] Multicaixa push failed:", err));
       }
     }
 
@@ -854,7 +884,33 @@ export default function PaymentScreen() {
                 </View>
                 <View style={[styles.bankRow, { borderBottomWidth: 0 }]}>
                   <Text style={[styles.bankLabel, { color: colors.muted }]}>رقم الحساب (IBAN)</Text>
-                  <Text style={[styles.bankValue, { color: "#E31937", fontWeight: "700", fontSize: 14 }]}>{WALLET_NUMBERS.multicaixa}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <Text style={[styles.bankValue, { color: "#E31937", fontWeight: "700", fontSize: 14, flex: 1 }]}>{WALLET_NUMBERS.multicaixa}</Text>
+                    <Pressable
+                      style={({ pressed }) => [{
+                        backgroundColor: ibanCopied ? colors.success : "#E31937",
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        gap: 4,
+                        opacity: pressed ? 0.8 : 1,
+                      }]}
+                      onPress={async () => {
+                        await Clipboard.setStringAsync(WALLET_NUMBERS.multicaixa);
+                        if (Platform.OS !== "web") {
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        }
+                        setIbanCopied(true);
+                        setTimeout(() => setIbanCopied(false), 2500);
+                      }}
+                    >
+                      <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>
+                        {ibanCopied ? "✅ تم النسخ" : "📋 نسخ"}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </View>
 
@@ -920,10 +976,33 @@ export default function PaymentScreen() {
                 />
               </View>
 
+              {/* سعر الصرف الحالي */}
+              {(() => {
+                const pricing = getPricingSettings();
+                const aoaRate = pricing.aoaToMRU;
+                const lastUpdated = pricing.ratesLastUpdated;
+                const dateStr = lastUpdated
+                  ? new Date(lastUpdated).toLocaleDateString("ar-SA", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                  : null;
+                return (
+                  <View style={[styles.infoBox, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 6 }]}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>سعر الصرف الحالي</Text>
+                      <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "700" }}>1 AOA = {aoaRate} MRU</Text>
+                    </View>
+                    {dateStr && (
+                      <Text style={{ color: colors.muted, fontSize: 10, textAlign: "left", marginTop: 4 }}>
+                        آخر تحديث: {dateStr}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })()}
+
               {/* تحذير سعر الصرف */}
               <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
                 <Text style={[styles.warningText, { color: colors.warning }]}>
-                  ⚠️ سعر الصرف قابل للتعديل من إعدادات المدير. قد يختلف السعر الفعلي بحسب يوم التحويل.
+                  ⚠️ قد يختلف السعر الفعلي بحسب يوم التحويل. يتم تحديث سعر الصرف دورياً من إعدادات المدير.
                 </Text>
               </View>
             </View>
