@@ -21,6 +21,7 @@ export default function ManagePnrScreen() {
   const colors = useColors();
   const { bookings, updateBookingPnr, updateBookingTicketNumber } = useApp();
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<"all" | "no_ticket" | "no_pnr" | "complete">("all");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pnrInput, setPnrInput] = useState("");
   const [ticketNumberInput, setTicketNumberInput] = useState("");
@@ -31,7 +32,17 @@ export default function ManagePnrScreen() {
 
   // Only show flight bookings (PNR is for flights only)
   const flightBookings = useMemo(() => {
-    const flights = bookings.filter((b) => b.type === "flight");
+    let flights = bookings.filter((b) => b.type === "flight");
+
+    // Apply filter
+    if (filter === "no_ticket") {
+      flights = flights.filter((b) => !b.ticketNumber);
+    } else if (filter === "no_pnr") {
+      flights = flights.filter((b) => !b.realPnr);
+    } else if (filter === "complete") {
+      flights = flights.filter((b) => b.realPnr && b.ticketNumber);
+    }
+
     if (!search.trim()) return flights;
     const q = search.toLowerCase();
     return flights.filter(
@@ -43,7 +54,13 @@ export default function ManagePnrScreen() {
         (b.passengerName && b.passengerName.toLowerCase().includes(q)) ||
         (b.flight?.airline && b.flight.airline.toLowerCase().includes(q))
     );
-  }, [bookings, search]);
+  }, [bookings, search, filter]);
+
+  // Counts for filter badges
+  const allFlights = useMemo(() => bookings.filter((b) => b.type === "flight"), [bookings]);
+  const noTicketCount = useMemo(() => allFlights.filter((b) => !b.ticketNumber).length, [allFlights]);
+  const noPnrCount = useMemo(() => allFlights.filter((b) => !b.realPnr).length, [allFlights]);
+  const completeCount = useMemo(() => allFlights.filter((b) => b.realPnr && b.ticketNumber).length, [allFlights]);
 
   const handleSavePnrAndTicket = async (bookingId: string) => {
     const pnr = pnrInput.trim().toUpperCase();
@@ -202,6 +219,47 @@ export default function ManagePnrScreen() {
             سيُرسل تلقائياً بريد إلكتروني للزبون وإشعار Push (في APK).
           </Text>
         </View>
+
+        {/* Filter Tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterRow} contentContainerStyle={styles.filterRowContent}>
+          {[
+            { key: "all" as const, label: "الكل", count: allFlights.length },
+            { key: "no_ticket" as const, label: "بدون تذكرة", count: noTicketCount },
+            { key: "no_pnr" as const, label: "بدون PNR", count: noPnrCount },
+            { key: "complete" as const, label: "مكتمل", count: completeCount },
+          ].map((tab) => (
+            <Pressable
+              key={tab.key}
+              style={({ pressed }) => [
+                styles.filterTab,
+                {
+                  backgroundColor: filter === tab.key ? "#1B2B5E" : colors.surface,
+                  borderColor: filter === tab.key ? "#1B2B5E" : colors.border,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+              onPress={() => setFilter(tab.key)}
+            >
+              <Text style={[
+                styles.filterTabText,
+                { color: filter === tab.key ? "#FFFFFF" : colors.foreground },
+              ]}>
+                {tab.label}
+              </Text>
+              <View style={[
+                styles.filterBadge,
+                { backgroundColor: filter === tab.key ? "#C9A84C" : colors.border },
+              ]}>
+                <Text style={[
+                  styles.filterBadgeText,
+                  { color: filter === tab.key ? "#1B2B5E" : colors.muted },
+                ]}>
+                  {tab.count}
+                </Text>
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         {/* Search */}
         <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -547,4 +605,25 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontSize: 14, fontWeight: "500" },
   saveBtn: { flex: 2, borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   saveBtnText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  filterRow: { marginBottom: 12, maxHeight: 44 },
+  filterRowContent: { gap: 8, paddingHorizontal: 0 },
+  filterTab: {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterTabText: { fontSize: 13, fontWeight: "600" as const },
+  filterBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    paddingHorizontal: 5,
+  },
+  filterBadgeText: { fontSize: 11, fontWeight: "700" as const },
 });

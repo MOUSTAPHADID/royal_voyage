@@ -264,8 +264,18 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       doc.fontSize(14).fillColor(NAVY).font("Helvetica-Bold")
         .text(data.pnr ?? data.bookingRef, rightX, pnrY + 11, { width: rightW - 4, align: "center" });
 
+      // Ticket Number (if available)
+      let nextRefY = pnrY + 36;
+      if (data.ticketNumber) {
+        doc.fontSize(7).fillColor(GRAY).font("Helvetica")
+          .text("TICKET NO.", rightX, nextRefY, { width: rightW - 4, align: "center" });
+        doc.fontSize(10).fillColor(GREEN).font("Helvetica-Bold")
+          .text(data.ticketNumber, rightX, nextRefY + 11, { width: rightW - 4, align: "center" });
+        nextRefY += 30;
+      }
+
       // Booking ref
-      const refY = pnrY + 36;
+      const refY = nextRefY;
       doc.fontSize(7).fillColor(GRAY).font("Helvetica")
         .text("BOOKING REF", rightX, refY, { width: rightW - 4, align: "center" });
       doc.fontSize(10).fillColor(GOLD).font("Helvetica-Bold")
@@ -289,15 +299,19 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       doc.fontSize(8).fillColor("rgba(255,255,255,0.55)").font("Helvetica")
         .text("PASSENGER COPY — KEEP THIS STUB", M + 16, y + 8, { width: cW - 24 });
 
-      const stubCellW = (cW - 32) / 5;
-      const stubDataY = y + 22;
-      const stubItems = [
+      const flightStubItems = [
         { label: "FROM", value: data.origin },
         { label: "TO", value: data.destination },
         { label: "DATE", value: data.departureDate },
         { label: "FLIGHT", value: `${data.airline}${data.flightNumber}` },
         { label: "PNR", value: data.pnr ?? data.bookingRef },
       ];
+      if (data.ticketNumber) {
+        flightStubItems.push({ label: "TICKET", value: data.ticketNumber });
+      }
+      const stubCellW = (cW - 32) / flightStubItems.length;
+      const stubDataY = y + 22;
+      const stubItems = flightStubItems;
       stubItems.forEach((item, i) => {
         const sx = M + 16 + i * stubCellW;
         doc.fontSize(7).fillColor("rgba(255,255,255,0.5)").font("Helvetica")
@@ -520,7 +534,17 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       doc.fontSize(14).fillColor(NAVY).font("Helvetica-Bold")
         .text(data.pnr ?? data.bookingRef, rightX, pnrY + 11, { width: rightW - 4, align: "center" });
 
-      const refY = pnrY + 36;
+      // Ticket Number (if available)
+      let hotelNextRefY = pnrY + 36;
+      if (data.ticketNumber) {
+        doc.fontSize(7).fillColor(GRAY).font("Helvetica")
+          .text("TICKET NO.", rightX, hotelNextRefY, { width: rightW - 4, align: "center" });
+        doc.fontSize(10).fillColor(GREEN).font("Helvetica-Bold")
+          .text(data.ticketNumber, rightX, hotelNextRefY + 11, { width: rightW - 4, align: "center" });
+        hotelNextRefY += 30;
+      }
+
+      const refY = hotelNextRefY;
       doc.fontSize(7).fillColor(GRAY).font("Helvetica")
         .text("BOOKING REF", rightX, refY, { width: rightW - 4, align: "center" });
       doc.fontSize(10).fillColor(GOLD).font("Helvetica-Bold")
@@ -528,7 +552,7 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
 
       y += cardH + 12;
 
-      // ── Tear-off stub ──────────────────────────────────────────────────────
+      // ── Tear-off stub ──────────────────────────────────────────────────────────────────
       drawTearLine(doc, y);
       y += 12;
 
@@ -539,15 +563,19 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       doc.fontSize(8).fillColor("rgba(255,255,255,0.55)").font("Helvetica")
         .text("GUEST COPY — PRESENT AT HOTEL RECEPTION", M + 16, y + 8, { width: cW - 24 });
 
-      const stubCellW = (cW - 32) / 5;
-      const stubDataY = y + 22;
-      const stubItems = [
+      const hotelStubItems = [
         { label: "HOTEL", value: data.hotelName.substring(0, 14) },
         { label: "CHECK-IN", value: data.checkIn },
         { label: "CHECK-OUT", value: data.checkOut },
         { label: "NIGHTS", value: `${data.nights}N` },
         { label: "PNR", value: data.pnr ?? data.bookingRef },
       ];
+      if (data.ticketNumber) {
+        hotelStubItems.push({ label: "TICKET", value: data.ticketNumber });
+      }
+      const stubCellW = (cW - 32) / hotelStubItems.length;
+      const stubDataY = y + 22;
+      const stubItems = hotelStubItems;
       stubItems.forEach((item, i) => {
         const sx = M + 16 + i * stubCellW;
         doc.fontSize(7).fillColor("rgba(255,255,255,0.5)").font("Helvetica")

@@ -4,7 +4,7 @@ import { View, ActivityIndicator } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 
 export default function Index() {
-  const { isAuthenticated, isLoading } = useApp();
+  const { isAuthenticated, isLoading, user } = useApp();
   const colors = useColors();
 
   if (isLoading) {
@@ -16,6 +16,10 @@ export default function Index() {
   }
 
   if (isAuthenticated) {
+    // Admin → go directly to admin panel
+    if (user?.isAdmin) {
+      return <Redirect href="/admin" />;
+    }
     return <Redirect href="/(tabs)" />;
   }
 

@@ -103,6 +103,7 @@ export interface FlightTicketData {
   passengerEmail: string;
   bookingRef: string;
   pnr?: string;
+  ticketNumber?: string;
   origin: string;
   originCity: string;
   destination: string;
@@ -205,6 +206,7 @@ export interface HotelConfirmationData {
   guestEmail: string;
   bookingRef: string;
   pnr?: string;
+  ticketNumber?: string;
   hotelName: string;
   hotelCity: string;
   hotelCountry: string;
