@@ -99,7 +99,7 @@ const WALLET_NUMBERS: Record<string, string> = {
   bankily: "22 XX XX XX",
   masrvi: "36 XX XX XX", // مصرفي
   sedad: "sedad.royalvoyage.mr",
-  multicaixa: "923 XXX XXX",
+  multicaixa: "0055 0000 76790864101 08",
 };
 
 export default function PaymentScreen() {
@@ -826,6 +826,7 @@ export default function PaymentScreen() {
 
         {/* تعليمات Multicaixa Express */}
         {paymentMethod === "multicaixa" && (() => {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const mcxAmount = fromMRU(total, "AOA");
           const mcxFormatted = formatCurrency(total, "AOA");
           return (
@@ -845,30 +846,66 @@ export default function PaymentScreen() {
                 </Text>
               </View>
 
+              {/* بيانات المستفيد */}
+              <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border, gap: 8 }]}>
+                <View style={styles.bankRow}>
+                  <Text style={[styles.bankLabel, { color: colors.muted }]}>اسم المستفيد</Text>
+                  <Text style={[styles.bankValue, { color: colors.foreground }]}>ANGOLAMIR COMERCIO E SERVICOS LDA</Text>
+                </View>
+                <View style={[styles.bankRow, { borderBottomWidth: 0 }]}>
+                  <Text style={[styles.bankLabel, { color: colors.muted }]}>رقم الحساب (IBAN)</Text>
+                  <Text style={[styles.bankValue, { color: "#E31937", fontWeight: "700", fontSize: 14 }]}>{WALLET_NUMBERS.multicaixa}</Text>
+                </View>
+              </View>
+
               {/* خطوات الدفع */}
               <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {[
                   "افتح تطبيق Multicaixa Express على هاتفك",
-                  `أرسل المبلغ ${mcxFormatted} إلى الرقم:`,
-                  `${WALLET_NUMBERS.multicaixa}`,
+                  `اختر تحويل وأدخل المبلغ: ${mcxFormatted}`,
+                  "أدخل رقم الحساب (IBAN) الموضح أعلاه",
                   "في خانة الملاحظة اكتب: اسمك الكامل + رقم حجزك",
                   "أدخل رقم معرّف العملية (Transaction ID) أدناه",
                 ].map((step, i) => (
-                  <View key={i} style={[styles.stepRow, i === 2 && { paddingRight: 32 }]}>
-                    {i !== 2 ? (
-                      <View style={[styles.stepNum, { backgroundColor: "#E31937" }]}>
-                        <Text style={styles.stepNumText}>{i < 2 ? i + 1 : i}</Text>
-                      </View>
-                    ) : (
-                      <View style={{ width: 28 }} />
-                    )}
-                    <Text style={[
-                      styles.stepText,
-                      { color: i === 2 ? "#E31937" : colors.foreground, fontWeight: i === 2 ? "700" : "400", fontSize: i === 2 ? 15 : 13 }
-                    ]}>{step}</Text>
+                  <View key={i} style={styles.stepRow}>
+                    <View style={[styles.stepNum, { backgroundColor: "#E31937" }]}>
+                      <Text style={styles.stepNumText}>{i + 1}</Text>
+                    </View>
+                    <Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text>
                   </View>
                 ))}
               </View>
+
+              {/* زر فتح Multicaixa Express */}
+              <Pressable
+                style={({ pressed }) => [{
+                  backgroundColor: "#E31937",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  marginTop: 10,
+                  marginBottom: 6,
+                  gap: 8,
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+                onPress={() => {
+                  // محاولة فتح تطبيق Multicaixa Express
+                  Linking.openURL("multicaixaexpress://").catch(() => {
+                    // إذا لم يكن التطبيق مثبتاً، فتح صفحة التحميل
+                    Linking.openURL("https://play.google.com/store/apps/details?id=ao.multicaixa.express").catch(() => {
+                      Linking.openURL("https://www.multicaixa.co.ao");
+                    });
+                  });
+                }}
+              >
+                <Text style={{ color: "#FFF", fontSize: 18 }}>🇦🇴</Text>
+                <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>فتح Multicaixa Express</Text>
+              </Pressable>
+              <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginBottom: 10 }}>
+                سيتم فتح التطبيق مباشرة — أدخل Transaction ID بعد إتمام الدفع
+              </Text>
 
               {/* حقل رقم العملية */}
               <View style={styles.inputGroup}>
@@ -886,7 +923,7 @@ export default function PaymentScreen() {
               {/* تحذير سعر الصرف */}
               <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
                 <Text style={[styles.warningText, { color: colors.warning }]}>
-                  ⚠️ سعر الصرف المستخدم ثابت (1 AOA ≈ 0.043 MRU). قد يختلف السعر الفعلي بحسب يوم التحويل.
+                  ⚠️ سعر الصرف قابل للتعديل من إعدادات المدير. قد يختلف السعر الفعلي بحسب يوم التحويل.
                 </Text>
               </View>
             </View>

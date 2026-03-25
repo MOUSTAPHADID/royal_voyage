@@ -47,11 +47,12 @@ export function toMRU(amount: number, fromCurrency: string = "USD"): number {
   const gbpRate = rates?.gbpToMRU ?? 50.2;
   const sarRate = rates?.sarToMRU ?? 10.5;
   const aedRate = rates?.aedToMRU ?? 10.75;
+  const aoaRate = (rates as any)?.aoaToMRU ?? AOA_TO_MRU_DEFAULT;
   switch (currency) {
     case "MRU": return amount;
     case "USD": return Math.round(amount * usdRate);
     case "EUR": return Math.round(amount * eurRate);
-    case "AOA": return Math.round(amount * AOA_TO_MRU_DEFAULT);
+    case "AOA": return Math.round(amount * aoaRate);
     case "GBP": return Math.round(amount * gbpRate);
     case "SAR": return Math.round(amount * sarRate);
     case "AED": return Math.round(amount * aedRate);
@@ -62,7 +63,7 @@ export function toMRU(amount: number, fromCurrency: string = "USD"): number {
 
 /** تحويل من MRU إلى عملة مستهدفة */
 export function fromMRU(amountMRU: number, toCurrency: AppCurrency): number {
-  let rates: { usdToMRU: number; eurToMRU: number } | null = null;
+  let rates: { usdToMRU: number; eurToMRU: number; aoaToMRU?: number } | null = null;
   try {
     const { getPricingSettings } = require("./pricing-settings");
     const s = getPricingSettings();
@@ -72,11 +73,12 @@ export function fromMRU(amountMRU: number, toCurrency: AppCurrency): number {
   }
   const usdRate = rates?.usdToMRU ?? USD_TO_MRU_DEFAULT;
   const eurRate = rates?.eurToMRU ?? EUR_TO_MRU_DEFAULT;
+  const aoaRate = rates?.aoaToMRU ?? AOA_TO_MRU_DEFAULT;
   switch (toCurrency) {
     case "MRU": return amountMRU;
     case "USD": return amountMRU / usdRate;
     case "EUR": return amountMRU / eurRate;
-    case "AOA": return amountMRU / AOA_TO_MRU_DEFAULT;
+    case "AOA": return amountMRU / aoaRate;
     default: return amountMRU;
   }
 }

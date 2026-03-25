@@ -25,6 +25,8 @@ export interface PricingSettings {
   sarToMRU: number;
   /** سعر صرف الدرهم الإماراتي إلى الأوقية */
   aedToMRU: number;
+  /** سعر صرف الكوانزا الأنغولية إلى الأوقية */
+  aoaToMRU: number;
   /** خصم سعر الطفل (0.75 = 25% خصم) */
   childDiscountRate: number;
   /** تاريخ آخر تحديث لأسعار الصرف */
@@ -39,6 +41,7 @@ export const DEFAULT_PRICING: PricingSettings = {
   gbpToMRU: 50.2,
   sarToMRU: 10.5,
   aedToMRU: 10.75,
+  aoaToMRU: 0.043,
   childDiscountRate: 0.75,
   ratesLastUpdated: undefined,
 };
@@ -107,6 +110,7 @@ export function toMRUWithSettings(amount: number, fromCurrency: string = "USD"):
     case "GBP": return Math.round(amount * s.gbpToMRU);
     case "SAR": return Math.round(amount * s.sarToMRU);
     case "AED": return Math.round(amount * s.aedToMRU);
+    case "AOA": return Math.round(amount * s.aoaToMRU);
     default: return Math.round(amount * s.usdToMRU);
   }
 }
@@ -129,6 +133,7 @@ export async function fetchLiveExchangeRates(): Promise<Partial<PricingSettings>
       gbpToMRU: parseFloat((usdToMRU / (rates["GBP"] ?? 0.79)).toFixed(2)),
       sarToMRU: parseFloat((usdToMRU / (rates["SAR"] ?? 3.75)).toFixed(2)),
       aedToMRU: parseFloat((usdToMRU / (rates["AED"] ?? 3.67)).toFixed(2)),
+      aoaToMRU: parseFloat((usdToMRU / (rates["AOA"] ?? 920)).toFixed(4)),
       ratesLastUpdated: new Date().toISOString(),
     };
   } catch {

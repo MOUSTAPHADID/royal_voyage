@@ -107,6 +107,16 @@ const FIELDS: FieldConfig[] = [
     step: 0.1,
     section: "أسعار الصرف",
   },
+  {
+    key: "aoaToMRU",
+    label: "الكوانزا (AOA)",
+    unit: "MRU",
+    description: "1 AOA = ؟ MRU (Multicaixa Express)",
+    min: 0.001,
+    max: 1,
+    step: 0.001,
+    section: "أسعار الصرف",
+  },
   // --- أسعار الأطفال ---
   {
     key: "childDiscountRate",
@@ -159,7 +169,7 @@ export default function PricingAdminScreen() {
     }
 
     // تحديث القيم المعروضة
-    const rateKeys: Array<keyof PricingSettings> = ["usdToMRU", "eurToMRU", "gbpToMRU", "sarToMRU", "aedToMRU"];
+    const rateKeys: Array<keyof PricingSettings> = ["usdToMRU", "eurToMRU", "gbpToMRU", "sarToMRU", "aedToMRU", "aoaToMRU"];
     setValues((prev) => {
       const updated = { ...prev };
       rateKeys.forEach((k) => {

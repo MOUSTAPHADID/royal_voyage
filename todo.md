@@ -609,3 +609,10 @@
 - [x] تحديث PAYMENT_LABELS في confirm-payment.tsx
 - [x] تحديث PAYMENT_METHOD_CONFIG في profit-report.tsx
 - [x] تحديث PDF التقرير ليشمل Multicaixa Express (يظهر تلقائياً من PAYMENT_METHOD_CONFIG)
+
+## تحسينات Multicaixa Express
+- [x] تحديث رقم محفظة Multicaixa Express بالبيانات الفعلية (IBAN: 0055 0000 76790864101 08 / ANGOLAMIR COMERCIO E SERVICOS LDA)
+- [x] إضافة حقل aoaToMRU في PricingSettings لسعر صرف AOA قابل للتعديل (افتراضي: 0.043)
+- [x] تحديث currency.ts لاستخدام سعر AOA الديناميكي من PricingSettings
+- [x] تحديث شاشة إعدادات المدير لعرض حقل سعر صرف AOA + تحديث تلقائي من API
+- [x] إضافة زر فتح تطبيق Multicaixa Express مباشرة (deep link + fallback إلى Play Store)
