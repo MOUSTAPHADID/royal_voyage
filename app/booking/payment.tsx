@@ -191,6 +191,27 @@ export default function PaymentScreen() {
   const [showReceiptPreview, setShowReceiptPreview] = useState(false);
   const [ibanCopied, setIbanCopied] = useState(false);
 
+  // مؤقت عد تنازلي 15 دقيقة لحجز المقعد مؤقتاً
+  const TIMER_DURATION = 15 * 60; // 15 دقيقة بالثواني
+  const [timeLeft, setTimeLeft] = useState(TIMER_DURATION);
+  const [timerExpired, setTimerExpired] = useState(false);
+
+  React.useEffect(() => {
+    if (timeLeft <= 0) {
+      setTimerExpired(true);
+      Alert.alert(
+        "انتهى الوقت",
+        "انتهت مهلة الحجز المؤقت (15 دقيقة). يرجى البدء من جديد.",
+        [{ text: "حسناً", onPress: () => router.back() }]
+      );
+      return;
+    }
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeLeft]);
+
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
   const sendAdminPush = trpc.email.sendPushNotification.useMutation();
@@ -511,6 +532,28 @@ export default function PaymentScreen() {
         </Pressable>
         <Text style={styles.headerTitle}>الدفع</Text>
         <View style={{ width: 30 }} />
+      </View>
+
+      {/* مؤقت عد تنازلي */}
+      <View style={[
+        styles.timerBar,
+        { backgroundColor: timeLeft <= 180 ? (timeLeft <= 60 ? "#FEE2E2" : "#FEF3C7") : "#E0F2FE" }
+      ]}>
+        <Text style={[
+          styles.timerIcon,
+          { color: timeLeft <= 180 ? (timeLeft <= 60 ? "#DC2626" : "#D97706") : "#0284C7" }
+        ]}>
+          {timeLeft <= 60 ? "\u26A0\uFE0F" : "\u23F0"}
+        </Text>
+        <Text style={[
+          styles.timerText,
+          { color: timeLeft <= 180 ? (timeLeft <= 60 ? "#DC2626" : "#D97706") : "#0284C7" }
+        ]}>
+          {timeLeft <= 180
+            ? `\u0623\u0643\u0645\u0644 \u0627\u0644\u062F\u0641\u0639 \u062E\u0644\u0627\u0644 ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")}`
+            : `\u062D\u062C\u0632 \u0645\u0624\u0642\u062A \u2022 ${Math.floor(timeLeft / 60)}:${(timeLeft % 60).toString().padStart(2, "0")} \u0645\u062A\u0628\u0642\u064A\u0629`
+          }
+        </Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
@@ -1453,5 +1496,20 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  timerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  timerIcon: {
+    fontSize: 18,
+  },
+  timerText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

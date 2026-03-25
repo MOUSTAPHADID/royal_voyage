@@ -10,6 +10,8 @@ import {
   Share,
   Alert,
   ActivityIndicator,
+  Linking,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
@@ -508,6 +510,42 @@ export default function ConfirmationScreen() {
           </Text>
         </Pressable>
 
+        {/* WhatsApp Confirmation */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.whatsappBtn,
+            { opacity: pressed ? 0.7 : 1 },
+          ]}
+          onPress={() => {
+            const ref = params.reference ?? "";
+            const pnr = params.pnr ?? "";
+            const type = isFlight ? "✈️ رحلة" : "🏨 فندق";
+            const route = isFlight
+              ? `${params.originCode ?? ""} \u2192 ${params.destinationCode ?? ""}`
+              : `${params.hotelName ?? ""} - ${params.hotelCity ?? ""}`;
+            const msg = `\u2705 *تأكيد حجز Royal Voyage*\n\n` +
+              `النوع: ${type}\n` +
+              `المسار: ${route}\n` +
+              `رقم المرجع: ${ref}\n` +
+              (pnr ? `PNR: ${pnr}\n` : "") +
+              `المبلغ: ${formattedTotal}\n` +
+              `الاسم: ${params.passengerName ?? ""}\n` +
+              `التاريخ: ${today}\n\n` +
+              `شكراً لاختياركم Royal Voyage \uD83D\uDC51`;
+            const encoded = encodeURIComponent(msg);
+            const phone = (params.phone ?? "").replace(/[^0-9]/g, "");
+            const url = phone
+              ? `https://wa.me/${phone}?text=${encoded}`
+              : `https://wa.me/?text=${encoded}`;
+            Linking.openURL(url).catch(() => {
+              Alert.alert("تنبيه", "لم يتم العثور على تطبيق WhatsApp");
+            });
+          }}
+        >
+          <Text style={styles.whatsappIcon}>💬</Text>
+          <Text style={styles.whatsappText}>إرسال التأكيد عبر WhatsApp</Text>
+        </Pressable>
+
         {/* Main Actions */}
         <View style={styles.actions}>
           <Pressable
@@ -669,4 +707,22 @@ const styles = StyleSheet.create({
   pnrLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 },
   pnrValue: { fontSize: 36, fontWeight: "800", letterSpacing: 6, fontFamily: "monospace" },
   pnrHint: { fontSize: 11, marginTop: 6, textAlign: "center" },
+  whatsappBtn: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: "#25D366",
+  },
+  whatsappIcon: {
+    fontSize: 20,
+  },
+  whatsappText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
 });
