@@ -22,6 +22,21 @@ async function getNotifications() {
         shouldShowList: true,
       }),
     });
+    // Create Android notification channel for new bookings with custom sound
+    if (Platform.OS === "android") {
+      await Notifications.setNotificationChannelAsync("new_booking", {
+        name: "حجز جديد",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        sound: "new_booking.wav",
+      }).catch(() => {});
+      await Notifications.setNotificationChannelAsync("booking_cancelled", {
+        name: "إلغاء حجز",
+        importance: Notifications.AndroidImportance.HIGH,
+        vibrationPattern: [0, 500, 250, 500],
+        sound: "new_booking.wav",
+      }).catch(() => {});
+    }
     return Notifications;
   } catch {
     return null;

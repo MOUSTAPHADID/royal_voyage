@@ -110,6 +110,12 @@ const config: ExpoConfig = {
       },
     ],
     [
+      "expo-notifications",
+      {
+        "sounds": ["./assets/sounds/new_booking.wav"]
+      }
+    ],
+    [
       "expo-build-properties",
       {
         android: {

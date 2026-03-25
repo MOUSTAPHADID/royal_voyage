@@ -518,6 +518,23 @@ export default function AdminScreen() {
               </View>
             </View>
 
+            {/* بطاقة سجل الإشعارات */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/notifications" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#F59E0B", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="bell.fill" size={22} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>سجل الإشعارات</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>مراجعة جميع إشعارات الحجوزات والإلغاءات</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* بطاقة إدارة الأسعار */}
             <Pressable
               style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}

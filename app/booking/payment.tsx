@@ -19,6 +19,7 @@ import { formatMRU, fromMRU, formatCurrency } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
+import { addAdminNotification } from "@/lib/admin-notifications";
 
 type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal";
 
@@ -297,18 +298,34 @@ export default function PaymentScreen() {
     await addBooking(booking);
 
     // إرسال إشعار Push للمدير عند إنشاء حجز جديد
-    if (adminPushToken) {
+    {
       const customerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "زبون";
       const bookingType = isFlight ? "✈️ رحلة" : "🏨 فندق";
       const dest = isFlight
         ? `${params.originCode ?? ""} → ${params.destinationCode ?? ""}`
         : params.hotelName ?? "";
-      sendAdminPush.mutateAsync({
-        expoPushToken: adminPushToken,
-        title: `🔔 حجز جديد! ${bookingType}`,
-        body: `${customerName} • ${dest} • ${fmt(total)} • ${ref}`,
-        data: { bookingRef: ref, type: "new_booking" },
-      }).catch((err) => console.error("[Payment] Admin push failed:", err));
+      const notifTitle = `🔔 حجز جديد! ${bookingType}`;
+      const notifBody = `${customerName} • ${dest} • ${fmt(total)} • ${ref}`;
+
+      // حفظ الإشعار محلياً في سجل الإشعارات
+      addAdminNotification({
+        type: "new_booking",
+        title: notifTitle,
+        body: notifBody,
+        bookingRef: ref,
+        bookingId: booking.id,
+      }).catch(() => {});
+
+      if (adminPushToken) {
+        sendAdminPush.mutateAsync({
+          expoPushToken: adminPushToken,
+          title: notifTitle,
+          body: notifBody,
+          data: { bookingRef: ref, type: "new_booking" },
+          sound: "new_booking.wav",
+          channelId: "new_booking",
+        }).catch((err) => console.error("[Payment] Admin push failed:", err));
+      }
     }
 
     // Schedule cash payment reminder (1h before 24h deadline)

@@ -391,6 +391,8 @@ export const appRouter = router({
           title: z.string(),
           body: z.string(),
           data: z.record(z.string(), z.unknown()).optional(),
+          sound: z.string().optional(),
+          channelId: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -404,10 +406,11 @@ export const appRouter = router({
             },
             body: JSON.stringify({
               to: input.expoPushToken,
-              sound: "default",
+              sound: input.sound ?? "default",
               title: input.title,
               body: input.body,
               data: input.data ?? {},
+              channelId: input.channelId,
             }),
           });
           const result = await response.json();
