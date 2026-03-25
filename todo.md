@@ -621,3 +621,8 @@
 - [x] إضافة زر نسخ رقم IBAN بنقرة واحدة مع haptic feedback وتغيير اللون عند النسخ
 - [x] إضافة إشعار تلقائي للمدير عند استلام دفعة Multicaixa Express (محلي + push)
 - [x] عرض سعر الصرف الحالي (1 AOA = X MRU) وتاريخ آخر تحديث في شاشة الدفع
+
+## تحسين الانتقال المباشر لتطبيق Multicaixa Express
+- [x] البحث عن deep link / package name الصحيح (com.sibsint.mcxwallet)
+- [x] تحديث زر فتح التطبيق بالروابط الصحيحة (Android intent URI + iOS canOpenURL + Web fallback)
+- [x] Fallback سلس: تطبيق → Play Store/App Store → multicaixa.ao

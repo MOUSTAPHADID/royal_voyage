@@ -946,14 +946,45 @@ export default function PaymentScreen() {
                   gap: 8,
                   opacity: pressed ? 0.85 : 1,
                 }]}
-                onPress={() => {
-                  // محاولة فتح تطبيق Multicaixa Express
-                  Linking.openURL("multicaixaexpress://").catch(() => {
-                    // إذا لم يكن التطبيق مثبتاً، فتح صفحة التحميل
-                    Linking.openURL("https://play.google.com/store/apps/details?id=ao.multicaixa.express").catch(() => {
-                      Linking.openURL("https://www.multicaixa.co.ao");
-                    });
-                  });
+                onPress={async () => {
+                  // محاولة فتح تطبيق Multicaixa Express مباشرة
+                  const packageName = "com.sibsint.mcxwallet";
+                  const playStoreUrl = `https://play.google.com/store/apps/details?id=${packageName}`;
+                  const appStoreUrl = "https://apps.apple.com/app/multicaixa-express/id1433675921";
+                  const websiteUrl = "https://multicaixa.ao";
+
+                  if (Platform.OS === "android") {
+                    // Android: intent URI لفتح التطبيق مباشرة أو الانتقال للمتجر
+                    const intentUri = `intent://#Intent;package=${packageName};scheme=multicaixaexpress;launchFlags=0x10000000;S.browser_fallback_url=${encodeURIComponent(playStoreUrl)};end`;
+                    try {
+                      await Linking.openURL(intentUri);
+                    } catch {
+                      try {
+                        await Linking.openURL(playStoreUrl);
+                      } catch {
+                        await Linking.openURL(websiteUrl);
+                      }
+                    }
+                  } else if (Platform.OS === "ios") {
+                    // iOS: محاولة فتح التطبيق أولاً ثم App Store
+                    try {
+                      const canOpen = await Linking.canOpenURL("multicaixaexpress://");
+                      if (canOpen) {
+                        await Linking.openURL("multicaixaexpress://");
+                      } else {
+                        await Linking.openURL(appStoreUrl);
+                      }
+                    } catch {
+                      try {
+                        await Linking.openURL(appStoreUrl);
+                      } catch {
+                        await Linking.openURL(websiteUrl);
+                      }
+                    }
+                  } else {
+                    // Web: فتح الموقع الرسمي
+                    await Linking.openURL(websiteUrl);
+                  }
                 }}
               >
                 <Text style={{ color: "#FFF", fontSize: 18 }}>🇦🇴</Text>
