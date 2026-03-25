@@ -225,6 +225,12 @@ export default function PaymentScreen() {
       }
     }
 
+    // التحقق من اختيار وسيلة دفع
+    if (!paymentMethod) {
+      Alert.alert("تنبيه", "يرجى اختيار وسيلة الدفع أولاً قبل إتمام الحجز");
+      return;
+    }
+
     // التحقق من رقم مرجع التحويل إن كان مطلوباً
     if (
       (paymentMethod === "bank_transfer" ||
@@ -234,7 +240,7 @@ export default function PaymentScreen() {
         paymentMethod === "multicaixa") &&
       transferRef.trim().length < 4
     ) {
-      Alert.alert("تنبيه", "الرجاء إدخال رقم مرجع العملية أو رقم الإيصال");
+      Alert.alert("تنبيه", "الرجاء إدخال رقم مرجع العملية أو رقم الإيصال لإتمام الحجز");
       return;
     }
 
@@ -294,7 +300,7 @@ export default function PaymentScreen() {
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
-      status: "confirmed",
+      status: paymentMethod === "cash" ? "pending" : "confirmed",
       reference: ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
@@ -1161,10 +1167,10 @@ export default function PaymentScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.payBtn,
-            { backgroundColor: selectedMethod.color, opacity: pressed || isProcessing ? 0.85 : 1 },
+            { backgroundColor: selectedMethod.color, opacity: (pressed || isProcessing) ? 0.85 : (!paymentMethod || ((paymentMethod === "bank_transfer" || paymentMethod === "bankily" || paymentMethod === "masrvi" || paymentMethod === "sedad" || paymentMethod === "multicaixa") && transferRef.trim().length < 4)) ? 0.5 : 1 },
           ]}
           onPress={handlePay}
-          disabled={isProcessing}
+          disabled={isProcessing || !paymentMethod || ((paymentMethod === "bank_transfer" || paymentMethod === "bankily" || paymentMethod === "masrvi" || paymentMethod === "sedad" || paymentMethod === "multicaixa") && transferRef.trim().length < 4)}
         >
           {isProcessing ? (
             <ActivityIndicator color="#FFFFFF" />
@@ -1172,7 +1178,7 @@ export default function PaymentScreen() {
             <>
               <Text style={{ fontSize: 18 }}>{selectedMethod.icon}</Text>
               <Text style={styles.payBtnText}>
-                {paymentMethod === "cash" ? "تأكيد الحجز" : "تأكيد الدفع"}
+                {paymentMethod === "cash" ? "تأكيد الحجز والدفع لاحقاً" : "تأكيد الدفع وإتمام الحجز"}
               </Text>
             </>
           )}
