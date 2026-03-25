@@ -626,3 +626,6 @@
 - [x] البحث عن deep link / package name الصحيح (com.sibsint.mcxwallet)
 - [x] تحديث زر فتح التطبيق بالروابط الصحيحة (Android intent URI + iOS canOpenURL + Web fallback)
 - [x] Fallback سلس: تطبيق → Play Store/App Store → multicaixa.ao
+
+## تحديث بريد PayPal
+- [x] تحديث بريد PayPal إلى angolamirlda@gmail.com في شاشة الدفع (زر الدفع + تعليمات الخطوات)

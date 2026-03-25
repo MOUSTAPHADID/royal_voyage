@@ -745,7 +745,7 @@ export default function PaymentScreen() {
                 {[
                   "افتح تطبيق PayPal أو الموقع الرسمي paypal.com",
                   `أرسل المبلغ ${ppFormatted} إلى البريد الإلكتروني:`,
-                  "suporte@royalvoyage.online",
+                  "angolamirlda@gmail.com",
                   "في خانة الملاحظة اكتب: اسمك الكامل + رقم حجزك",
                   "أدخل رقم معرّف العملية (Transaction ID) أدناه",
                 ].map((step, i) => (
@@ -780,7 +780,7 @@ export default function PaymentScreen() {
                   opacity: pressed ? 0.85 : 1,
                 }]}
                 onPress={() => {
-                  const paypalEmail = "suporte@royalvoyage.online";
+                  const paypalEmail = "angolamirlda@gmail.com";
                   const paypalUrl = `https://www.paypal.com/paypalme/royalvoyage/${ppAmount.toFixed(2)}${ppCurrency}`;
                   const fallbackUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(paypalEmail)}&amount=${ppAmount.toFixed(2)}&currency_code=${ppCurrency}&item_name=${encodeURIComponent("Royal Voyage Booking")}`;
                   Linking.openURL(fallbackUrl).catch(() => {
