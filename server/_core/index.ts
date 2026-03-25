@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
+import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
@@ -74,6 +76,18 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Serve static web build
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const webDistPath = path.join(__dirname, "../../web-dist");
+  app.use(express.static(webDistPath));
+
+  // SPA fallback — serve index.html for all non-API routes
+  app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+      res.sendFile(path.join(webDistPath, "index.html"));
+    }
+  });
 
   server.listen(port, () => {
     console.log(`[api] server listening on port ${port}`);

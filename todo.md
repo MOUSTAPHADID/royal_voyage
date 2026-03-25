@@ -454,3 +454,14 @@
 - [x] إعداد Email Forwarding في Resend لـ suporte@royalvoyage.online (يحتاج Cloudflare)
 - [x] إنشاء/تحديث صفحة About بتاريخ الوكالة منذ 2023 وخدماتها
 - [x] إضافة رقم WhatsApp في تذاكر PDF
+
+## إصلاح نظام الحجز على الموقع
+- [ ] تشخيص مشكلة الحجز على royalvoyage.online
+- [ ] إصلاح المشكلة
+- [ ] نشر التحديث
+
+## إصلاح شاشة Home الفارغة
+- [x] إصلاح crash بسبب useAudioRecorder في VoiceSearchModal (تأخير render حتى فتح Modal)
+
+## حذف خدمة Render.com
+- [x] حذف خدمة Render.com عبر API

@@ -840,12 +840,14 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Voice Search Modal */}
-      <VoiceSearchModal
-        visible={voiceModalVisible}
-        onClose={() => setVoiceModalVisible(false)}
-        onResult={handleVoiceResult}
-        isRTL={isRTL}
-      />
+      {voiceModalVisible && (
+        <VoiceSearchModal
+          visible={voiceModalVisible}
+          onClose={() => setVoiceModalVisible(false)}
+          onResult={handleVoiceResult}
+          isRTL={isRTL}
+        />
+      )}
     </ScreenContainer>
   );
 }
