@@ -67,8 +67,8 @@ const PAYMENT_METHODS: {
   },
   {
     id: "paypal",
-    label: "PayPal",
-    sublabel: "ادفع بالدولار أو اليورو عبر PayPal",
+    label: "PayPal (بالبطاقة)",
+    sublabel: "ادفع بالبطاقة البنكية (Visa, Mastercard) أو رصيد PayPal",
     icon: "🌐",
     color: "#003087",
   },

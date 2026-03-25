@@ -555,3 +555,8 @@
 ## إظهار طرق الدفع في Profile
 - [x] إنشاء شاشة profile/payment-methods.tsx (Bankily, Masrivi, Sedad, نقد، تحويل بنكي)
 - [x] ربط زر "طرق الدفع" في Profile بالشاشة الجديدة
+
+## إضافة PayPal كطريقة دفع بالبطاقة
+- [x] PayPal موجود بالفعل في شاشة الدفع (payment.tsx) - تم تحديث الوصف ليشمل البطاقة
+- [x] إضافة PayPal في شاشة طرق الدفع (profile/payment-methods.tsx)
+- [x] تحديث وصف PayPal: "ادفع بالبطاقة البنكية (Visa, Mastercard) أو رصيد PayPal"

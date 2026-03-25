@@ -88,6 +88,18 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     color: "#8E44AD",
     available: true,
   },
+  {
+    id: "paypal",
+    name: "PayPal (Card)",
+    nameAr: "PayPal (بالبطاقة)",
+    nameFr: "PayPal (par carte)",
+    description: "Pay with Visa, Mastercard or PayPal balance",
+    descriptionAr: "ادفع بالبطاقة البنكية (Visa, Mastercard) أو رصيد PayPal",
+    descriptionFr: "Payez par carte bancaire (Visa, Mastercard) ou solde PayPal",
+    icon: "🌐",
+    color: "#003087",
+    available: true,
+  },
 ];
 
 export default function PaymentMethodsScreen() {
