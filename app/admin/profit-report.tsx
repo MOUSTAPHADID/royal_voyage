@@ -25,6 +25,16 @@ function isDomestic(originCode?: string, destCode?: string) {
   return MR_AIRPORTS.includes((originCode || "").toUpperCase()) && MR_AIRPORTS.includes((destCode || "").toUpperCase());
 }
 
+// ألوان وأيقونات مميزة لكل طريقة دفع
+const PAYMENT_METHOD_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  bankily: { label: "بنكيلي", color: "#F59E0B", icon: "📱" },
+  masrvi: { label: "مصرفي", color: "#8B5CF6", icon: "💳" },
+  sedad: { label: "سداد", color: "#EF4444", icon: "🔐" },
+  cash: { label: "نقداً", color: "#22C55E", icon: "💵" },
+  bank_transfer: { label: "تحويل بنكي", color: "#3B82F6", icon: "🏦" },
+  paypal: { label: "PayPal", color: "#003087", icon: "🌐" },
+};
+
 export default function ProfitReportScreen() {
   const router = useRouter();
   const colors = useColors();
@@ -65,10 +75,40 @@ export default function ProfitReportScreen() {
     const hotelProfit = hotels.length * pricing.agencyFeeMRU;
     const totalProfit = domesticProfit + intlProfit + hotelProfit;
 
+    // تفصيل حسب طريقة الدفع
+    const paymentMethodStats: Record<string, { count: number; total: number; profit: number }> = {};
+    confirmed.forEach(b => {
+      const method = b.paymentMethod || "cash";
+      if (!paymentMethodStats[method]) paymentMethodStats[method] = { count: 0, total: 0, profit: 0 };
+      paymentMethodStats[method].count++;
+      paymentMethodStats[method].total += b.totalPrice || 0;
+      // حساب الربح لكل طريقة دفع
+      if (b.type === "flight" && isDomestic(b.flight?.originCode, b.flight?.destinationCode)) {
+        paymentMethodStats[method].profit += pricing.agencyFeeDomesticMRU;
+      } else {
+        paymentMethodStats[method].profit += pricing.agencyFeeMRU;
+      }
+    });
+
+    // ترتيب طرق الدفع حسب المبلغ الإجمالي
+    const sortedPaymentMethods = Object.entries(paymentMethodStats)
+      .sort(([, a], [, b]) => b.total - a.total);
+
+    // إحصائيات الحالة
+    const totalBookings = bookings.length;
+    const pendingCount = bookings.filter(b => b.status === "pending").length;
+    const confirmedCount = confirmed.length;
+    const cancelledCount = bookings.filter(b => b.status === "cancelled").length;
+    const paymentConfirmedCount = confirmed.filter(b => b.paymentConfirmed).length;
+    const totalRevenue = confirmed.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+
     return {
       confirmed,
       domesticFlights, intlFlights, hotels,
       domesticProfit, intlProfit, hotelProfit, totalProfit,
+      paymentMethodStats, sortedPaymentMethods,
+      totalBookings, pendingCount, confirmedCount, cancelledCount,
+      paymentConfirmedCount, totalRevenue,
     };
   }, [bookings, selectedMonth, pricing]);
 
@@ -78,6 +118,22 @@ export default function ProfitReportScreen() {
       const now = new Date();
       const dateStr = now.toLocaleDateString("ar-SA", { day: "2-digit", month: "long", year: "numeric" });
       const monthLabel = selectedMonth === "all" ? "جميع الأشهر" : availableMonths.find(m => m.key === selectedMonth)?.label || "";
+
+      // بناء صفوف طرق الدفع للـ PDF
+      const paymentMethodRows = reportData.sortedPaymentMethods.map(([method, stats]) => {
+        const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "💰" };
+        return `
+        <tr>
+          <td>
+            <span class="badge" style="background: ${config.color}15; color: ${config.color};">
+              ${config.icon} ${config.label}
+            </span>
+          </td>
+          <td>${stats.count}</td>
+          <td>${formatMRU(stats.total)}</td>
+          <td class="profit-value">${formatMRU(stats.profit)}</td>
+        </tr>`;
+      }).join("");
 
       const html = `
 <!DOCTYPE html>
@@ -111,13 +167,15 @@ export default function ProfitReportScreen() {
     .badge-hotel { background: #fef3c7; color: #C4973A; }
     .footer { text-align: center; padding: 20px; color: #9ba1a6; font-size: 11px; border-top: 1px solid #e5e7eb; margin-top: 24px; }
     .total-row td { font-weight: 800; font-size: 15px; background: #f0f4ff !important; color: #1B2B5E; }
+    .status-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-top: 16px; }
+    .status-card { text-align: center; padding: 12px; border-radius: 10px; }
   </style>
 </head>
 <body>
   <div class="header">
     <div class="logo">ROYAL VOYAGE</div>
     <div class="subtitle">وكالة السفر الملكية</div>
-    <div class="report-title">تقرير الأرباح</div>
+    <div class="report-title">تقرير الأرباح المالي</div>
     <div class="period">الفترة: ${monthLabel} | تاريخ الإصدار: ${dateStr}</div>
   </div>
 
@@ -129,16 +187,16 @@ export default function ProfitReportScreen() {
         <div class="card-value">${formatMRU(reportData.totalProfit)}</div>
       </div>
       <div class="summary-card">
-        <div class="card-label">إجمالي الحجوزات المؤكدة</div>
+        <div class="card-label">إجمالي الإيرادات</div>
+        <div class="card-value" style="color: #22C55E;">${formatMRU(reportData.totalRevenue)}</div>
+      </div>
+      <div class="summary-card">
+        <div class="card-label">الحجوزات المؤكدة</div>
         <div class="card-value">${reportData.confirmed.length}</div>
       </div>
       <div class="summary-card">
-        <div class="card-label">رسوم الرحلات الدولية</div>
-        <div class="card-value">${formatMRU(pricing.agencyFeeMRU)} / حجز</div>
-      </div>
-      <div class="summary-card">
-        <div class="card-label">رسوم الرحلات الداخلية</div>
-        <div class="card-value">${formatMRU(pricing.agencyFeeDomesticMRU)} / حجز</div>
+        <div class="card-label">الدفع المؤكد</div>
+        <div class="card-value" style="color: #059669;">${reportData.paymentConfirmedCount}</div>
       </div>
     </div>
 
@@ -180,6 +238,49 @@ export default function ProfitReportScreen() {
         </tr>
       </tbody>
     </table>
+
+    <!-- تفصيل حسب طريقة الدفع -->
+    <div class="section-title">تفصيل الإيرادات حسب طريقة الدفع</div>
+    <table class="breakdown-table">
+      <thead>
+        <tr>
+          <th>طريقة الدفع</th>
+          <th>عدد العمليات</th>
+          <th>إجمالي الإيرادات</th>
+          <th>إجمالي الأرباح</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${paymentMethodRows}
+        <tr class="total-row">
+          <td>الإجمالي</td>
+          <td>${reportData.confirmed.length}</td>
+          <td>${formatMRU(reportData.totalRevenue)}</td>
+          <td>${formatMRU(reportData.totalProfit)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- إحصائيات عامة -->
+    <div class="section-title">إحصائيات الحجوزات</div>
+    <div class="status-grid">
+      <div class="status-card" style="background: #FEF3C7;">
+        <div style="font-size: 20px; font-weight: 800; color: #D97706;">${reportData.pendingCount}</div>
+        <div style="font-size: 11px; color: #D97706;">معلق</div>
+      </div>
+      <div class="status-card" style="background: #DBEAFE;">
+        <div style="font-size: 20px; font-weight: 800; color: #1B2B5E;">${reportData.confirmedCount}</div>
+        <div style="font-size: 11px; color: #1B2B5E;">مؤكد</div>
+      </div>
+      <div class="status-card" style="background: #FEE2E2;">
+        <div style="font-size: 20px; font-weight: 800; color: #DC2626;">${reportData.cancelledCount}</div>
+        <div style="font-size: 11px; color: #DC2626;">ملغى</div>
+      </div>
+      <div class="status-card" style="background: #D1FAE5;">
+        <div style="font-size: 20px; font-weight: 800; color: #059669;">${reportData.paymentConfirmedCount}</div>
+        <div style="font-size: 11px; color: #059669;">دفع مؤكد</div>
+      </div>
+    </div>
   </div>
 
   <div class="footer">
@@ -243,12 +344,22 @@ export default function ProfitReportScreen() {
               <Text style={[styles.statValue, { color: "#FFFFFF" }]}>{formatMRU(reportData.totalProfit)}</Text>
             </View>
             <View style={[styles.statCard, { flex: 1, backgroundColor: colors.surface }]}>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>إجمالي الإيرادات</Text>
+              <Text style={[styles.statValue, { color: "#22C55E" }]}>{formatMRU(reportData.totalRevenue)}</Text>
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+            <View style={[styles.statCard, { flex: 1, backgroundColor: colors.surface }]}>
               <Text style={[styles.statLabel, { color: colors.muted }]}>حجوزات مؤكدة</Text>
               <Text style={[styles.statValue, { color: colors.foreground }]}>{reportData.confirmed.length}</Text>
             </View>
+            <View style={[styles.statCard, { flex: 1, backgroundColor: colors.surface }]}>
+              <Text style={[styles.statLabel, { color: colors.muted }]}>دفع مؤكد</Text>
+              <Text style={[styles.statValue, { color: "#059669" }]}>{reportData.paymentConfirmedCount}</Text>
+            </View>
           </View>
 
-          {/* تفصيل */}
+          {/* تفصيل حسب النوع */}
           <Text style={[styles.sectionLabel, { color: colors.muted, marginBottom: 8 }]}>تفصيل حسب النوع</Text>
           {[
             { label: "رحلات داخلية", count: reportData.domesticFlights.length, profit: reportData.domesticProfit, fee: pricing.agencyFeeDomesticMRU, color: "#0a7ea4" },
@@ -266,6 +377,69 @@ export default function ProfitReportScreen() {
               <Text style={{ color: item.color, fontWeight: "800", fontSize: 16 }}>{formatMRU(item.profit)}</Text>
             </View>
           ))}
+        </View>
+
+        {/* تفصيل حسب طريقة الدفع */}
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <Text style={[styles.sectionLabel, { color: colors.muted, marginBottom: 8 }]}>تفصيل حسب طريقة الدفع</Text>
+          {reportData.sortedPaymentMethods.length === 0 ? (
+            <View style={[styles.breakdownRow, { backgroundColor: colors.surface, borderColor: colors.border, justifyContent: "center" }]}>
+              <Text style={{ color: colors.muted, fontSize: 13 }}>لا توجد بيانات</Text>
+            </View>
+          ) : (
+            reportData.sortedPaymentMethods.map(([method, stats], i) => {
+              const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "💰" };
+              const percentage = reportData.totalRevenue > 0 ? Math.round((stats.total / reportData.totalRevenue) * 100) : 0;
+              return (
+                <View key={i} style={[styles.breakdownRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: config.color + "18", justifyContent: "center", alignItems: "center" }}>
+                      <Text style={{ fontSize: 18 }}>{config.icon}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 14 }}>{config.label}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+                        <Text style={{ color: colors.muted, fontSize: 11 }}>{stats.count} عملية</Text>
+                        <View style={{ width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.muted }} />
+                        <Text style={{ color: config.color, fontSize: 11, fontWeight: "600" }}>{percentage}%</Text>
+                      </View>
+                      {/* شريط النسبة */}
+                      <View style={{ height: 4, backgroundColor: colors.border, borderRadius: 2, marginTop: 4 }}>
+                        <View style={{ height: 4, backgroundColor: config.color, borderRadius: 2, width: `${Math.max(percentage, 2)}%` as any }} />
+                      </View>
+                    </View>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ color: config.color, fontWeight: "800", fontSize: 15 }}>{formatMRU(stats.total)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 10, marginTop: 1 }}>ربح: {formatMRU(stats.profit)}</Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+        {/* إحصائيات عامة */}
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <Text style={[styles.sectionLabel, { color: colors.muted, marginBottom: 8 }]}>إحصائيات عامة</Text>
+          <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
+            <View style={[styles.miniStat, { backgroundColor: "#FEF3C7", flex: 1 }]}>
+              <Text style={{ fontSize: 18, fontWeight: "800", color: "#D97706" }}>{reportData.pendingCount}</Text>
+              <Text style={{ fontSize: 11, color: "#D97706" }}>معلق</Text>
+            </View>
+            <View style={[styles.miniStat, { backgroundColor: "#DBEAFE", flex: 1 }]}>
+              <Text style={{ fontSize: 18, fontWeight: "800", color: "#1B2B5E" }}>{reportData.confirmedCount}</Text>
+              <Text style={{ fontSize: 11, color: "#1B2B5E" }}>مؤكد</Text>
+            </View>
+            <View style={[styles.miniStat, { backgroundColor: "#FEE2E2", flex: 1 }]}>
+              <Text style={{ fontSize: 18, fontWeight: "800", color: "#DC2626" }}>{reportData.cancelledCount}</Text>
+              <Text style={{ fontSize: 11, color: "#DC2626" }}>ملغى</Text>
+            </View>
+            <View style={[styles.miniStat, { backgroundColor: "#D1FAE5", flex: 1 }]}>
+              <Text style={{ fontSize: 18, fontWeight: "800", color: "#059669" }}>{reportData.paymentConfirmedCount}</Text>
+              <Text style={{ fontSize: 11, color: "#059669" }}>دفع مؤكد</Text>
+            </View>
+          </View>
         </View>
 
         <View style={{ height: 120 }} />
@@ -340,4 +514,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#22C55E",
   },
   exportBtnText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  miniStat: {
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 12,
+  },
 });

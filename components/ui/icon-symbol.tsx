@@ -73,6 +73,9 @@ const MAPPING = {
   "mic.fill": "mic",
   "stop.fill": "stop",
   "waveform": "graphic-eq",
+  "camera.fill": "camera-alt",
+  "photo.fill": "photo",
+  "eye.fill": "visibility",
 } as IconMapping;
 
 /**

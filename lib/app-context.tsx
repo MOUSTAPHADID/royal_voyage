@@ -42,6 +42,7 @@ type AppContextType = {
   updateBookingTicketSent: (id: string) => void;
   confirmBookingPayment: (id: string) => void;
   rejectBookingPayment: (id: string, reason: string) => void;
+  updateBookingReceipt: (id: string, receiptImage: string) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
   saveAdminPushToken: (token: string) => void;
@@ -282,6 +283,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const updateBookingReceipt = useCallback(async (id: string, receiptImage: string) => {
+    const now = new Date().toISOString();
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, receiptImage, receiptImageAt: now } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
   const saveExpoPushToken = useCallback(async (token: string) => {
     setExpoPushToken(token);
     await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
@@ -315,6 +325,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateBookingTicketSent,
         confirmBookingPayment,
         rejectBookingPayment,
+        updateBookingReceipt,
         saveExpoPushToken,
         expoPushToken,
         saveAdminPushToken,

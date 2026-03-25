@@ -85,6 +85,9 @@ export type Booking = {
   paymentRejectedReason?: string; // reason for rejection
   paymentRejectedAt?: string; // ISO timestamp when payment was rejected
   transferRef?: string; // Transfer reference / Transaction ID entered by customer
+  // Payment receipt image
+  receiptImage?: string; // Base64 or URI of payment receipt image uploaded by customer
+  receiptImageAt?: string; // ISO timestamp when receipt was uploaded
 };
 
 export const DESTINATIONS: Destination[] = [

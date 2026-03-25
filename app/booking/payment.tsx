@@ -9,7 +9,11 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
+  Image,
+  Modal,
+  Platform,
 } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -93,7 +97,7 @@ const WALLET_NUMBERS: Record<string, string> = {
 export default function PaymentScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { addBooking, expoPushToken, adminPushToken } = useApp();
+  const { addBooking, updateBookingReceipt, expoPushToken, adminPushToken } = useApp();
   const { fmt, currency } = useCurrency();
   const params = useLocalSearchParams<{
     type: string;
@@ -170,6 +174,8 @@ export default function PaymentScreen() {
   const [transferRef, setTransferRef] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const [receiptImage, setReceiptImage] = useState<string | null>(null);
+  const [showReceiptPreview, setShowReceiptPreview] = useState(false);
 
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
@@ -294,6 +300,8 @@ export default function PaymentScreen() {
       totalPrice: total,
       currency: "MRU",
       paymentMethod,
+      ...(transferRef.trim() ? { transferRef: transferRef.trim() } : {}),
+      ...(receiptImage ? { receiptImage, receiptImageAt: new Date().toISOString() } : {}),
     };
 
     await addBooking(booking);
@@ -807,6 +815,97 @@ export default function PaymentScreen() {
           </View>
         )}
 
+        {/* رفع إيصال الدفع */}
+        {paymentMethod !== "cash" && (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>📸 إيصال الدفع (اختياري)</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 12, lineHeight: 18 }}>
+              يمكنك رفع صورة إيصال الدفع لتسريع عملية التأكيد من طرف الإدارة
+            </Text>
+
+            {receiptImage ? (
+              <View>
+                <Pressable
+                  style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+                  onPress={() => setShowReceiptPreview(true)}
+                >
+                  <Image
+                    source={{ uri: receiptImage }}
+                    style={{ width: "100%" as any, height: 200, borderRadius: 12, backgroundColor: colors.border }}
+                    resizeMode="cover"
+                  />
+                  <View style={[styles.receiptOverlay]}>
+                    <IconSymbol name="eye.fill" size={16} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "600" }}>اضغط للمعاينة</Text>
+                  </View>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.removeReceiptBtn, { borderColor: colors.error, opacity: pressed ? 0.7 : 1 }]}
+                  onPress={() => setReceiptImage(null)}
+                >
+                  <IconSymbol name="trash.fill" size={14} color={colors.error} />
+                  <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600" }}>حذف الصورة</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <Pressable
+                  style={({ pressed }) => [styles.uploadBtn, { backgroundColor: colors.primary + "12", borderColor: colors.primary + "40", flex: 1, opacity: pressed ? 0.7 : 1 }]}
+                  onPress={async () => {
+                    const result = await ImagePicker.launchImageLibraryAsync({
+                      mediaTypes: ["images"],
+                      allowsEditing: true,
+                      quality: 0.7,
+                    });
+                    if (!result.canceled && result.assets[0]) {
+                      setReceiptImage(result.assets[0].uri);
+                    }
+                  }}
+                >
+                  <IconSymbol name="photo.fill" size={22} color={colors.primary} />
+                  <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "600", marginTop: 4 }}>من المعرض</Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [styles.uploadBtn, { backgroundColor: "#F59E0B12", borderColor: "#F59E0B40", flex: 1, opacity: pressed ? 0.7 : 1 }]}
+                  onPress={async () => {
+                    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                    if (status !== "granted") {
+                      Alert.alert("تنبيه", "يرجى السماح بالوصول إلى الكاميرا لالتقاط صورة الإيصال");
+                      return;
+                    }
+                    const result = await ImagePicker.launchCameraAsync({
+                      allowsEditing: true,
+                      quality: 0.7,
+                    });
+                    if (!result.canceled && result.assets[0]) {
+                      setReceiptImage(result.assets[0].uri);
+                    }
+                  }}
+                >
+                  <IconSymbol name="camera.fill" size={22} color="#F59E0B" />
+                  <Text style={{ color: "#F59E0B", fontSize: 13, fontWeight: "600", marginTop: 4 }}>التقاط صورة</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* معاينة الإيصال */}
+        <Modal visible={showReceiptPreview} transparent animationType="fade">
+          <View style={styles.previewOverlay}>
+            <Pressable style={styles.previewCloseBtn} onPress={() => setShowReceiptPreview(false)}>
+              <IconSymbol name="xmark" size={24} color="#FFFFFF" />
+            </Pressable>
+            {receiptImage && (
+              <Image
+                source={{ uri: receiptImage }}
+                style={{ width: "90%" as any, height: "70%" as any, borderRadius: 16 }}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        </Modal>
+
         {/* ملاحظة الأمان */}
         <View style={[styles.securityNote, { backgroundColor: colors.success + "10", borderColor: colors.success + "30" }]}>
           <IconSymbol name="shield.fill" size={16} color={colors.success} />
@@ -1067,5 +1166,55 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "700",
+  },
+  uploadBtn: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+  },
+  receiptOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  removeReceiptBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    marginTop: 10,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  previewCloseBtn: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

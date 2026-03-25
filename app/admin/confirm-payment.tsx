@@ -8,6 +8,8 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Image,
+  Modal,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -44,6 +46,7 @@ export default function ConfirmPaymentScreen() {
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "pending" | "confirmed" | "rejected">("all");
+  const [previewReceipt, setPreviewReceipt] = useState<string | null>(null);
 
   // Filter bookings based on payment status
   const pendingBookings = bookings.filter((b) => {
@@ -357,6 +360,32 @@ export default function ConfirmPaymentScreen() {
                     ) : null}
                   </View>
 
+                  {/* إيصال الدفع */}
+                  {booking.receiptImage && (
+                    <View style={{ marginHorizontal: 14, marginBottom: 10 }}>
+                      <Text style={[styles.detailLabel, { color: colors.muted, marginBottom: 6 }]}>📸 إيصال الدفع</Text>
+                      <Pressable
+                        style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
+                        onPress={() => setPreviewReceipt(booking.receiptImage!)}
+                      >
+                        <Image
+                          source={{ uri: booking.receiptImage }}
+                          style={{ width: "100%" as any, height: 160, borderRadius: 10, backgroundColor: colors.border }}
+                          resizeMode="cover"
+                        />
+                        <View style={styles.receiptBadge}>
+                          <IconSymbol name="eye.fill" size={14} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "600" }}>اضغط للمعاينة</Text>
+                        </View>
+                      </Pressable>
+                      {booking.receiptImageAt && (
+                        <Text style={{ color: colors.muted, fontSize: 10, marginTop: 4 }}>
+                          تم الرفع: {new Date(booking.receiptImageAt).toLocaleString("ar-SA", { dateStyle: "medium", timeStyle: "short" })}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+
                   {/* Cash deadline warning */}
                   {isCash && booking.paymentDeadline && (() => {
                     const diff = new Date(booking.paymentDeadline).getTime() - Date.now();
@@ -476,6 +505,22 @@ export default function ConfirmPaymentScreen() {
         )}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* معاينة الإيصال */}
+      <Modal visible={!!previewReceipt} transparent animationType="fade">
+        <View style={styles.previewOverlay}>
+          <Pressable style={styles.previewCloseBtn} onPress={() => setPreviewReceipt(null)}>
+            <IconSymbol name="xmark" size={24} color="#FFFFFF" />
+          </Pressable>
+          {previewReceipt && (
+            <Image
+              source={{ uri: previewReceipt }}
+              style={{ width: "90%" as any, height: "70%" as any, borderRadius: 16 }}
+              resizeMode="contain"
+            />
+          )}
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -591,5 +636,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     minHeight: 60,
     textAlignVertical: "top",
+  },
+  receiptBadge: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingVertical: 6,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  previewOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  previewCloseBtn: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    zIndex: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
