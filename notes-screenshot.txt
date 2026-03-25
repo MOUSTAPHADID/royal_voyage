@@ -1,0 +1,11 @@
+Screenshot analysis: Profile screen for a regular customer shows:
+- Account section (الامان والخصوصية)
+- Preferences section (التفضيلات): اللغة العربية, العملة MRU
+- Support section (الدعم): مركز المساعدة, تواصل معنا, قيم التطبيق
+- PROBLEM: "لوحة الإدارة" section is visible with a button "لوحة الإدارة" - this should be hidden for non-admin users
+- Royal Voyage v1.0.0
+- تسجيل الخروج button
+
+The admin panel section appears as a separate menuSection at the bottom, before the version text.
+Need to find where this section is defined - it's NOT in the menuSections array visible in profile.tsx.
+It might be added conditionally but the condition is wrong, or it's in a separate part of the JSX.

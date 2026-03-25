@@ -13,50 +13,145 @@ import {
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
+import { useTranslation } from "@/lib/i18n";
 import { registerForPushNotifications } from "@/lib/push-notifications";
 
 export default function RegisterScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { register, saveExpoPushToken } = useApp();
+  const { register, sendVerificationCode, verifyCode, saveExpoPushToken } = useApp();
+  const { t } = useTranslation();
 
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Please fill in all fields.");
+  // Verification step
+  const [step, setStep] = useState<"form" | "verify">("form");
+  const [code, setCode] = useState("");
+
+  const handleSendCode = async () => {
+    if (!name.trim()) {
+      setError(t.auth.nameRequired);
       return;
     }
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (!phone.trim()) {
+      setError(t.auth.phoneRequired);
       return;
     }
     setIsLoading(true);
     setError("");
     try {
-      const success = await register(name.trim(), email.trim(), password);
-      if (success) {
-        // Register push token in background
-        registerForPushNotifications()
-          .then((token) => { if (token) saveExpoPushToken(token); })
-          .catch(() => {});
-        router.replace("/(tabs)" as any);
-      }
+      await sendVerificationCode(phone.trim());
+      setStep("verify");
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError(t.error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleVerify = async () => {
+    if (!code.trim() || code.length < 4) {
+      setError(t.auth.codeInvalid);
+      return;
+    }
+    setIsLoading(true);
+    setError("");
+    try {
+      const valid = await verifyCode(phone.trim(), code.trim());
+      if (valid) {
+        const success = await register(name.trim(), phone.trim(), email.trim() || undefined);
+        if (success) {
+          registerForPushNotifications()
+            .then((token) => { if (token) saveExpoPushToken(token); })
+            .catch(() => {});
+          router.replace("/(tabs)" as any);
+        }
+      } else {
+        setError(t.auth.codeInvalid);
+      }
+    } catch {
+      setError(t.error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    setError("");
+    try {
+      await sendVerificationCode(phone.trim());
+      setError(t.auth.codeSent);
+    } catch {}
+  };
+
+  if (step === "verify") {
+    return (
+      <KeyboardAvoidingView
+        style={{ flex: 1, backgroundColor: colors.background }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.header, { backgroundColor: colors.primary }]}>
+            <Pressable style={styles.backButton} onPress={() => { setStep("form"); setCode(""); setError(""); }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700" }}>←</Text>
+            </Pressable>
+            <Text style={styles.headerTitle}>{t.auth.verificationCode}</Text>
+            <Text style={styles.headerSubtitle}>{t.auth.codeSent}</Text>
+            <Text style={styles.phoneDisplay}>{phone}</Text>
+          </View>
+
+          <View style={[styles.formContainer, { backgroundColor: colors.background }]}>
+            {error ? (
+              <View style={[styles.errorBox, { backgroundColor: error === t.auth.codeSent ? colors.success + "15" : colors.error + "15", borderColor: error === t.auth.codeSent ? colors.success + "40" : colors.error + "40" }]}>
+                <Text style={[styles.errorText, { color: error === t.auth.codeSent ? colors.success : colors.error }]}>{error}</Text>
+              </View>
+            ) : null}
+
+            <Text style={[styles.codeLabel, { color: colors.foreground }]}>{t.auth.enterCode}</Text>
+            <View style={styles.codeInputRow}>
+              {[0, 1, 2, 3].map((i) => (
+                <View key={i} style={[styles.codeBox, { backgroundColor: colors.surface, borderColor: code.length === i ? colors.primary : colors.border }]}>
+                  <Text style={[styles.codeDigit, { color: colors.foreground }]}>{code[i] || ""}</Text>
+                </View>
+              ))}
+            </View>
+            <TextInput
+              style={styles.hiddenInput}
+              value={code}
+              onChangeText={(t) => { if (t.length <= 4) setCode(t); }}
+              keyboardType="number-pad"
+              autoFocus
+              maxLength={4}
+            />
+
+            <Pressable
+              style={({ pressed }) => [styles.registerButton, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+              onPress={handleVerify}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <Text style={styles.registerButtonText}>{t.auth.verify}</Text>
+              )}
+            </Pressable>
+
+            <Pressable style={styles.resendBtn} onPress={handleResend}>
+              <Text style={[styles.resendText, { color: colors.primary }]}>{t.auth.resendCode}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -70,14 +165,11 @@ export default function RegisterScreen() {
       >
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.primary }]}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={{ color: "#FFFFFF", fontSize: 16 }}>← Back</Text>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700" }}>← {t.back}</Text>
           </Pressable>
-          <Text style={styles.headerTitle}>Create Account</Text>
-          <Text style={styles.headerSubtitle}>Join the Royal Voyage family</Text>
+          <Text style={styles.headerTitle}>{t.auth.createAccount}</Text>
+          <Text style={styles.headerSubtitle}>Royal Voyage</Text>
         </View>
 
         {/* Form */}
@@ -88,50 +180,67 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-          {[
-            { label: "Full Name", value: name, setter: setName, placeholder: "John Doe", type: "default" as const },
-            { label: "Email Address", value: email, setter: setEmail, placeholder: "you@example.com", type: "email-address" as const },
-            { label: "Password", value: password, setter: setPassword, placeholder: "Min. 6 characters", type: "default" as const, secure: true },
-            { label: "Confirm Password", value: confirmPassword, setter: setConfirmPassword, placeholder: "Repeat password", type: "default" as const, secure: true },
-          ].map((field) => (
-            <View key={field.label} style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.foreground }]}>{field.label}</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
-                placeholder={field.placeholder}
-                placeholderTextColor={colors.muted}
-                value={field.value}
-                onChangeText={field.setter}
-                keyboardType={field.type}
-                autoCapitalize={field.type === "email-address" ? "none" : "words"}
-                autoCorrect={false}
-                secureTextEntry={field.secure}
-                returnKeyType="next"
-              />
-            </View>
-          ))}
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.foreground }]}>{t.auth.fullName} *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
+              placeholder={t.auth.fullName}
+              placeholderTextColor={colors.muted}
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.foreground }]}>{t.auth.phone} *</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
+              placeholder={t.auth.phonePlaceholder}
+              placeholderTextColor={colors.muted}
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              autoCorrect={false}
+              returnKeyType="next"
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={[styles.label, { color: colors.muted }]}>{t.auth.emailOptional}</Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="you@example.com"
+              placeholderTextColor={colors.muted}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="done"
+            />
+          </View>
 
           <Pressable
-            style={({ pressed }) => [
-              styles.registerButton,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 },
-            ]}
-            onPress={handleRegister}
+            style={({ pressed }) => [styles.registerButton, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
+            onPress={handleSendCode}
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.registerButtonText}>Create Account</Text>
+              <Text style={styles.registerButtonText}>{t.auth.signUp}</Text>
             )}
           </Pressable>
 
           <View style={styles.loginRow}>
             <Text style={[styles.loginText, { color: colors.muted }]}>
-              Already have an account?{" "}
+              {t.auth.hasAccount}{" "}
             </Text>
             <Pressable onPress={() => router.back()}>
-              <Text style={[styles.loginLink, { color: colors.primary }]}>Sign In</Text>
+              <Text style={[styles.loginLink, { color: colors.primary }]}>{t.auth.signIn}</Text>
             </Pressable>
           </View>
         </View>
@@ -152,12 +261,18 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "#FFFFFF",
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: "700",
   },
   headerSubtitle: {
     color: "rgba(255,255,255,0.7)",
     fontSize: 15,
+  },
+  phoneDisplay: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "600",
+    letterSpacing: 1,
   },
   formContainer: {
     flex: 1,
@@ -175,6 +290,7 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 14,
+    textAlign: "center",
   },
   inputGroup: {
     marginBottom: 16,
@@ -214,5 +330,44 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 15,
     fontWeight: "700",
+  },
+  // Verification code styles
+  codeLabel: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  codeInputRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 14,
+    marginBottom: 8,
+  },
+  codeBox: {
+    width: 56,
+    height: 64,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  codeDigit: {
+    fontSize: 28,
+    fontWeight: "700",
+  },
+  hiddenInput: {
+    position: "absolute",
+    opacity: 0,
+    height: 0,
+    width: 0,
+  },
+  resendBtn: {
+    alignItems: "center",
+    paddingVertical: 12,
+  },
+  resendText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

@@ -88,8 +88,8 @@ export default function ProfileScreen() {
     {
       title: t.profile.account,
       items: [
-        { icon: "person.fill", label: t.profile.editProfile, value: "", onPress: () => {} },
-        { icon: "creditcard.fill", label: t.profile.paymentMethods, value: "", onPress: () => {} },
+        { icon: "person.fill", label: t.profile.editProfile, value: "", onPress: () => router.push("/profile/edit" as any) },
+        { icon: "creditcard.fill", label: t.profile.paymentMethods, value: "", onPress: () => router.push("/profile/payment-methods" as any) },
         { icon: "shield.fill", label: t.profile.security, value: "", onPress: () => {} },
       ],
     },

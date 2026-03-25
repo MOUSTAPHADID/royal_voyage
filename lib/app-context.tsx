@@ -11,6 +11,7 @@ export type User = {
   nationality?: string;
   passportNumber?: string;
   isAdmin?: boolean;
+  isGuest?: boolean;
   expoPushToken?: string;
 };
 
@@ -23,8 +24,12 @@ type AppContextType = {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<"admin" | "user" | false>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  login: (emailOrPhone: string, password: string) => Promise<"admin" | "user" | false>;
+  loginWithPhone: (phone: string) => Promise<"user" | false>;
+  loginAsGuest: () => Promise<void>;
+  register: (name: string, phone: string, email?: string) => Promise<boolean>;
+  sendVerificationCode: (phone: string) => Promise<string>;
+  verifyCode: (phone: string, code: string) => Promise<boolean>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
   // Bookings
@@ -107,9 +112,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = useCallback(async (email: string, password: string): Promise<"admin" | "user" | false> => {
+  // Store pending verification codes
+  const verificationCodes = React.useRef<Record<string, string>>({});
+
+  const login = useCallback(async (emailOrPhone: string, password: string): Promise<"admin" | "user" | false> => {
     // Admin login check
-    if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+    if (emailOrPhone.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
       const adminUser: User = {
         id: "admin",
         name: "مدير Royal Voyage",
@@ -121,21 +129,72 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return "admin";
     }
     // Regular customer login — accept any credentials
+    const isPhone = /^[+\d]/.test(emailOrPhone) && !emailOrPhone.includes("@");
     const mockUser: User = {
       id: "u" + Date.now(),
-      name: email.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-      email,
+      name: isPhone ? "" : emailOrPhone.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      email: isPhone ? "" : emailOrPhone,
+      phone: isPhone ? emailOrPhone : undefined,
     };
     setUser(mockUser);
     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(mockUser));
     return "user";
   }, []);
 
-  const register = useCallback(async (name: string, email: string, _password: string): Promise<boolean> => {
+  const loginWithPhone = useCallback(async (phone: string): Promise<"user" | false> => {
+    const phoneUser: User = {
+      id: "u" + Date.now(),
+      name: "",
+      email: "",
+      phone,
+    };
+    setUser(phoneUser);
+    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(phoneUser));
+    return "user";
+  }, []);
+
+  const loginAsGuest = useCallback(async () => {
+    const guestUser: User = {
+      id: "guest_" + Date.now(),
+      name: "ضيف",
+      email: "",
+      isGuest: true,
+    };
+    setUser(guestUser);
+    await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(guestUser));
+  }, []);
+
+  const sendVerificationCode = useCallback(async (phone: string): Promise<string> => {
+    // Generate a 4-digit code
+    const code = String(Math.floor(1000 + Math.random() * 9000));
+    verificationCodes.current[phone] = code;
+    // Send via local push notification
+    try {
+      const { scheduleLocalNotification } = await import("@/lib/push-notifications");
+      await scheduleLocalNotification(
+        "رمز التحقق - Royal Voyage",
+        `رمز التحقق الخاص بك: ${code}`,
+        { type: "verification", code }
+      );
+    } catch {}
+    return code;
+  }, []);
+
+  const verifyCode = useCallback(async (phone: string, code: string): Promise<boolean> => {
+    const stored = verificationCodes.current[phone];
+    if (stored && stored === code) {
+      delete verificationCodes.current[phone];
+      return true;
+    }
+    return false;
+  }, []);
+
+  const register = useCallback(async (name: string, phone: string, email?: string): Promise<boolean> => {
     const newUser: User = {
       id: "u" + Date.now(),
       name,
-      email,
+      email: email || "",
+      phone,
     };
     setUser(newUser);
     await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser));
@@ -220,7 +279,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         login,
+        loginWithPhone,
+        loginAsGuest,
         register,
+        sendVerificationCode,
+        verifyCode,
         logout,
         updateUser,
         bookings,
