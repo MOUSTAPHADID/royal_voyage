@@ -33,6 +33,7 @@ const PAYMENT_METHOD_CONFIG: Record<string, { label: string; color: string; icon
   cash: { label: "نقداً", color: "#22C55E", icon: "💵" },
   bank_transfer: { label: "تحويل بنكي", color: "#3B82F6", icon: "🏦" },
   paypal: { label: "PayPal", color: "#003087", icon: "🌐" },
+  multicaixa: { label: "Multicaixa Express", color: "#E31937", icon: "🇦🇴" },
 };
 
 export default function ProfitReportScreen() {

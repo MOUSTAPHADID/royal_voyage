@@ -31,6 +31,7 @@ const PAYMENT_LABELS: PaymentMethodLabel = {
   masrvi: "مصرفي",
   sedad: "سداد",
   paypal: "PayPal (عملة أجنبية)",
+  multicaixa: "Multicaixa Express (AOA)",
 };
 
 export default function ConfirmPaymentScreen() {

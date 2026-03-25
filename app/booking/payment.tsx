@@ -26,7 +26,7 @@ import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
 import { addAdminNotification } from "@/lib/admin-notifications";
 
-type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal";
+type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal" | "multicaixa";
 
 const PAYMENT_METHODS: {
   id: PaymentMethod;
@@ -77,6 +77,13 @@ const PAYMENT_METHODS: {
     icon: "🌐",
     color: "#003087",
   },
+  {
+    id: "multicaixa",
+    label: "Multicaixa Express",
+    sublabel: "الدفع عبر Multicaixa Express (بالكوانزا AOA)",
+    icon: "🇦🇴",
+    color: "#E31937",
+  },
 ];
 
 // بيانات التحويل البنكي
@@ -92,6 +99,7 @@ const WALLET_NUMBERS: Record<string, string> = {
   bankily: "22 XX XX XX",
   masrvi: "36 XX XX XX", // مصرفي
   sedad: "sedad.royalvoyage.mr",
+  multicaixa: "923 XXX XXX",
 };
 
 export default function PaymentScreen() {
@@ -216,7 +224,8 @@ export default function PaymentScreen() {
       (paymentMethod === "bank_transfer" ||
         paymentMethod === "bankily" ||
         paymentMethod === "masrvi" ||
-        paymentMethod === "sedad") &&
+        paymentMethod === "sedad" ||
+        paymentMethod === "multicaixa") &&
       transferRef.trim().length < 4
     ) {
       Alert.alert("تنبيه", "الرجاء إدخال رقم مرجع العملية أو رقم الإيصال");
@@ -814,6 +823,75 @@ export default function PaymentScreen() {
             </View>
           </View>
         )}
+
+        {/* تعليمات Multicaixa Express */}
+        {paymentMethod === "multicaixa" && (() => {
+          const mcxAmount = fromMRU(total, "AOA");
+          const mcxFormatted = formatCurrency(total, "AOA");
+          return (
+            <View style={[styles.card, { backgroundColor: "#E3193710", borderColor: "#E3193730" }]}>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>🇦🇴 الدفع عبر Multicaixa Express</Text>
+
+              {/* بطاقة السعر بالكوانزا */}
+              <View style={[styles.infoBox, { backgroundColor: "#E3193715", borderColor: "#E3193740", marginBottom: 14 }]}>
+                <Text style={{ color: "#E31937", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  المبلغ المطلوب بالكوانزا الأنغولية
+                </Text>
+                <Text style={{ color: "#E31937", fontSize: 26, fontWeight: "800", textAlign: "center", marginTop: 4 }}>
+                  {mcxFormatted}
+                </Text>
+                <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 2 }}>
+                  (يعادل {fmt(total)} بسعر صرف ثابت)
+                </Text>
+              </View>
+
+              {/* خطوات الدفع */}
+              <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                {[
+                  "افتح تطبيق Multicaixa Express على هاتفك",
+                  `أرسل المبلغ ${mcxFormatted} إلى الرقم:`,
+                  `${WALLET_NUMBERS.multicaixa}`,
+                  "في خانة الملاحظة اكتب: اسمك الكامل + رقم حجزك",
+                  "أدخل رقم معرّف العملية (Transaction ID) أدناه",
+                ].map((step, i) => (
+                  <View key={i} style={[styles.stepRow, i === 2 && { paddingRight: 32 }]}>
+                    {i !== 2 ? (
+                      <View style={[styles.stepNum, { backgroundColor: "#E31937" }]}>
+                        <Text style={styles.stepNumText}>{i < 2 ? i + 1 : i}</Text>
+                      </View>
+                    ) : (
+                      <View style={{ width: 28 }} />
+                    )}
+                    <Text style={[
+                      styles.stepText,
+                      { color: i === 2 ? "#E31937" : colors.foreground, fontWeight: i === 2 ? "700" : "400", fontSize: i === 2 ? 15 : 13 }
+                    ]}>{step}</Text>
+                  </View>
+                ))}
+              </View>
+
+              {/* حقل رقم العملية */}
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, { color: colors.foreground }]}>رقم معرّف العملية (Transaction ID) *</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                  placeholder="أدخل رقم معرّف العملية من التطبيق"
+                  placeholderTextColor={colors.muted}
+                  value={transferRef}
+                  onChangeText={setTransferRef}
+                  returnKeyType="done"
+                />
+              </View>
+
+              {/* تحذير سعر الصرف */}
+              <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
+                <Text style={[styles.warningText, { color: colors.warning }]}>
+                  ⚠️ سعر الصرف المستخدم ثابت (1 AOA ≈ 0.043 MRU). قد يختلف السعر الفعلي بحسب يوم التحويل.
+                </Text>
+              </View>
+            </View>
+          );
+        })()}
 
         {/* رفع إيصال الدفع */}
         {paymentMethod !== "cash" && (

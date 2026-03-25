@@ -600,3 +600,12 @@
 - [x] إضافة دالة updateBookingReceipt في AppContext
 - [x] إضافة أيقونات camera.fill, photo.fill, eye.fill في icon-symbol.tsx
 - [x] إضافة حقلي receiptImage و receiptImageAt في نوع Booking
+
+## إضافة وسيلة الدفع Multicaixa Express (AOA)
+- [x] إضافة عملة AOA في نظام العملات (currency.ts) مع سعر الصرف (كانت موجودة مسبقاً)
+- [x] إضافة Multicaixa Express كوسيلة دفع في شاشة الدفع (payment.tsx) مع لون #E31937 وعلم 🇦🇴
+- [x] إضافة رقم محفظة Multicaixa Express في WALLET_NUMBERS
+- [x] إضافة تعليمات الدفع عبر Multicaixa Express مع عرض المبلغ بالـ AOA وتحذير سعر الصرف
+- [x] تحديث PAYMENT_LABELS في confirm-payment.tsx
+- [x] تحديث PAYMENT_METHOD_CONFIG في profit-report.tsx
+- [x] تحديث PDF التقرير ليشمل Multicaixa Express (يظهر تلقائياً من PAYMENT_METHOD_CONFIG)
