@@ -6,9 +6,10 @@
  * ملاحظة: جميع الأرقام تُعرض باللاتينية (0-9)
  */
 
-const USD_TO_MRU = 39.5;
-const EUR_TO_MRU = 43.0;
-const AOA_TO_MRU = 0.043; // 1 AOA ≈ 0.043 MRU (1 MRU ≈ 23.3 AOA)
+// Default fallback rates (used only if PricingSettings not loaded yet)
+const USD_TO_MRU_DEFAULT = 39.5;
+const EUR_TO_MRU_DEFAULT = 43.0;
+const AOA_TO_MRU_DEFAULT = 0.043; // 1 AOA ≈ 0.043 MRU
 
 /**
  * رسوم الوكالة الثابتة بالأوقية الموريتانية
@@ -25,29 +26,57 @@ export const CURRENCIES: { code: AppCurrency; name: string; symbol: string; flag
   { code: "AOA", name: "كوانزا أنغولي",   symbol: "Kz",  flag: "🇦🇴" },
 ];
 
-/** تحويل من عملة مصدر إلى MRU */
+/**
+ * تحويل من عملة مصدر إلى MRU
+ * يستخدم أسعار الصرف من PricingSettings (إن وُجدت) لضمان توحيد السعر عبر جميع الشاشات
+ */
 export function toMRU(amount: number, fromCurrency: string = "USD"): number {
   const currency = fromCurrency.toUpperCase();
+  // Try to use dynamic rates from PricingSettings
+  let rates: { usdToMRU: number; eurToMRU: number; gbpToMRU: number; sarToMRU: number; aedToMRU: number } | null = null;
+  try {
+    // Dynamic import to avoid circular dependency
+    const { getPricingSettings } = require("./pricing-settings");
+    const s = getPricingSettings();
+    if (s) rates = s;
+  } catch {
+    // fallback to defaults
+  }
+  const usdRate = rates?.usdToMRU ?? USD_TO_MRU_DEFAULT;
+  const eurRate = rates?.eurToMRU ?? EUR_TO_MRU_DEFAULT;
+  const gbpRate = rates?.gbpToMRU ?? 50.2;
+  const sarRate = rates?.sarToMRU ?? 10.5;
+  const aedRate = rates?.aedToMRU ?? 10.75;
   switch (currency) {
     case "MRU": return amount;
-    case "USD": return Math.round(amount * USD_TO_MRU);
-    case "EUR": return Math.round(amount * EUR_TO_MRU);
-    case "AOA": return Math.round(amount * AOA_TO_MRU);
-    case "GBP": return Math.round(amount * 50.2);
-    case "SAR": return Math.round(amount * 10.5);
-    case "AED": return Math.round(amount * 10.75);
-    case "MAD": return Math.round(amount * 3.95);
-    default: return Math.round(amount * USD_TO_MRU);
+    case "USD": return Math.round(amount * usdRate);
+    case "EUR": return Math.round(amount * eurRate);
+    case "AOA": return Math.round(amount * AOA_TO_MRU_DEFAULT);
+    case "GBP": return Math.round(amount * gbpRate);
+    case "SAR": return Math.round(amount * sarRate);
+    case "AED": return Math.round(amount * aedRate);
+    case "MAD": return Math.round(amount * (usdRate / 10));
+    default: return Math.round(amount * usdRate);
   }
 }
 
 /** تحويل من MRU إلى عملة مستهدفة */
 export function fromMRU(amountMRU: number, toCurrency: AppCurrency): number {
+  let rates: { usdToMRU: number; eurToMRU: number } | null = null;
+  try {
+    const { getPricingSettings } = require("./pricing-settings");
+    const s = getPricingSettings();
+    if (s) rates = s;
+  } catch {
+    // fallback
+  }
+  const usdRate = rates?.usdToMRU ?? USD_TO_MRU_DEFAULT;
+  const eurRate = rates?.eurToMRU ?? EUR_TO_MRU_DEFAULT;
   switch (toCurrency) {
     case "MRU": return amountMRU;
-    case "USD": return amountMRU / USD_TO_MRU;
-    case "EUR": return amountMRU / EUR_TO_MRU;
-    case "AOA": return amountMRU / AOA_TO_MRU;
+    case "USD": return amountMRU / usdRate;
+    case "EUR": return amountMRU / eurRate;
+    case "AOA": return amountMRU / AOA_TO_MRU_DEFAULT;
     default: return amountMRU;
   }
 }

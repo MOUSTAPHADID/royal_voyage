@@ -98,22 +98,40 @@ export default function UpdateStatusScreen() {
   const { bookings, updateBookingStatus, updateBookingTicketSent } = useApp();
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | "all">("all");
 
   const sendPushNotification = trpc.email.sendPushNotification.useMutation();
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
   const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
 
   const filteredBookings = useMemo(() => {
-    if (!search.trim()) return bookings;
-    const q = search.toLowerCase();
-    return bookings.filter(
-      (b) =>
-        b.reference.toLowerCase().includes(q) ||
-        (b.passengerName && b.passengerName.toLowerCase().includes(q)) ||
-        (b.flight?.airline && b.flight.airline.toLowerCase().includes(q)) ||
-        (b.hotel?.name && b.hotel.name.toLowerCase().includes(q))
-    );
-  }, [bookings, search]);
+    let result = bookings;
+    // Apply status filter
+    if (statusFilter !== "all") {
+      result = result.filter((b) => b.status === statusFilter);
+    }
+    // Apply search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (b) =>
+          b.reference.toLowerCase().includes(q) ||
+          (b.passengerName && b.passengerName.toLowerCase().includes(q)) ||
+          (b.flight?.airline && b.flight.airline.toLowerCase().includes(q)) ||
+          (b.hotel?.name && b.hotel.name.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [bookings, search, statusFilter]);
+
+  // Count bookings per status
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: bookings.length };
+    STATUS_OPTIONS.forEach((s) => {
+      counts[s.id] = bookings.filter((b) => b.status === s.id).length;
+    });
+    return counts;
+  }, [bookings]);
 
   const handleStatusChange = async (booking: Booking, newStatus: BookingStatus) => {
     if (booking.status === newStatus) return;
@@ -254,18 +272,58 @@ export default function UpdateStatusScreen() {
         </View>
       </View>
 
-      {/* Status Legend */}
+      {/* Status Filter Tabs */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.legendScroll}
         contentContainerStyle={styles.legendContent}
       >
-        {STATUS_OPTIONS.map((s) => (
-          <View key={s.id} style={[styles.legendItem, { backgroundColor: s.color + "15", borderColor: s.color + "40" }]}>
-            <Text style={{ fontSize: 14 }}>{s.icon}</Text>
-            <Text style={[styles.legendText, { color: s.color }]}>{s.labelAr}</Text>
+        {/* All Tab */}
+        <Pressable
+          key="all"
+          style={({ pressed }) => [
+            styles.filterTab,
+            {
+              backgroundColor: statusFilter === "all" ? "#1B2B5E" : colors.surface,
+              borderColor: statusFilter === "all" ? "#1B2B5E" : colors.border,
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
+          onPress={() => setStatusFilter("all")}
+        >
+          <Text style={[styles.filterTabText, { color: statusFilter === "all" ? "#FFFFFF" : colors.foreground }]}>الكل</Text>
+          <View style={[styles.filterBadge, { backgroundColor: statusFilter === "all" ? "#C9A84C" : colors.border }]}>
+            <Text style={[styles.filterBadgeText, { color: statusFilter === "all" ? "#1B2B5E" : colors.muted }]}>
+              {statusCounts.all}
+            </Text>
           </View>
+        </Pressable>
+        {STATUS_OPTIONS.map((s) => (
+          <Pressable
+            key={s.id}
+            style={({ pressed }) => [
+              styles.filterTab,
+              {
+                backgroundColor: statusFilter === s.id ? s.color + "20" : colors.surface,
+                borderColor: statusFilter === s.id ? s.color : colors.border,
+                opacity: pressed ? 0.7 : 1,
+              },
+            ]}
+            onPress={() => setStatusFilter(s.id)}
+          >
+            <Text style={{ fontSize: 14 }}>{s.icon}</Text>
+            <Text style={[styles.filterTabText, { color: statusFilter === s.id ? s.color : colors.foreground }]}>
+              {s.labelAr}
+            </Text>
+            {statusCounts[s.id] > 0 && (
+              <View style={[styles.filterBadge, { backgroundColor: statusFilter === s.id ? s.color : colors.border }]}>
+                <Text style={[styles.filterBadgeText, { color: statusFilter === s.id ? "#FFFFFF" : colors.muted }]}>
+                  {statusCounts[s.id]}
+                </Text>
+              </View>
+            )}
+          </Pressable>
         ))}
       </ScrollView>
 
@@ -375,8 +433,25 @@ const styles = StyleSheet.create({
   badgeText: { fontSize: 12, fontWeight: "700", color: "#1B2B5E" },
   legendScroll: { maxHeight: 52 },
   legendContent: { paddingHorizontal: 16, paddingVertical: 8, gap: 8, flexDirection: "row" },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, borderWidth: 1 },
-  legendText: { fontSize: 11, fontWeight: "600" },
+  filterTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  filterTabText: { fontSize: 12, fontWeight: "600" },
+  filterBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+  },
+  filterBadgeText: { fontSize: 10, fontWeight: "700" },
   content: { flex: 1, paddingHorizontal: 16, paddingTop: 8 },
   searchBox: {
     flexDirection: "row",

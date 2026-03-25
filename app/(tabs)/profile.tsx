@@ -30,6 +30,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user, logout, bookings } = useApp();
+  const isAdmin = user?.isAdmin === true;
   const { t } = useTranslation();
   const { language, setLanguage } = useI18n();
   const { currency, setCurrency } = useCurrency();
@@ -38,10 +39,12 @@ export default function ProfileScreen() {
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [dailyProfitNotif, setDailyProfitNotif] = useState(false);
 
-  // تحميل حالة الإشعار اليومي
+  // تحميل حالة الإشعار اليومي (للأدمن فقط)
   useEffect(() => {
-    getDailyNotificationStatus().then(({ enabled }) => setDailyProfitNotif(enabled));
-  }, []);
+    if (isAdmin) {
+      getDailyNotificationStatus().then(({ enabled }) => setDailyProfitNotif(enabled));
+    }
+  }, [isAdmin]);
 
   const toggleDailyProfitNotif = async (value: boolean) => {
     setDailyProfitNotif(value);
@@ -175,6 +178,31 @@ export default function ProfileScreen() {
             thumbColor="#FFFFFF"
           />
         </View>
+
+        {/* Admin Daily Profit Notification - visible only to admin */}
+        {isAdmin && (
+          <View style={[styles.notifCard, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 8 }]}>
+            <View style={styles.notifLeft}>
+              <View style={[styles.notifIcon, { backgroundColor: "#1B2B5E15" }]}>
+                <IconSymbol name="chart.bar.fill" size={20} color="#1B2B5E" />
+              </View>
+              <View>
+                <Text style={[styles.notifTitle, { color: colors.foreground }]}>
+                  {language === "ar" ? "إشعار الأرباح اليومي" : "Daily Profit Alert"}
+                </Text>
+                <Text style={[styles.notifSub, { color: colors.muted }]}>
+                  {language === "ar" ? "إشعار يومي بالأرباح الساعة 8 مساءً" : "Daily profit notification at 8 PM"}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={dailyProfitNotif}
+              onValueChange={toggleDailyProfitNotif}
+              trackColor={{ false: colors.border, true: "#1B2B5E" }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+        )}
 
         {/* Menu Sections */}
         {menuSections.map((section) => (
