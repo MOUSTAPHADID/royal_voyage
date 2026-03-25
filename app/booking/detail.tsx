@@ -335,6 +335,35 @@ export default function BookingDetailScreen() {
             </View>
           )}
 
+          {/* Payment Status */}
+          {booking.paymentConfirmed && (
+            <View style={[styles.pnrBox, { backgroundColor: "#22C55E10", borderColor: "#22C55E" }]}>
+              <Text style={{ fontSize: 28 }}>✅</Text>
+              <Text style={{ color: "#22C55E", fontSize: 16, fontWeight: "700", marginTop: 4 }}>تم تأكيد الدفع</Text>
+              {booking.paymentConfirmedAt && (
+                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
+                  {new Date(booking.paymentConfirmedAt).toLocaleString('ar-MR', { dateStyle: 'short', timeStyle: 'short' })}
+                </Text>
+              )}
+            </View>
+          )}
+          {booking.paymentRejected && (
+            <View style={[styles.pnrBox, { backgroundColor: "#EF444410", borderColor: "#EF4444" }]}>
+              <Text style={{ fontSize: 28 }}>❌</Text>
+              <Text style={{ color: "#EF4444", fontSize: 16, fontWeight: "700", marginTop: 4 }}>تم رفض الدفع</Text>
+              {booking.paymentRejectedReason && (
+                <Text style={{ color: "#EF4444", fontSize: 13, marginTop: 4, textAlign: "center" }}>
+                  السبب: {booking.paymentRejectedReason}
+                </Text>
+              )}
+              {booking.paymentRejectedAt && (
+                <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
+                  {new Date(booking.paymentRejectedAt).toLocaleString('ar-MR', { dateStyle: 'short', timeStyle: 'short' })}
+                </Text>
+              )}
+            </View>
+          )}
+
           {[
             { label: "تاريخ الحجز", value: booking.date },
             { label: "رقم المرجع", value: booking.reference },

@@ -16,6 +16,7 @@ import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { trpc } from "@/lib/trpc";
 import { formatMRU } from "@/lib/currency";
+import { addAdminNotification } from "@/lib/admin-notifications";
 
 type PaymentMethodLabel = {
   [key: string]: string;
@@ -33,26 +34,36 @@ const PAYMENT_LABELS: PaymentMethodLabel = {
 export default function ConfirmPaymentScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingStatus } = useApp();
+  const { bookings, updateBookingStatus, confirmBookingPayment, rejectBookingPayment } = useApp();
   const confirmPaymentMutation = trpc.email.confirmPayment.useMutation();
+  const sendPushMutation = trpc.email.sendPushNotification.useMutation();
 
   const [confirming, setConfirming] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "flight" | "hotel">("all");
+  const [filterType, setFilterType] = useState<"all" | "pending" | "confirmed" | "rejected">("all");
 
-  // Show all non-cancelled bookings that have passengerEmail (real bookings)
-  // Admin can confirm payment for cash bookings or any pending booking
+  // Filter bookings based on payment status
   const pendingBookings = bookings.filter((b) => {
-    const matchesType = filterType === "all" || b.type === filterType;
     const matchesSearch =
       searchQuery.trim() === "" ||
       b.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
       b.passengerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.passengerEmail?.toLowerCase().includes(searchQuery.toLowerCase());
+      b.passengerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      b.transferRef?.toLowerCase().includes(searchQuery.toLowerCase());
     const isNotCancelled = b.status !== "cancelled";
-    const isNotAlreadyConfirmed = b.status !== "confirmed" || b.paymentDeadline; // show cash confirmed too
-    return matchesType && matchesSearch && isNotCancelled && isNotAlreadyConfirmed;
+    
+    if (filterType === "pending") return matchesSearch && isNotCancelled && !b.paymentConfirmed && !b.paymentRejected;
+    if (filterType === "confirmed") return matchesSearch && isNotCancelled && b.paymentConfirmed;
+    if (filterType === "rejected") return matchesSearch && isNotCancelled && b.paymentRejected;
+    return matchesSearch && isNotCancelled;
   });
+
+  const pendingCount = bookings.filter((b) => b.status !== "cancelled" && !b.paymentConfirmed && !b.paymentRejected).length;
+  const confirmedCount = bookings.filter((b) => b.status !== "cancelled" && b.paymentConfirmed).length;
+  const rejectedCount = bookings.filter((b) => b.status !== "cancelled" && b.paymentRejected).length;
 
   const handleConfirmPayment = async (bookingId: string) => {
     const booking = bookings.find((b) => b.id === bookingId);
@@ -69,8 +80,11 @@ export default function ConfirmPaymentScreen() {
           onPress: async () => {
             setConfirming(bookingId);
             try {
-              // Update booking status to confirmed
-              await updateBookingStatus(bookingId, "confirmed");
+              // Update booking payment confirmed
+              await confirmBookingPayment(bookingId);
+              if (booking.status === "pending") {
+                await updateBookingStatus(bookingId, "confirmed");
+              }
 
               // Send confirmation email + push if email available
               if (booking.passengerEmail) {
@@ -103,18 +117,50 @@ export default function ConfirmPaymentScreen() {
                   expoPushToken: booking.customerPushToken,
                 });
 
+                // Send push notification to customer
+                if (booking.customerPushToken) {
+                  try {
+                    await sendPushMutation.mutateAsync({
+                      expoPushToken: booking.customerPushToken,
+                      title: "✅ تم تأكيد الدفع",
+                      body: `تم تأكيد دفع حجزك ${booking.reference}. شكراً لثقتك!`,
+                      data: { type: "payment_confirmed", bookingId: booking.id },
+                    });
+                  } catch {}
+                }
+
                 Alert.alert(
                   "✅ تم التأكيد",
                   `تم تأكيد دفع الحجز ${booking.reference} بنجاح.\nتم إرسال بريد تأكيد للزبون.`,
                   [{ text: "حسناً" }]
                 );
               } else {
+                // Send push notification even without email
+                if (booking.customerPushToken) {
+                  try {
+                    await sendPushMutation.mutateAsync({
+                      expoPushToken: booking.customerPushToken,
+                      title: "✅ تم تأكيد الدفع",
+                      body: `تم تأكيد دفع حجزك ${booking.reference}. شكراً لثقتك!`,
+                      data: { type: "payment_confirmed", bookingId: booking.id },
+                    });
+                  } catch {}
+                }
+
                 Alert.alert(
                   "✅ تم التأكيد",
                   `تم تأكيد دفع الحجز ${booking.reference}.\n(لا يوجد بريد إلكتروني للزبون)`,
                   [{ text: "حسناً" }]
                 );
               }
+
+              // Save admin notification
+              await addAdminNotification({
+                type: "payment_confirmed",
+                title: `تأكيد دفع: ${booking.reference}`,
+                body: `تم تأكيد دفع ${booking.passengerName ?? "زبون"} - ${formatMRU(booking.totalPrice)}`,
+                bookingId: booking.id,
+              });
             } catch (err: any) {
               Alert.alert("خطأ", `فشل تأكيد الدفع: ${err?.message ?? "خطأ غير معروف"}`);
             } finally {
@@ -124,6 +170,47 @@ export default function ConfirmPaymentScreen() {
         },
       ]
     );
+  };
+
+  const handleRejectPayment = async (bookingId: string) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking || !rejectReason.trim()) {
+      Alert.alert("خطأ", "يرجى إدخال سبب الرفض");
+      return;
+    }
+
+    setRejecting(bookingId);
+    try {
+      await rejectBookingPayment(bookingId, rejectReason.trim());
+
+      // Send push notification to customer about rejection
+      if (booking.customerPushToken) {
+        try {
+          await sendPushMutation.mutateAsync({
+            expoPushToken: booking.customerPushToken,
+            title: "❌ رفض الدفع",
+            body: `تم رفض دفع حجزك ${booking.reference}. السبب: ${rejectReason.trim()}`,
+            data: { type: "payment_rejected", bookingId: booking.id },
+          });
+        } catch {}
+      }
+
+      // Save admin notification
+      await addAdminNotification({
+        type: "payment_rejected",
+        title: `رفض دفع: ${booking.reference}`,
+        body: `تم رفض دفع ${booking.passengerName ?? "زبون"} - السبب: ${rejectReason.trim()}`,
+        bookingId: booking.id,
+      });
+
+      Alert.alert("❌ تم الرفض", `تم رفض دفع الحجز ${booking.reference}.\nتم إرسال إشعار للزبون.`);
+      setShowRejectModal(null);
+      setRejectReason("");
+    } catch (err: any) {
+      Alert.alert("خطأ", `فشل رفض الدفع: ${err?.message ?? "خطأ غير معروف"}`);
+    } finally {
+      setRejecting(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -172,21 +259,24 @@ export default function ConfirmPaymentScreen() {
           />
         </View>
         <View style={styles.filterRow}>
-          {(["all", "flight", "hotel"] as const).map((f) => (
-            <Pressable
-              key={f}
-              style={({ pressed }) => [
-                styles.filterBtn,
-                filterType === f && { backgroundColor: colors.primary },
-                pressed && { opacity: 0.7 },
-              ]}
-              onPress={() => setFilterType(f)}
-            >
-              <Text style={[styles.filterLabel, filterType === f && { color: "#fff" }]}>
-                {f === "all" ? "الكل" : f === "flight" ? "✈ رحلات" : "🏨 فنادق"}
-              </Text>
-            </Pressable>
-          ))}
+          {(["all", "pending", "confirmed", "rejected"] as const).map((f) => {
+            const count = f === "all" ? pendingBookings.length : f === "pending" ? pendingCount : f === "confirmed" ? confirmedCount : rejectedCount;
+            return (
+              <Pressable
+                key={f}
+                style={({ pressed }) => [
+                  styles.filterBtn,
+                  filterType === f && { backgroundColor: f === "rejected" ? "#EF4444" : f === "confirmed" ? colors.success : colors.primary },
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPress={() => setFilterType(f)}
+              >
+                <Text style={[styles.filterLabel, filterType === f && { color: "#fff" }]}>
+                  {f === "all" ? `الكل` : f === "pending" ? `معلق (${count})` : f === "confirmed" ? `مؤكد (${count})` : `مرفوض (${count})`}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -249,6 +339,14 @@ export default function ConfirmPaymentScreen() {
                         {PAYMENT_LABELS[booking.paymentMethod ?? "cash"] ?? "نقدي"}
                       </Text>
                     </View>
+                    {booking.transferRef ? (
+                      <View style={styles.detailItem}>
+                        <Text style={[styles.detailLabel, { color: colors.muted }]}>رقم الإيصال</Text>
+                        <Text style={[styles.detailValue, { color: "#003087", fontWeight: "700" }]} numberOfLines={1}>
+                          {booking.transferRef}
+                        </Text>
+                      </View>
+                    ) : null}
                     {booking.passengerEmail ? (
                       <View style={styles.detailItem}>
                         <Text style={[styles.detailLabel, { color: colors.muted }]}>البريد</Text>
@@ -279,27 +377,98 @@ export default function ConfirmPaymentScreen() {
                     );
                   })()}
 
-                  {/* Confirm Button */}
-                  {booking.status !== "confirmed" || booking.paymentDeadline ? (
-                    <Pressable
-                      style={({ pressed }) => [
-                        styles.confirmBtn,
-                        { backgroundColor: booking.status === "confirmed" ? colors.success : colors.primary },
-                        pressed && { opacity: 0.8 },
-                        isConfirming && { opacity: 0.6 },
-                      ]}
-                      onPress={() => handleConfirmPayment(booking.id)}
-                      disabled={isConfirming}
-                    >
-                      {isConfirming ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <Text style={styles.confirmBtnText}>
-                          {booking.status === "confirmed" ? "✅ تم التأكيد — إعادة إرسال البريد" : "✅ تأكيد الدفع وإرسال تأكيد للزبون"}
-                        </Text>
-                      )}
-                    </Pressable>
-                  ) : null}
+                  {/* Payment status badge */}
+                  {booking.paymentConfirmed && (
+                    <View style={[styles.deadlineBanner, { backgroundColor: "#22C55E15", borderColor: "#22C55E30" }]}>
+                      <Text style={{ color: "#22C55E", fontSize: 12, fontWeight: "700" }}>✅ تم تأكيد الدفع — {booking.paymentConfirmedAt ? new Date(booking.paymentConfirmedAt).toLocaleDateString("ar-SA") : ""}</Text>
+                    </View>
+                  )}
+                  {booking.paymentRejected && (
+                    <View style={[styles.deadlineBanner, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}>
+                      <Text style={{ color: "#EF4444", fontSize: 12, fontWeight: "700" }}>❌ تم رفض الدفع: {booking.paymentRejectedReason}</Text>
+                    </View>
+                  )}
+
+                  {/* Action Buttons */}
+                  <View style={{ flexDirection: "row", gap: 8, margin: 14, marginTop: 4 }}>
+                    {!booking.paymentConfirmed && (
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.confirmBtn,
+                          { backgroundColor: colors.primary, flex: 1, margin: 0 },
+                          pressed && { opacity: 0.8 },
+                          isConfirming && { opacity: 0.6 },
+                        ]}
+                        onPress={() => handleConfirmPayment(booking.id)}
+                        disabled={isConfirming}
+                      >
+                        {isConfirming ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <Text style={styles.confirmBtnText}>✅ تأكيد الدفع</Text>
+                        )}
+                      </Pressable>
+                    )}
+                    {!booking.paymentRejected && !booking.paymentConfirmed && (
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.confirmBtn,
+                          { backgroundColor: "#EF4444", flex: 1, margin: 0 },
+                          pressed && { opacity: 0.8 },
+                        ]}
+                        onPress={() => { setShowRejectModal(booking.id); setRejectReason(""); }}
+                      >
+                        <Text style={styles.confirmBtnText}>❌ رفض الدفع</Text>
+                      </Pressable>
+                    )}
+                    {booking.paymentConfirmed && (
+                      <Pressable
+                        style={({ pressed }) => [
+                          styles.confirmBtn,
+                          { backgroundColor: colors.success, flex: 1, margin: 0 },
+                          pressed && { opacity: 0.8 },
+                        ]}
+                        onPress={() => handleConfirmPayment(booking.id)}
+                      >
+                        <Text style={styles.confirmBtnText}>إعادة إرسال التأكيد</Text>
+                      </Pressable>
+                    )}
+                  </View>
+
+                  {/* Reject Modal */}
+                  {showRejectModal === booking.id && (
+                    <View style={[styles.rejectModal, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                      <Text style={[{ color: colors.foreground, fontWeight: "700", fontSize: 14, marginBottom: 8 }]}>سبب رفض الدفع:</Text>
+                      <TextInput
+                        style={[styles.rejectInput, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                        placeholder="مثال: لم يتم استلام المبلغ..."
+                        placeholderTextColor={colors.muted}
+                        value={rejectReason}
+                        onChangeText={setRejectReason}
+                        multiline
+                        numberOfLines={3}
+                      />
+                      <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                        <Pressable
+                          style={({ pressed }) => [{ flex: 1, paddingVertical: 10, borderRadius: 8, backgroundColor: "#EF4444", alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
+                          onPress={() => handleRejectPayment(booking.id)}
+                          disabled={rejecting === booking.id}
+                        >
+                          {rejecting === booking.id ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                          ) : (
+                            <Text style={{ color: "#fff", fontWeight: "700" }}>تأكيد الرفض</Text>
+                          )}
+                        </Pressable>
+                        <Pressable
+                          style={({ pressed }) => [{ flex: 1, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.border, alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
+                          onPress={() => { setShowRejectModal(null); setRejectReason(""); }}
+                        >
+                          <Text style={{ color: colors.foreground, fontWeight: "600" }}>إلغاء</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
                 </View>
               );
             })}
@@ -408,4 +577,19 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 18, fontWeight: "700" },
   emptySubtitle: { fontSize: 14 },
+  rejectModal: {
+    marginHorizontal: 14,
+    marginBottom: 14,
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  rejectInput: {
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 10,
+    fontSize: 14,
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
 });

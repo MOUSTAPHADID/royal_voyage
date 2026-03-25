@@ -560,3 +560,19 @@
 - [x] PayPal موجود بالفعل في شاشة الدفع (payment.tsx) - تم تحديث الوصف ليشمل البطاقة
 - [x] إضافة PayPal في شاشة طرق الدفع (profile/payment-methods.tsx)
 - [x] تحديث وصف PayPal: "ادفع بالبطاقة البنكية (Visa, Mastercard) أو رصيد PayPal"
+
+## رابط مباشر لـ PayPal
+- [x] إضافة زر "فتح PayPal" في تعليمات الدفع عبر PayPal
+- [x] فتح تطبيق/موقع PayPal تلقائياً مع البريد الإلكتروني والمبلغ
+
+## تأكيد الدفع من المدير
+- [x] تحديث شاشة admin/confirm-payment.tsx بإضافة زر رفض الدفع مع سبب الرفض
+- [x] عرض transferRef في تفاصيل الدفع
+- [x] إضافة دوال confirmBookingPayment وrejectBookingPayment في app-context
+- [x] إضافة حقول paymentConfirmed/paymentRejected في Booking type
+- [x] عرض حالة الدفع (مؤكد/مرفوض) في booking/detail.tsx للزبون
+
+## إشعار للزبون عند تأكيد الدفع
+- [x] إرسال Push notification للزبون عند تأكيد الدفع من المدير
+- [x] إرسال إشعار عند رفض الدفع مع سبب الرفض
+- [x] حفظ الإشعار في سجل إشعارات المدير

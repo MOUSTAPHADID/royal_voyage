@@ -8,6 +8,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Linking,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -716,6 +717,38 @@ export default function PaymentScreen() {
                   </View>
                 ))}
               </View>
+
+              {/* زر فتح PayPal مباشرة */}
+              <Pressable
+                style={({ pressed }) => [{
+                  backgroundColor: "#003087",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  paddingVertical: 14,
+                  borderRadius: 12,
+                  marginTop: 10,
+                  marginBottom: 6,
+                  gap: 8,
+                  opacity: pressed ? 0.85 : 1,
+                }]}
+                onPress={() => {
+                  const paypalEmail = "suporte@royalvoyage.online";
+                  const paypalUrl = `https://www.paypal.com/paypalme/royalvoyage/${ppAmount.toFixed(2)}${ppCurrency}`;
+                  const fallbackUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(paypalEmail)}&amount=${ppAmount.toFixed(2)}&currency_code=${ppCurrency}&item_name=${encodeURIComponent("Royal Voyage Booking")}`;
+                  Linking.openURL(fallbackUrl).catch(() => {
+                    Linking.openURL(paypalUrl).catch(() => {
+                      Linking.openURL("https://www.paypal.com");
+                    });
+                  });
+                }}
+              >
+                <Text style={{ color: "#FFF", fontSize: 18 }}>🌐</Text>
+                <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>فتح PayPal للدفع الآن</Text>
+              </Pressable>
+              <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginBottom: 10 }}>
+                سيتم فتح PayPal بالمبلغ {ppFormatted} — أدخل Transaction ID بعد إتمام الدفع
+              </Text>
 
               {/* حقل رقم العملية */}
               <View style={styles.inputGroup}>

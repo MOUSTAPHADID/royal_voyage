@@ -40,6 +40,8 @@ type AppContextType = {
   updateBookingStatus: (id: string, status: Booking["status"]) => void;
   updateBookingTicketNumber: (id: string, ticketNumber: string) => void;
   updateBookingTicketSent: (id: string) => void;
+  confirmBookingPayment: (id: string) => void;
+  rejectBookingPayment: (id: string, reason: string) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
   saveAdminPushToken: (token: string) => void;
@@ -262,6 +264,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const confirmBookingPayment = useCallback(async (id: string) => {
+    const now = new Date().toISOString();
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, paymentConfirmed: true, paymentConfirmedAt: now, paymentRejected: false, paymentRejectedReason: undefined, paymentRejectedAt: undefined } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
+  const rejectBookingPayment = useCallback(async (id: string, reason: string) => {
+    const now = new Date().toISOString();
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, paymentRejected: true, paymentRejectedReason: reason, paymentRejectedAt: now, paymentConfirmed: false, paymentConfirmedAt: undefined } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
   const saveExpoPushToken = useCallback(async (token: string) => {
     setExpoPushToken(token);
     await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
@@ -293,6 +313,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateBookingStatus,
         updateBookingTicketNumber,
         updateBookingTicketSent,
+        confirmBookingPayment,
+        rejectBookingPayment,
         saveExpoPushToken,
         expoPushToken,
         saveAdminPushToken,

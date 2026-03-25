@@ -78,6 +78,13 @@ export type Booking = {
   // Ticket delivery tracking
   ticketSent?: boolean; // true when PDF ticket has been sent to customer
   ticketSentAt?: string; // ISO timestamp when ticket was last sent
+  // Payment confirmation by admin
+  paymentConfirmed?: boolean; // true when admin confirms payment receipt
+  paymentConfirmedAt?: string; // ISO timestamp when payment was confirmed
+  paymentRejected?: boolean; // true when admin rejects payment
+  paymentRejectedReason?: string; // reason for rejection
+  paymentRejectedAt?: string; // ISO timestamp when payment was rejected
+  transferRef?: string; // Transfer reference / Transaction ID entered by customer
 };
 
 export const DESTINATIONS: Destination[] = [
