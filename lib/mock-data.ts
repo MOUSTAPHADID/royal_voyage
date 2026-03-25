@@ -97,6 +97,13 @@ export type Booking = {
   seatUpgrade?: boolean; // true if extra legroom seat was selected
   seatUpgradeFee?: number; // Fee paid for seat upgrade in MRU
   flightReminderScheduled?: boolean; // true when 2h pre-flight reminder is scheduled
+  // Meal selection
+  mealChoice?: "regular" | "vegetarian" | "halal" | "none"; // Selected meal option
+  // Seat change history
+  seatChangeCount?: number; // Number of times seat was changed
+  seatChangeFee?: number; // Total fee for seat changes in MRU
+  // Travel checklist
+  travelChecklist?: Record<string, boolean>; // Checklist items completion status
 };
 
 export const DESTINATIONS: Destination[] = [

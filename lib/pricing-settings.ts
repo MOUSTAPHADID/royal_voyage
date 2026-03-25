@@ -31,6 +31,8 @@ export interface PricingSettings {
   childDiscountRate: number;
   /** رسوم ترقية المقعد (مساحة إضافية للأرجل) بالأوقية */
   extraLegroomFeeMRU: number;
+  /** رسوم تغيير المقعد بعد تسجيل الوصول بالأوقية */
+  seatChangeFeeMRU: number;
   /** تاريخ آخر تحديث لأسعار الصرف */
   ratesLastUpdated?: string;
 }
@@ -46,6 +48,7 @@ export const DEFAULT_PRICING: PricingSettings = {
   aoaToMRU: 0.043,
   childDiscountRate: 0.75,
   extraLegroomFeeMRU: 500,
+  seatChangeFeeMRU: 300,
   ratesLastUpdated: undefined,
 };
 

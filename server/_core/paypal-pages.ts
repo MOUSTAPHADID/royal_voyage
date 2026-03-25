@@ -1,6 +1,7 @@
 /**
  * PayPal checkout and success page HTML generators.
- * Separated to avoid template literal nesting issues in index.ts.
+ * Uses PayPal JS SDK with createOrder to pre-fill the amount automatically.
+ * The customer sees the exact amount and can pay directly without manual entry.
  */
 
 interface CheckoutParams {
@@ -27,13 +28,17 @@ export function buildCheckoutPage(p: CheckoutParams): string {
     ? '<div class="info-row"><span class="label">\u0631\u0642\u0645 \u0627\u0644\u062d\u062c\u0632</span><span class="value">' + escapeHtml(p.booking) + "</span></div>"
     : "";
 
+  // Use the standard PayPal JS SDK with buttons (not hosted buttons)
+  // This allows us to set the amount programmatically via createOrder
+  const clientId = "BAAe3HWztSL3qmFxXI2nVSKirPWH_KJhAUyU9OPRnVTQZ8kmmdeF5u2yYJkIYGlqBhOnQvyxhDpFF9qI90";
+
   return `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Royal Voyage - \u0627\u0644\u062f\u0641\u0639 \u0639\u0628\u0631 PayPal</title>
-<script src="https://www.paypal.com/sdk/js?client-id=BAAe3HWztSL3qmFxXI2nVSKirPWH_KJhAUyU9OPRnVTQZ8kmmdeF5u2yYJkIYGlqBhOnQvyxhDpFF9qI90&components=hosted-buttons&disable-funding=venmo&currency=${escapeHtml(p.currency)}"><\/script>
+<script src="https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${escapeHtml(p.currency)}&disable-funding=venmo"><\/script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#001f4d 0%,#003087 50%,#0070ba 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -45,13 +50,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .info-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:15px;color:#333}
 .info-row .label{color:#687076;font-size:13px}
 .info-row .value{font-weight:600;color:#11181C}
-.amount-box{background:#f0f7ff;border:2px solid #003087;border-radius:14px;padding:16px;text-align:center;margin:16px 0}
-.amount-box .amount{font-size:32px;font-weight:800;color:#003087}
+.amount-box{background:#f0f7ff;border:2px solid #003087;border-radius:14px;padding:20px;text-align:center;margin:16px 0}
+.amount-box .amount{font-size:36px;font-weight:800;color:#003087}
 .amount-box .currency-label{font-size:13px;color:#687076;margin-top:4px}
-#paypal-container-HS2AES3UYJHQA{margin-top:20px;min-height:150px}
+.amount-box .ready-badge{display:inline-block;background:#22C55E;color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;margin-top:8px}
+#paypal-button-container{margin-top:20px;min-height:150px}
 #loading-msg{display:none;text-align:center;padding:20px;color:#003087;font-size:16px;font-weight:600}
+#error-msg{display:none;text-align:center;padding:16px;color:#EF4444;font-size:14px;font-weight:600;background:#FEF2F2;border-radius:10px;margin-top:12px}
 .secure-note{text-align:center;font-size:11px;color:#9BA1A6;margin-top:16px}
 .secure-note span{color:#22C55E}
+.info-note{background:#f0f7ff;border:1px solid #003087;border-radius:10px;padding:12px;text-align:center;margin-top:12px;font-size:12px;color:#003087;line-height:1.5}
 </style>
 </head>
 <body>
@@ -64,37 +72,82 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   ${nameRow}
   ${bookingRow}
   <div class="amount-box">
-    <div class="amount">${escapeHtml(p.amount)} ${escapeHtml(p.currency)}</div>
+    <div class="amount">${escapeHtml(p.currency)} ${escapeHtml(p.amount)}</div>
     <div class="currency-label">\u0627\u0644\u0645\u0628\u0644\u063a \u0627\u0644\u0645\u0637\u0644\u0648\u0628</div>
+    <div class="ready-badge">\u2713 \u062c\u0627\u0647\u0632 \u0644\u0644\u062f\u0641\u0639 \u0645\u0628\u0627\u0634\u0631\u0629</div>
   </div>
-  <div id="paypal-container-HS2AES3UYJHQA"></div>
+  <div class="info-note">
+    \u0627\u0644\u0645\u0628\u0644\u063a \u0645\u0639\u0628\u0623 \u062a\u0644\u0642\u0627\u0626\u064a\u0627\u064b \u2014 \u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0632\u0631 PayPal \u0623\u0648 Checkout \u0644\u0644\u062f\u0641\u0639 \u0645\u0628\u0627\u0634\u0631\u0629
+  </div>
+  <div id="paypal-button-container"></div>
   <div id="loading-msg">\u062c\u0627\u0631\u064d \u0645\u0639\u0627\u0644\u062c\u0629 \u0627\u0644\u062f\u0641\u0639...</div>
+  <div id="error-msg"></div>
   <script>
-    paypal.HostedButtons({
-      hostedButtonId: "HS2AES3UYJHQA",
-      onApprove: function(data) {
-        document.getElementById('paypal-container-HS2AES3UYJHQA').style.display = 'none';
-        document.getElementById('loading-msg').style.display = 'block';
-        var txId = (data && data.orderID) || (data && data.paymentID) || 'N/A';
-        fetch('/api/paypal-notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            txId: txId,
-            amount: '${escapeHtml(p.amount)}',
-            currency: '${escapeHtml(p.currency)}',
-            name: '${escapeJs(p.name)}',
-            booking: '${escapeJs(p.booking)}'
-          })
-        }).finally(function() {
-          window.location.href = '/api/paypal-success?tx=' + encodeURIComponent(txId)
-            + '&amount=' + encodeURIComponent('${escapeHtml(p.amount)}')
-            + '&currency=' + encodeURIComponent('${escapeHtml(p.currency)}')
-            + '&name=' + encodeURIComponent('${escapeJs(p.name)}')
-            + '&scheme=' + encodeURIComponent('${escapeHtml(p.scheme)}');
+    var AMOUNT = '${escapeJs(p.amount)}';
+    var CURRENCY = '${escapeJs(p.currency)}';
+    var CUSTOMER_NAME = '${escapeJs(p.name)}';
+    var BOOKING_REF = '${escapeJs(p.booking)}';
+    var APP_SCHEME = '${escapeJs(p.scheme)}';
+
+    paypal.Buttons({
+      style: {
+        layout: 'vertical',
+        color: 'gold',
+        shape: 'rect',
+        label: 'checkout',
+        height: 50
+      },
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{
+            description: 'Royal Voyage - ' + BOOKING_REF,
+            amount: {
+              currency_code: CURRENCY,
+              value: AMOUNT
+            }
+          }]
         });
+      },
+      onApprove: function(data, actions) {
+        document.getElementById('paypal-button-container').style.display = 'none';
+        document.getElementById('loading-msg').style.display = 'block';
+        document.getElementById('error-msg').style.display = 'none';
+
+        return actions.order.capture().then(function(details) {
+          var txId = details.id || data.orderID || 'N/A';
+
+          // Notify server
+          fetch('/api/paypal-notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              txId: txId,
+              amount: AMOUNT,
+              currency: CURRENCY,
+              name: CUSTOMER_NAME,
+              booking: BOOKING_REF
+            })
+          }).finally(function() {
+            window.location.href = '/api/paypal-success?tx=' + encodeURIComponent(txId)
+              + '&amount=' + encodeURIComponent(AMOUNT)
+              + '&currency=' + encodeURIComponent(CURRENCY)
+              + '&name=' + encodeURIComponent(CUSTOMER_NAME)
+              + '&scheme=' + encodeURIComponent(APP_SCHEME);
+          });
+        });
+      },
+      onCancel: function() {
+        document.getElementById('error-msg').textContent = '\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0627\u0644\u062f\u0641\u0639. \u064a\u0645\u0643\u0646\u0643 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.';
+        document.getElementById('error-msg').style.display = 'block';
+      },
+      onError: function(err) {
+        document.getElementById('loading-msg').style.display = 'none';
+        document.getElementById('paypal-button-container').style.display = 'block';
+        document.getElementById('error-msg').textContent = '\u062d\u062f\u062b \u062e\u0637\u0623 \u0641\u064a \u0627\u0644\u062f\u0641\u0639. \u064a\u0631\u062c\u0649 \u0627\u0644\u0645\u062d\u0627\u0648\u0644\u0629 \u0645\u0631\u0629 \u0623\u062e\u0631\u0649.';
+        document.getElementById('error-msg').style.display = 'block';
+        console.error('PayPal Error:', err);
       }
-    }).render("#paypal-container-HS2AES3UYJHQA");
+    }).render('#paypal-button-container');
   <\/script>
   <div class="secure-note">
     <span>&#x1F512;</span> \u062f\u0641\u0639 \u0622\u0645\u0646 \u0639\u0628\u0631 PayPal - \u0644\u0627 \u0646\u062d\u0641\u0638 \u0628\u064a\u0627\u0646\u0627\u062a \u0628\u0637\u0627\u0642\u062a\u0643

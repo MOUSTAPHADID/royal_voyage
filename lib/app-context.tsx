@@ -45,6 +45,9 @@ type AppContextType = {
   updateBookingReceipt: (id: string, receiptImage: string) => void;
   updateBookingCheckin: (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string, seatUpgrade?: boolean, seatUpgradeFee?: number) => void;
   updateBookingFlightReminder: (id: string) => void;
+  updateBookingSeatChange: (id: string, newSeat: string, newPreference: "window" | "middle" | "aisle", newGroup: string, changeFee: number) => void;
+  updateBookingMeal: (id: string, mealChoice: "regular" | "vegetarian" | "halal" | "none") => void;
+  updateBookingChecklist: (id: string, checklist: Record<string, boolean>) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
   saveAdminPushToken: (token: string) => void;
@@ -311,6 +314,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
+  const updateBookingSeatChange = useCallback(async (id: string, newSeat: string, newPreference: "window" | "middle" | "aisle", newGroup: string, changeFee: number) => {
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, seatNumber: newSeat, seatPreference: newPreference, boardingGroup: newGroup, seatChangeCount: (b.seatChangeCount || 0) + 1, seatChangeFee: (b.seatChangeFee || 0) + changeFee } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
+  const updateBookingMeal = useCallback(async (id: string, mealChoice: "regular" | "vegetarian" | "halal" | "none") => {
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, mealChoice } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
+  const updateBookingChecklist = useCallback(async (id: string, checklist: Record<string, boolean>) => {
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, travelChecklist: checklist } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
   const saveExpoPushToken = useCallback(async (token: string) => {
     setExpoPushToken(token);
     await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
@@ -347,6 +374,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateBookingReceipt,
         updateBookingCheckin,
         updateBookingFlightReminder,
+        updateBookingSeatChange,
+        updateBookingMeal,
+        updateBookingChecklist,
         saveExpoPushToken,
         expoPushToken,
         saveAdminPushToken,

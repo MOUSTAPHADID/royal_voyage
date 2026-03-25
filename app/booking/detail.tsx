@@ -532,6 +532,22 @@ export default function BookingDetailScreen() {
           </Pressable>
         )}
 
+        {/* Change Seat (after check-in) */}
+        {booking.type === "flight" && booking.checkedIn && booking.status !== "cancelled" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.changeSeatBtn,
+              { borderColor: "#FF9800", opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => router.push({ pathname: "/change-seat" as any, params: { id: booking.id } })}
+          >
+            <IconSymbol name="repeat" size={18} color="#FF9800" />
+            <Text style={[styles.changeSeatText, { color: "#FF9800" }]}>
+              {booking.seatChangeCount ? `\u062A\u063A\u064A\u064A\u0631 \u0627\u0644\u0645\u0642\u0639\u062F (${booking.seatChangeCount}x)` : "\u062A\u063A\u064A\u064A\u0631 \u0627\u0644\u0645\u0642\u0639\u062F"}
+            </Text>
+          </Pressable>
+        )}
+
         {/* Track Flight Status */}
         {booking.type === "flight" && booking.status !== "cancelled" && (
           <Pressable
@@ -543,6 +559,20 @@ export default function BookingDetailScreen() {
           >
             <IconSymbol name="airplane.circle.fill" size={18} color={colors.primary} />
             <Text style={[styles.trackFlightText, { color: colors.primary }]}>\u062A\u062A\u0628\u0639 \u062D\u0627\u0644\u0629 \u0627\u0644\u0631\u062D\u0644\u0629</Text>
+          </Pressable>
+        )}
+
+        {/* Travel Checklist */}
+        {booking.status !== "cancelled" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.checklistBtn,
+              { borderColor: colors.primary, opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => router.push({ pathname: "/travel-checklist" as any, params: { id: booking.id } })}
+          >
+            <IconSymbol name="list.bullet.clipboard" size={18} color={colors.primary} />
+            <Text style={[styles.checklistText, { color: colors.primary }]}>\u0642\u0627\u0626\u0645\u0629 \u0627\u0644\u062A\u062D\u0642\u0642 \u0642\u0628\u0644 \u0627\u0644\u0633\u0641\u0631</Text>
           </Pressable>
         )}
 
@@ -836,6 +866,36 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   trackFlightText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  changeSeatBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
+  changeSeatText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  checklistBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
+  checklistText: {
     fontSize: 15,
     fontWeight: "700",
   },

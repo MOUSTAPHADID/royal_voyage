@@ -27,7 +27,8 @@ import Animated, {
 
 // ─── Types ────────────────────────────────────────────────────────
 type SeatPreference = "window" | "middle" | "aisle";
-type CheckinStep = "info" | "seat" | "confirm" | "done";
+type MealChoice = "regular" | "vegetarian" | "halal" | "none";
+type CheckinStep = "info" | "seat" | "meal" | "confirm" | "done";
 
 interface SeatInfo {
   id: string;
@@ -249,7 +250,7 @@ export default function OnlineCheckinScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const colors = useColors();
-  const { bookings, updateBookingCheckin, updateBookingFlightReminder } = useApp();
+  const { bookings, updateBookingCheckin, updateBookingFlightReminder, updateBookingMeal } = useApp();
   const { fmt } = useCurrency();
   const { t, isRTL } = useI18n();
 
@@ -260,6 +261,7 @@ export default function OnlineCheckinScreen() {
   const [seatPreference, setSeatPreference] = useState<SeatPreference>("window");
   const [wantUpgrade, setWantUpgrade] = useState(false);
   const [upgradeFee, setUpgradeFee] = useState(DEFAULT_PRICING.extraLegroomFeeMRU);
+  const [mealChoice, setMealChoice] = useState<MealChoice>("regular");
 
   // Load actual pricing
   useEffect(() => {
@@ -277,6 +279,7 @@ export default function OnlineCheckinScreen() {
   const STEPS: { key: CheckinStep; label: string }[] = [
     { key: "info", label: isRTL ? "\u0627\u0644\u0645\u0639\u0644\u0648\u0645\u0627\u062A" : "Info" },
     { key: "seat", label: isRTL ? "\u0627\u0644\u0645\u0642\u0639\u062F" : "Seat" },
+    { key: "meal", label: isRTL ? "\u0627\u0644\u0648\u062C\u0628\u0629" : "Meal" },
     { key: "confirm", label: isRTL ? "\u062A\u0623\u0643\u064A\u062F" : "Confirm" },
     { key: "done", label: isRTL ? "\u062A\u0645" : "Done" },
   ];
@@ -347,6 +350,7 @@ export default function OnlineCheckinScreen() {
     const fee = isUpgrade ? upgradeFee : 0;
 
     await updateBookingCheckin(booking.id, selectedSeat, selectedSeatInfo.type, boardingGroup, isUpgrade, fee);
+    await updateBookingMeal(booking.id, mealChoice);
 
     if (Platform.OS !== "web") {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -381,7 +385,7 @@ export default function OnlineCheckinScreen() {
     } catch {}
 
     setStep("done");
-  }, [booking, selectedSeat, selectedSeatInfo, updateBookingCheckin, updateBookingFlightReminder, isRTL, wantUpgrade, upgradeFee]);
+  }, [booking, selectedSeat, selectedSeatInfo, updateBookingCheckin, updateBookingFlightReminder, updateBookingMeal, isRTL, wantUpgrade, upgradeFee, mealChoice]);
 
   // ─── Already Checked In View ──────────────────────────────────
   if (booking?.checkedIn) {
@@ -746,7 +750,7 @@ export default function OnlineCheckinScreen() {
               onPress={() => {
                 if (!selectedSeat) { Alert.alert(isRTL ? "\u062A\u0646\u0628\u064A\u0647" : "Notice", isRTL ? "\u064A\u0631\u062C\u0649 \u0627\u062E\u062A\u064A\u0627\u0631 \u0645\u0642\u0639\u062F \u0623\u0648\u0644\u0627\u064B" : "Please select a seat first"); return; }
                 if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setStep("confirm");
+                setStep("meal");
               }}
               style={({ pressed }) => [styles.primaryBtn, { backgroundColor: selectedSeat ? colors.primary : colors.muted, opacity: pressed ? 0.8 : 1 }]}
             >
@@ -756,7 +760,69 @@ export default function OnlineCheckinScreen() {
           </Animated.View>
         )}
 
-        {/* Step 3: Confirmation */}
+        {/* Step 3: Meal Selection */}
+        {step === "meal" && (
+          <Animated.View entering={FadeInDown.duration(300)}>
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.cardHeader}>
+                <IconSymbol name="fork.knife" size={20} color={colors.primary} />
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>
+                  {isRTL ? "\u0627\u062E\u062A\u064A\u0627\u0631 \u0627\u0644\u0648\u062C\u0628\u0629" : "Meal Selection"}
+                </Text>
+              </View>
+              <Text style={[styles.mealDesc, { color: colors.muted }]}>
+                {isRTL
+                  ? "\u0627\u062E\u062A\u0631 \u0648\u062C\u0628\u062A\u0643 \u0627\u0644\u0645\u0641\u0636\u0644\u0629 \u0644\u0644\u0631\u062D\u0644\u0629. \u064A\u0645\u0643\u0646\u0643 \u0627\u062E\u062A\u064A\u0627\u0631 \"\u0628\u062F\u0648\u0646 \u0648\u062C\u0628\u0629\" \u0625\u0630\u0627 \u0644\u0645 \u062A\u0631\u063A\u0628."
+                  : "Choose your preferred meal for the flight. Select \"No Meal\" if you prefer not to have one."}
+              </Text>
+              {([
+                { key: "regular" as MealChoice, icon: "fork.knife" as const, labelEn: "Regular Meal", labelAr: "\u0648\u062C\u0628\u0629 \u0639\u0627\u062F\u064A\u0629", descEn: "Standard in-flight meal", descAr: "\u0648\u062C\u0628\u0629 \u0627\u0644\u0637\u0627\u0626\u0631\u0629 \u0627\u0644\u0639\u0627\u062F\u064A\u0629" },
+                { key: "vegetarian" as MealChoice, icon: "leaf.fill" as const, labelEn: "Vegetarian", labelAr: "\u0646\u0628\u0627\u062A\u064A\u0629", descEn: "Plant-based meal option", descAr: "\u0648\u062C\u0628\u0629 \u0646\u0628\u0627\u062A\u064A\u0629" },
+                { key: "halal" as MealChoice, icon: "checkmark.shield.fill" as const, labelEn: "Halal", labelAr: "\u062D\u0644\u0627\u0644", descEn: "Halal-certified meal", descAr: "\u0648\u062C\u0628\u0629 \u062D\u0644\u0627\u0644 \u0645\u0639\u062A\u0645\u062F\u0629" },
+                { key: "none" as MealChoice, icon: "xmark" as const, labelEn: "No Meal", labelAr: "\u0628\u062F\u0648\u0646 \u0648\u062C\u0628\u0629", descEn: "Skip meal service", descAr: "\u062A\u062E\u0637\u064A \u062E\u062F\u0645\u0629 \u0627\u0644\u0648\u062C\u0628\u0627\u062A" },
+              ]).map((meal) => (
+                <Pressable
+                  key={meal.key}
+                  onPress={() => {
+                    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setMealChoice(meal.key);
+                  }}
+                  style={({ pressed }) => [styles.mealOption, {
+                    backgroundColor: mealChoice === meal.key ? colors.primary + "12" : colors.background,
+                    borderColor: mealChoice === meal.key ? colors.primary : colors.border,
+                    opacity: pressed ? 0.7 : 1,
+                  }]}
+                >
+                  <View style={[styles.mealRadio, { borderColor: mealChoice === meal.key ? colors.primary : colors.border, backgroundColor: mealChoice === meal.key ? colors.primary : "transparent" }]}>
+                    {mealChoice === meal.key && <View style={styles.mealRadioInner} />}
+                  </View>
+                  <IconSymbol name={meal.icon} size={22} color={mealChoice === meal.key ? colors.primary : colors.muted} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.mealLabel, { color: mealChoice === meal.key ? colors.primary : colors.foreground }]}>
+                      {isRTL ? meal.labelAr : meal.labelEn}
+                    </Text>
+                    <Text style={[styles.mealSubLabel, { color: colors.muted }]}>
+                      {isRTL ? meal.descAr : meal.descEn}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+
+            <Pressable
+              onPress={() => {
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setStep("confirm");
+              }}
+              style={({ pressed }) => [styles.primaryBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 }]}
+            >
+              <Text style={styles.primaryBtnText}>{isRTL ? "\u0645\u062A\u0627\u0628\u0639\u0629" : "Continue"}</Text>
+              <IconSymbol name="arrow.right" size={18} color="#FFF" />
+            </Pressable>
+          </Animated.View>
+        )}
+
+        {/* Step 4: Confirmation */}
         {step === "confirm" && selectedSeatInfo && (
           <Animated.View entering={FadeInDown.duration(300)}>
             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -781,6 +847,11 @@ export default function OnlineCheckinScreen() {
                 {wantUpgrade && selectedSeatInfo.isExtra && (
                   <InfoRow label={isRTL ? "\u062A\u0631\u0642\u064A\u0629 \u0627\u0644\u0645\u0642\u0639\u062F" : "Seat Upgrade"} value={`Extra Legroom (+${fmt(upgradeFee)})`} colors={colors} highlight />
                 )}
+                <InfoRow
+                  label={isRTL ? "\u0627\u0644\u0648\u062C\u0628\u0629" : "Meal"}
+                  value={mealChoice === "regular" ? (isRTL ? "\u0648\u062C\u0628\u0629 \u0639\u0627\u062F\u064A\u0629" : "Regular") : mealChoice === "vegetarian" ? (isRTL ? "\u0646\u0628\u0627\u062A\u064A\u0629" : "Vegetarian") : mealChoice === "halal" ? (isRTL ? "\u062D\u0644\u0627\u0644" : "Halal") : (isRTL ? "\u0628\u062F\u0648\u0646 \u0648\u062C\u0628\u0629" : "No Meal")}
+                  colors={colors}
+                />
               </View>
             </View>
 
@@ -1053,4 +1124,10 @@ const styles = StyleSheet.create({
   bpFooter: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 10, paddingHorizontal: 16 },
   bpRef: { fontSize: 12, fontWeight: "700", letterSpacing: 1 },
   bpUpgradeBadge: { alignSelf: "center", paddingHorizontal: 12, paddingVertical: 4, borderRadius: 6, marginTop: 4 },
+  mealDesc: { fontSize: 13, lineHeight: 20, marginBottom: 12 },
+  mealOption: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, borderRadius: 12, borderWidth: 1.5, marginBottom: 8 },
+  mealRadio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, justifyContent: "center", alignItems: "center" },
+  mealRadioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#FFF" },
+  mealLabel: { fontSize: 15, fontWeight: "700" },
+  mealSubLabel: { fontSize: 12, marginTop: 2 },
 });
