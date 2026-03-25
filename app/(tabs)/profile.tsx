@@ -117,34 +117,7 @@ export default function ProfileScreen() {
         { icon: "shield.fill", label: language === "ar" ? "سياسة الخصوصية" : language === "fr" ? "Politique de Confidentialité" : "Privacy Policy", value: "", onPress: () => router.push("/privacy" as any) },
       ],
     },
-    // Admin notification section — only for admins
-    ...(user?.isAdmin ? [{
-      title: language === "ar" ? "إشعارات الأدمن" : language === "fr" ? "Notifications Admin" : "Admin Notifications",
-      items: [
-        {
-          icon: "chart.bar.fill",
-          label: language === "ar" ? "تقرير الأرباح اليومي (8م)" : language === "fr" ? "Rapport journalier (20h)" : "Daily Profit Report (8PM)",
-          value: "",
-          onPress: () => {},
-          isSwitch: true,
-          switchValue: dailyProfitNotif,
-          onSwitchChange: toggleDailyProfitNotif,
-        },
-      ],
-    }] : []),
-    // Admin section — only shown to admin users
-    ...(user?.isAdmin ? [{
-      title: t.admin.adminAccess,
-      items: [
-        {
-          icon: "shield.fill",
-          label: t.admin.title,
-          value: "",
-          onPress: () => router.push("/admin" as any),
-          highlight: true,
-        },
-      ],
-    }] : []),
+
   ];
 
   return (

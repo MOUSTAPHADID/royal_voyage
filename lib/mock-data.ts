@@ -72,6 +72,9 @@ export type Booking = {
   paymentMethod?: string; // cash | bank_transfer | bankily | masrvi | sedad
   // Expo Push Token for customer notifications
   customerPushToken?: string;
+  // Ticket number entered by admin
+  ticketNumber?: string; // Airline ticket number entered by admin
+  ticketNumberUpdatedAt?: string; // ISO timestamp when ticketNumber was last updated
   // Ticket delivery tracking
   ticketSent?: boolean; // true when PDF ticket has been sent to customer
   ticketSentAt?: string; // ISO timestamp when ticket was last sent

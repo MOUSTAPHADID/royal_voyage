@@ -296,6 +296,27 @@ export default function AdminBookingDetailScreen() {
           </View>
         )}
 
+        {/* Ticket Number */}
+        {booking.ticketNumber && (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>رقم التذكرة</Text>
+            <View style={[
+              styles.pnrBox,
+              { backgroundColor: "#1B2B5E10", borderColor: "#1B2B5E" }
+            ]}>
+              <Text style={[styles.pnrLabel, { color: colors.muted }]}>Ticket Number</Text>
+              <Text style={[{ fontSize: 22, fontWeight: "800", letterSpacing: 3, color: "#1B2B5E", fontFamily: "monospace" }]}>
+                {booking.ticketNumber}
+              </Text>
+              {booking.ticketNumberUpdatedAt && (
+                <Text style={[styles.pnrHint, { color: colors.muted }]}>
+                  تحديث: {new Date(booking.ticketNumberUpdatedAt).toLocaleString("ar-MR", { dateStyle: "short", timeStyle: "short" })}
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+
         {/* Price */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>ملخص السعر</Text>

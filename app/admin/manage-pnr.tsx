@@ -19,10 +19,11 @@ import { trpc } from "@/lib/trpc";
 export default function ManagePnrScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingPnr } = useApp();
+  const { bookings, updateBookingPnr, updateBookingTicketNumber } = useApp();
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pnrInput, setPnrInput] = useState("");
+  const [ticketNumberInput, setTicketNumberInput] = useState("");
   const [saving, setSaving] = useState(false);
 
   const sendPnrUpdate = trpc.email.sendPnrUpdate.useMutation();
@@ -38,39 +39,60 @@ export default function ManagePnrScreen() {
         b.reference.toLowerCase().includes(q) ||
         (b.pnr && b.pnr.toLowerCase().includes(q)) ||
         (b.realPnr && b.realPnr.toLowerCase().includes(q)) ||
+        (b.ticketNumber && b.ticketNumber.toLowerCase().includes(q)) ||
         (b.passengerName && b.passengerName.toLowerCase().includes(q)) ||
         (b.flight?.airline && b.flight.airline.toLowerCase().includes(q))
     );
   }, [bookings, search]);
 
-  const handleSavePnr = async (bookingId: string) => {
+  const handleSavePnrAndTicket = async (bookingId: string) => {
     const pnr = pnrInput.trim().toUpperCase();
-    if (!pnr) {
-      Alert.alert("خطأ", "يرجى إدخال رمز PNR");
+    const ticketNum = ticketNumberInput.trim();
+
+    // At least one field must be filled
+    if (!pnr && !ticketNum) {
+      Alert.alert("خطأ", "يرجى إدخال رمز PNR أو رقم التذكرة على الأقل");
       return;
     }
-    if (pnr.length < 5 || pnr.length > 8) {
+
+    // Validate PNR if provided
+    if (pnr && (pnr.length < 5 || pnr.length > 8)) {
       Alert.alert("خطأ", "رمز PNR يجب أن يكون بين 5 و 8 أحرف");
       return;
     }
+
+    // Validate ticket number if provided (typically 13 digits: 3-digit airline code + 10-digit serial)
+    if (ticketNum && ticketNum.length < 3) {
+      Alert.alert("خطأ", "رقم التذكرة قصير جداً");
+      return;
+    }
+
     const booking = flightBookings.find((b) => b.id === bookingId);
     setSaving(true);
 
     try {
-      // 1. Update PNR in local storage
-      await updateBookingPnr(bookingId, pnr);
+      // 1. Update PNR in local storage (if provided)
+      if (pnr) {
+        await updateBookingPnr(bookingId, pnr);
+      }
+
+      // 2. Update Ticket Number in local storage (if provided)
+      if (ticketNum) {
+        await updateBookingTicketNumber(bookingId, ticketNum);
+      }
 
       let emailSent = false;
       let pushSent = false;
 
-      // 2. Send email notification to customer
+      // 3. Send email notification to customer
       if (booking?.passengerEmail) {
         try {
           const emailResult = await sendPnrUpdate.mutateAsync({
             passengerName: booking.passengerName ?? "العميل الكريم",
             passengerEmail: booking.passengerEmail,
             bookingRef: booking.reference,
-            pnr,
+            pnr: pnr || booking.realPnr || "",
+            ticketNumber: ticketNum || booking.ticketNumber || "",
             origin: booking.flight?.originCode,
             destination: booking.flight?.destinationCode,
             departureDate: booking.date,
@@ -78,33 +100,42 @@ export default function ManagePnrScreen() {
             flightNumber: booking.flight?.flightNumber,
           });
           emailSent = emailResult.success;
-          console.log("[PNR] Email sent:", emailSent);
+          console.log("[PNR/Ticket] Email sent:", emailSent);
         } catch (err) {
-          console.error("[PNR] Email failed:", err);
+          console.error("[PNR/Ticket] Email failed:", err);
         }
       }
 
-      // 3. Send Push Notification to customer (works in APK, not Expo Go)
+      // 4. Send Push Notification to customer
       if (booking?.customerPushToken && Platform.OS !== "web") {
         try {
+          const pushBody = pnr && ticketNum
+            ? `رمز PNR: ${pnr} | رقم التذكرة: ${ticketNum}`
+            : pnr
+            ? `رمز PNR لحجزك ${booking.reference} هو: ${pnr}`
+            : `رقم التذكرة لحجزك ${booking.reference} هو: ${ticketNum}`;
+
           const pushResult = await sendPushNotification.mutateAsync({
             expoPushToken: booking.customerPushToken,
-            title: "✈️ تم تحديث رمز حجزك",
-            body: `رمز PNR لحجزك ${booking.reference} هو: ${pnr}`,
-            data: { bookingRef: booking.reference, pnr, type: "pnr_update" },
+            title: "✈️ تم تحديث بيانات حجزك",
+            body: pushBody,
+            data: { bookingRef: booking.reference, pnr, ticketNumber: ticketNum, type: "pnr_update" },
           });
           pushSent = pushResult.success;
-          console.log("[PNR] Push sent:", pushSent);
+          console.log("[PNR/Ticket] Push sent:", pushSent);
         } catch (err) {
-          console.error("[PNR] Push failed:", err);
+          console.error("[PNR/Ticket] Push failed:", err);
         }
       }
 
       setEditingId(null);
       setPnrInput("");
+      setTicketNumberInput("");
 
       // Show success message with details
-      const details: string[] = [`✅ تم تحديث PNR إلى: ${pnr}`];
+      const details: string[] = [];
+      if (pnr) details.push(`✅ تم تحديث PNR إلى: ${pnr}`);
+      if (ticketNum) details.push(`🎫 تم تحديث رقم التذكرة إلى: ${ticketNum}`);
       if (booking?.passengerEmail) {
         details.push(emailSent
           ? `📧 تم إرسال بريد إلكتروني إلى: ${booking.passengerEmail}`
@@ -119,20 +150,22 @@ export default function ManagePnrScreen() {
 
       Alert.alert("تم التحديث", details.join("\n"));
     } catch (err) {
-      Alert.alert("خطأ", "فشل تحديث PNR. يرجى المحاولة مجدداً.");
+      Alert.alert("خطأ", "فشل التحديث. يرجى المحاولة مجدداً.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleEdit = (bookingId: string, currentPnr?: string) => {
+  const handleEdit = (bookingId: string, currentPnr?: string, currentTicketNumber?: string) => {
     setEditingId(bookingId);
     setPnrInput(currentPnr ?? "");
+    setTicketNumberInput(currentTicketNumber ?? "");
   };
 
   const handleCancel = () => {
     setEditingId(null);
     setPnrInput("");
+    setTicketNumberInput("");
   };
 
   const getStatusColor = (status: string) => {
@@ -152,8 +185,8 @@ export default function ManagePnrScreen() {
           <IconSymbol name="chevron.left.forwardslash.chevron.right" size={20} color="#FFFFFF" />
         </Pressable>
         <View style={styles.headerText}>
-          <Text style={styles.headerTitle}>إدارة PNR</Text>
-          <Text style={styles.headerSub}>تحديث رموز الحجز الحقيقية</Text>
+          <Text style={styles.headerTitle}>إدارة PNR ورقم التذكرة</Text>
+          <Text style={styles.headerSub}>تحديث رموز الحجز ورقم التذكرة</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: "#C9A84C" }]}>
           <Text style={styles.badgeText}>{flightBookings.length}</Text>
@@ -165,7 +198,7 @@ export default function ManagePnrScreen() {
         <View style={[styles.infoBanner, { backgroundColor: "#1B2B5E15", borderColor: "#1B2B5E30" }]}>
           <IconSymbol name="paperplane.fill" size={16} color="#1B2B5E" />
           <Text style={[styles.infoText, { color: "#1B2B5E" }]}>
-            بعد الحجز اليدوي مع شركة الطيران، أدخل رمز PNR الحقيقي هنا.
+            بعد الحجز اليدوي مع شركة الطيران، أدخل رمز PNR ورقم التذكرة هنا.
             سيُرسل تلقائياً بريد إلكتروني للزبون وإشعار Push (في APK).
           </Text>
         </View>
@@ -175,7 +208,7 @@ export default function ManagePnrScreen() {
           <IconSymbol name="paperplane.fill" size={16} color={colors.muted} />
           <TextInput
             style={[styles.searchInput, { color: colors.foreground }]}
-            placeholder="بحث بالمرجع أو الاسم أو PNR..."
+            placeholder="بحث بالمرجع أو الاسم أو PNR أو رقم التذكرة..."
             placeholderTextColor={colors.muted}
             value={search}
             onChangeText={setSearch}
@@ -197,6 +230,7 @@ export default function ManagePnrScreen() {
             const isEditing = editingId === booking.id;
             const displayPnr = booking.realPnr || booking.pnr;
             const hasRealPnr = !!booking.realPnr;
+            const hasTicketNumber = !!booking.ticketNumber;
 
             return (
               <View
@@ -252,49 +286,79 @@ export default function ManagePnrScreen() {
                   </View>
                 </View>
 
-                {/* PNR Section */}
+                {/* PNR & Ticket Number Section */}
                 <View style={[styles.pnrSection, { borderTopColor: colors.border }]}>
                   {!isEditing ? (
-                    <View style={styles.pnrRow}>
-                      <View style={styles.pnrLeft}>
-                        <Text style={[styles.pnrLabel, { color: colors.muted }]}>PNR</Text>
-                        <View style={styles.pnrValueRow}>
-                          <Text style={[styles.pnrValue, { color: hasRealPnr ? colors.success : colors.warning }]}>
-                            {displayPnr ?? "—"}
-                          </Text>
-                          {hasRealPnr && (
-                            <View style={[styles.realBadge, { backgroundColor: colors.success + "20" }]}>
-                              <Text style={[styles.realBadgeText, { color: colors.success }]}>حقيقي ✓</Text>
-                            </View>
-                          )}
-                          {!hasRealPnr && (
-                            <View style={[styles.realBadge, { backgroundColor: colors.warning + "20" }]}>
-                              <Text style={[styles.realBadgeText, { color: colors.warning }]}>تلقائي</Text>
-                            </View>
+                    <View>
+                      {/* PNR Display */}
+                      <View style={styles.pnrRow}>
+                        <View style={styles.pnrLeft}>
+                          <Text style={[styles.pnrLabel, { color: colors.muted }]}>PNR</Text>
+                          <View style={styles.pnrValueRow}>
+                            <Text style={[styles.pnrValue, { color: hasRealPnr ? colors.success : colors.warning }]}>
+                              {displayPnr ?? "—"}
+                            </Text>
+                            {hasRealPnr && (
+                              <View style={[styles.realBadge, { backgroundColor: colors.success + "20" }]}>
+                                <Text style={[styles.realBadgeText, { color: colors.success }]}>حقيقي ✓</Text>
+                              </View>
+                            )}
+                            {!hasRealPnr && (
+                              <View style={[styles.realBadge, { backgroundColor: colors.warning + "20" }]}>
+                                <Text style={[styles.realBadgeText, { color: colors.warning }]}>تلقائي</Text>
+                              </View>
+                            )}
+                          </View>
+                          {booking.realPnrUpdatedAt && (
+                            <Text style={[styles.updatedAt, { color: colors.muted }]}>
+                              آخر تحديث: {new Date(booking.realPnrUpdatedAt).toLocaleString("ar-MR")}
+                            </Text>
                           )}
                         </View>
-                        {booking.realPnrUpdatedAt && (
-                          <Text style={[styles.updatedAt, { color: colors.muted }]}>
-                            آخر تحديث: {new Date(booking.realPnrUpdatedAt).toLocaleString("ar-MR")}
-                          </Text>
-                        )}
                       </View>
-                      <Pressable
-                        style={({ pressed }) => [
-                          styles.editBtn,
-                          { backgroundColor: "#1B2B5E", opacity: pressed ? 0.7 : 1 },
-                        ]}
-                        onPress={() => handleEdit(booking.id, booking.realPnr)}
-                      >
-                        <Text style={styles.editBtnText}>
-                          {hasRealPnr ? "تعديل" : "إدخال PNR"}
-                        </Text>
-                      </Pressable>
+
+                      {/* Ticket Number Display */}
+                      <View style={[styles.ticketRow, { borderTopColor: colors.border }]}>
+                        <View style={styles.pnrLeft}>
+                          <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم التذكرة (Ticket Number)</Text>
+                          <View style={styles.pnrValueRow}>
+                            <Text style={[styles.ticketValue, { color: hasTicketNumber ? colors.success : colors.muted }]}>
+                              {booking.ticketNumber ?? "لم يُدخل بعد"}
+                            </Text>
+                            {hasTicketNumber && (
+                              <View style={[styles.realBadge, { backgroundColor: colors.success + "20" }]}>
+                                <Text style={[styles.realBadgeText, { color: colors.success }]}>✓</Text>
+                              </View>
+                            )}
+                          </View>
+                          {booking.ticketNumberUpdatedAt && (
+                            <Text style={[styles.updatedAt, { color: colors.muted }]}>
+                              آخر تحديث: {new Date(booking.ticketNumberUpdatedAt).toLocaleString("ar-MR")}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+
+                      {/* Edit Button */}
+                      <View style={styles.editBtnContainer}>
+                        <Pressable
+                          style={({ pressed }) => [
+                            styles.editBtn,
+                            { backgroundColor: "#1B2B5E", opacity: pressed ? 0.7 : 1 },
+                          ]}
+                          onPress={() => handleEdit(booking.id, booking.realPnr, booking.ticketNumber)}
+                        >
+                          <Text style={styles.editBtnText}>
+                            {hasRealPnr || hasTicketNumber ? "تعديل PNR / رقم التذكرة" : "إدخال PNR ورقم التذكرة"}
+                          </Text>
+                        </Pressable>
+                      </View>
                     </View>
                   ) : (
                     <View style={styles.editSection}>
+                      {/* PNR Input */}
                       <Text style={[styles.editLabel, { color: colors.foreground }]}>
-                        أدخل رمز PNR من شركة الطيران:
+                        رمز PNR من شركة الطيران:
                       </Text>
                       <TextInput
                         style={[styles.pnrTextInput, { borderColor: "#1B2B5E", color: colors.foreground, backgroundColor: colors.background }]}
@@ -306,6 +370,21 @@ export default function ManagePnrScreen() {
                         maxLength={8}
                         autoFocus
                       />
+
+                      {/* Ticket Number Input */}
+                      <Text style={[styles.editLabel, { color: colors.foreground, marginTop: 12 }]}>
+                        رقم التذكرة (Ticket Number):
+                      </Text>
+                      <TextInput
+                        style={[styles.ticketTextInput, { borderColor: "#C9A84C", color: colors.foreground, backgroundColor: colors.background }]}
+                        placeholder="مثال: 176-1234567890"
+                        placeholderTextColor={colors.muted}
+                        value={ticketNumberInput}
+                        onChangeText={setTicketNumberInput}
+                        maxLength={20}
+                        keyboardType="default"
+                      />
+
                       <View style={styles.editActions}>
                         <Pressable
                           style={({ pressed }) => [
@@ -321,7 +400,7 @@ export default function ManagePnrScreen() {
                             styles.saveBtn,
                             { backgroundColor: "#1B2B5E", opacity: pressed ? 0.7 : 1 },
                           ]}
-                          onPress={() => handleSavePnr(booking.id)}
+                          onPress={() => handleSavePnrAndTicket(booking.id)}
                           disabled={saving}
                         >
                           <Text style={styles.saveBtnText}>{saving ? "جاري الإرسال..." : "حفظ وإرسال"}</Text>
@@ -422,9 +501,19 @@ const styles = StyleSheet.create({
   pnrLabel: { fontSize: 11, fontWeight: "600", letterSpacing: 0.5 },
   pnrValueRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
   pnrValue: { fontSize: 20, fontWeight: "800", letterSpacing: 2 },
+  ticketValue: { fontSize: 16, fontWeight: "700", letterSpacing: 1 },
   realBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
   realBadgeText: { fontSize: 10, fontWeight: "600" },
   updatedAt: { fontSize: 10, marginTop: 4 },
+  ticketRow: {
+    borderTopWidth: 1,
+    paddingTop: 10,
+    marginTop: 10,
+  },
+  editBtnContainer: {
+    marginTop: 12,
+    alignItems: "flex-end",
+  },
   editBtn: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -443,7 +532,17 @@ const styles = StyleSheet.create({
     letterSpacing: 4,
     textAlign: "center",
   },
-  editActions: { flexDirection: "row", gap: 10 },
+  ticketTextInput: {
+    borderWidth: 2,
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: 1,
+    textAlign: "center",
+  },
+  editActions: { flexDirection: "row", gap: 10, marginTop: 4 },
   cancelBtn: { flex: 1, borderWidth: 1, borderRadius: 8, paddingVertical: 10, alignItems: "center" },
   cancelBtnText: { fontSize: 14, fontWeight: "500" },
   saveBtn: { flex: 2, borderRadius: 8, paddingVertical: 10, alignItems: "center" },

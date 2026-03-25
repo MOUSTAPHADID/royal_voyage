@@ -283,6 +283,25 @@ export default function BookingDetailScreen() {
             </View>
           )}
 
+          {/* Ticket Number Box */}
+          {booking.ticketNumber && (
+            <View style={[
+              styles.pnrBox,
+              { backgroundColor: "#1B2B5E10", borderColor: "#1B2B5E" }
+            ]}>
+              <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم التذكرة Ticket Number</Text>
+              <Text style={[styles.ticketNumberValue, { color: "#1B2B5E" }]}>
+                {booking.ticketNumber}
+              </Text>
+              <Text style={[styles.pnrHint, { color: colors.success }]}>✓ رقم التذكرة الإلكترونية</Text>
+              {booking.ticketNumberUpdatedAt && (
+                <Text style={[styles.pnrHint, { color: colors.muted, fontSize: 10, marginTop: 2 }]}>
+                  تحديث: {new Date(booking.ticketNumberUpdatedAt).toLocaleString('ar-MR', { dateStyle: 'short', timeStyle: 'short' })}
+                </Text>
+              )}
+            </View>
+          )}
+
           {[
             { label: "تاريخ الحجز", value: booking.date },
             { label: "رقم المرجع", value: booking.reference },
@@ -588,6 +607,7 @@ const styles = StyleSheet.create({
   },
   pnrLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 },
   pnrValue: { fontSize: 34, fontWeight: "800", letterSpacing: 6, fontFamily: "monospace" },
+  ticketNumberValue: { fontSize: 22, fontWeight: "800", letterSpacing: 3, fontFamily: "monospace" },
   pnrHint: { fontSize: 11, marginTop: 6, textAlign: "center" },
   countdownBanner: {
     flexDirection: "row",

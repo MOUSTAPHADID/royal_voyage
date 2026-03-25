@@ -276,6 +276,7 @@ export interface PnrUpdateData {
   passengerEmail: string;
   bookingRef: string;
   pnr: string;
+  ticketNumber?: string;
   origin?: string;
   destination?: string;
   departureDate?: string;
@@ -301,6 +302,14 @@ function pnrUpdateHtml(data: PnrUpdateData): string {
       <div style="font-size:12px;color:rgba(0,0,0,0.6);margin-top:8px;">Present this code at the airport check-in counter</div>
     </div>
 
+    ${data.ticketNumber ? `
+    <div style="background:#1B2B5E;border-radius:12px;padding:20px 24px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.6);letter-spacing:2px;text-transform:uppercase;font-weight:700;">Ticket Number</div>
+      <div style="font-size:28px;font-weight:800;color:#C9A84C;letter-spacing:4px;margin-top:8px;font-family:monospace;">${data.ticketNumber}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:8px;">Your airline e-ticket number</div>
+    </div>
+    ` : ""}
+
     ${data.origin && data.destination ? `
     <div class="card">
       <div class="flight-route">
@@ -316,7 +325,7 @@ function pnrUpdateHtml(data: PnrUpdateData): string {
     ` : ""}
 
     <div class="notice">
-      ⚠ Please save this PNR code. You will need it for check-in at the airport. If you have any questions, contact us at ${COMPANY.phone}.
+      ⚠ Please save this PNR code${data.ticketNumber ? ' and ticket number' : ''}. You will need it for check-in at the airport. If you have any questions, contact us at ${COMPANY.phone}.
     </div>
   `;
   return baseLayout(content, `PNR Updated — ${data.bookingRef}`);
@@ -336,7 +345,7 @@ export async function sendPnrUpdateEmail(data: PnrUpdateData): Promise<boolean> 
     await transporter.sendMail({
       from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.passengerEmail,
-      subject: `✈ PNR Updated — ${data.bookingRef} | Royal Voyage`,
+      subject: `✈ ${data.ticketNumber ? 'PNR & Ticket' : 'PNR'} Updated — ${data.bookingRef} | Royal Voyage`,
       html,
     });
     console.log(`[Email] ✅ PNR update email sent to ${data.passengerEmail}`);
