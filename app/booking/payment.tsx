@@ -16,6 +16,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
+import Constants from "expo-constants";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -784,7 +785,9 @@ export default function PaymentScreen() {
                   // فتح صفحة الدفع المستضافة على السيرفر مع زر PayPal الرسمي
                   const baseUrl = getApiBaseUrl();
                   const customerFullName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim();
-                  const checkoutUrl = `${baseUrl}/api/paypal-checkout?amount=${ppAmount.toFixed(2)}&currency=${ppCurrency}&name=${encodeURIComponent(customerFullName)}&booking=${encodeURIComponent("Royal Voyage")}`;
+                  const rawScheme = Constants.expoConfig?.scheme;
+                  const appScheme = typeof rawScheme === "string" ? rawScheme : "manus20260323015034";
+                  const checkoutUrl = `${baseUrl}/api/paypal-checkout?amount=${ppAmount.toFixed(2)}&currency=${ppCurrency}&name=${encodeURIComponent(customerFullName)}&booking=${encodeURIComponent("Royal Voyage")}&scheme=${encodeURIComponent(appScheme)}`;
                   try {
                     await Linking.openURL(checkoutUrl);
                   } catch {

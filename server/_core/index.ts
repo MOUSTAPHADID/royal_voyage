@@ -69,8 +69,9 @@ async function startServer() {
     const currency = String(req.query.currency || "EUR");
     const booking = String(req.query.booking || "");
     const name = String(req.query.name || "");
+    const scheme = String(req.query.scheme || "manus20260323015034");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.send(buildCheckoutPage({ amount, currency, booking, name }));
+    res.send(buildCheckoutPage({ amount, currency, booking, name, scheme }));
   });
 
   // PayPal Success page
@@ -79,14 +80,61 @@ async function startServer() {
     const amount = String(req.query.amount || "0");
     const currency = String(req.query.currency || "EUR");
     const name = String(req.query.name || "");
+    const scheme = String(req.query.scheme || "manus20260323015034");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.send(buildSuccessPage({ tx, amount, currency, name }));
+    res.send(buildSuccessPage({ tx, amount, currency, name, scheme }));
   });
 
-  // PayPal payment notification endpoint
-  app.post("/api/paypal-notify", (req, res) => {
+  // PayPal payment notification endpoint with validation
+  app.post("/api/paypal-notify", async (req, res) => {
     const { txId, amount, currency, name, booking } = req.body || {};
     console.log(`[PayPal] Payment received: TX=${txId}, Amount=${amount} ${currency}, Name=${name}, Booking=${booking}`);
+
+    // Validate required fields
+    let verified = false;
+    let verificationNote = "";
+    if (!txId || txId === "N/A") {
+      verificationNote = "Missing transaction ID";
+    } else {
+      // Attempt to verify via PayPal Orders API (if access token available)
+      try {
+        const clientId = "BAAe3HWztSL3qmFxXI2nVSKirPWH_KJhAUyU9OPRnVTQZ8kmmdeF5u2yYJkIYGlqBhOnQvyxhDpFF9qI90";
+        const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+        if (clientSecret) {
+          // Get access token
+          const authRes = await fetch("https://api-m.paypal.com/v1/oauth2/token", {
+            method: "POST",
+            headers: {
+              "Authorization": "Basic " + Buffer.from(clientId + ":" + clientSecret).toString("base64"),
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: "grant_type=client_credentials",
+          });
+          if (authRes.ok) {
+            const authData = await authRes.json() as { access_token: string };
+            // Check order status
+            const orderRes = await fetch(`https://api-m.paypal.com/v2/checkout/orders/${txId}`, {
+              headers: { "Authorization": `Bearer ${authData.access_token}` },
+            });
+            if (orderRes.ok) {
+              const orderData = await orderRes.json() as { status: string };
+              verified = orderData.status === "COMPLETED" || orderData.status === "APPROVED";
+              verificationNote = `PayPal status: ${orderData.status}`;
+              console.log(`[PayPal] Verification: ${verificationNote}`);
+            } else {
+              verificationNote = "Could not verify order - API error";
+            }
+          }
+        } else {
+          // No secret configured - mark as unverified but still record
+          verificationNote = "PayPal secret not configured - manual verification needed";
+        }
+      } catch (err) {
+        verificationNote = "Verification failed - network error";
+        console.warn("[PayPal] Verification error:", err);
+      }
+    }
+
     const notification = {
       id: Date.now().toString(),
       type: "paypal_payment",
@@ -95,6 +143,8 @@ async function startServer() {
       currency,
       name,
       booking,
+      verified,
+      verificationNote,
       timestamp: new Date().toISOString(),
     };
     if (!(global as any)._paypalNotifications) (global as any)._paypalNotifications = [];
@@ -102,7 +152,7 @@ async function startServer() {
     if ((global as any)._paypalNotifications.length > 100) {
       (global as any)._paypalNotifications.length = 100;
     }
-    res.json({ ok: true, notification });
+    res.json({ ok: true, verified, notification });
   });
 
   // Admin endpoint to get PayPal notifications

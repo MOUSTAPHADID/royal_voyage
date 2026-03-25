@@ -8,6 +8,7 @@ interface CheckoutParams {
   currency: string;
   booking: string;
   name: string;
+  scheme: string;
 }
 
 interface SuccessParams {
@@ -15,6 +16,7 @@ interface SuccessParams {
   amount: string;
   currency: string;
   name: string;
+  scheme: string;
 }
 
 export function buildCheckoutPage(p: CheckoutParams): string {
@@ -88,7 +90,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
           window.location.href = '/api/paypal-success?tx=' + encodeURIComponent(txId)
             + '&amount=' + encodeURIComponent('${escapeHtml(p.amount)}')
             + '&currency=' + encodeURIComponent('${escapeHtml(p.currency)}')
-            + '&name=' + encodeURIComponent('${escapeJs(p.name)}');
+            + '&name=' + encodeURIComponent('${escapeJs(p.name)}')
+            + '&scheme=' + encodeURIComponent('${escapeHtml(p.scheme)}');
         });
       }
     }).render("#paypal-container-HS2AES3UYJHQA");
@@ -130,6 +133,10 @@ h1{font-size:24px;color:#065f46;margin-bottom:8px}
 .copy-btn:active{opacity:.8}
 .note{font-size:12px;color:#9BA1A6;margin-top:20px;line-height:1.6}
 .note strong{color:#065f46}
+.back-btn{display:block;width:100%;background:linear-gradient(135deg,#065f46,#047857);color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;margin-top:20px;text-decoration:none;text-align:center}
+.back-btn:active{opacity:.85}
+.back-btn-secondary{display:block;width:100%;background:#f0f7ff;color:#003087;border:2px solid #003087;border-radius:14px;padding:14px;font-size:14px;font-weight:600;cursor:pointer;margin-top:10px;text-decoration:none;text-align:center}
+.back-btn-secondary:active{opacity:.85}
 </style>
 </head>
 <body>
@@ -165,6 +172,22 @@ h1{font-size:24px;color:#065f46;margin-bottom:8px}
         btn.textContent = '\\u2705 \\u062a\\u0645 \\u0627\\u0644\\u0646\\u0633\\u062e';
         setTimeout(function(){ btn.textContent = '\\u{1F4CB} \\u0646\\u0633\\u062e \\u0631\\u0642\\u0645 \\u0627\\u0644\\u0639\\u0645\\u0644\\u064a\\u0629'; }, 2500);
       });
+    }
+  <\/script>
+  <a class="back-btn" href="${p.scheme}://paypal-success?tx=${escapeHtml(p.tx)}" onclick="tryDeepLink(event)">
+    \u2708\uFE0F \u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 Royal Voyage
+  </a>
+  <a class="back-btn-secondary" href="javascript:void(0)" onclick="window.close(); return false;">
+    \u0625\u063a\u0644\u0627\u0642 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629
+  </a>
+  <script>
+    function tryDeepLink(e) {
+      e.preventDefault();
+      var deepLink = '${p.scheme}://paypal-success?tx=' + encodeURIComponent('${escapeJs(p.tx)}');
+      window.location.href = deepLink;
+      setTimeout(function() {
+        // If still here after 1.5s, deep link didn't work
+      }, 1500);
     }
   <\/script>
   <div class="note">

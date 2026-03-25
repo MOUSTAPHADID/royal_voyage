@@ -21,6 +21,7 @@ import {
   markAllNotificationsRead,
   clearAdminNotifications,
 } from "@/lib/admin-notifications";
+import { syncPayPalNotifications } from "@/lib/paypal-notification-sync";
 
 export default function AdminNotificationsScreen() {
   const router = useRouter();
@@ -31,6 +32,10 @@ export default function AdminNotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadNotifications = useCallback(async () => {
+    // Sync PayPal notifications from server first
+    try {
+      await syncPayPalNotifications();
+    } catch {}
     const data = await getAdminNotifications();
     setNotifications(data);
     setIsLoading(false);
@@ -96,6 +101,8 @@ export default function AdminNotificationsScreen() {
         return { icon: "xmark.circle.fill" as const, color: "#EF4444", bg: "#FEE2E2" };
       case "payment_confirmed":
         return { icon: "checkmark.seal.fill" as const, color: "#22C55E", bg: "#DCFCE7" };
+      case "paypal_payment":
+        return { icon: "creditcard.fill" as const, color: "#003087", bg: "#E6F0FF" };
       default:
         return { icon: "bell.fill" as const, color: "#F59E0B", bg: "#FEF3C7" };
     }

@@ -4,7 +4,7 @@
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export type AdminNotificationType = "new_booking" | "booking_cancelled" | "payment_confirmed" | "payment_rejected" | "general";
+export type AdminNotificationType = "new_booking" | "booking_cancelled" | "payment_confirmed" | "payment_rejected" | "paypal_payment" | "general";
 
 export type AdminNotification = {
   id: string;

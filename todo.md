@@ -644,3 +644,8 @@
 - [x] إضافة onApprove callback في صفحة PayPal checkout لتوجيه الزبون تلقائياً
 - [x] إنشاء POST /api/paypal-notify لتسجيل الدفعات + GET /api/paypal-notifications للمدير
 - [x] فصل HTML إلى paypal-pages.ts لتجنب مشاكل template literals
+
+## تحسين تدفق PayPal - الجولة الرابعة
+- [x] ربط إشعارات PayPal من السيرفر بلوحة إشعارات المدير (sync عند فتح/تحديث الشاشة + أيقونة PayPal زرقاء)
+- [x] إضافة تحقق من صحة الدفعة عبر PayPal Orders API (PAYPAL_CLIENT_SECRET إن وُجد)
+- [x] إضافة زر "العودة إلى Royal Voyage" بـ deep link + زر "إغلاق الصفحة"
