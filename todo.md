@@ -638,3 +638,9 @@
 - [x] إنشاء صفحة ويب على السيرفر /api/paypal-checkout مع PayPal Hosted Button (HS2AES3UYJHQA)
 - [x] تحديث زر PayPal في شاشة الدفع لفتح الصفحة المستضافة مع fallback إلى paypal.me/angolamir
 - [x] تمرير المبلغ والعملة واسم الزبون كمعاملات URL
+
+## تحسين تدفق PayPal - الجولة الثالثة
+- [x] إنشاء صفحة "تم الدفع بنجاح" (/api/paypal-success) مع رقم المعاملة وزر نسخ وتصميم أخضر
+- [x] إضافة onApprove callback في صفحة PayPal checkout لتوجيه الزبون تلقائياً
+- [x] إنشاء POST /api/paypal-notify لتسجيل الدفعات + GET /api/paypal-notifications للمدير
+- [x] فصل HTML إلى paypal-pages.ts لتجنب مشاكل template literals
