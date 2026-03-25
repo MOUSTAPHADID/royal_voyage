@@ -779,15 +779,37 @@ export default function PaymentScreen() {
                   gap: 8,
                   opacity: pressed ? 0.85 : 1,
                 }]}
-                onPress={() => {
-                  const paypalEmail = "angolamirlda@gmail.com";
-                  const paypalUrl = `https://www.paypal.com/paypalme/royalvoyage/${ppAmount.toFixed(2)}${ppCurrency}`;
-                  const fallbackUrl = `https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=${encodeURIComponent(paypalEmail)}&amount=${ppAmount.toFixed(2)}&currency_code=${ppCurrency}&item_name=${encodeURIComponent("Royal Voyage Booking")}`;
-                  Linking.openURL(fallbackUrl).catch(() => {
-                    Linking.openURL(paypalUrl).catch(() => {
-                      Linking.openURL("https://www.paypal.com");
-                    });
-                  });
+                onPress={async () => {
+                  const paypalMeUrl = `https://paypal.me/angolamir/${ppAmount.toFixed(2)}${ppCurrency}`;
+
+                  if (Platform.OS === "android") {
+                    // Android: محاولة فتح تطبيق PayPal مباشرة ثم fallback إلى المتصفح
+                    const intentUri = `intent://#Intent;package=com.paypal.android.p2pmobile;scheme=paypal;S.browser_fallback_url=${encodeURIComponent(paypalMeUrl)};end`;
+                    try {
+                      await Linking.openURL(intentUri);
+                    } catch {
+                      try {
+                        await Linking.openURL(paypalMeUrl);
+                      } catch {
+                        await Linking.openURL("https://www.paypal.com");
+                      }
+                    }
+                  } else if (Platform.OS === "ios") {
+                    // iOS: محاولة فتح تطبيق PayPal أولاً ثم paypal.me
+                    try {
+                      const canOpen = await Linking.canOpenURL("paypal://");
+                      if (canOpen) {
+                        await Linking.openURL("paypal://");
+                      } else {
+                        await Linking.openURL(paypalMeUrl);
+                      }
+                    } catch {
+                      await Linking.openURL(paypalMeUrl);
+                    }
+                  } else {
+                    // Web: فتح paypal.me مباشرة
+                    await Linking.openURL(paypalMeUrl);
+                  }
                 }}
               >
                 <Text style={{ color: "#FFF", fontSize: 18 }}>🌐</Text>

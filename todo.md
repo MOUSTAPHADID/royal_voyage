@@ -629,3 +629,7 @@
 
 ## تحديث بريد PayPal
 - [x] تحديث بريد PayPal إلى angolamirlda@gmail.com في شاشة الدفع (زر الدفع + تعليمات الخطوات)
+
+## إصلاح رابط الدفع عبر PayPal
+- [x] استبدال رابط webscr المعطل بـ paypal.me/angolamir مع فتح التطبيق مباشرة
+- [x] Fallback سلس: تطبيق PayPal (Android intent/iOS scheme) → paypal.me → paypal.com
