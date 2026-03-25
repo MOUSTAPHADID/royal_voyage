@@ -90,6 +90,9 @@ const MAPPING = {
   "rectangle.portrait.and.arrow.right": "login",
   "hand.raised.fill": "pan-tool",
   "number": "tag",
+  "bell.badge.fill": "notifications-active",
+  "arrow.up.circle.fill": "upgrade",
+  "sparkles": "auto-awesome",
 } as IconMapping;
 
 /**

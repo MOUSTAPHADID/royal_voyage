@@ -43,7 +43,8 @@ type AppContextType = {
   confirmBookingPayment: (id: string) => void;
   rejectBookingPayment: (id: string, reason: string) => void;
   updateBookingReceipt: (id: string, receiptImage: string) => void;
-  updateBookingCheckin: (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string) => void;
+  updateBookingCheckin: (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string, seatUpgrade?: boolean, seatUpgradeFee?: number) => void;
+  updateBookingFlightReminder: (id: string) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
   saveAdminPushToken: (token: string) => void;
@@ -293,10 +294,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
   }, [bookings]);
 
-  const updateBookingCheckin = useCallback(async (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string) => {
+  const updateBookingCheckin = useCallback(async (id: string, seatNumber: string, seatPreference: "window" | "middle" | "aisle", boardingGroup: string, seatUpgrade?: boolean, seatUpgradeFee?: number) => {
     const now = new Date().toISOString();
     const updated = bookings.map((b) =>
-      b.id === id ? { ...b, checkedIn: true, checkedInAt: now, seatNumber, seatPreference, boardingGroup } : b
+      b.id === id ? { ...b, checkedIn: true, checkedInAt: now, seatNumber, seatPreference, boardingGroup, seatUpgrade: seatUpgrade || false, seatUpgradeFee: seatUpgradeFee || 0 } : b
+    );
+    setBookings(updated);
+    await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+  }, [bookings]);
+
+  const updateBookingFlightReminder = useCallback(async (id: string) => {
+    const updated = bookings.map((b) =>
+      b.id === id ? { ...b, flightReminderScheduled: true } : b
     );
     setBookings(updated);
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
@@ -337,6 +346,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         rejectBookingPayment,
         updateBookingReceipt,
         updateBookingCheckin,
+        updateBookingFlightReminder,
         saveExpoPushToken,
         expoPushToken,
         saveAdminPushToken,

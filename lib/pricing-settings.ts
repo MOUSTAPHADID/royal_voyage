@@ -29,6 +29,8 @@ export interface PricingSettings {
   aoaToMRU: number;
   /** خصم سعر الطفل (0.75 = 25% خصم) */
   childDiscountRate: number;
+  /** رسوم ترقية المقعد (مساحة إضافية للأرجل) بالأوقية */
+  extraLegroomFeeMRU: number;
   /** تاريخ آخر تحديث لأسعار الصرف */
   ratesLastUpdated?: string;
 }
@@ -43,6 +45,7 @@ export const DEFAULT_PRICING: PricingSettings = {
   aedToMRU: 10.75,
   aoaToMRU: 0.043,
   childDiscountRate: 0.75,
+  extraLegroomFeeMRU: 500,
   ratesLastUpdated: undefined,
 };
 

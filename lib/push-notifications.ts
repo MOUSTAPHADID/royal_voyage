@@ -114,6 +114,67 @@ export async function scheduleCashPaymentReminder(
 }
 
 /**
+ * Schedule a local notification 2 hours before flight departure.
+ */
+export async function scheduleFlightReminder(
+  bookingRef: string,
+  flightNumber: string,
+  seatNumber: string,
+  boardingGroup: string,
+  departureDate: string,
+  departureTime: string
+): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
+  try {
+    // Parse departure date and time
+    // departureDate format: "2026-04-15" or similar, departureTime: "14:30" or "2:30 PM"
+    const dateStr = departureDate;
+    let hours = 0;
+    let minutes = 0;
+    
+    // Try parsing time like "14:30" or "2:30 PM"
+    const timeParts = departureTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (timeParts) {
+      hours = parseInt(timeParts[1], 10);
+      minutes = parseInt(timeParts[2], 10);
+      if (timeParts[3]) {
+        const period = timeParts[3].toUpperCase();
+        if (period === "PM" && hours !== 12) hours += 12;
+        if (period === "AM" && hours === 12) hours = 0;
+      }
+    }
+
+    const departure = new Date(dateStr);
+    departure.setHours(hours, minutes, 0, 0);
+    
+    const reminderTime = departure.getTime() - 2 * 60 * 60 * 1000; // 2 hours before
+    const now = Date.now();
+    if (reminderTime <= now) return; // Already past
+
+    const secondsUntilReminder = Math.floor((reminderTime - now) / 1000);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "\u2708\uFE0F Flight Reminder",
+        body: `Your flight ${flightNumber} departs in 2 hours! Seat: ${seatNumber} | Boarding Group: ${boardingGroup} | Ref: ${bookingRef}`,
+        sound: true,
+        data: { bookingRef, type: "flight_reminder" },
+      },
+      trigger: {
+        seconds: secondsUntilReminder,
+        repeats: false,
+      } as any,
+    });
+  } catch {
+    // Silently fail in Expo Go
+  }
+}
+
+/**
  * Schedule an immediate local notification (same device only).
  */
 export async function scheduleLocalNotification(

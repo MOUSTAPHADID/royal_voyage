@@ -94,6 +94,9 @@ export type Booking = {
   seatNumber?: string; // Selected seat (e.g. "12A")
   seatPreference?: "window" | "middle" | "aisle"; // Seat preference
   boardingGroup?: string; // Boarding group (e.g. "A", "B", "C")
+  seatUpgrade?: boolean; // true if extra legroom seat was selected
+  seatUpgradeFee?: number; // Fee paid for seat upgrade in MRU
+  flightReminderScheduled?: boolean; // true when 2h pre-flight reminder is scheduled
 };
 
 export const DESTINATIONS: Destination[] = [
