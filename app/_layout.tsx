@@ -118,6 +118,7 @@ export default function RootLayout() {
             <Stack.Screen name="change-seat" />
             <Stack.Screen name="travel-checklist" />
             <Stack.Screen name="pnr-status" />
+            <Stack.Screen name="admin/sales-reports" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />

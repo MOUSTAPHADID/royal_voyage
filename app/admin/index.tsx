@@ -18,6 +18,7 @@ import { useTranslation } from "@/lib/i18n";
 import { Booking } from "@/lib/mock-data";
 import { formatMRU } from "@/lib/currency";
 import { getPricingSettings } from "@/lib/pricing-settings";
+import { trpc } from "@/lib/trpc";
 
 const ADMIN_PIN = "36380112";
 
@@ -470,6 +471,71 @@ export default function AdminScreen() {
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <View style={s.section}>
+            {/* Amadeus Office ID & Status Card */}
+            <View style={{
+              backgroundColor: "#0F172A",
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: "#1E293B",
+            }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#C9A84C20", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="building.fill" size={20} color="#C9A84C" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Amadeus GDS</Text>
+                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>Office ID & Connection Status</Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#22C55E20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#22C55E" }} />
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: "#22C55E" }}>Production</Text>
+                </View>
+              </View>
+              {/* Office ID */}
+              <View style={{ backgroundColor: "#1E293B", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+                <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 4, letterSpacing: 1 }}>OFFICE ID</Text>
+                <Text style={{ fontSize: 22, fontWeight: "800", color: "#C9A84C", letterSpacing: 3, fontFamily: "monospace" }}>NKC26239A</Text>
+              </View>
+              {/* Stats Row */}
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 18, fontWeight: "700", color: "#FFFFFF" }}>{stats.total}</Text>
+                  <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>إجمالي الحجوزات</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 18, fontWeight: "700", color: "#22C55E" }}>{stats.confirmed}</Text>
+                  <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>مؤكدة</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 18, fontWeight: "700", color: "#F59E0B" }}>{stats.pending}</Text>
+                  <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>معلقة</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 18, fontWeight: "700", color: "#EF4444" }}>{stats.cancelled}</Text>
+                  <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>ملغاة</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* بطاقة تقارير المبيعات */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/sales-reports" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#6366F1", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="chart.bar.fill" size={22} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>تقارير المبيعات</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>تقارير يومية وشهرية مرتبطة بالمكتب</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* Revenue Card */}
             <View style={s.revenueCard}>
               <View>

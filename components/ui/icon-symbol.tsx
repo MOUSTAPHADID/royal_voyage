@@ -111,6 +111,11 @@ const MAPPING = {
   "banknote.fill": "payments",
   "bag.fill": "shopping-bag",
   "checkmark": "check",
+  "building.fill": "business",
+  "link": "link",
+  "chart.line.uptrend.xyaxis": "trending-up",
+  "calendar.badge.clock": "pending-actions",
+  "doc.richtext": "article",
 } as IconMapping;
 
 /**

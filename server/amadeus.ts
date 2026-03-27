@@ -704,3 +704,105 @@ export async function cancelFlightOrder(orderId: string): Promise<CancelOrderRes
     throw new Error(detail);
   }
 }
+
+// ─── Amadeus Status Info ────────────────────────────────────────────────────
+
+export interface AmadeusStatusInfo {
+  officeId: string;
+  environment: "production" | "test";
+  isConnected: boolean;
+  clientIdConfigured: boolean;
+}
+
+export function getAmadeusStatus(): AmadeusStatusInfo {
+  return {
+    officeId: OFFICE_ID,
+    environment: isProd ? "production" : "test",
+    isConnected: true,
+    clientIdConfigured: !!(isProd
+      ? process.env.AMADEUS_PROD_CLIENT_ID
+      : process.env.AMADEUS_CLIENT_ID),
+  };
+}
+
+// ─── Flight Order Management: Issue Ticket ──────────────────────────────────
+// Note: Amadeus Self-Service API does not have a direct "issue ticket" endpoint.
+// Ticketing is handled by the airline after order creation with CONFIRM option.
+// This function retrieves the order to check if ticketing info is available,
+// and returns the ticket numbers if they exist.
+
+export interface TicketIssuanceResult {
+  success: boolean;
+  orderId: string;
+  tickets: Array<{
+    ticketNumber: string;
+    status: string;
+    dateOfIssuance?: string;
+    travelerId?: string;
+  }>;
+  message: string;
+}
+
+export async function checkTicketIssuance(orderId: string): Promise<TicketIssuanceResult> {
+  console.log(`[Amadeus] Checking ticket issuance for order: ${orderId}`);
+
+  try {
+    const response = await (amadeus as any).booking.flightOrder(orderId).get();
+    const order = response.data;
+
+    // Extract ticket info from various possible locations in the response
+    const tickets: TicketIssuanceResult["tickets"] = [];
+
+    // Check ticketingAgreement.ticketingInfo
+    const ticketingInfo = order?.ticketingAgreement?.ticketingInfo || [];
+    for (const t of ticketingInfo) {
+      if (t.ticketNumber) {
+        tickets.push({
+          ticketNumber: t.ticketNumber,
+          status: t.status || "ISSUED",
+          dateOfIssuance: t.dateOfIssuance,
+          travelerId: t.travelerId,
+        });
+      }
+    }
+
+    // Also check travelerPricings for e-ticket info
+    const travelerPricings = order?.flightOffers?.[0]?.travelerPricings || [];
+    for (const tp of travelerPricings) {
+      const fareDetails = tp.fareDetailsBySegment || [];
+      for (const fd of fareDetails) {
+        if (fd.ticketNumber && !tickets.find(t => t.ticketNumber === fd.ticketNumber)) {
+          tickets.push({
+            ticketNumber: fd.ticketNumber,
+            status: "ISSUED",
+            travelerId: tp.travelerId,
+          });
+        }
+      }
+    }
+
+    if (tickets.length > 0) {
+      console.log(`[Amadeus] ✅ Found ${tickets.length} ticket(s) for order ${orderId}`);
+      return {
+        success: true,
+        orderId,
+        tickets,
+        message: `${tickets.length} ticket(s) found`,
+      };
+    }
+
+    // No tickets found - order may still be pending ticketing
+    const status = order?.type === "flight-order" ? "CONFIRMED_PENDING_TICKETING" : "UNKNOWN";
+    console.log(`[Amadeus] ⏳ No tickets found for order ${orderId} (status: ${status})`);
+    return {
+      success: true,
+      orderId,
+      tickets: [],
+      message: "Order confirmed but tickets not yet issued by airline. Ticketing is automatic after order confirmation.",
+    };
+  } catch (err: any) {
+    console.error(`[Amadeus] ❌ Failed to check ticket issuance for ${orderId}:`, err?.message || err);
+    const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "TICKET_CHECK_ERROR";
+    throw new Error(detail);
+  }
+}

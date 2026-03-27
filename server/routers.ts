@@ -12,6 +12,8 @@ import {
   getCachedRawOffer,
   getFlightOrder,
   cancelFlightOrder,
+  getAmadeusStatus,
+  checkTicketIssuance,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -201,6 +203,25 @@ export const appRouter = router({
         } catch (err: any) {
           console.error("[Amadeus] cancelFlightOrder error:", err?.message || err);
           const detail = err?.message || "CANCEL_ERROR";
+          return { success: false, data: null, error: detail };
+        }
+      }),
+
+    // ─── Amadeus: Get Status Info ──────────────────────────────────────────
+    getStatus: publicProcedure.query(() => {
+      return getAmadeusStatus();
+    }),
+
+    // ─── Amadeus: Check Ticket Issuance ──────────────────────────────────────
+    checkTicketIssuance: publicProcedure
+      .input(z.object({ orderId: z.string() }))
+      .query(async ({ input }) => {
+        try {
+          const result = await checkTicketIssuance(input.orderId);
+          return { success: true, data: result };
+        } catch (err: any) {
+          console.error("[Amadeus] checkTicketIssuance error:", err?.message || err);
+          const detail = err?.message || "TICKET_CHECK_ERROR";
           return { success: false, data: null, error: detail };
         }
       }),

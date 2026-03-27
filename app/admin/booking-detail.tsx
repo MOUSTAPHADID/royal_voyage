@@ -19,9 +19,10 @@ import { trpc } from "@/lib/trpc";
 export default function AdminBookingDetailScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingTicketSent } = useApp();
+  const { bookings, updateBookingTicketSent, updateBookingTicketNumber } = useApp();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [resending, setResending] = useState(false);
+  const [checkingTicket, setCheckingTicket] = useState(false);
 
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
   const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
@@ -343,6 +344,85 @@ export default function AdminBookingDetailScreen() {
             )}
             <Text style={styles.resendBtnText}>
               {booking.ticketSent ? "إعادة إرسال التذكرة PDF" : "إرسال التذكرة PDF"}
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Check Ticket Issuance from Amadeus */}
+        {booking.type === "flight" && booking.amadeusOrderId && !booking.ticketNumber && (
+          <Pressable
+            style={({ pressed }) => [{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              margin: 16,
+              marginBottom: 0,
+              paddingVertical: 16,
+              borderRadius: 14,
+              backgroundColor: "#6366F1",
+              opacity: pressed || checkingTicket ? 0.7 : 1,
+            }]}
+            onPress={async () => {
+              setCheckingTicket(true);
+              try {
+                const res = await fetch(
+                  `http://127.0.0.1:3000/trpc/amadeus.checkTicketIssuance?input=${encodeURIComponent(JSON.stringify({ orderId: booking.amadeusOrderId }))}`
+                );
+                const json = await res.json();
+                const result = json?.result?.data;
+                if (result?.success && result?.data?.tickets?.length > 0) {
+                  const ticketNum = result.data.tickets[0].ticketNumber;
+                  updateBookingTicketNumber(booking.id, ticketNum);
+                  Alert.alert(
+                    "✅ تم العثور على التذكرة",
+                    `رقم التذكرة: ${ticketNum}\nتم حفظه تلقائياً في الحجز.`
+                  );
+                } else {
+                  Alert.alert(
+                    "⏳ لم تُصدر بعد",
+                    result?.data?.message || "التذكرة لم تُصدر بعد من شركة الطيران. حاول لاحقاً."
+                  );
+                }
+              } catch (err: any) {
+                Alert.alert("خطأ", err?.message || "فشل التحقق من إصدار التذكرة");
+              } finally {
+                setCheckingTicket(false);
+              }
+            }}
+            disabled={checkingTicket}
+          >
+            {checkingTicket ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <IconSymbol name="ticket.fill" size={20} color="#FFFFFF" />
+            )}
+            <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
+              التحقق من إصدار التذكرة من Amadeus
+            </Text>
+          </Pressable>
+        )}
+
+        {/* View PNR Status from Amadeus */}
+        {booking.type === "flight" && booking.amadeusOrderId && (
+          <Pressable
+            style={({ pressed }) => [{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              margin: 16,
+              marginBottom: 0,
+              paddingVertical: 16,
+              borderRadius: 14,
+              backgroundColor: "#0a7ea4",
+              opacity: pressed ? 0.7 : 1,
+            }]}
+            onPress={() => router.push({ pathname: "/pnr-status" as any, params: { orderId: booking.amadeusOrderId } })}
+          >
+            <IconSymbol name="doc.text.magnifyingglass" size={20} color="#FFFFFF" />
+            <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
+              عرض حالة PNR من Amadeus
             </Text>
           </Pressable>
         )}
