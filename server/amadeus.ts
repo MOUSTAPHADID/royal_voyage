@@ -17,7 +17,7 @@ const amadeus = new Amadeus({
 });
 
 const OFFICE_ID = process.env.AMADEUS_OFFICE_ID || "";
-const CONSOLIDATOR_OFFICE_ID = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID || "";
+let CONSOLIDATOR_OFFICE_ID = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID || "";
 
 if (isProd) {
   console.log("[Amadeus] \uD83D\uDFE2 Connected to PRODUCTION API (api.amadeus.com)");
@@ -817,6 +817,20 @@ export function getConsolidatorConfig() {
     environment: isProd ? "production" as const : "test" as const,
     ticketingMode: CONSOLIDATOR_OFFICE_ID ? "DELAY_TO_QUEUE" : "CONFIRM",
   };
+}
+
+/**
+ * Update the Consolidator Office ID at runtime (from admin panel).
+ */
+export function setConsolidatorOfficeId(newOfficeId: string) {
+  const trimmed = newOfficeId.trim().toUpperCase();
+  if (trimmed && !/^[A-Z]{3}\d{4,6}[A-Z]?$/.test(trimmed)) {
+    throw new Error(`Invalid IATA Office ID format: ${trimmed}. Expected format: ABC12345X`);
+  }
+  CONSOLIDATOR_OFFICE_ID = trimmed;
+  process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID = trimmed;
+  console.log(`[Amadeus] 🎫 Consolidator Office ID updated to: ${trimmed || '(disabled)'}`);
+  return getConsolidatorConfig();
 }
 
 // ─── Flight Order Management: Issue Ticket ──────────────────────────────────

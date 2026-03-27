@@ -11,8 +11,10 @@ import {
   Modal,
   Switch,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import { useTicketPolling } from "@/hooks/use-ticket-polling";
 import {
   getAdminPin,
   setAdminPin,
@@ -76,6 +78,17 @@ export default function AdminScreen() {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
   const [biometricOn, setBiometricOn] = useState(false);
+
+  // Consolidator Office ID change state
+  const [showConsolidatorModal, setShowConsolidatorModal] = useState(false);
+  const [consolidatorInput, setConsolidatorInput] = useState("");
+  const [consolidatorLoading, setConsolidatorLoading] = useState(false);
+  const [consolidatorError, setConsolidatorError] = useState("");
+  const consolidatorConfig = trpc.amadeus.getConsolidatorConfig.useQuery();
+  const setConsolidatorMut = trpc.amadeus.setConsolidatorOfficeId.useMutation();
+
+  // Ticket polling
+  const ticketPolling = useTicketPolling();
 
   // Load biometric state
   useEffect(() => {
@@ -616,28 +629,109 @@ export default function AdminScreen() {
                   <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Consolidator</Text>
                   <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>إصدار التذاكر عبر الوسيط</Text>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "#22C55E20" : "#F59E0B20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "#22C55E" : "#F59E0B" }} />
-                  <Text style={{ fontSize: 11, fontWeight: "600", color: process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "#22C55E" : "#F59E0B" }}>
-                    {process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "مفعّل" : "غير مفعّل"}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: consolidatorConfig.data?.isConfigured ? "#22C55E20" : "#F59E0B20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: consolidatorConfig.data?.isConfigured ? "#22C55E" : "#F59E0B" }} />
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: consolidatorConfig.data?.isConfigured ? "#22C55E" : "#F59E0B" }}>
+                    {consolidatorConfig.data?.isConfigured ? "مفعّل" : "غير مفعّل"}
                   </Text>
                 </View>
               </View>
               <View style={{ backgroundColor: "#1E293B", borderRadius: 12, padding: 14, marginBottom: 10 }}>
                 <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 4, letterSpacing: 1 }}>CONSOLIDATOR OFFICE ID</Text>
                 <Text style={{ fontSize: 18, fontWeight: "800", color: "#6366F1", letterSpacing: 2, fontFamily: "monospace" }}>
-                  {process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID || "غير مُعد"}
+                  {consolidatorConfig.data?.consolidatorOfficeId || "غير مُعد"}
                 </Text>
               </View>
-              <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
                 <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>DELAY_TO_QUEUE</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>{consolidatorConfig.data?.ticketingMode || "DELAY_TO_QUEUE"}</Text>
                   <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>وضع الإصدار</Text>
                 </View>
                 <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
                   <Text style={{ fontSize: 14, fontWeight: "700", color: "#C9A84C" }}>تلقائي</Text>
                   <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>إرسال PNR</Text>
                 </View>
+              </View>
+              {/* Change Consolidator Office ID Button */}
+              <Pressable
+                style={({ pressed }) => [{
+                  flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+                  backgroundColor: "#6366F1", borderRadius: 10, paddingVertical: 12,
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+                onPress={() => {
+                  setConsolidatorInput(consolidatorConfig.data?.consolidatorOfficeId || "");
+                  setConsolidatorError("");
+                  setShowConsolidatorModal(true);
+                }}
+              >
+                <IconSymbol name="pencil" size={16} color="#FFFFFF" />
+                <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>تغيير Consolidator Office ID</Text>
+              </Pressable>
+            </View>
+
+            {/* Ticket Polling Card */}
+            <View style={{
+              backgroundColor: colors.surface,
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: colors.border,
+            }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#22C55E20", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="ticket.fill" size={20} color="#22C55E" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>متابعة إصدار التذاكر</Text>
+                  <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>فحص تلقائي كل 60 ثانية + إشعار عند الإصدار</Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: ticketPolling.pollingEnabled ? "#22C55E20" : "#F59E0B20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: ticketPolling.pollingEnabled ? "#22C55E" : "#F59E0B" }} />
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: ticketPolling.pollingEnabled ? "#22C55E" : "#F59E0B" }}>
+                    {ticketPolling.pollingEnabled ? "مفعّل" : "موقف"}
+                  </Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+                <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 20, fontWeight: "800", color: colors.foreground }}>{ticketPolling.pendingCount}</Text>
+                  <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>تذاكر معلقة</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 12, fontWeight: "600", color: colors.foreground }}>{ticketPolling.lastCheck ? new Date(ticketPolling.lastCheck).toLocaleTimeString("ar") : "—"}</Text>
+                  <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>آخر فحص</Text>
+                </View>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: colors.foreground }}>متابعة تلقائية</Text>
+                  <Switch
+                    value={ticketPolling.pollingEnabled}
+                    onValueChange={ticketPolling.togglePolling}
+                    trackColor={{ false: colors.border, true: "#22C55E" }}
+                    thumbColor="#FFFFFF"
+                  />
+                </View>
+                <Pressable
+                  style={({ pressed }) => [{
+                    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
+                    backgroundColor: "#22C55E", borderRadius: 10, paddingVertical: 10,
+                    opacity: pressed || ticketPolling.isPolling ? 0.7 : 1,
+                  }]}
+                  disabled={ticketPolling.isPolling}
+                  onPress={ticketPolling.checkNow}
+                >
+                  {ticketPolling.isPolling ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <IconSymbol name="magnifyingglass" size={14} color="#FFFFFF" />
+                      <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF" }}>فحص الآن</Text>
+                    </>
+                  )}
+                </Pressable>
               </View>
             </View>
 
@@ -1185,6 +1279,94 @@ export default function AdminScreen() {
                 onPress={handleChangePinSubmit}
               >
                 <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>حفظ</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+      {/* Consolidator Office ID Modal */}
+      <Modal visible={showConsolidatorModal} transparent animationType="fade" onRequestClose={() => setShowConsolidatorModal(false)}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 24 }}
+          onPress={() => setShowConsolidatorModal(false)}
+        >
+          <View style={{ width: "100%", maxWidth: 380, backgroundColor: colors.surface, borderRadius: 20, padding: 24 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 20 }}>
+              <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#6366F120", alignItems: "center", justifyContent: "center" }}>
+                <IconSymbol name="ticket.fill" size={22} color="#6366F1" />
+              </View>
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>تغيير Consolidator</Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>أدخل Office ID الجديد للوسيط</Text>
+              </View>
+            </View>
+
+            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6 }}>Office ID الحالي: <Text style={{ fontWeight: "700", color: "#6366F1" }}>{consolidatorConfig.data?.consolidatorOfficeId || "غير مُعد"}</Text></Text>
+
+            <TextInput
+              style={{
+                backgroundColor: colors.background,
+                borderRadius: 12,
+                padding: 14,
+                fontSize: 18,
+                fontWeight: "700",
+                color: colors.foreground,
+                borderWidth: 1,
+                borderColor: consolidatorError ? "#EF4444" : colors.border,
+                textAlign: "center",
+                letterSpacing: 2,
+                marginBottom: 8,
+              }}
+              value={consolidatorInput}
+              onChangeText={(t) => { setConsolidatorInput(t.toUpperCase()); setConsolidatorError(""); }}
+              placeholder="NKC26203A"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="characters"
+              maxLength={10}
+              returnKeyType="done"
+            />
+
+            {consolidatorError ? (
+              <Text style={{ fontSize: 12, color: "#EF4444", marginBottom: 8, textAlign: "center" }}>{consolidatorError}</Text>
+            ) : (
+              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 8, textAlign: "center" }}>صيغة IATA: 3 أحرف + أرقام + حرف (مثل NKC26203A). اترك فارغاً لتعطيل Consolidator.</Text>
+            )}
+
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
+              <Pressable
+                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center", opacity: pressed ? 0.7 : 1 }]}
+                onPress={() => setShowConsolidatorModal(false)}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>إلغاء</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: "#6366F1", alignItems: "center", opacity: pressed || consolidatorLoading ? 0.7 : 1 }]}
+                disabled={consolidatorLoading}
+                onPress={async () => {
+                  setConsolidatorLoading(true);
+                  setConsolidatorError("");
+                  try {
+                    const result = await setConsolidatorMut.mutateAsync({ officeId: consolidatorInput.trim() });
+                    if (result.success) {
+                      consolidatorConfig.refetch();
+                      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                      Alert.alert("✅ تم التحديث", consolidatorInput.trim() ? `Consolidator Office ID: ${consolidatorInput.trim()}` : "تم تعطيل Consolidator");
+                      setShowConsolidatorModal(false);
+                    } else {
+                      setConsolidatorError(result.error || "فشل التحديث");
+                    }
+                  } catch (err: any) {
+                    setConsolidatorError(err?.message || "خطأ في الاتصال");
+                  } finally {
+                    setConsolidatorLoading(false);
+                  }
+                }}
+              >
+                {consolidatorLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>حفظ</Text>
+                )}
               </Pressable>
             </View>
           </View>

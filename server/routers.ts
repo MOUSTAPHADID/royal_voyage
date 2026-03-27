@@ -16,6 +16,7 @@ import {
   checkTicketIssuance,
   queueToConsolidator,
   getConsolidatorConfig,
+  setConsolidatorOfficeId,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -246,6 +247,18 @@ export const appRouter = router({
     getConsolidatorConfig: publicProcedure.query(() => {
       return getConsolidatorConfig();
     }),
+
+    // ─── Amadeus: Update Consolidator Office ID ─────────────────────────────
+    setConsolidatorOfficeId: publicProcedure
+      .input(z.object({ officeId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const config = setConsolidatorOfficeId(input.officeId);
+          return { success: true, data: config };
+        } catch (err: any) {
+          return { success: false, data: null, error: err?.message || "INVALID_OFFICE_ID" };
+        }
+      }),
 
     // ─── Amadeus: Hotel Search ─────────────────────────────────────────────────
     searchHotels: publicProcedure
