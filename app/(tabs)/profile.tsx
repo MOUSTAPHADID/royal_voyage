@@ -9,7 +9,10 @@ import {
   Switch,
   Modal,
   Linking,
+  TextInput,
+  Platform,
 } from "react-native";
+import * as Haptics from "expo-haptics";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -38,6 +41,9 @@ export default function ProfileScreen() {
   const [showLangModal, setShowLangModal] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [dailyProfitNotif, setDailyProfitNotif] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState("");
+  const [showAdminPinModal, setShowAdminPinModal] = useState(false);
+  const ADMIN_PIN = "36380112";
 
   // تحميل حالة الإشعار اليومي (للأدمن فقط)
   useEffect(() => {
@@ -248,8 +254,17 @@ export default function ProfileScreen() {
 
 
 
-        {/* App Version */}
-        <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage v1.0.0  ·  Since 2023</Text>
+        {/* App Version — Long press to access admin */}
+        <Pressable
+          onLongPress={() => {
+            setAdminPinInput("");
+            setShowAdminPinModal(true);
+          }}
+          delayLongPress={1500}
+          style={{ alignSelf: "center" }}
+        >
+          <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage v1.0.0  ·  Since 2023</Text>
+        </Pressable>
 
         {/* Logout */}
         <Pressable
@@ -344,6 +359,87 @@ export default function ProfileScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Admin PIN Modal — triggered by long press on version text */}
+      <Modal
+        visible={showAdminPinModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowAdminPinModal(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setShowAdminPinModal(false)}>
+          <View style={[styles.adminPinSheet, { backgroundColor: colors.surface }]}>
+            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "#1B2B5E", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 }}>
+              <IconSymbol name="shield.fill" size={24} color="#C9A84C" />
+            </View>
+            <Text style={[styles.adminPinTitle, { color: colors.foreground }]}>
+              {language === "ar" ? "دخول الإدارة" : language === "fr" ? "Acc\u00e8s Admin" : "Admin Access"}
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20 }}>
+              {language === "ar" ? "أدخل رمز PIN للوصول للوحة الإدارة" : language === "fr" ? "Entrez le code PIN" : "Enter PIN to access admin panel"}
+            </Text>
+            <TextInput
+              style={[styles.adminPinInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+              placeholder="PIN"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              secureTextEntry
+              maxLength={8}
+              value={adminPinInput}
+              onChangeText={setAdminPinInput}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={() => {
+                if (adminPinInput === ADMIN_PIN) {
+                  setShowAdminPinModal(false);
+                  setAdminPinInput("");
+                  if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  router.push("/admin" as any);
+                } else {
+                  if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                  Alert.alert(
+                    language === "ar" ? "رمز خاطئ" : "Wrong PIN",
+                    language === "ar" ? "رمز PIN غير صحيح" : "Incorrect PIN code"
+                  );
+                  setAdminPinInput("");
+                }
+              }}
+            />
+            <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+              <Pressable
+                style={({ pressed }) => [styles.adminPinCancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                onPress={() => { setShowAdminPinModal(false); setAdminPinInput(""); }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>
+                  {language === "ar" ? "إلغاء" : language === "fr" ? "Annuler" : "Cancel"}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.adminPinConfirmBtn, { opacity: pressed ? 0.8 : 1 }]}
+                onPress={() => {
+                  if (adminPinInput === ADMIN_PIN) {
+                    setShowAdminPinModal(false);
+                    setAdminPinInput("");
+                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    router.push("/admin" as any);
+                  } else {
+                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                    Alert.alert(
+                      language === "ar" ? "رمز خاطئ" : "Wrong PIN",
+                      language === "ar" ? "رمز PIN غير صحيح" : "Incorrect PIN code"
+                    );
+                    setAdminPinInput("");
+                  }
+                }}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>
+                  {language === "ar" ? "دخول" : language === "fr" ? "Entrer" : "Enter"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -434,4 +530,44 @@ const styles = StyleSheet.create({
   langFlag: { fontSize: 28 },
   langNative: { fontSize: 16, fontWeight: "600" },
   langEnglish: { fontSize: 13, marginTop: 2 },
+  // Admin PIN Modal
+  adminPinSheet: {
+    borderRadius: 24,
+    padding: 28,
+    marginHorizontal: 32,
+    alignSelf: "center",
+    width: "100%",
+    maxWidth: 340,
+    marginTop: "auto",
+    marginBottom: "auto",
+  },
+  adminPinTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  adminPinInput: {
+    fontSize: 24,
+    fontWeight: "700",
+    textAlign: "center",
+    letterSpacing: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  adminPinCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    alignItems: "center",
+  },
+  adminPinConfirmBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#1B2B5E",
+    alignItems: "center",
+  },
 });
