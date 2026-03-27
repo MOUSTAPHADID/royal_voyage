@@ -754,3 +754,11 @@
 ## زر الحجز يذهب مباشرة للدفع
 - [x] تعديل تدفق الحجز: بيانات المسافر → الدفع مباشرة (تخطي صفحة الملخص)
 - [x] تمرير جميع بيانات المسافر مباشرة لصفحة الدفع
+
+## دمج Amadeus API لـ PNR حقيقي
+- [x] البحث عن Amadeus Flight Create Orders API
+- [x] إنشاء خدمة Amadeus على السيرفر (priceFlightOffer + createFlightOrder)
+- [x] إضافة tRPC endpoint bookFlightWithPNR لإنشاء PNR حقيقي
+- [x] إضافة cache للـ rawOffer عند البحث واسترجاعه عند الحجز
+- [x] ربط تدفق الحجز بـ Amadeus API بعد الدفع مع fallback لـ PNR محلي
+- [x] عرض PNR الحق

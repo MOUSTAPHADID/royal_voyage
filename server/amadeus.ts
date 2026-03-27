@@ -17,9 +17,38 @@ const amadeus = new Amadeus({
 });
 
 if (isProd) {
-  console.log("[Amadeus] 🟢 Connected to PRODUCTION API (api.amadeus.com)");
+  console.log("[Amadeus] \uD83D\uDFE2 Connected to PRODUCTION API (api.amadeus.com)");
 } else {
-  console.log("[Amadeus] 🟡 Connected to TEST API (test.api.amadeus.com)");
+  console.log("[Amadeus] \uD83D\uDFE1 Connected to TEST API (test.api.amadeus.com)");
+}
+
+// ─── Raw Offer Cache ─────────────────────────────────────────────────────────
+// Cache raw offers from search results so they can be retrieved for pricing/booking
+// Key: flightNumber + departureTime (unique enough for a session)
+// TTL: 30 minutes
+const offerCache = new Map<string, { offer: unknown; timestamp: number }>();
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function cleanExpiredCache() {
+  const now = Date.now();
+  for (const [key, val] of offerCache) {
+    if (now - val.timestamp > CACHE_TTL) offerCache.delete(key);
+  }
+}
+
+export function cacheRawOffer(offerId: string, rawOffer: unknown) {
+  cleanExpiredCache();
+  offerCache.set(offerId, { offer: rawOffer, timestamp: Date.now() });
+}
+
+export function getCachedRawOffer(offerId: string): unknown | null {
+  const entry = offerCache.get(offerId);
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > CACHE_TTL) {
+    offerCache.delete(offerId);
+    return null;
+  }
+  return entry.offer;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -198,9 +227,13 @@ export async function searchFlights(params: {
     const firstSeg = segments[0];
     const lastSeg = segments[segments.length - 1];
     const airlineCode = offer.validatingAirlineCodes?.[0] || firstSeg.carrierCode;
+    const offerId = offer.id || `f${idx}`;
+
+    // Cache the raw offer for later pricing/booking
+    cacheRawOffer(offerId, offer);
 
     return {
-      id: offer.id || `f${idx}`,
+      id: offerId,
       airline: getAirlineName(airlineCode),
       airlineCode,
       flightNumber: `${firstSeg.carrierCode} ${firstSeg.number}`,
@@ -221,6 +254,153 @@ export async function searchFlights(params: {
       rawOffer: offer,
     };
   });
+}
+
+// ─── Flight Offer Pricing (Step 2) ───────────────────────────────────────────
+
+export type PricedFlightOffer = {
+  pricedOffer: unknown; // The full priced offer to pass to createFlightOrder
+  totalPrice: number;
+  currency: string;
+  lastTicketingDate?: string;
+};
+
+/**
+ * Confirms the price of a flight offer before booking.
+ * Takes the rawOffer from search results and returns a priced offer.
+ */
+export async function priceFlightOffer(rawOffer: unknown): Promise<PricedFlightOffer> {
+  const response = await amadeus.shopping.flightOffers.pricing.post(
+    JSON.stringify({
+      data: {
+        type: "flight-offers-pricing",
+        flightOffers: [rawOffer],
+      },
+    })
+  );
+
+  const resData = response.data as any;
+  const pricedOffer = resData?.flightOffers?.[0] ?? (Array.isArray(resData) ? resData[0] : resData);
+  if (!pricedOffer) {
+    throw new Error("No priced offer returned from Amadeus");
+  }
+
+  return {
+    pricedOffer,
+    totalPrice: parseFloat(pricedOffer.price?.total || "0"),
+    currency: pricedOffer.price?.currency || "USD",
+    lastTicketingDate: pricedOffer.lastTicketingDate,
+  };
+}
+
+// ─── Flight Create Order (Step 3 — Real PNR) ────────────────────────────────
+
+export type FlightOrderResult = {
+  orderId: string;
+  pnr: string; // 6-char airline PNR
+  associatedRecords: Array<{ reference: string; creationDate?: string; originSystemCode?: string }>;
+  ticketingDeadline?: string;
+};
+
+export type TravelerInput = {
+  id: string;
+  dateOfBirth: string; // YYYY-MM-DD
+  firstName: string;
+  lastName: string;
+  gender: "MALE" | "FEMALE";
+  email: string;
+  phone: string; // full number without country code
+  countryCallingCode: string; // e.g. "222"
+};
+
+/**
+ * Creates a flight order (booking) on Amadeus and returns a real PNR.
+ * The pricedOffer must come from priceFlightOffer().
+ */
+export async function createFlightOrder(
+  pricedOffer: unknown,
+  travelers: TravelerInput[]
+): Promise<FlightOrderResult> {
+  const travelerData = travelers.map((t) => ({
+    id: t.id,
+    dateOfBirth: t.dateOfBirth,
+    name: {
+      firstName: t.firstName.toUpperCase(),
+      lastName: t.lastName.toUpperCase(),
+    },
+    gender: t.gender,
+    contact: {
+      emailAddress: t.email,
+      phones: [
+        {
+          deviceType: "MOBILE",
+          countryCallingCode: t.countryCallingCode,
+          number: t.phone,
+        },
+      ],
+    },
+    documents: [],
+  }));
+
+  const body = JSON.stringify({
+    data: {
+      type: "flight-order",
+      flightOffers: [pricedOffer],
+      travelers: travelerData,
+      remarks: {
+        general: [
+          {
+            subType: "GENERAL_MISCELLANEOUS",
+            text: "ONLINE BOOKING FROM ROYAL VOYAGE",
+          },
+        ],
+      },
+      ticketingAgreement: {
+        option: "DELAY_TO_CANCEL",
+        delay: "6D",
+      },
+      contacts: [
+        {
+          addresseeName: {
+            firstName: "ROYAL",
+            lastName: "VOYAGE",
+          },
+          purpose: "STANDARD",
+          emailAddress: "royal-voyage@gmail.com",
+          phones: [
+            {
+              deviceType: "MOBILE",
+              countryCallingCode: "222",
+              number: "33700000",
+            },
+          ],
+          address: {
+            lines: ["Tavragh Zeina"],
+            cityName: "Nouakchott",
+            countryCode: "MR",
+          },
+        },
+      ],
+    },
+  });
+
+  const response = await amadeus.booking.flightOrders.post(body);
+  const order = response.data as any;
+
+  // Extract PNR from associatedRecords
+  const records = order?.associatedRecords || [];
+  const pnr = records[0]?.reference || "";
+
+  if (!pnr) {
+    console.warn("[Amadeus] Flight order created but no PNR in associatedRecords:", JSON.stringify(order).slice(0, 500));
+  }
+
+  return {
+    orderId: order?.id || "",
+    pnr,
+    associatedRecords: records,
+    ticketingDeadline: order?.ticketingAgreement?.dateTimeInformation?.dateTime,
+  };
 }
 
 // ─── Airport / City Autocomplete ──────────────────────────────────────────────

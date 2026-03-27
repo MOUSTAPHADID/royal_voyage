@@ -7,6 +7,9 @@ import {
   searchFlights,
   searchLocations,
   searchHotelsByCity,
+  priceFlightOffer,
+  createFlightOrder,
+  getCachedRawOffer,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -67,6 +70,107 @@ export const appRouter = router({
         } catch (err: any) {
           console.error("[Amadeus] searchFlights error:", err?.code || err?.message);
           return { success: false, data: [], error: err?.code || "SEARCH_ERROR" };
+        }
+      }),
+    // ─── Amadeus: Price Flight Offer ─────────────────────────────────────────
+    priceFlightOffer: publicProcedure
+      .input(z.object({ rawOffer: z.any() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await priceFlightOffer(input.rawOffer);
+          return { success: true, data: result };
+        } catch (err: any) {
+          console.error("[Amadeus] priceFlightOffer error:", err?.message || err);
+          return { success: false, data: null, error: err?.message || "PRICING_ERROR" };
+        }
+      }),
+
+    // ─── Amadeus: Book Flight with Real PNR (uses cached offer) ───────────
+    bookFlightWithPNR: publicProcedure
+      .input(
+        z.object({
+          offerId: z.string(),
+          firstName: z.string(),
+          lastName: z.string(),
+          dateOfBirth: z.string(),
+          gender: z.enum(["MALE", "FEMALE"]),
+          email: z.string(),
+          phone: z.string(),
+          countryCallingCode: z.string().default("222"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          // Step 1: Get cached raw offer
+          const rawOffer = getCachedRawOffer(input.offerId);
+          if (!rawOffer) {
+            console.warn(`[Amadeus] No cached offer for ID: ${input.offerId}`);
+            return { success: false, pnr: null, error: "OFFER_EXPIRED" };
+          }
+
+          // Step 2: Price the offer
+          console.log(`[Amadeus] Pricing offer ${input.offerId}...`);
+          const priced = await priceFlightOffer(rawOffer);
+
+          // Step 3: Create the order with real PNR
+          console.log(`[Amadeus] Creating flight order for ${input.firstName} ${input.lastName}...`);
+          const order = await createFlightOrder(priced.pricedOffer, [
+            {
+              id: "1",
+              dateOfBirth: input.dateOfBirth,
+              firstName: input.firstName,
+              lastName: input.lastName,
+              gender: input.gender,
+              email: input.email,
+              phone: input.phone,
+              countryCallingCode: input.countryCallingCode,
+            },
+          ]);
+
+          console.log(`[Amadeus] \u2705 Real PNR: ${order.pnr}, OrderID: ${order.orderId}`);
+          return {
+            success: true,
+            pnr: order.pnr,
+            orderId: order.orderId,
+            associatedRecords: order.associatedRecords,
+            ticketingDeadline: order.ticketingDeadline,
+          };
+        } catch (err: any) {
+          console.error("[Amadeus] bookFlightWithPNR error:", err?.message || err);
+          const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "BOOKING_ERROR";
+          return { success: false, pnr: null, error: detail };
+        }
+      }),
+
+    // ─── Amadeus: Create Flight Order (Real PNR) ─────────────────────────
+    createFlightOrder: publicProcedure
+      .input(
+        z.object({
+          pricedOffer: z.any(),
+          travelers: z.array(
+            z.object({
+              id: z.string(),
+              dateOfBirth: z.string(),
+              firstName: z.string(),
+              lastName: z.string(),
+              gender: z.enum(["MALE", "FEMALE"]),
+              email: z.string(),
+              phone: z.string(),
+              countryCallingCode: z.string().default("222"),
+            })
+          ),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const result = await createFlightOrder(input.pricedOffer, input.travelers);
+          console.log(`[Amadeus] ✅ Flight order created! PNR: ${result.pnr}, OrderID: ${result.orderId}`);
+          return { success: true, data: result };
+        } catch (err: any) {
+          console.error("[Amadeus] createFlightOrder error:", err?.message || err);
+          // Try to extract more useful error info
+          const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "ORDER_ERROR";
+          return { success: false, data: null, error: detail };
         }
       }),
 

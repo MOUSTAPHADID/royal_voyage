@@ -215,6 +215,7 @@ export default function PaymentScreen() {
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
   const sendAdminPush = trpc.email.sendPushNotification.useMutation();
+  const bookFlightWithPNR = trpc.amadeus.bookFlightWithPNR.useMutation();
 
   const handlePay = async () => {
     // التحقق من اكتمال بيانات الرحلة
@@ -266,13 +267,45 @@ export default function PaymentScreen() {
     }
 
     setIsProcessing(true);
-    await new Promise((r) => setTimeout(r, 1000));
 
-    // Generate unique PNR (6 uppercase alphanumeric chars, airline industry standard)
-    const PNR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const pnr = Array.from({ length: 6 }, () =>
-      PNR_CHARS[Math.floor(Math.random() * PNR_CHARS.length)]
-    ).join("");
+    // ── Try to get real PNR from Amadeus for flights ──
+    let pnr = "";
+    let amadeusOrderId = "";
+    
+    if (isFlight && params.id) {
+      try {
+        console.log("[Payment] Attempting Amadeus booking for offer:", params.id);
+        const result = await bookFlightWithPNR.mutateAsync({
+          offerId: params.id,
+          firstName: params.firstName ?? "GUEST",
+          lastName: params.lastName ?? "PASSENGER",
+          dateOfBirth: params.dateOfBirth ?? "1990-01-01",
+          gender: "MALE" as const,
+          email: params.email ?? "guest@royalvoyage.mr",
+          phone: params.phone ?? "33700000",
+          countryCallingCode: "222",
+        });
+
+        if (result.success && result.pnr) {
+          pnr = result.pnr;
+          amadeusOrderId = result.orderId ?? "";
+          console.log(`[Payment] \u2705 Got real Amadeus PNR: ${pnr}`);
+        } else {
+          console.warn(`[Payment] Amadeus booking failed: ${result.error}. Using fallback PNR.`);
+        }
+      } catch (err: any) {
+        console.warn("[Payment] Amadeus API error, using fallback PNR:", err?.message);
+      }
+    }
+
+    // Fallback: Generate local PNR if Amadeus didn't return one
+    if (!pnr) {
+      const PNR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      pnr = Array.from({ length: 6 }, () =>
+        PNR_CHARS[Math.floor(Math.random() * PNR_CHARS.length)]
+      ).join("");
+      console.log(`[Payment] Using fallback PNR: ${pnr}`);
+    }
 
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
     // Build flight data from params (real Amadeus data) with fallback to local FLIGHTS
