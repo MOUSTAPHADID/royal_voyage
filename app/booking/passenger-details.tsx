@@ -89,7 +89,7 @@ export default function PassengerDetailsScreen() {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) return;
     if (dobError) return;
     router.push({
-      pathname: "/booking/summary" as any,
+      pathname: "/booking/payment" as any,
       params: {
         type: params.type,
         id: params.id,

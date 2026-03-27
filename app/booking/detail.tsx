@@ -20,6 +20,8 @@ import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { addAdminNotification } from "@/lib/admin-notifications";
 import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
+import { shareFlightTicketPDF, shareHotelVoucherPDF } from "@/lib/pdf-ticket-generator";
+import { Platform } from "react-native";
 
 function useCountdown(deadlineISO?: string) {
   const [remaining, setRemaining] = useState<number | null>(null);
@@ -440,73 +442,123 @@ export default function BookingDetailScreen() {
           </View>
         )}
 
-        {/* Send Ticket via WhatsApp */}
-        {booking.status !== "cancelled" && (
+        {/* Send Ticket PDF via WhatsApp */}
+        {booking.status !== "cancelled" && Platform.OS !== "web" && (
           <Pressable
             style={({ pressed }) => [
               styles.whatsappTicketBtn,
               { opacity: pressed ? 0.7 : 1 },
             ]}
             onPress={() => {
-              const ticketText = booking.type === "flight" && booking.flight
-                ? generateFlightTicket({
-                    reference: booking.reference,
-                    pnr: booking.realPnr || booking.pnr,
-                    passengerName: booking.passengerName || "---",
-                    email: booking.passengerEmail || "",
-                    airline: booking.flight.airline,
-                    flightNumber: booking.flight.flightNumber,
-                    origin: booking.flight.origin,
-                    originCode: booking.flight.originCode,
-                    destination: booking.flight.destination,
-                    destinationCode: booking.flight.destinationCode,
-                    departureTime: booking.flight.departureTime,
-                    arrivalTime: booking.flight.arrivalTime,
-                    duration: booking.flight.duration,
-                    cabinClass: booking.flight.class ?? "Economy",
-                    adults: booking.passengers ?? 1,
-                    children: 0,
-                    tripType: "oneway",
-                    totalPrice: fmt(booking.totalPrice ?? 0),
-                    currency: booking.currency || "MRU",
-                    issueDate: new Date(booking.date).toLocaleDateString("en-US"),
-                  })
-                : booking.type === "hotel" && booking.hotel
-                  ? generateHotelVoucher({
-                      reference: booking.reference,
-                      guestName: booking.guestName || "---",
-                      email: booking.passengerEmail || "",
-                      hotelName: booking.hotel.name,
-                      hotelCity: booking.hotel.city,
-                      hotelCountry: booking.hotel.country ?? "Mauritania",
-                      checkIn: booking.checkIn ?? "",
-                      checkOut: booking.checkOut ?? "",
-                      roomType: "Standard",
-                      adults: booking.guests ?? 1,
-                      children: 0,
-                      totalPrice: fmt(booking.totalPrice ?? 0),
-                      currency: booking.currency || "MRU",
-                      issueDate: new Date(booking.date).toLocaleDateString("en-US"),
-                    })
-                  : "";
-
-              if (!ticketText) {
-                Alert.alert("تنبيه", "لا توجد بيانات كافية لإنشاء التذكرة");
-                return;
+              if (booking.type === "flight" && booking.flight) {
+                shareFlightTicketPDF({
+                  reference: booking.reference,
+                  pnr: booking.realPnr || booking.pnr,
+                  passengerName: booking.passengerName || "---",
+                  email: booking.passengerEmail || "",
+                  airline: booking.flight.airline,
+                  flightNumber: booking.flight.flightNumber,
+                  origin: booking.flight.origin,
+                  originCode: booking.flight.originCode,
+                  destination: booking.flight.destination,
+                  destinationCode: booking.flight.destinationCode,
+                  departureTime: booking.flight.departureTime,
+                  arrivalTime: booking.flight.arrivalTime,
+                  duration: booking.flight.duration,
+                  cabinClass: booking.flight.class ?? "Economy",
+                  adults: booking.passengers ?? 1,
+                  children: 0,
+                  tripType: "oneway",
+                  totalPrice: fmt(booking.totalPrice ?? 0),
+                  currency: booking.currency || "MRU",
+                  issueDate: new Date(booking.date).toLocaleDateString("en-US"),
+                  seatNumber: booking.seatNumber,
+                  boardingGroup: booking.boardingGroup,
+                  meal: booking.mealChoice,
+                }, true);
+              } else if (booking.type === "hotel" && booking.hotel) {
+                shareHotelVoucherPDF({
+                  reference: booking.reference,
+                  guestName: booking.guestName || "---",
+                  email: booking.passengerEmail || "",
+                  hotelName: booking.hotel.name,
+                  hotelCity: booking.hotel.city,
+                  hotelCountry: booking.hotel.country ?? "Mauritania",
+                  checkIn: booking.checkIn ?? "",
+                  checkOut: booking.checkOut ?? "",
+                  roomType: "Standard",
+                  adults: booking.guests ?? 1,
+                  children: 0,
+                  totalPrice: fmt(booking.totalPrice ?? 0),
+                  currency: booking.currency || "MRU",
+                  issueDate: new Date(booking.date).toLocaleDateString("en-US"),
+                }, true);
+              } else {
+                Alert.alert("\u062a\u0646\u0628\u064a\u0647", "\u0644\u0627 \u062a\u0648\u062c\u062f \u0628\u064a\u0627\u0646\u0627\u062a \u0643\u0627\u0641\u064a\u0629 \u0644\u0625\u0646\u0634\u0627\u0621 \u0627\u0644\u062a\u0630\u0643\u0631\u0629");
               }
-
-              const encoded = encodeURIComponent(ticketText);
-              const url = `https://wa.me/?text=${encoded}`;
-              Linking.openURL(url).catch(() => {
-                // Fallback: use native share
-                Share.share({ message: ticketText }).catch(() => {
-                  Alert.alert("تنبيه", "لم يتم العثور على تطبيق WhatsApp");
-                });
-              });
             }}
           >
             <Text style={styles.whatsappTicketIcon}>{"\uD83D\uDCE8"}</Text>
-            <Text style={styles.whatsappTicketText}>إرسال التذكرة عبر WhatsApp</Text>
+            <Text style={styles.whatsappTicketText}>\u0625\u0631\u0633\u0627\u0644 \u0627\u0644\u062a\u0630\u0643\u0631\u0629 PDF \u0639\u0628\u0631 WhatsApp</Text>
+          </Pressable>
+        )}
+
+        {/* Share Ticket PDF (general) */}
+        {booking.status !== "cancelled" && Platform.OS !== "web" && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.sharePdfBtn,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => {
+              if (booking.type === "flight" && booking.flight) {
+                shareFlightTicketPDF({
+                  reference: booking.reference,
+                  pnr: booking.realPnr || booking.pnr,
+                  passengerName: booking.passengerName || "---",
+                  email: booking.passengerEmail || "",
+                  airline: booking.flight.airline,
+                  flightNumber: booking.flight.flightNumber,
+                  origin: booking.flight.origin,
+                  originCode: booking.flight.originCode,
+                  destination: booking.flight.destination,
+                  destinationCode: booking.flight.destinationCode,
+                  departureTime: booking.flight.departureTime,
+                  arrivalTime: booking.flight.arrivalTime,
+                  duration: booking.flight.duration,
+                  cabinClass: booking.flight.class ?? "Economy",
+                  adults: booking.passengers ?? 1,
+                  children: 0,
+                  tripType: "oneway",
+                  totalPrice: fmt(booking.totalPrice ?? 0),
+                  currency: booking.currency || "MRU",
+                  issueDate: new Date(booking.date).toLocaleDateString("en-US"),
+                  seatNumber: booking.seatNumber,
+                  boardingGroup: booking.boardingGroup,
+                  meal: booking.mealChoice,
+                }, false);
+              } else if (booking.type === "hotel" && booking.hotel) {
+                shareHotelVoucherPDF({
+                  reference: booking.reference,
+                  guestName: booking.guestName || "---",
+                  email: booking.passengerEmail || "",
+                  hotelName: booking.hotel.name,
+                  hotelCity: booking.hotel.city,
+                  hotelCountry: booking.hotel.country ?? "Mauritania",
+                  checkIn: booking.checkIn ?? "",
+                  checkOut: booking.checkOut ?? "",
+                  roomType: "Standard",
+                  adults: booking.guests ?? 1,
+                  children: 0,
+                  totalPrice: fmt(booking.totalPrice ?? 0),
+                  currency: booking.currency || "MRU",
+                  issueDate: new Date(booking.date).toLocaleDateString("en-US"),
+                }, false);
+              }
+            }}
+          >
+            <Text style={styles.sharePdfIcon}>{"\uD83D\uDCC4"}</Text>
+            <Text style={styles.sharePdfText}>\u0645\u0634\u0627\u0631\u0643\u0629 \u0627\u0644\u062a\u0630\u0643\u0631\u0629 PDF</Text>
           </Pressable>
         )}
 
@@ -896,6 +948,24 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   checklistText: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  sharePdfBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    backgroundColor: "#1A73E8",
+    marginTop: 8,
+  },
+  sharePdfIcon: {
+    fontSize: 18,
+  },
+  sharePdfText: {
+    color: "#fff",
     fontSize: 15,
     fontWeight: "700",
   },
