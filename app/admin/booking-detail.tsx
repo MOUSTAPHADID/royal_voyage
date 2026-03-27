@@ -23,9 +23,11 @@ export default function AdminBookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [resending, setResending] = useState(false);
   const [checkingTicket, setCheckingTicket] = useState(false);
+  const [queuingConsolidator, setQueuingConsolidator] = useState(false);
 
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
   const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
+  const queueToConsolidatorMut = trpc.amadeus.queueToConsolidator.useMutation();
 
   const booking = bookings.find((b) => b.id === id);
 
@@ -399,6 +401,52 @@ export default function AdminBookingDetailScreen() {
             )}
             <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
               التحقق من إصدار التذكرة من Amadeus
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Queue to Consolidator */}
+        {booking.type === "flight" && booking.amadeusOrderId && (
+          <Pressable
+            style={({ pressed }) => [{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              margin: 16,
+              marginBottom: 0,
+              paddingVertical: 16,
+              borderRadius: 14,
+              backgroundColor: "#7C3AED",
+              opacity: pressed || queuingConsolidator ? 0.7 : 1,
+            }]}
+            onPress={async () => {
+              setQueuingConsolidator(true);
+              try {
+                const result = await queueToConsolidatorMut.mutateAsync({ orderId: booking.amadeusOrderId! });
+                if (result.success && result.data) {
+                  Alert.alert(
+                    "\u2705 Consolidator",
+                    `${result.data.message}\n\nConsolidator: ${result.data.consolidatorOfficeId}\nTicketing: ${result.data.ticketingOption}`
+                  );
+                } else {
+                  Alert.alert("\u26A0\uFE0F \u062E\u0637\u0623", result.error || "\u0641\u0634\u0644 \u0625\u0631\u0633\u0627\u0644 PNR \u0625\u0644\u0649 Consolidator");
+                }
+              } catch (err: any) {
+                Alert.alert("\u274C \u062E\u0637\u0623", err?.message || "\u0641\u0634\u0644 \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0628\u0627\u0644\u0633\u064A\u0631\u0641\u0631");
+              } finally {
+                setQueuingConsolidator(false);
+              }
+            }}
+            disabled={queuingConsolidator}
+          >
+            {queuingConsolidator ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <IconSymbol name="ticket.fill" size={20} color="#FFFFFF" />
+            )}
+            <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
+              \u0625\u0631\u0633\u0627\u0644 PNR \u0625\u0644\u0649 Consolidator
             </Text>
           </Pressable>
         )}

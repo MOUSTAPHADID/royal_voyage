@@ -599,6 +599,48 @@ export default function AdminScreen() {
               </View>
             </View>
 
+            {/* Consolidator Card */}
+            <View style={{
+              backgroundColor: "#0F172A",
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: "#1E293B",
+            }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: "#6366F120", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="ticket.fill" size={20} color="#6366F1" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Consolidator</Text>
+                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>إصدار التذاكر عبر الوسيط</Text>
+                </View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "#22C55E20" : "#F59E0B20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "#22C55E" : "#F59E0B" }} />
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "#22C55E" : "#F59E0B" }}>
+                    {process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID ? "مفعّل" : "غير مفعّل"}
+                  </Text>
+                </View>
+              </View>
+              <View style={{ backgroundColor: "#1E293B", borderRadius: 12, padding: 14, marginBottom: 10 }}>
+                <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 4, letterSpacing: 1 }}>CONSOLIDATOR OFFICE ID</Text>
+                <Text style={{ fontSize: 18, fontWeight: "800", color: "#6366F1", letterSpacing: 2, fontFamily: "monospace" }}>
+                  {process.env.EXPO_PUBLIC_CONSOLIDATOR_OFFICE_ID || "غير مُعد"}
+                </Text>
+              </View>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>DELAY_TO_QUEUE</Text>
+                  <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>وضع الإصدار</Text>
+                </View>
+                <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#C9A84C" }}>تلقائي</Text>
+                  <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>إرسال PNR</Text>
+                </View>
+              </View>
+            </View>
+
             {/* بطاقة تقارير المبيعات */}
             <Pressable
               style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}

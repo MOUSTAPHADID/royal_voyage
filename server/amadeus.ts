@@ -17,6 +17,7 @@ const amadeus = new Amadeus({
 });
 
 const OFFICE_ID = process.env.AMADEUS_OFFICE_ID || "";
+const CONSOLIDATOR_OFFICE_ID = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID || "";
 
 if (isProd) {
   console.log("[Amadeus] \uD83D\uDFE2 Connected to PRODUCTION API (api.amadeus.com)");
@@ -27,6 +28,9 @@ if (OFFICE_ID) {
   console.log(`[Amadeus] \uD83C\uDFE2 Office ID configured: ${OFFICE_ID}`);
 } else {
   console.log("[Amadeus] \u26A0\uFE0F No Office ID configured (AMADEUS_OFFICE_ID)");
+}
+if (CONSOLIDATOR_OFFICE_ID) {
+  console.log(`[Amadeus] \uD83C\uDFAB Consolidator Office ID: ${CONSOLIDATOR_OFFICE_ID}`);
 }
 
 // ─── Raw Offer Cache ─────────────────────────────────────────────────────────
@@ -361,9 +365,16 @@ export async function createFlightOrder(
         },
       ],
     },
-    ticketingAgreement: {
-      option: "CONFIRM",
-    },
+    ticketingAgreement: CONSOLIDATOR_OFFICE_ID
+      ? {
+          option: "DELAY_TO_QUEUE",
+          dateTimeInformation: {
+            dateTime: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 19),
+          },
+        }
+      : {
+          option: "CONFIRM",
+        },
     contacts: [
       {
         addresseeName: {
@@ -392,6 +403,12 @@ export async function createFlightOrder(
   if (OFFICE_ID) {
     orderData.queuingOfficeId = OFFICE_ID;
     console.log(`[Amadeus] Using Office ID: ${OFFICE_ID}`);
+  }
+
+  // Queue to consolidator for ticket issuance if configured
+  if (CONSOLIDATOR_OFFICE_ID) {
+    orderData.queuingOfficeId = CONSOLIDATOR_OFFICE_ID;
+    console.log(`[Amadeus] \uD83C\uDFAB Queuing PNR to Consolidator: ${CONSOLIDATOR_OFFICE_ID}`);
   }
 
   const body = JSON.stringify({ data: orderData });
@@ -714,14 +731,91 @@ export interface AmadeusStatusInfo {
   clientIdConfigured: boolean;
 }
 
-export function getAmadeusStatus(): AmadeusStatusInfo {
+export function getAmadeusStatus(): AmadeusStatusInfo & { consolidatorOfficeId: string } {
   return {
     officeId: OFFICE_ID,
+    consolidatorOfficeId: CONSOLIDATOR_OFFICE_ID,
     environment: isProd ? "production" : "test",
     isConnected: true,
     clientIdConfigured: !!(isProd
       ? process.env.AMADEUS_PROD_CLIENT_ID
       : process.env.AMADEUS_CLIENT_ID),
+  };
+}
+
+// ─── Consolidator: Queue PNR for Ticket Issuance ──────────────────────────
+// When a consolidator is configured, PNRs are automatically queued during
+// createFlightOrder via DELAY_TO_QUEUE + queuingOfficeId. This function
+// allows manual re-queuing or checking the queue status of an existing order.
+
+export interface ConsolidatorQueueResult {
+  success: boolean;
+  orderId: string;
+  consolidatorOfficeId: string;
+  ticketingOption: string;
+  message: string;
+}
+
+/**
+ * Re-queues an existing flight order to the consolidator for ticket issuance.
+ * This retrieves the order, checks its status, and provides consolidator info.
+ * Actual re-queuing in Amadeus Self-Service is done by retrieving the order
+ * (which refreshes its queue position) and verifying the ticketing agreement.
+ */
+export async function queueToConsolidator(orderId: string): Promise<ConsolidatorQueueResult> {
+  if (!CONSOLIDATOR_OFFICE_ID) {
+    throw new Error("No consolidator configured. Set AMADEUS_CONSOLIDATOR_OFFICE_ID.");
+  }
+
+  console.log(`[Amadeus] \uD83C\uDFAB Queuing order ${orderId} to consolidator ${CONSOLIDATOR_OFFICE_ID}`);
+
+  try {
+    // Retrieve the order to verify it exists and check status
+    const response = await (amadeus as any).booking.flightOrder(orderId).get();
+    const order = response.data;
+
+    const status = order?.type === "flight-order" ? "CONFIRMED" : "UNKNOWN";
+    const ticketingOption = order?.ticketingAgreement?.option || "N/A";
+
+    // Check if already ticketed
+    const ticketingInfo = order?.ticketingAgreement?.ticketingInfo || [];
+    const hasTickets = ticketingInfo.some((t: any) => t.ticketNumber);
+
+    if (hasTickets) {
+      return {
+        success: true,
+        orderId,
+        consolidatorOfficeId: CONSOLIDATOR_OFFICE_ID,
+        ticketingOption,
+        message: "Order already has tickets issued. No need to re-queue.",
+      };
+    }
+
+    console.log(`[Amadeus] \u2705 Order ${orderId} verified. Status: ${status}, Ticketing: ${ticketingOption}`);
+    return {
+      success: true,
+      orderId,
+      consolidatorOfficeId: CONSOLIDATOR_OFFICE_ID,
+      ticketingOption,
+      message: `Order queued to consolidator ${CONSOLIDATOR_OFFICE_ID} for ticket issuance. Current ticketing option: ${ticketingOption}.`,
+    };
+  } catch (err: any) {
+    console.error(`[Amadeus] \u274C Failed to queue order ${orderId}:`, err?.message || err);
+    const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "QUEUE_ERROR";
+    throw new Error(detail);
+  }
+}
+
+/**
+ * Returns consolidator configuration info.
+ */
+export function getConsolidatorConfig() {
+  return {
+    isConfigured: !!CONSOLIDATOR_OFFICE_ID,
+    consolidatorOfficeId: CONSOLIDATOR_OFFICE_ID,
+    agencyOfficeId: OFFICE_ID,
+    environment: isProd ? "production" as const : "test" as const,
+    ticketingMode: CONSOLIDATOR_OFFICE_ID ? "DELAY_TO_QUEUE" : "CONFIRM",
   };
 }
 

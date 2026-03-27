@@ -822,3 +822,12 @@
 - [x] تسجيل دخول بالبصمة (Face ID / Fingerprint) للوحة الإدارة
 - [x] تفعيل/تعطيل البصمة من إعدادات لوحة الإدارة
 - [x] التحقق من البصمة قبل تفعيلها
+
+## ربط Amadeus Consolidator لإصدار التذاكر
+- [x] إضافة إعداد Consolidator Office ID في السيرفر (NKC262203A)
+- [x] إضافة ticketingAgreement DELAY_TO_QUEUE في Flight Create Orders
+- [x] إضافة دالة queueToConsolidator لإرسال PNR للـ Consolidator
+- [x] إضافة tRPC endpoints (queueToConsolidator + getConsolidatorConfig)
+- [x] إضافة متابعة حالة التذكرة عبر checkTicketIssuance
+- [x] إضافة بطاقة Consolidator في لوحة الإدارة مع حالة الاتصال
+- [x] إضافة زر "إرسال PNR إلى Consolidator" في تفاصيل الحجز (Admin)

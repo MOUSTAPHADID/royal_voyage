@@ -14,6 +14,8 @@ import {
   cancelFlightOrder,
   getAmadeusStatus,
   checkTicketIssuance,
+  queueToConsolidator,
+  getConsolidatorConfig,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -225,6 +227,25 @@ export const appRouter = router({
           return { success: false, data: null, error: detail };
         }
       }),
+
+    // ─── Amadeus: Queue to Consolidator ──────────────────────────────────────
+    queueToConsolidator: publicProcedure
+      .input(z.object({ orderId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await queueToConsolidator(input.orderId);
+          return { success: true, data: result };
+        } catch (err: any) {
+          console.error("[Amadeus] queueToConsolidator error:", err?.message || err);
+          const detail = err?.message || "QUEUE_ERROR";
+          return { success: false, data: null, error: detail };
+        }
+      }),
+
+    // ─── Amadeus: Get Consolidator Config ────────────────────────────────────
+    getConsolidatorConfig: publicProcedure.query(() => {
+      return getConsolidatorConfig();
+    }),
 
     // ─── Amadeus: Hotel Search ─────────────────────────────────────────────────
     searchHotels: publicProcedure
