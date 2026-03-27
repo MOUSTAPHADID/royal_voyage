@@ -85,6 +85,12 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     [
+      "expo-local-authentication",
+      {
+        faceIDPermission: "Allow $(PRODUCT_NAME) to use Face ID for admin access."
+      }
+    ],
+    [
       "expo-audio",
       {
         microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",

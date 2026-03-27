@@ -13,6 +13,13 @@ import {
   Platform,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import {
+  validatePin,
+  isLockedOut,
+  checkBiometricAvailability,
+  isBiometricEnabled,
+  authenticateWithBiometric,
+} from "@/lib/admin-security";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -43,7 +50,97 @@ export default function ProfileScreen() {
   const [dailyProfitNotif, setDailyProfitNotif] = useState(false);
   const [adminPinInput, setAdminPinInput] = useState("");
   const [showAdminPinModal, setShowAdminPinModal] = useState(false);
-  const ADMIN_PIN = "36380112";
+  const [pinError, setPinError] = useState("");
+  const [lockoutTimer, setLockoutTimer] = useState(0);
+  const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
+  const [biometricReady, setBiometricReady] = useState(false);
+  const lockoutIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Check biometric availability on mount
+  useEffect(() => {
+    checkBiometricAvailability().then(({ available, type }) => {
+      setBiometricType(type);
+      if (available) {
+        isBiometricEnabled().then(setBiometricReady);
+      }
+    });
+  }, []);
+
+  // Lockout countdown timer
+  useEffect(() => {
+    if (lockoutTimer > 0) {
+      lockoutIntervalRef.current = setInterval(() => {
+        setLockoutTimer((prev) => {
+          if (prev <= 1) {
+            if (lockoutIntervalRef.current) clearInterval(lockoutIntervalRef.current);
+            setPinError("");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => { if (lockoutIntervalRef.current) clearInterval(lockoutIntervalRef.current); };
+    }
+  }, [lockoutTimer]);
+
+  const handleAdminAccess = async () => {
+    // Check lockout first
+    const lockStatus = await isLockedOut();
+    if (lockStatus.locked) {
+      setLockoutTimer(lockStatus.remainingSeconds);
+      const mins = Math.ceil(lockStatus.remainingSeconds / 60);
+      setPinError(
+        language === "ar" ? `تم القفل. انتظر ${mins} دقيقة` : `Locked. Wait ${mins} min`
+      );
+      setShowAdminPinModal(true);
+      return;
+    }
+
+    // Try biometric first if enabled
+    if (biometricReady && biometricType !== "none") {
+      const promptMsg = language === "ar" ? "تحقق للدخول للوحة الإدارة" : "Authenticate for admin access";
+      const success = await authenticateWithBiometric(promptMsg);
+      if (success) {
+        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        router.push("/admin" as any);
+        return;
+      }
+      // Biometric failed or cancelled — fall through to PIN
+    }
+
+    // Show PIN modal
+    setAdminPinInput("");
+    setPinError("");
+    setShowAdminPinModal(true);
+  };
+
+  const handlePinSubmit = async () => {
+    if (lockoutTimer > 0) return;
+    const result = await validatePin(adminPinInput);
+    if (result.success) {
+      setShowAdminPinModal(false);
+      setAdminPinInput("");
+      setPinError("");
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.push("/admin" as any);
+    } else {
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setAdminPinInput("");
+      if (result.locked) {
+        const mins = Math.ceil(result.lockoutSeconds / 60);
+        setLockoutTimer(result.lockoutSeconds);
+        setPinError(
+          language === "ar" ? `3 محاولات خاطئة. تم القفل لمدة ${mins} دقائق`
+          : `3 wrong attempts. Locked for ${mins} minutes`
+        );
+      } else {
+        setPinError(
+          language === "ar" ? `رمز خاطئ. متبقي ${result.attemptsLeft} محاولات`
+          : `Wrong PIN. ${result.attemptsLeft} attempts left`
+        );
+      }
+    }
+  };
 
   // تحميل حالة الإشعار اليومي (للأدمن فقط)
   useEffect(() => {
@@ -256,10 +353,7 @@ export default function ProfileScreen() {
 
         {/* App Version — Long press to access admin */}
         <Pressable
-          onLongPress={() => {
-            setAdminPinInput("");
-            setShowAdminPinModal(true);
-          }}
+          onLongPress={handleAdminAccess}
           delayLongPress={1500}
           style={{ alignSelf: "center" }}
         >
@@ -365,9 +459,9 @@ export default function ProfileScreen() {
         visible={showAdminPinModal}
         transparent
         animationType="fade"
-        onRequestClose={() => setShowAdminPinModal(false)}
+        onRequestClose={() => { setShowAdminPinModal(false); setPinError(""); }}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowAdminPinModal(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => { setShowAdminPinModal(false); setPinError(""); }}>
           <View style={[styles.adminPinSheet, { backgroundColor: colors.surface }]}>
             <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "#1B2B5E", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 }}>
               <IconSymbol name="shield.fill" size={24} color="#C9A84C" />
@@ -378,8 +472,28 @@ export default function ProfileScreen() {
             <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20 }}>
               {language === "ar" ? "أدخل رمز PIN للوصول للوحة الإدارة" : language === "fr" ? "Entrez le code PIN" : "Enter PIN to access admin panel"}
             </Text>
+
+            {/* Error / Lockout message */}
+            {pinError !== "" && (
+              <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  {lockoutTimer > 0
+                    ? `${pinError} (${Math.floor(lockoutTimer / 60)}:${(lockoutTimer % 60).toString().padStart(2, "0")})`
+                    : pinError}
+                </Text>
+              </View>
+            )}
+
             <TextInput
-              style={[styles.adminPinInput, { color: colors.foreground, borderColor: colors.border, backgroundColor: colors.background }]}
+              style={[
+                styles.adminPinInput,
+                {
+                  color: colors.foreground,
+                  borderColor: pinError ? colors.error : colors.border,
+                  backgroundColor: colors.background,
+                  opacity: lockoutTimer > 0 ? 0.5 : 1,
+                },
+              ]}
               placeholder="PIN"
               placeholderTextColor={colors.muted}
               keyboardType="number-pad"
@@ -388,49 +502,47 @@ export default function ProfileScreen() {
               value={adminPinInput}
               onChangeText={setAdminPinInput}
               autoFocus
+              editable={lockoutTimer === 0}
               returnKeyType="done"
-              onSubmitEditing={() => {
-                if (adminPinInput === ADMIN_PIN) {
-                  setShowAdminPinModal(false);
-                  setAdminPinInput("");
-                  if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  router.push("/admin" as any);
-                } else {
-                  if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                  Alert.alert(
-                    language === "ar" ? "رمز خاطئ" : "Wrong PIN",
-                    language === "ar" ? "رمز PIN غير صحيح" : "Incorrect PIN code"
-                  );
-                  setAdminPinInput("");
-                }
-              }}
+              onSubmitEditing={handlePinSubmit}
             />
+
+            {/* Biometric button if available */}
+            {biometricReady && biometricType !== "none" && lockoutTimer === 0 && (
+              <Pressable
+                style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, opacity: pressed ? 0.6 : 1 }]}
+                onPress={async () => {
+                  const promptMsg = language === "ar" ? "تحقق للدخول للوحة الإدارة" : "Authenticate for admin access";
+                  const success = await authenticateWithBiometric(promptMsg);
+                  if (success) {
+                    setShowAdminPinModal(false);
+                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    router.push("/admin" as any);
+                  }
+                }}
+              >
+                <IconSymbol name={biometricType === "face" ? "faceid" as any : "touchid" as any} size={22} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
+                  {biometricType === "face"
+                    ? (language === "ar" ? "استخدم Face ID" : "Use Face ID")
+                    : (language === "ar" ? "استخدم البصمة" : "Use Fingerprint")}
+                </Text>
+              </Pressable>
+            )}
+
             <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
               <Pressable
                 style={({ pressed }) => [styles.adminPinCancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
-                onPress={() => { setShowAdminPinModal(false); setAdminPinInput(""); }}
+                onPress={() => { setShowAdminPinModal(false); setAdminPinInput(""); setPinError(""); }}
               >
                 <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>
                   {language === "ar" ? "إلغاء" : language === "fr" ? "Annuler" : "Cancel"}
                 </Text>
               </Pressable>
               <Pressable
-                style={({ pressed }) => [styles.adminPinConfirmBtn, { opacity: pressed ? 0.8 : 1 }]}
-                onPress={() => {
-                  if (adminPinInput === ADMIN_PIN) {
-                    setShowAdminPinModal(false);
-                    setAdminPinInput("");
-                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    router.push("/admin" as any);
-                  } else {
-                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-                    Alert.alert(
-                      language === "ar" ? "رمز خاطئ" : "Wrong PIN",
-                      language === "ar" ? "رمز PIN غير صحيح" : "Incorrect PIN code"
-                    );
-                    setAdminPinInput("");
-                  }
-                }}
+                style={({ pressed }) => [styles.adminPinConfirmBtn, { opacity: (pressed || lockoutTimer > 0) ? 0.5 : 1 }]}
+                onPress={handlePinSubmit}
+                disabled={lockoutTimer > 0}
               >
                 <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>
                   {language === "ar" ? "دخول" : language === "fr" ? "Entrer" : "Enter"}
