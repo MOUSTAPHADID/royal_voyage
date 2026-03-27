@@ -10,6 +10,8 @@ import {
   priceFlightOffer,
   createFlightOrder,
   getCachedRawOffer,
+  getFlightOrder,
+  cancelFlightOrder,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -170,6 +172,35 @@ export const appRouter = router({
           console.error("[Amadeus] createFlightOrder error:", err?.message || err);
           // Try to extract more useful error info
           const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "ORDER_ERROR";
+          return { success: false, data: null, error: detail };
+        }
+      }),
+
+    // ─── Amadeus: Get Flight Order Status (PNR Lookup) ─────────────────────
+    getFlightOrder: publicProcedure
+      .input(z.object({ orderId: z.string() }))
+      .query(async ({ input }) => {
+        try {
+          const result = await getFlightOrder(input.orderId);
+          return { success: true, data: result };
+        } catch (err: any) {
+          console.error("[Amadeus] getFlightOrder error:", err?.message || err);
+          const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "RETRIEVE_ERROR";
+          return { success: false, data: null, error: detail };
+        }
+      }),
+
+    // ─── Amadeus: Cancel Flight Order ─────────────────────────────────────────
+    cancelFlightOrder: publicProcedure
+      .input(z.object({ orderId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await cancelFlightOrder(input.orderId);
+          console.log(`[Amadeus] ✅ Order ${input.orderId} cancelled`);
+          return { success: true, data: result };
+        } catch (err: any) {
+          console.error("[Amadeus] cancelFlightOrder error:", err?.message || err);
+          const detail = err?.message || "CANCEL_ERROR";
           return { success: false, data: null, error: detail };
         }
       }),

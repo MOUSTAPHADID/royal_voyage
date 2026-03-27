@@ -628,6 +628,20 @@ export default function BookingDetailScreen() {
           </Pressable>
         )}
 
+        {/* PNR Status (Amadeus) */}
+        {booking.type === "flight" && booking.status !== "cancelled" && booking.amadeusOrderId && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.pnrStatusBtn,
+              { borderColor: "#6366F1", opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={() => router.push({ pathname: "/pnr-status" as any, params: { orderId: booking.amadeusOrderId, bookingId: booking.id } })}
+          >
+            <IconSymbol name="doc.text.magnifyingglass" size={18} color="#6366F1" />
+            <Text style={[styles.pnrStatusText, { color: "#6366F1" }]}>PNR Status (Amadeus)</Text>
+          </Pressable>
+        )}
+
         {/* Cancel */}
         {booking.status !== "cancelled" && (
           <Pressable
@@ -966,6 +980,21 @@ const styles = StyleSheet.create({
   },
   sharePdfText: {
     color: "#fff",
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  pnrStatusBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    marginHorizontal: 16,
+    marginTop: 8,
+  },
+  pnrStatusText: {
     fontSize: 15,
     fontWeight: "700",
   },

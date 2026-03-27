@@ -766,3 +766,21 @@
 ## إصلاح تأكيد PNR - ticketingAgreement
 - [x] تغيير ticketingAgreement من DELAY_TO_CANCEL إلى CONFIRM في createFlightOrder
 - [x] التأكد من أن الحجز يُؤكد مباشرة عند الإنشاء
+
+## استرجاع حالة PNR عبر Amadeus
+- [x] إضافة دالة getFlightOrder في server/amadeus.ts لاسترجاع حالة الحجز
+- [x] إضافة tRPC endpoint لاسترجاع حالة PNR
+- [x] إنشاء شاشة pnr-status.tsx لعرض حالة الحجز (مؤكد/معلق/ملغى)
+- [x] عرض تفاصيل الحجز من Amadeus (الرحلة، المسافرين، حالة التذكرة)
+- [x] إضافة رابط للشاشة من تفاصيل الحجز والشاشة الرئيسية
+
+## إلغاء الحجز عبر Amadeus API
+- [x] إضافة دالة cancelFlightOrder في server/amadeus.ts
+- [x] إضافة tRPC endpoint لإلغاء الحجز
+- [x] إضافة زر إلغاء الحجز عبر Amadeus في شاشة حالة PNR
+- [x] تحديث حالة الحجز المحلي بعد الإلغاء الناجح
+
+## تفعيل مفاتيح Amadeus Production
+- [x] إعداد السيرفر للتبديل التلقائي بين Test و Production
+- [x] التأكد من أن السيرفر يستخدم Production API عند توفر المفاتيح
+- [ ] طلب مفاتيح AMADEUS_PROD_CLIENT_ID و AMADEUS_PROD_CLIENT_SECRET من المستخدم

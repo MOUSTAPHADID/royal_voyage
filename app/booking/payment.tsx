@@ -377,6 +377,7 @@ export default function PaymentScreen() {
       paymentMethod,
       ...(transferRef.trim() ? { transferRef: transferRef.trim() } : {}),
       ...(receiptImage ? { receiptImage, receiptImageAt: new Date().toISOString() } : {}),
+      ...(amadeusOrderId ? { amadeusOrderId } : {}),
     };
 
     await addBooking(booking);

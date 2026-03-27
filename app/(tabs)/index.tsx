@@ -788,6 +788,31 @@ export default function HomeScreen() {
           <IconSymbol name="chevron.right" size={18} color={"#EF4444"} />
         </Pressable>
 
+        {/* PNR Status Lookup */}
+        <Pressable
+          style={({ pressed }) => [{
+            flexDirection: "row",
+            alignItems: "center",
+            marginHorizontal: 20,
+            marginBottom: 16,
+            padding: 14,
+            borderRadius: 14,
+            backgroundColor: "#6366F1" + "12",
+            borderWidth: 1,
+            borderColor: "#6366F1" + "25",
+            gap: 12,
+            opacity: pressed ? 0.85 : 1,
+          }]}
+          onPress={() => router.push("/pnr-status" as any)}
+        >
+          <IconSymbol name="doc.text.magnifyingglass" size={24} color="#6366F1" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>PNR Status</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Check booking status from Amadeus</Text>
+          </View>
+          <IconSymbol name="chevron.right" size={18} color="#6366F1" />
+        </Pressable>
+
         {/* Hot Deals */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>

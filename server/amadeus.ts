@@ -531,3 +531,163 @@ export async function searchHotelsByCity(params: {
 
   return result;
 }
+
+
+// ─── Flight Order Management: Retrieve PNR Status ────────────────────────────
+
+export interface FlightOrderStatus {
+  orderId: string;
+  pnr: string;
+  status: string; // CONFIRMED, CANCELLED, PENDING, etc.
+  travelers: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    dateOfBirth?: string;
+    gender?: string;
+  }>;
+  segments: Array<{
+    departure: { iataCode: string; terminal?: string; at: string };
+    arrival: { iataCode: string; terminal?: string; at: string };
+    carrierCode: string;
+    number: string;
+    aircraft?: string;
+    duration?: string;
+    status?: string;
+  }>;
+  ticketing: Array<{
+    number?: string;
+    status?: string;
+    dateOfIssuance?: string;
+  }>;
+  price: {
+    total: string;
+    currency: string;
+    base?: string;
+  };
+  contacts: Array<{
+    emailAddress?: string;
+    phones?: Array<{ number: string }>;
+  }>;
+  associatedRecords: Array<{
+    reference: string;
+    originSystemCode: string;
+  }>;
+  ticketingDeadline?: string;
+  createdAt?: string;
+}
+
+export async function getFlightOrder(orderId: string): Promise<FlightOrderStatus> {
+  console.log(`[Amadeus] Retrieving flight order: ${orderId}`);
+
+  const response = await (amadeus as any).booking.flightOrder(orderId).get();
+  const order = response.data;
+
+  const travelers = (order.travelers || []).map((t: any) => ({
+    id: t.id,
+    firstName: t.name?.firstName || "",
+    lastName: t.name?.lastName || "",
+    dateOfBirth: t.dateOfBirth,
+    gender: t.gender,
+  }));
+
+  const segments: FlightOrderStatus["segments"] = [];
+  for (const itinerary of order.flightOffers?.[0]?.itineraries || []) {
+    for (const seg of itinerary.segments || []) {
+      segments.push({
+        departure: {
+          iataCode: seg.departure?.iataCode || "",
+          terminal: seg.departure?.terminal,
+          at: seg.departure?.at || "",
+        },
+        arrival: {
+          iataCode: seg.arrival?.iataCode || "",
+          terminal: seg.arrival?.terminal,
+          at: seg.arrival?.at || "",
+        },
+        carrierCode: seg.carrierCode || "",
+        number: seg.number || "",
+        aircraft: seg.aircraft?.code,
+        duration: seg.duration,
+        status: seg.operating?.carrierCode ? "OPERATING" : "CONFIRMED",
+      });
+    }
+  }
+
+  const ticketing = (order.ticketingAgreement?.ticketingInfo || []).map((t: any) => ({
+    number: t.ticketNumber,
+    status: t.status,
+    dateOfIssuance: t.dateOfIssuance,
+  }));
+
+  // Also check associatedRecords for PNR
+  const associatedRecords = (order.associatedRecords || []).map((r: any) => ({
+    reference: r.reference || "",
+    originSystemCode: r.originSystemCode || "",
+  }));
+
+  const pnr = associatedRecords[0]?.reference || order.id || orderId;
+
+  const contacts = (order.contacts || []).map((c: any) => ({
+    emailAddress: c.emailAddress,
+    phones: c.phones?.map((p: any) => ({ number: p.number })),
+  }));
+
+  const price = {
+    total: order.flightOffers?.[0]?.price?.total || "0",
+    currency: order.flightOffers?.[0]?.price?.currency || "USD",
+    base: order.flightOffers?.[0]?.price?.base,
+  };
+
+  // Determine overall status
+  let status = "CONFIRMED";
+  if (order.type === "flight-order") {
+    // Check if there's ticketing info
+    if (ticketing.length > 0 && ticketing[0].status === "ISSUED") {
+      status = "TICKETED";
+    } else if (ticketing.length > 0 && ticketing[0].status === "CANCELLED") {
+      status = "CANCELLED";
+    }
+  }
+
+  return {
+    orderId: order.id || orderId,
+    pnr,
+    status,
+    travelers,
+    segments,
+    ticketing,
+    price,
+    contacts,
+    associatedRecords,
+    ticketingDeadline: order.ticketingAgreement?.dateTimeInformation?.dateTime,
+    createdAt: order.queuingOfficeId ? undefined : undefined, // Amadeus doesn't always return creation date
+  };
+}
+
+// ─── Flight Order Management: Cancel / Delete Order ──────────────────────────
+
+export interface CancelOrderResult {
+  success: boolean;
+  orderId: string;
+  message: string;
+}
+
+export async function cancelFlightOrder(orderId: string): Promise<CancelOrderResult> {
+  console.log(`[Amadeus] Cancelling flight order: ${orderId}`);
+
+  try {
+    await (amadeus as any).booking.flightOrder(orderId).delete();
+
+    console.log(`[Amadeus] ✅ Flight order ${orderId} cancelled successfully`);
+    return {
+      success: true,
+      orderId,
+      message: "Flight order cancelled successfully",
+    };
+  } catch (err: any) {
+    console.error(`[Amadeus] ❌ Failed to cancel order ${orderId}:`, err?.message || err);
+    const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "CANCEL_ERROR";
+    throw new Error(detail);
+  }
+}
