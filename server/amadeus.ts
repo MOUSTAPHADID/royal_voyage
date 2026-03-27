@@ -356,8 +356,7 @@ export async function createFlightOrder(
         ],
       },
       ticketingAgreement: {
-        option: "DELAY_TO_CANCEL",
-        delay: "6D",
+        option: "CONFIRM",
       },
       contacts: [
         {

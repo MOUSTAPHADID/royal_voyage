@@ -762,3 +762,7 @@
 - [x] إضافة cache للـ rawOffer عند البحث واسترجاعه عند الحجز
 - [x] ربط تدفق الحجز بـ Amadeus API بعد الدفع مع fallback لـ PNR محلي
 - [x] عرض PNR الحق
+
+## إصلاح تأكيد PNR - ticketingAgreement
+- [x] تغيير ticketingAgreement من DELAY_TO_CANCEL إلى CONFIRM في createFlightOrder
+- [x] التأكد من أن الحجز يُؤكد مباشرة عند الإنشاء
