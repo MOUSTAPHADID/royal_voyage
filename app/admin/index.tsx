@@ -79,13 +79,19 @@ export default function AdminScreen() {
   const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
   const [biometricOn, setBiometricOn] = useState(false);
 
-  // Consolidator Office ID change state
+  // Multi-Consolidator state
   const [showConsolidatorModal, setShowConsolidatorModal] = useState(false);
   const [consolidatorInput, setConsolidatorInput] = useState("");
+  const [consolidatorCurrencyInput, setConsolidatorCurrencyInput] = useState("MRU");
   const [consolidatorLoading, setConsolidatorLoading] = useState(false);
   const [consolidatorError, setConsolidatorError] = useState("");
+  const [consolidatorModalMode, setConsolidatorModalMode] = useState<"add" | "edit">("add");
+  const [editConsolidatorIndex, setEditConsolidatorIndex] = useState(-1);
   const consolidatorConfig = trpc.amadeus.getConsolidatorConfig.useQuery();
   const setConsolidatorMut = trpc.amadeus.setConsolidatorOfficeId.useMutation();
+  const setActiveMut = trpc.amadeus.setActiveConsolidator.useMutation();
+  const addConsolidatorMut = trpc.amadeus.addConsolidator.useMutation();
+  const removeConsolidatorMut = trpc.amadeus.removeConsolidator.useMutation();
 
   // Ticket polling
   const ticketPolling = useTicketPolling();
@@ -612,7 +618,7 @@ export default function AdminScreen() {
               </View>
             </View>
 
-            {/* Consolidator Card */}
+            {/* Multi-Consolidator Card */}
             <View style={{
               backgroundColor: "#0F172A",
               borderRadius: 16,
@@ -626,23 +632,87 @@ export default function AdminScreen() {
                   <IconSymbol name="ticket.fill" size={20} color="#6366F1" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Consolidator</Text>
-                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>إصدار التذاكر عبر الوسيط</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Consolidators</Text>
+                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>إصدار التذاكر عبر الوسطاء</Text>
                 </View>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: consolidatorConfig.data?.isConfigured ? "#22C55E20" : "#F59E0B20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: consolidatorConfig.data?.isConfigured ? "#22C55E" : "#F59E0B" }} />
-                  <Text style={{ fontSize: 11, fontWeight: "600", color: consolidatorConfig.data?.isConfigured ? "#22C55E" : "#F59E0B" }}>
-                    {consolidatorConfig.data?.isConfigured ? "مفعّل" : "غير مفعّل"}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#22C55E20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                  <Text style={{ fontSize: 11, fontWeight: "600", color: "#22C55E" }}>
+                    {(consolidatorConfig.data as any)?.consolidators?.length || 0} وسيط
                   </Text>
                 </View>
               </View>
-              <View style={{ backgroundColor: "#1E293B", borderRadius: 12, padding: 14, marginBottom: 10 }}>
-                <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginBottom: 4, letterSpacing: 1 }}>CONSOLIDATOR OFFICE ID</Text>
-                <Text style={{ fontSize: 18, fontWeight: "800", color: "#6366F1", letterSpacing: 2, fontFamily: "monospace" }}>
-                  {consolidatorConfig.data?.consolidatorOfficeId || "غير مُعد"}
-                </Text>
-              </View>
-              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
+
+              {/* List of consolidators */}
+              {((consolidatorConfig.data as any)?.consolidators || []).map((c: any, idx: number) => (
+                <Pressable
+                  key={c.officeId}
+                  style={({ pressed }) => [{
+                    backgroundColor: c.isActive ? "#6366F115" : "#1E293B",
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 8,
+                    borderWidth: c.isActive ? 1.5 : 1,
+                    borderColor: c.isActive ? "#6366F1" : "#334155",
+                    opacity: pressed ? 0.7 : 1,
+                  }]}
+                  onPress={async () => {
+                    try {
+                      await setActiveMut.mutateAsync({ index: idx });
+                      consolidatorConfig.refetch();
+                      if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    } catch {}
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        <Text style={{ fontSize: 16, fontWeight: "800", color: c.isActive ? "#6366F1" : "#FFFFFF", letterSpacing: 1.5, fontFamily: "monospace" }}>
+                          {c.officeId}
+                        </Text>
+                        {c.isActive && (
+                          <View style={{ backgroundColor: "#6366F1", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                            <Text style={{ fontSize: 9, fontWeight: "700", color: "#FFFFFF" }}>نشط</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>{c.label}</Text>
+                    </View>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <View style={{ backgroundColor: c.currency === "AOA" ? "#E3193720" : "#C9A84C20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                        <Text style={{ fontSize: 12, fontWeight: "700", color: c.currency === "AOA" ? "#E31937" : "#C9A84C" }}>{c.currency}</Text>
+                      </View>
+                      <Pressable
+                        style={({ pressed }) => [{ padding: 6, opacity: pressed ? 0.5 : 1 }]}
+                        onPress={() => {
+                          Alert.alert(
+                            "حذف الوسيط",
+                            `هل تريد حذف ${c.officeId} (${c.currency})؟`,
+                            [
+                              { text: "إلغاء", style: "cancel" },
+                              {
+                                text: "حذف",
+                                style: "destructive",
+                                onPress: async () => {
+                                  try {
+                                    await removeConsolidatorMut.mutateAsync({ index: idx });
+                                    consolidatorConfig.refetch();
+                                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                                  } catch {}
+                                },
+                              },
+                            ]
+                          );
+                        }}
+                      >
+                        <IconSymbol name="xmark.circle.fill" size={18} color="#EF4444" />
+                      </Pressable>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+
+              {/* Ticketing mode info */}
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10, marginTop: 4 }}>
                 <View style={{ flex: 1, backgroundColor: "#1E293B", borderRadius: 10, padding: 10, alignItems: "center" }}>
                   <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>{consolidatorConfig.data?.ticketingMode || "DELAY_TO_QUEUE"}</Text>
                   <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>وضع الإصدار</Text>
@@ -652,7 +722,8 @@ export default function AdminScreen() {
                   <Text style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 2 }}>إرسال PNR</Text>
                 </View>
               </View>
-              {/* Change Consolidator Office ID Button */}
+
+              {/* Add Consolidator Button */}
               <Pressable
                 style={({ pressed }) => [{
                   flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
@@ -660,13 +731,15 @@ export default function AdminScreen() {
                   opacity: pressed ? 0.7 : 1,
                 }]}
                 onPress={() => {
-                  setConsolidatorInput(consolidatorConfig.data?.consolidatorOfficeId || "");
+                  setConsolidatorInput("");
+                  setConsolidatorCurrencyInput("MRU");
                   setConsolidatorError("");
+                  setConsolidatorModalMode("add");
                   setShowConsolidatorModal(true);
                 }}
               >
-                <IconSymbol name="pencil" size={16} color="#FFFFFF" />
-                <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>تغيير Consolidator Office ID</Text>
+                <IconSymbol name="plus.circle.fill" size={16} color="#FFFFFF" />
+                <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>إضافة وسيط جديد</Text>
               </Pressable>
             </View>
 
@@ -1284,7 +1357,7 @@ export default function AdminScreen() {
           </View>
         </Pressable>
       </Modal>
-      {/* Consolidator Office ID Modal */}
+      {/* Add/Edit Consolidator Modal */}
       <Modal visible={showConsolidatorModal} transparent animationType="fade" onRequestClose={() => setShowConsolidatorModal(false)}>
         <Pressable
           style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center", padding: 24 }}
@@ -1296,13 +1369,14 @@ export default function AdminScreen() {
                 <IconSymbol name="ticket.fill" size={22} color="#6366F1" />
               </View>
               <View>
-                <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>تغيير Consolidator</Text>
-                <Text style={{ fontSize: 12, color: colors.muted }}>أدخل Office ID الجديد للوسيط</Text>
+                <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground }}>
+                  {consolidatorModalMode === "add" ? "إضافة وسيط جديد" : "تعديل الوسيط"}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.muted }}>أدخل Office ID واختر العملة</Text>
               </View>
             </View>
 
-            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 6 }}>Office ID الحالي: <Text style={{ fontWeight: "700", color: "#6366F1" }}>{consolidatorConfig.data?.consolidatorOfficeId || "غير مُعد"}</Text></Text>
-
+            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 6 }}>Office ID</Text>
             <TextInput
               style={{
                 backgroundColor: colors.background,
@@ -1315,21 +1389,43 @@ export default function AdminScreen() {
                 borderColor: consolidatorError ? "#EF4444" : colors.border,
                 textAlign: "center",
                 letterSpacing: 2,
-                marginBottom: 8,
+                marginBottom: 12,
               }}
               value={consolidatorInput}
               onChangeText={(t) => { setConsolidatorInput(t.toUpperCase()); setConsolidatorError(""); }}
-              placeholder="NKC26203A"
+              placeholder="LAD282354"
               placeholderTextColor={colors.muted}
               autoCapitalize="characters"
               maxLength={10}
               returnKeyType="done"
             />
 
+            <Text style={{ fontSize: 12, fontWeight: "600", color: colors.muted, marginBottom: 6 }}>عملة الإصدار</Text>
+            <View style={{ flexDirection: "row", gap: 8, marginBottom: 12 }}>
+              {["MRU", "AOA", "EUR", "USD", "XOF"].map((cur) => (
+                <Pressable
+                  key={cur}
+                  style={({ pressed }) => [{
+                    flex: 1,
+                    paddingVertical: 10,
+                    borderRadius: 10,
+                    alignItems: "center",
+                    backgroundColor: consolidatorCurrencyInput === cur ? "#6366F1" : colors.background,
+                    borderWidth: 1,
+                    borderColor: consolidatorCurrencyInput === cur ? "#6366F1" : colors.border,
+                    opacity: pressed ? 0.7 : 1,
+                  }]}
+                  onPress={() => setConsolidatorCurrencyInput(cur)}
+                >
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: consolidatorCurrencyInput === cur ? "#FFFFFF" : colors.foreground }}>{cur}</Text>
+                </Pressable>
+              ))}
+            </View>
+
             {consolidatorError ? (
               <Text style={{ fontSize: 12, color: "#EF4444", marginBottom: 8, textAlign: "center" }}>{consolidatorError}</Text>
             ) : (
-              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 8, textAlign: "center" }}>صيغة IATA: 3 أحرف + أرقام + حرف (مثل NKC26203A). اترك فارغاً لتعطيل Consolidator.</Text>
+              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 8, textAlign: "center" }}>صيغة IATA: 3 أحرف + أرقام + حرف (مثل LAD282354 أو NKC26203A)</Text>
             )}
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 8 }}>
@@ -1343,17 +1439,27 @@ export default function AdminScreen() {
                 style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: "#6366F1", alignItems: "center", opacity: pressed || consolidatorLoading ? 0.7 : 1 }]}
                 disabled={consolidatorLoading}
                 onPress={async () => {
+                  if (!consolidatorInput.trim()) {
+                    setConsolidatorError("أدخل Office ID");
+                    return;
+                  }
                   setConsolidatorLoading(true);
                   setConsolidatorError("");
                   try {
-                    const result = await setConsolidatorMut.mutateAsync({ officeId: consolidatorInput.trim() });
+                    const result = await addConsolidatorMut.mutateAsync({
+                      officeId: consolidatorInput.trim(),
+                      currency: consolidatorCurrencyInput,
+                    });
                     if (result.success) {
                       consolidatorConfig.refetch();
                       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                      Alert.alert("✅ تم التحديث", consolidatorInput.trim() ? `Consolidator Office ID: ${consolidatorInput.trim()}` : "تم تعطيل Consolidator");
+                      Alert.alert(
+                        "✅ تمت الإضافة",
+                        `الوسيط: ${consolidatorInput.trim()} (عملة: ${consolidatorCurrencyInput})`
+                      );
                       setShowConsolidatorModal(false);
                     } else {
-                      setConsolidatorError(result.error || "فشل التحديث");
+                      setConsolidatorError(result.error || "فشل الإضافة");
                     }
                   } catch (err: any) {
                     setConsolidatorError(err?.message || "خطأ في الاتصال");
@@ -1365,7 +1471,9 @@ export default function AdminScreen() {
                 {consolidatorLoading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>حفظ</Text>
+                  <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>
+                    {consolidatorModalMode === "add" ? "إضافة" : "حفظ"}
+                  </Text>
                 )}
               </Pressable>
             </View>

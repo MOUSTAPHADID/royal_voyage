@@ -17,6 +17,10 @@ import {
   queueToConsolidator,
   getConsolidatorConfig,
   setConsolidatorOfficeId,
+  setActiveConsolidator,
+  addConsolidator,
+  removeConsolidator,
+  getConsolidatorForBooking,
 } from "./amadeus";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
@@ -248,7 +252,7 @@ export const appRouter = router({
       return getConsolidatorConfig();
     }),
 
-    // ─── Amadeus: Update Consolidator Office ID ─────────────────────────────
+    // ─── Amadeus: Update Consolidator Office ID (backward compat) ──────────
     setConsolidatorOfficeId: publicProcedure
       .input(z.object({ officeId: z.string() }))
       .mutation(async ({ input }) => {
@@ -257,6 +261,42 @@ export const appRouter = router({
           return { success: true, data: config };
         } catch (err: any) {
           return { success: false, data: null, error: err?.message || "INVALID_OFFICE_ID" };
+        }
+      }),
+
+    // ─── Amadeus: Set Active Consolidator ────────────────────────────────────
+    setActiveConsolidator: publicProcedure
+      .input(z.object({ index: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          const config = setActiveConsolidator(input.index);
+          return { success: true, data: config };
+        } catch (err: any) {
+          return { success: false, data: null, error: err?.message || "INVALID_INDEX" };
+        }
+      }),
+
+    // ─── Amadeus: Add Consolidator ──────────────────────────────────────────
+    addConsolidator: publicProcedure
+      .input(z.object({ officeId: z.string(), currency: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const config = addConsolidator(input.officeId, input.currency);
+          return { success: true, data: config };
+        } catch (err: any) {
+          return { success: false, data: null, error: err?.message || "ADD_ERROR" };
+        }
+      }),
+
+    // ─── Amadeus: Remove Consolidator ───────────────────────────────────────
+    removeConsolidator: publicProcedure
+      .input(z.object({ index: z.number() }))
+      .mutation(async ({ input }) => {
+        try {
+          const config = removeConsolidator(input.index);
+          return { success: true, data: config };
+        } catch (err: any) {
+          return { success: false, data: null, error: err?.message || "REMOVE_ERROR" };
         }
       }),
 

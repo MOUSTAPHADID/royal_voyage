@@ -45,6 +45,7 @@ const MAPPING = {
   "person.2.fill": "group",
   "minus.circle.fill": "remove-circle",
   "plus.circle.fill": "add-circle",
+  "xmark.circle.fill": "cancel",
   "qrcode": "qr-code",
   "square.and.arrow.up": "share",
   "trash.fill": "delete",

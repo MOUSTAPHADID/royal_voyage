@@ -17,7 +17,66 @@ const amadeus = new Amadeus({
 });
 
 const OFFICE_ID = process.env.AMADEUS_OFFICE_ID || "";
-let CONSOLIDATOR_OFFICE_ID = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID || "";
+// ─── Multi-Consolidator Support ──────────────────────────────────────────────
+// Each consolidator has an office ID and associated currency for ticket issuance.
+export type ConsolidatorEntry = {
+  officeId: string;
+  currency: string; // e.g. "MRU", "AOA"
+  label: string;    // e.g. "NKC - Nouakchott (MRU)"
+  city: string;     // 3-letter city code from office ID
+};
+
+function parseConsolidatorCity(officeId: string): string {
+  return officeId.slice(0, 3).toUpperCase();
+}
+
+function buildConsolidatorLabel(officeId: string, currency: string): string {
+  const city = parseConsolidatorCity(officeId);
+  const cityNames: Record<string, string> = {
+    NKC: "Nouakchott", LAD: "Luanda", CMN: "Casablanca", CDG: "Paris",
+    DXB: "Dubai", JFK: "New York", LHR: "London", IST: "Istanbul",
+  };
+  return `${city} - ${cityNames[city] || city} (${currency})`;
+}
+
+// Initialize consolidators from env
+let consolidators: ConsolidatorEntry[] = [];
+
+// Legacy single consolidator (backward compat)
+const legacyConsolidator = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID || "";
+if (legacyConsolidator) {
+  consolidators.push({
+    officeId: legacyConsolidator,
+    currency: "MRU",
+    label: buildConsolidatorLabel(legacyConsolidator, "MRU"),
+    city: parseConsolidatorCity(legacyConsolidator),
+  });
+}
+
+// Second consolidator: LAD282354 (AOA)
+const ladConsolidator = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID_2 || "LAD282354";
+if (ladConsolidator) {
+  consolidators.push({
+    officeId: ladConsolidator,
+    currency: "AOA",
+    label: buildConsolidatorLabel(ladConsolidator, "AOA"),
+    city: parseConsolidatorCity(ladConsolidator),
+  });
+}
+
+// Active consolidator (default: first one)
+let activeConsolidatorIndex = 0;
+
+// Backward compat: single CONSOLIDATOR_OFFICE_ID getter
+function getActiveConsolidatorOfficeId(): string {
+  return consolidators[activeConsolidatorIndex]?.officeId || "";
+}
+function getActiveConsolidatorCurrency(): string {
+  return consolidators[activeConsolidatorIndex]?.currency || "MRU";
+}
+
+// Keep backward compat variable
+let CONSOLIDATOR_OFFICE_ID = getActiveConsolidatorOfficeId();
 
 if (isProd) {
   console.log("[Amadeus] \uD83D\uDFE2 Connected to PRODUCTION API (api.amadeus.com)");
@@ -29,8 +88,12 @@ if (OFFICE_ID) {
 } else {
   console.log("[Amadeus] \u26A0\uFE0F No Office ID configured (AMADEUS_OFFICE_ID)");
 }
-if (CONSOLIDATOR_OFFICE_ID) {
-  console.log(`[Amadeus] \uD83C\uDFAB Consolidator Office ID: ${CONSOLIDATOR_OFFICE_ID}`);
+if (consolidators.length > 0) {
+  console.log(`[Amadeus] 🎫 Consolidators configured: ${consolidators.length}`);
+  for (const c of consolidators) {
+    console.log(`[Amadeus]   → ${c.officeId} (${c.currency}) — ${c.label}`);
+  }
+  console.log(`[Amadeus]   Active: ${getActiveConsolidatorOfficeId()} (${getActiveConsolidatorCurrency()})`);
 }
 
 // ─── Raw Offer Cache ─────────────────────────────────────────────────────────
@@ -807,30 +870,115 @@ export async function queueToConsolidator(orderId: string): Promise<Consolidator
 }
 
 /**
- * Returns consolidator configuration info.
+ * Returns consolidator configuration info (multi-consolidator aware).
  */
 export function getConsolidatorConfig() {
+  const active = consolidators[activeConsolidatorIndex];
   return {
-    isConfigured: !!CONSOLIDATOR_OFFICE_ID,
-    consolidatorOfficeId: CONSOLIDATOR_OFFICE_ID,
+    isConfigured: consolidators.length > 0,
+    consolidatorOfficeId: active?.officeId || "",
+    consolidatorCurrency: active?.currency || "MRU",
     agencyOfficeId: OFFICE_ID,
     environment: isProd ? "production" as const : "test" as const,
-    ticketingMode: CONSOLIDATOR_OFFICE_ID ? "DELAY_TO_QUEUE" : "CONFIRM",
+    ticketingMode: consolidators.length > 0 ? "DELAY_TO_QUEUE" : "CONFIRM",
+    consolidators: consolidators.map((c, i) => ({
+      ...c,
+      isActive: i === activeConsolidatorIndex,
+    })),
+    activeIndex: activeConsolidatorIndex,
   };
 }
 
 /**
- * Update the Consolidator Office ID at runtime (from admin panel).
+ * Set the active consolidator by index.
+ */
+export function setActiveConsolidator(index: number) {
+  if (index < 0 || index >= consolidators.length) {
+    throw new Error(`Invalid consolidator index: ${index}. Available: 0-${consolidators.length - 1}`);
+  }
+  activeConsolidatorIndex = index;
+  CONSOLIDATOR_OFFICE_ID = getActiveConsolidatorOfficeId();
+  console.log(`[Amadeus] 🎫 Active consolidator switched to: ${CONSOLIDATOR_OFFICE_ID} (${getActiveConsolidatorCurrency()})`);
+  return getConsolidatorConfig();
+}
+
+/**
+ * Add a new consolidator at runtime.
+ */
+export function addConsolidator(officeId: string, currency: string) {
+  const trimmed = officeId.trim().toUpperCase();
+  if (!trimmed || !/^[A-Z]{3}\d{4,6}[A-Z]?$/.test(trimmed)) {
+    throw new Error(`Invalid IATA Office ID format: ${trimmed}. Expected format: ABC12345X`);
+  }
+  const cur = currency.trim().toUpperCase() || "MRU";
+  // Check if already exists
+  const existing = consolidators.findIndex(c => c.officeId === trimmed);
+  if (existing >= 0) {
+    // Update currency
+    consolidators[existing].currency = cur;
+    consolidators[existing].label = buildConsolidatorLabel(trimmed, cur);
+    console.log(`[Amadeus] 🎫 Consolidator ${trimmed} updated to currency: ${cur}`);
+    return getConsolidatorConfig();
+  }
+  consolidators.push({
+    officeId: trimmed,
+    currency: cur,
+    label: buildConsolidatorLabel(trimmed, cur),
+    city: parseConsolidatorCity(trimmed),
+  });
+  console.log(`[Amadeus] 🎫 Consolidator added: ${trimmed} (${cur})`);
+  return getConsolidatorConfig();
+}
+
+/**
+ * Remove a consolidator by index.
+ */
+export function removeConsolidator(index: number) {
+  if (index < 0 || index >= consolidators.length) {
+    throw new Error(`Invalid consolidator index: ${index}`);
+  }
+  const removed = consolidators.splice(index, 1)[0];
+  if (activeConsolidatorIndex >= consolidators.length) {
+    activeConsolidatorIndex = Math.max(0, consolidators.length - 1);
+  }
+  CONSOLIDATOR_OFFICE_ID = getActiveConsolidatorOfficeId();
+  console.log(`[Amadeus] 🎫 Consolidator removed: ${removed.officeId}`);
+  return getConsolidatorConfig();
+}
+
+/**
+ * Update the Consolidator Office ID at runtime (backward compat - updates first consolidator).
  */
 export function setConsolidatorOfficeId(newOfficeId: string) {
   const trimmed = newOfficeId.trim().toUpperCase();
   if (trimmed && !/^[A-Z]{3}\d{4,6}[A-Z]?$/.test(trimmed)) {
     throw new Error(`Invalid IATA Office ID format: ${trimmed}. Expected format: ABC12345X`);
   }
-  CONSOLIDATOR_OFFICE_ID = trimmed;
-  process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID = trimmed;
+  if (consolidators.length > 0) {
+    consolidators[0].officeId = trimmed;
+    consolidators[0].label = buildConsolidatorLabel(trimmed, consolidators[0].currency);
+    consolidators[0].city = parseConsolidatorCity(trimmed);
+  } else if (trimmed) {
+    consolidators.push({
+      officeId: trimmed,
+      currency: "MRU",
+      label: buildConsolidatorLabel(trimmed, "MRU"),
+      city: parseConsolidatorCity(trimmed),
+    });
+  }
+  CONSOLIDATOR_OFFICE_ID = getActiveConsolidatorOfficeId();
   console.log(`[Amadeus] 🎫 Consolidator Office ID updated to: ${trimmed || '(disabled)'}`);
   return getConsolidatorConfig();
+}
+
+/**
+ * Queue a PNR to a specific consolidator by index (or active one).
+ */
+export function getConsolidatorForBooking(consolidatorIndex?: number): ConsolidatorEntry | null {
+  if (consolidatorIndex !== undefined && consolidatorIndex >= 0 && consolidatorIndex < consolidators.length) {
+    return consolidators[consolidatorIndex];
+  }
+  return consolidators[activeConsolidatorIndex] || null;
 }
 
 // ─── Flight Order Management: Issue Ticket ──────────────────────────────────
