@@ -784,3 +784,9 @@
 - [x] إعداد السيرفر للتبديل التلقائي بين Test و Production
 - [x] التأكد من أن السيرفر يستخدم Production API عند توفر المفاتيح
 - [ ] طلب مفاتيح AMADEUS_PROD_CLIENT_ID و AMADEUS_PROD_CLIENT_SECRET من المستخدم
+
+## ربط Amadeus Office ID
+- [x] إضافة متغير بيئة AMADEUS_OFFICE_ID
+- [x] تمرير Office ID في createFlightOrder (queuingOfficeId)
+- [x] تسجيل Office ID في سجل السيرفر عند بدء التشغيل
+- [x] طلب Office ID من المستخدم (NKC26239A)

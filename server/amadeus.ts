@@ -16,10 +16,17 @@ const amadeus = new Amadeus({
   hostname: isProd ? "production" : "test",
 });
 
+const OFFICE_ID = process.env.AMADEUS_OFFICE_ID || "";
+
 if (isProd) {
   console.log("[Amadeus] \uD83D\uDFE2 Connected to PRODUCTION API (api.amadeus.com)");
 } else {
   console.log("[Amadeus] \uD83D\uDFE1 Connected to TEST API (test.api.amadeus.com)");
+}
+if (OFFICE_ID) {
+  console.log(`[Amadeus] \uD83C\uDFE2 Office ID configured: ${OFFICE_ID}`);
+} else {
+  console.log("[Amadeus] \u26A0\uFE0F No Office ID configured (AMADEUS_OFFICE_ID)");
 }
 
 // ─── Raw Offer Cache ─────────────────────────────────────────────────────────
@@ -342,46 +349,52 @@ export async function createFlightOrder(
     documents: [],
   }));
 
-  const body = JSON.stringify({
-    data: {
-      type: "flight-order",
-      flightOffers: [pricedOffer],
-      travelers: travelerData,
-      remarks: {
-        general: [
-          {
-            subType: "GENERAL_MISCELLANEOUS",
-            text: "ONLINE BOOKING FROM ROYAL VOYAGE",
-          },
-        ],
-      },
-      ticketingAgreement: {
-        option: "CONFIRM",
-      },
-      contacts: [
+  const orderData: any = {
+    type: "flight-order",
+    flightOffers: [pricedOffer],
+    travelers: travelerData,
+    remarks: {
+      general: [
         {
-          addresseeName: {
-            firstName: "ROYAL",
-            lastName: "VOYAGE",
-          },
-          purpose: "STANDARD",
-          emailAddress: "royal-voyage@gmail.com",
-          phones: [
-            {
-              deviceType: "MOBILE",
-              countryCallingCode: "222",
-              number: "33700000",
-            },
-          ],
-          address: {
-            lines: ["Tavragh Zeina"],
-            cityName: "Nouakchott",
-            countryCode: "MR",
-          },
+          subType: "GENERAL_MISCELLANEOUS",
+          text: "ONLINE BOOKING FROM ROYAL VOYAGE",
         },
       ],
     },
-  });
+    ticketingAgreement: {
+      option: "CONFIRM",
+    },
+    contacts: [
+      {
+        addresseeName: {
+          firstName: "ROYAL",
+          lastName: "VOYAGE",
+        },
+        purpose: "STANDARD",
+        emailAddress: "royal-voyage@gmail.com",
+        phones: [
+          {
+            deviceType: "MOBILE",
+            countryCallingCode: "222",
+            number: "33700000",
+          },
+        ],
+        address: {
+          lines: ["Tavragh Zeina"],
+          cityName: "Nouakchott",
+          countryCode: "MR",
+        },
+      },
+    ],
+  };
+
+  // Add Office ID (queuing office) if configured
+  if (OFFICE_ID) {
+    orderData.queuingOfficeId = OFFICE_ID;
+    console.log(`[Amadeus] Using Office ID: ${OFFICE_ID}`);
+  }
+
+  const body = JSON.stringify({ data: orderData });
 
   const response = await amadeus.booking.flightOrders.post(body);
   const order = response.data as any;
