@@ -850,3 +850,15 @@
 - [x] تحديث لوحة الإدارة لعرض Consolidators متعددة مع إضافة/حذف/تبديل
 - [x] إضافة اختيار العملة (MRU/AOA/EUR/USD/XOF) عند إضافة وسيط
 - [x] AOA Multicaixa Express مدعوم بالفعل في طرق الدفع
+
+## استبدال Amadeus API بـ Duffel API
+- [x] البحث عن وثائق Duffel API وفهم الفروقات
+- [x] طلب مفتاح Duffel API من المستخدم (DUFFEL_API_TOKEN)
+- [x] تثبيت @duffel/api SDK
+- [x] إنشاء server/duffel.ts بدلاً من server/amadeus.ts
+- [x] تحديث tRPC routes لاستخدام Duffel (searchFlights, searchHotels, bookFlightWithPNR, getFlightOrder, cancelFlightOrder, checkTicketIssuance, consolidator)
+- [x] تحديث شاشات البحث والحجز والإلغاء وBooking Status
+- [x] تحديث لوحة الإدارة (Duffel API بدل Amadeus GDS)
+- [x] تحديث admin/booking-detail.tsx (أزرار التحقق والحالة)
+- [x] اختبارات Duffel Integration (9 اختبارات ناجحة)
+- [ ] إزالة مفاتيح Amadeus غير المطلوبة (اختياري)

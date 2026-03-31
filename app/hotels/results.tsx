@@ -54,10 +54,10 @@ export default function HotelResultsScreen() {
   const { t } = useTranslation();
   const { fmt } = useCurrency();
 
-  // Always use Amadeus Production API
+  // Always use Duffel Production API
   const useMock = false;
 
-  // Amadeus Production API hotel search
+  // Duffel Production API hotel search
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchHotels.useQuery(
     {
       cityCode: params.destinationCode || "",
@@ -74,7 +74,7 @@ export default function HotelResultsScreen() {
 
   const amadeusHotels: AnyHotel[] = (amadeusResult?.data ?? []) as AnyHotel[];
 
-  // Use live Amadeus data; fallback to mock only if API fails
+  // Use live Duffel data; fallback to mock only if API fails
   const rawHotels: AnyHotel[] = amadeusResult?.success && amadeusHotels.length > 0
     ? amadeusHotels
     : isLoading

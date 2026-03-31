@@ -268,13 +268,13 @@ export default function PaymentScreen() {
 
     setIsProcessing(true);
 
-    // ── Try to get real PNR from Amadeus for flights ──
+    // ── Try to get real PNR from Duffel for flights ──
     let pnr = "";
     let amadeusOrderId = "";
     
     if (isFlight && params.id) {
       try {
-        console.log("[Payment] Attempting Amadeus booking for offer:", params.id);
+        console.log("[Payment] Attempting Duffel booking for offer:", params.id);
         const result = await bookFlightWithPNR.mutateAsync({
           offerId: params.id,
           firstName: params.firstName ?? "GUEST",
@@ -289,16 +289,16 @@ export default function PaymentScreen() {
         if (result.success && result.pnr) {
           pnr = result.pnr;
           amadeusOrderId = result.orderId ?? "";
-          console.log(`[Payment] \u2705 Got real Amadeus PNR: ${pnr}`);
+          console.log(`[Payment] \u2705 Got real Duffel PNR: ${pnr}`);
         } else {
-          console.warn(`[Payment] Amadeus booking failed: ${result.error}. Using fallback PNR.`);
+          console.warn(`[Payment] Duffel booking failed: ${result.error}. Using fallback PNR.`);
         }
       } catch (err: any) {
-        console.warn("[Payment] Amadeus API error, using fallback PNR:", err?.message);
+        console.warn("[Payment] Duffel API error, using fallback PNR:", err?.message);
       }
     }
 
-    // Fallback: Generate local PNR if Amadeus didn't return one
+    // Fallback: Generate local PNR if Duffel didn't return one
     if (!pnr) {
       const PNR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       pnr = Array.from({ length: 6 }, () =>

@@ -350,7 +350,7 @@ export default function AdminBookingDetailScreen() {
           </Pressable>
         )}
 
-        {/* Check Ticket Issuance from Amadeus */}
+        {/* Check Ticket Issuance from Duffel */}
         {booking.type === "flight" && booking.amadeusOrderId && !booking.ticketNumber && (
           <Pressable
             style={({ pressed }) => [{
@@ -400,7 +400,7 @@ export default function AdminBookingDetailScreen() {
               <IconSymbol name="ticket.fill" size={20} color="#FFFFFF" />
             )}
             <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
-              التحقق من إصدار التذكرة من Amadeus
+              التحقق من إصدار التذكرة
             </Text>
           </Pressable>
         )}
@@ -430,7 +430,7 @@ export default function AdminBookingDetailScreen() {
                     `${result.data.message}\n\nConsolidator: ${result.data.consolidatorOfficeId}\nTicketing: ${result.data.ticketingOption}`
                   );
                 } else {
-                  Alert.alert("\u26A0\uFE0F \u062E\u0637\u0623", result.error || "\u0641\u0634\u0644 \u0625\u0631\u0633\u0627\u0644 PNR \u0625\u0644\u0649 Consolidator");
+                  Alert.alert("\u26A0\uFE0F \u062E\u0637\u0623", (result as any).error || "\u0641\u0634\u0644 \u0625\u0631\u0633\u0627\u0644 PNR \u0625\u0644\u0649 Consolidator");
                 }
               } catch (err: any) {
                 Alert.alert("\u274C \u062E\u0637\u0623", err?.message || "\u0641\u0634\u0644 \u0627\u0644\u0627\u062A\u0635\u0627\u0644 \u0628\u0627\u0644\u0633\u064A\u0631\u0641\u0631");
@@ -451,7 +451,7 @@ export default function AdminBookingDetailScreen() {
           </Pressable>
         )}
 
-        {/* View PNR Status from Amadeus */}
+        {/* View Booking Status (Duffel) */}
         {booking.type === "flight" && booking.amadeusOrderId && (
           <Pressable
             style={({ pressed }) => [{
@@ -470,7 +470,7 @@ export default function AdminBookingDetailScreen() {
           >
             <IconSymbol name="doc.text.magnifyingglass" size={20} color="#FFFFFF" />
             <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
-              عرض حالة PNR من Amadeus
+              عرض حالة الحجز
             </Text>
           </Pressable>
         )}

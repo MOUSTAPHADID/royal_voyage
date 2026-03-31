@@ -124,7 +124,7 @@ export default function PnrStatusScreen() {
         setError(result.error || "Could not retrieve order. Please check the Order ID.");
       }
     } catch (err: any) {
-      setError(err?.message || "Failed to connect to Amadeus API");
+      setError(err?.message || "Failed to connect to Duffel API");
     } finally {
       setLoading(false);
     }
@@ -157,12 +157,12 @@ export default function PnrStatusScreen() {
                 if (Platform.OS !== "web") {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
-                Alert.alert("Success", "Booking has been cancelled successfully via Amadeus.");
+                Alert.alert("Success", "Booking has been cancelled successfully.");
               } else {
                 Alert.alert("Error", result.error || "Failed to cancel booking");
               }
             } catch (err: any) {
-              Alert.alert("Error", err?.message || "Failed to cancel booking via Amadeus");
+              Alert.alert("Error", err?.message || "Failed to cancel booking");
             } finally {
               setCancelling(false);
             }
@@ -183,17 +183,17 @@ export default function PnrStatusScreen() {
           >
             <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.title, { color: colors.foreground }]}>PNR Status</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>Booking Status</Text>
           <View style={{ width: 40 }} />
         </View>
 
         {/* Search Section */}
         <View style={[styles.searchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.searchLabel, { color: colors.foreground }]}>
-            Amadeus Order ID
+            Duffel Order ID
           </Text>
           <Text style={[styles.searchHint, { color: colors.muted }]}>
-            Enter the Amadeus Order ID to retrieve booking status from the airline system
+            Enter the Duffel Order ID to retrieve booking status from the airline system
           </Text>
           <View style={styles.searchRow}>
             <TextInput
@@ -207,7 +207,7 @@ export default function PnrStatusScreen() {
               ]}
               value={orderId}
               onChangeText={setOrderId}
-              placeholder="e.g. eJzTd9f3c..."
+              placeholder="e.g. ord_0000..."
               placeholderTextColor={colors.muted}
               autoCapitalize="none"
               autoCorrect={false}
@@ -246,7 +246,7 @@ export default function PnrStatusScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.muted }]}>
-              Retrieving order from Amadeus...
+              Retrieving order from Duffel...
             </Text>
           </View>
         )}
@@ -456,7 +456,7 @@ export default function PnrStatusScreen() {
                 ) : (
                   <>
                     <IconSymbol name="xmark" size={20} color="#fff" />
-                    <Text style={styles.cancelBtnText}>Cancel Booking via Amadeus</Text>
+                    <Text style={styles.cancelBtnText}>Cancel Booking</Text>
                   </>
                 )}
               </Pressable>
@@ -478,10 +478,10 @@ export default function PnrStatusScreen() {
           <View style={styles.emptyState}>
             <IconSymbol name="doc.text.magnifyingglass" size={48} color={colors.muted} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Check PNR Status
+              Check Booking Status
             </Text>
             <Text style={[styles.emptyDesc, { color: colors.muted }]}>
-              Enter an Amadeus Order ID to retrieve the real-time booking status, flight details, and traveler information directly from the airline system.
+              Enter a Duffel Order ID to retrieve the real-time booking status, flight details, and traveler information directly from the airline system.
             </Text>
           </View>
         )}

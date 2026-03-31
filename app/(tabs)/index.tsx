@@ -807,8 +807,8 @@ export default function HomeScreen() {
         >
           <IconSymbol name="doc.text.magnifyingglass" size={24} color="#6366F1" />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>PNR Status</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Check booking status from Amadeus</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Booking Status</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Check booking status from airline system</Text>
           </View>
           <IconSymbol name="chevron.right" size={18} color="#6366F1" />
         </Pressable>

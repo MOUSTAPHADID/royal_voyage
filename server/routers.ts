@@ -21,7 +21,8 @@ import {
   addConsolidator,
   removeConsolidator,
   getConsolidatorForBooking,
-} from "./amadeus";
+  getDuffelStatus,
+} from "./duffel";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
@@ -38,7 +39,7 @@ export const appRouter = router({
     }),
   }),
 
-  // ─── Amadeus: Location Autocomplete ─────────────────────────────────────────
+  // ─── Flight & Hotel API (Duffel) ──────────────────────────────────────────
   amadeus: router({
     searchLocations: publicProcedure
       .input(z.object({ keyword: z.string().min(1) }))
@@ -46,12 +47,12 @@ export const appRouter = router({
         try {
           return await searchLocations(input.keyword);
         } catch (err: any) {
-          console.error("[Amadeus] searchLocations error:", err?.code || err?.message);
+          console.error("[Duffel] searchLocations error:", err?.code || err?.message);
           return [];
         }
       }),
 
-    // ─── Amadeus: Flight Search ────────────────────────────────────────────────
+    // ─── Flight Search ────────────────────────────────────────────────
     searchFlights: publicProcedure
       .input(
         z.object({
@@ -79,11 +80,12 @@ export const appRouter = router({
           });
           return { success: true, data: flights };
         } catch (err: any) {
-          console.error("[Amadeus] searchFlights error:", err?.code || err?.message);
-          return { success: false, data: [], error: err?.code || "SEARCH_ERROR" };
+          console.error("[Duffel] searchFlights error:", err?.code || err?.message);
+          return { success: false, data: [], error: err?.code || err?.message || "SEARCH_ERROR" };
         }
       }),
-    // ─── Amadeus: Price Flight Offer ─────────────────────────────────────────
+
+    // ─── Price Flight Offer ─────────────────────────────────────────
     priceFlightOffer: publicProcedure
       .input(z.object({ rawOffer: z.any() }))
       .mutation(async ({ input }) => {
@@ -91,12 +93,12 @@ export const appRouter = router({
           const result = await priceFlightOffer(input.rawOffer);
           return { success: true, data: result };
         } catch (err: any) {
-          console.error("[Amadeus] priceFlightOffer error:", err?.message || err);
+          console.error("[Duffel] priceFlightOffer error:", err?.message || err);
           return { success: false, data: null, error: err?.message || "PRICING_ERROR" };
         }
       }),
 
-    // ─── Amadeus: Book Flight with Real PNR (uses cached offer) ───────────
+    // ─── Book Flight with PNR (Instant Confirmation via Duffel) ─────
     bookFlightWithPNR: publicProcedure
       .input(
         z.object({
@@ -112,19 +114,19 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          // Step 1: Get cached raw offer
+          // Step 1: Get cached offer
           const rawOffer = getCachedRawOffer(input.offerId);
           if (!rawOffer) {
-            console.warn(`[Amadeus] No cached offer for ID: ${input.offerId}`);
+            console.warn(`[Duffel] No cached offer for ID: ${input.offerId}`);
             return { success: false, pnr: null, error: "OFFER_EXPIRED" };
           }
 
-          // Step 2: Price the offer
-          console.log(`[Amadeus] Pricing offer ${input.offerId}...`);
+          // Step 2: Price the offer (refresh)
+          console.log(`[Duffel] Pricing offer ${input.offerId}...`);
           const priced = await priceFlightOffer(rawOffer);
 
-          // Step 3: Create the order with real PNR
-          console.log(`[Amadeus] Creating flight order for ${input.firstName} ${input.lastName}...`);
+          // Step 3: Create the order with instant confirmation
+          console.log(`[Duffel] Creating flight order for ${input.firstName} ${input.lastName}...`);
           const order = await createFlightOrder(priced.pricedOffer, [
             {
               id: "1",
@@ -138,22 +140,24 @@ export const appRouter = router({
             },
           ]);
 
-          console.log(`[Amadeus] \u2705 Real PNR: ${order.pnr}, OrderID: ${order.orderId}`);
+          console.log(`[Duffel] ✅ PNR: ${order.pnr}, OrderID: ${order.orderId}, Status: ${order.status}`);
           return {
             success: true,
             pnr: order.pnr,
             orderId: order.orderId,
             associatedRecords: order.associatedRecords,
             ticketingDeadline: order.ticketingDeadline,
+            status: order.status,
+            documents: order.documents,
           };
         } catch (err: any) {
-          console.error("[Amadeus] bookFlightWithPNR error:", err?.message || err);
-          const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "BOOKING_ERROR";
+          console.error("[Duffel] bookFlightWithPNR error:", err?.message || err);
+          const detail = err?.errors?.[0]?.message || err?.message || "BOOKING_ERROR";
           return { success: false, pnr: null, error: detail };
         }
       }),
 
-    // ─── Amadeus: Create Flight Order (Real PNR) ─────────────────────────
+    // ─── Create Flight Order (Real PNR) ─────────────────────────
     createFlightOrder: publicProcedure
       .input(
         z.object({
@@ -175,17 +179,16 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           const result = await createFlightOrder(input.pricedOffer, input.travelers);
-          console.log(`[Amadeus] ✅ Flight order created! PNR: ${result.pnr}, OrderID: ${result.orderId}`);
+          console.log(`[Duffel] ✅ Flight order created! PNR: ${result.pnr}, OrderID: ${result.orderId}`);
           return { success: true, data: result };
         } catch (err: any) {
-          console.error("[Amadeus] createFlightOrder error:", err?.message || err);
-          // Try to extract more useful error info
-          const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "ORDER_ERROR";
+          console.error("[Duffel] createFlightOrder error:", err?.message || err);
+          const detail = err?.errors?.[0]?.message || err?.message || "ORDER_ERROR";
           return { success: false, data: null, error: detail };
         }
       }),
 
-    // ─── Amadeus: Get Flight Order Status (PNR Lookup) ─────────────────────
+    // ─── Get Flight Order Status (PNR Lookup) ─────────────────────
     getFlightOrder: publicProcedure
       .input(z.object({ orderId: z.string() }))
       .query(async ({ input }) => {
@@ -193,33 +196,38 @@ export const appRouter = router({
           const result = await getFlightOrder(input.orderId);
           return { success: true, data: result };
         } catch (err: any) {
-          console.error("[Amadeus] getFlightOrder error:", err?.message || err);
-          const detail = err?.response?.result?.errors?.[0]?.detail || err?.message || "RETRIEVE_ERROR";
+          console.error("[Duffel] getFlightOrder error:", err?.message || err);
+          const detail = err?.errors?.[0]?.message || err?.message || "RETRIEVE_ERROR";
           return { success: false, data: null, error: detail };
         }
       }),
 
-    // ─── Amadeus: Cancel Flight Order ─────────────────────────────────────────
+    // ─── Cancel Flight Order ─────────────────────────────────────────
     cancelFlightOrder: publicProcedure
       .input(z.object({ orderId: z.string() }))
       .mutation(async ({ input }) => {
         try {
           const result = await cancelFlightOrder(input.orderId);
-          console.log(`[Amadeus] ✅ Order ${input.orderId} cancelled`);
+          console.log(`[Duffel] ✅ Order ${input.orderId} cancelled`);
           return { success: true, data: result };
         } catch (err: any) {
-          console.error("[Amadeus] cancelFlightOrder error:", err?.message || err);
+          console.error("[Duffel] cancelFlightOrder error:", err?.message || err);
           const detail = err?.message || "CANCEL_ERROR";
           return { success: false, data: null, error: detail };
         }
       }),
 
-    // ─── Amadeus: Get Status Info ──────────────────────────────────────────
+    // ─── Get Status Info ──────────────────────────────────────────
     getStatus: publicProcedure.query(() => {
       return getAmadeusStatus();
     }),
 
-    // ─── Amadeus: Check Ticket Issuance ──────────────────────────────────────
+    // ─── Get Duffel Status ──────────────────────────────────────────
+    getDuffelStatus: publicProcedure.query(() => {
+      return getDuffelStatus();
+    }),
+
+    // ─── Check Ticket Issuance ──────────────────────────────────────
     checkTicketIssuance: publicProcedure
       .input(z.object({ orderId: z.string() }))
       .query(async ({ input }) => {
@@ -227,80 +235,58 @@ export const appRouter = router({
           const result = await checkTicketIssuance(input.orderId);
           return { success: true, data: result };
         } catch (err: any) {
-          console.error("[Amadeus] checkTicketIssuance error:", err?.message || err);
+          console.error("[Duffel] checkTicketIssuance error:", err?.message || err);
           const detail = err?.message || "TICKET_CHECK_ERROR";
           return { success: false, data: null, error: detail };
         }
       }),
 
-    // ─── Amadeus: Queue to Consolidator ──────────────────────────────────────
+    // ─── Queue to Consolidator (no-op for Duffel) ──────────────────
     queueToConsolidator: publicProcedure
       .input(z.object({ orderId: z.string() }))
       .mutation(async ({ input }) => {
-        try {
-          const result = await queueToConsolidator(input.orderId);
-          return { success: true, data: result };
-        } catch (err: any) {
-          console.error("[Amadeus] queueToConsolidator error:", err?.message || err);
-          const detail = err?.message || "QUEUE_ERROR";
-          return { success: false, data: null, error: detail };
-        }
+        const result = queueToConsolidator(input.orderId);
+        return { success: true, data: result };
       }),
 
-    // ─── Amadeus: Get Consolidator Config ────────────────────────────────────
+    // ─── Get Consolidator Config ────────────────────────────────────
     getConsolidatorConfig: publicProcedure.query(() => {
       return getConsolidatorConfig();
     }),
 
-    // ─── Amadeus: Update Consolidator Office ID (backward compat) ──────────
+    // ─── Update Consolidator Office ID (no-op for Duffel) ──────────
     setConsolidatorOfficeId: publicProcedure
       .input(z.object({ officeId: z.string() }))
       .mutation(async ({ input }) => {
-        try {
-          const config = setConsolidatorOfficeId(input.officeId);
-          return { success: true, data: config };
-        } catch (err: any) {
-          return { success: false, data: null, error: err?.message || "INVALID_OFFICE_ID" };
-        }
+        const config = setConsolidatorOfficeId(input.officeId);
+        return { success: true, data: config };
       }),
 
-    // ─── Amadeus: Set Active Consolidator ────────────────────────────────────
+    // ─── Set Active Consolidator (no-op for Duffel) ────────────────
     setActiveConsolidator: publicProcedure
       .input(z.object({ index: z.number() }))
       .mutation(async ({ input }) => {
-        try {
-          const config = setActiveConsolidator(input.index);
-          return { success: true, data: config };
-        } catch (err: any) {
-          return { success: false, data: null, error: err?.message || "INVALID_INDEX" };
-        }
+        const config = setActiveConsolidator(input.index);
+        return { success: true, data: config };
       }),
 
-    // ─── Amadeus: Add Consolidator ──────────────────────────────────────────
+    // ─── Add Consolidator (no-op for Duffel) ──────────────────────
     addConsolidator: publicProcedure
       .input(z.object({ officeId: z.string(), currency: z.string() }))
       .mutation(async ({ input }) => {
-        try {
-          const config = addConsolidator(input.officeId, input.currency);
-          return { success: true, data: config };
-        } catch (err: any) {
-          return { success: false, data: null, error: err?.message || "ADD_ERROR" };
-        }
+        const config = addConsolidator(input.officeId, input.currency);
+        return { success: true, data: config };
       }),
 
-    // ─── Amadeus: Remove Consolidator ───────────────────────────────────────
+    // ─── Remove Consolidator (no-op for Duffel) ───────────────────
     removeConsolidator: publicProcedure
       .input(z.object({ index: z.number() }))
       .mutation(async ({ input }) => {
-        try {
-          const config = removeConsolidator(input.index);
-          return { success: true, data: config };
-        } catch (err: any) {
-          return { success: false, data: null, error: err?.message || "REMOVE_ERROR" };
-        }
+        const config = removeConsolidator(input.index);
+        return { success: true, data: config };
       }),
 
-    // ─── Amadeus: Hotel Search ─────────────────────────────────────────────────
+    // ─── Hotel Search ─────────────────────────────────────────────────
     searchHotels: publicProcedure
       .input(
         z.object({
@@ -324,7 +310,7 @@ export const appRouter = router({
           });
           return { success: true, data: hotels };
         } catch (err: any) {
-          console.error("[Amadeus] searchHotels error:", err?.code || err?.message);
+          console.error("[Duffel] searchHotels error:", err?.code || err?.message);
           return { success: false, data: [], error: err?.code || "SEARCH_ERROR" };
         }
       }),
@@ -545,8 +531,8 @@ export const appRouter = router({
                 to: expoPushToken,
                 sound: "default",
                 title: "\u2708\uFE0F \u062a\u0630\u0643\u0631\u062a\u0643 \u062c\u0627\u0647\u0632\u0629!",
-                body: `\u062a\u0645 \u0625\u0635\u062f\u0627\u0631 \u062a\u0630\u0643\u0631\u0629 \u0631\u062d\u0644\u062a\u0643 ${input.bookingRef} \u0628\u0646\u062c\u0627\u062d. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u0644\u062a\u0646\u0632\u064a\u0644.`,
-                data: { bookingRef: input.bookingRef, type: "airline_confirmed_ticket" },
+                body: `\u062a\u0645 \u0625\u0635\u062f\u0627\u0631 \u062a\u0630\u0643\u0631\u0629 \u0631\u062d\u0644\u062a\u0643 ${input.bookingRef} \u0628\u0646\u062c\u0627\u062d. \u062a\u062d\u0642\u0642 \u0645\u0646 \u0628\u0631\u064a\u062f\u0643 \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a \u0644\u062a\u0646\u0632\u064a\u0644 \u0627\u0644\u062a\u0630\u0643\u0631\u0629.`,
+                data: { bookingRef: input.bookingRef, type: "airline_confirmed" },
               }),
             });
             const result = await response.json();
@@ -655,4 +641,3 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
-

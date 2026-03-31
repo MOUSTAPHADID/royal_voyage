@@ -65,10 +65,10 @@ export default function FlightResultsScreen() {
   const [filterClass, setFilterClass] = useState<string>("All");
   const [activeSection, setActiveSection] = useState<"outbound" | "return">("outbound");
 
-  // Always use Amadeus Production API — useMock is kept for emergency fallback only
+  // Always use Duffel Production API — useMock is kept for emergency fallback only
   const useMock = false;const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
 
-  // Amadeus Production API query — outbound
+  // Duffel Production API query — outbound
   const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchFlights.useQuery(
     {
       originCode: params.originCode || "",
@@ -84,7 +84,7 @@ export default function FlightResultsScreen() {
     }
   );
 
-  // Amadeus Production API query — inbound (return leg)
+  // Duffel Production API query — inbound (return leg)
   const { data: returnResult, isLoading: returnLoading } = trpc.amadeus.searchFlights.useQuery(
     {
       originCode: params.destinationCode || "",
@@ -102,7 +102,7 @@ export default function FlightResultsScreen() {
   const amadeusFlights: AnyFlight[] = (amadeusResult?.data ?? []) as AnyFlight[];
   const returnFlights: AnyFlight[] = (returnResult?.data ?? []) as AnyFlight[];
 
-  // Use live Amadeus data; fallback to mock only if API fails
+  // Use live Duffel data; fallback to mock only if API fails
   const rawFlights: AnyFlight[] = amadeusResult?.success && amadeusFlights.length > 0
     ? amadeusFlights
     : isLoading

@@ -570,7 +570,7 @@ export default function AdminScreen() {
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
           <View style={s.section}>
-            {/* Amadeus Office ID & Status Card */}
+            {/* Duffel API Status Card */}
             <View style={{
               backgroundColor: "#0F172A",
               borderRadius: 16,
@@ -584,8 +584,8 @@ export default function AdminScreen() {
                   <IconSymbol name="building.fill" size={20} color="#C9A84C" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Amadeus GDS</Text>
-                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>Office ID & Connection Status</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: "#FFFFFF" }}>Duffel API</Text>
+                  <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", marginTop: 1 }}>Connection Status & Instant Ticketing</Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#22C55E20", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: "#22C55E" }} />
@@ -1459,7 +1459,7 @@ export default function AdminScreen() {
                       );
                       setShowConsolidatorModal(false);
                     } else {
-                      setConsolidatorError(result.error || "فشل الإضافة");
+                      setConsolidatorError((result as any).error || "فشل الإضافة");
                     }
                   } catch (err: any) {
                     setConsolidatorError(err?.message || "خطأ في الاتصال");
