@@ -19,18 +19,21 @@ import { trpc } from "@/lib/trpc";
 export default function AdminBookingDetailScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingTicketSent, updateBookingTicketNumber, updateBookingStatus } = useApp();
+  const { bookings, updateBookingTicketSent, updateBookingTicketNumber, updateBookingStatus, updateBookingPnr } = useApp();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [resending, setResending] = useState(false);
   const [checkingTicket, setCheckingTicket] = useState(false);
   const [queuingConsolidator, setQueuingConsolidator] = useState(false);
   const [cancellingOrder, setCancellingOrder] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
 
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
   const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
   const queueToConsolidatorMut = trpc.amadeus.queueToConsolidator.useMutation();
   const cancelFlightOrder = trpc.amadeus.cancelFlightOrder.useMutation();
   const sendCancellationEmail = trpc.email.sendCancellation.useMutation();
+  const payHoldOrder = trpc.amadeus.payHoldOrder.useMutation();
+  const sendPaymentConfirmation = trpc.email.confirmPayment.useMutation();
 
   const booking = bookings.find((b) => b.id === id);
 
@@ -350,6 +353,129 @@ export default function AdminBookingDetailScreen() {
             <Text style={styles.resendBtnText}>
               {booking.ticketSent ? "إعادة إرسال التذكرة PDF" : "إرسال التذكرة PDF"}
             </Text>
+          </Pressable>
+        )}
+
+        {/* Confirm Payment & Issue Ticket (for hold/cash/pending bookings with Duffel order) */}
+        {booking.type === "flight" && booking.royalOrderId && booking.status !== "cancelled" && booking.status !== "airline_confirmed" && (
+          <Pressable
+            style={({ pressed }) => [{
+              flexDirection: "row" as const,
+              alignItems: "center" as const,
+              justifyContent: "center" as const,
+              gap: 10,
+              margin: 16,
+              marginBottom: 0,
+              paddingVertical: 18,
+              borderRadius: 14,
+              backgroundColor: "#22C55E",
+              opacity: pressed || confirmingPayment ? 0.7 : 1,
+            }]}
+            disabled={confirmingPayment}
+            onPress={() => {
+              const pnrDisplay = booking.realPnr || booking.pnr || "—";
+              Alert.alert(
+                "تأكيد الدفع وإصدار التذكرة",
+                `هل تم استلام الدفع لهذا الحجز؟\n\nالمرجع: ${booking.reference}\nPNR: ${pnrDisplay}\nالمبلغ: ${formatMRU(booking.totalPrice ?? 0)}\n\nسيتم تأكيد الدفع عبر Duffel وإصدار التذكرة فوراً وإرسال إشعار للعميل.`,
+                [
+                  { text: "إلغاء", style: "cancel" },
+                  {
+                    text: "تأكيد الدفع والإصدار",
+                    onPress: async () => {
+                      setConfirmingPayment(true);
+                      try {
+                        const result = await payHoldOrder.mutateAsync({ orderId: booking.royalOrderId! });
+                        if (result.success) {
+                          const confirmedPnr = result.pnr || "";
+                          const issuedTicket = result.ticketNumber || "";
+                          
+                          // Update booking locally
+                          if (confirmedPnr) {
+                            await updateBookingPnr(booking.id, confirmedPnr);
+                          }
+                          if (issuedTicket) {
+                            await updateBookingTicketNumber(booking.id, issuedTicket);
+                          }
+                          await updateBookingStatus(booking.id, "confirmed");
+                          
+                          // Send email + push to customer
+                          const email = booking.passengerEmail;
+                          const name = booking.passengerName || "عميل";
+                          if (email) {
+                            try {
+                              // Send airline confirmed ticket email
+                              if (booking.flight) {
+                                await sendAirlineConfirmedTicket.mutateAsync({
+                                  passengerName: name,
+                                  passengerEmail: email,
+                                  bookingRef: booking.reference,
+                                  pnr: confirmedPnr || booking.realPnr || booking.pnr,
+                                  origin: booking.flight.originCode ?? booking.flight.origin ?? "",
+                                  originCity: booking.flight.origin ?? "",
+                                  destination: booking.flight.destinationCode ?? booking.flight.destination ?? "",
+                                  destinationCity: booking.flight.destination ?? "",
+                                  departureDate: booking.date ?? "",
+                                  departureTime: booking.flight.departureTime ?? "",
+                                  arrivalTime: booking.flight.arrivalTime ?? "",
+                                  airline: booking.flight.airline ?? "",
+                                  flightNumber: booking.flight.flightNumber ?? "",
+                                  cabinClass: booking.flight.class ?? "ECONOMY",
+                                  passengers: booking.passengers ?? 1,
+                                  children: 0,
+                                  totalPrice: formatMRU(booking.totalPrice ?? 0),
+                                  currency: "MRU",
+                                  tripType: "one-way",
+                                  expoPushToken: booking.customerPushToken,
+                                });
+                              }
+                              await updateBookingTicketSent(booking.id);
+                            } catch (emailErr) {
+                              console.warn("[Admin] Email notification failed:", emailErr);
+                            }
+                          }
+                          
+                          Alert.alert(
+                            "\u2705 تم تأكيد الدفع وإصدار التذكرة",
+                            `PNR: ${confirmedPnr || "—"}\nرقم التذكرة: ${issuedTicket || "قيد الإصدار"}\n\n${email ? "تم إرسال التذكرة للعميل عبر البريد الإلكتروني." : "لا يوجد بريد مسجّل للعميل."}`
+                          );
+                        } else {
+                          const errMsg = result.error || "فشل تأكيد الدفع";
+                          if (errMsg.includes("insufficient")) {
+                            Alert.alert(
+                              "\u26A0\uFE0F رصيد غير كافٍ",
+                              "رصيد حساب Duffel غير كافٍ لتأكيد هذا الحجز. يرجى شحن الحساب أولاً."
+                            );
+                          } else if (errMsg.includes("CANCELLED")) {
+                            Alert.alert("\u274C الحجز ملغى", "هذا الحجز تم إلغاؤه مسبقاً ولا يمكن تأكيده.");
+                          } else {
+                            Alert.alert("\u274C خطأ", errMsg);
+                          }
+                        }
+                      } catch (err: any) {
+                        console.error("[Admin] Confirm payment error:", err);
+                        Alert.alert("\u274C خطأ", err?.message || "فشل الاتصال بالسيرفر");
+                      } finally {
+                        setConfirmingPayment(false);
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            {confirmingPayment ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={{ fontSize: 22 }}>\u2705</Text>
+            )}
+            <View>
+              <Text style={{ fontSize: 17, fontWeight: "800", color: "#FFFFFF" }}>
+                تأكيد الدفع وإصدار التذكرة
+              </Text>
+              <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginTop: 2 }}>
+                Duffel Pay & Issue
+              </Text>
+            </View>
           </Pressable>
         )}
 
