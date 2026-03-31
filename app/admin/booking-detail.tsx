@@ -153,10 +153,13 @@ export default function AdminBookingDetailScreen() {
   const paymentLabels: Record<string, string> = {
     cash: "💵 نقداً",
     bank_transfer: "🏦 تحويل بنكي",
+    stripe: "💳 بطاقة بنكية (Visa/Mastercard)",
     bankily: "📱 Bankily",
     masrvi: "📱 Masrvi",
     sedad: "📱 Sedad",
     paypal: "🌐 PayPal (عملة أجنبية)",
+    multicaixa: "🇦🇴 Multicaixa Express (AOA)",
+    hold_24h: "⏰ حجز مؤكد 24 ساعة",
   };
 
   return (

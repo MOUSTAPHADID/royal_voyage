@@ -52,6 +52,7 @@ function getPaymentLabel(method?: string): string {
     bankily: "بنكيلي",
     masrvi: "مصرفي",
     sedad: "سداد",
+    stripe: "بطاقة بنكية (Stripe)",
     paypal: "PayPal",
     multicaixa: "Multicaixa",
     hold_24h: "حجز 24 ساعة",

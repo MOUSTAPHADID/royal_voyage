@@ -30,8 +30,10 @@ import { scheduleCashPaymentReminder, scheduleHoldExpiryReminders, scheduleAdmin
 import { addAdminNotification } from "@/lib/admin-notifications";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { getApiBaseUrl } from "@/constants/oauth";
+import { usePaymentSheet } from "@/hooks/use-stripe-payment";
+import { fromMRU as convertFromMRU, type AppCurrency } from "@/lib/currency";
 
-type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal" | "multicaixa" | "hold_24h";
+type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "stripe" | "multicaixa" | "hold_24h";
 
 const PAYMENT_METHODS: {
   id: PaymentMethod;
@@ -76,11 +78,11 @@ const PAYMENT_METHODS: {
     color: "#EF4444",
   },
   {
-    id: "paypal",
-    label: "PayPal (بالبطاقة)",
-    sublabel: "ادفع بالبطاقة البنكية (Visa, Mastercard) أو رصيد PayPal",
-    icon: "🌐",
-    color: "#003087",
+    id: "stripe",
+    label: "بطاقة بنكية (Visa / Mastercard)",
+    sublabel: "ادفع بالبطاقة البنكية بشكل آمن عبر Stripe",
+    icon: "💳",
+    color: "#635BFF",
   },
   {
     id: "multicaixa",
@@ -235,6 +237,77 @@ export default function PaymentScreen() {
   const bookFlightWithPNR = trpc.amadeus.bookFlightWithPNR.useMutation();
   const holdFlightOrder = trpc.amadeus.holdFlightOrder.useMutation();
   const registerBookingContact = trpc.amadeus.registerBookingContact.useMutation();
+  const createPaymentIntent = trpc.stripe.createPaymentIntent.useMutation();
+
+  // Stripe Payment Sheet
+  const { initPaymentSheet, presentPaymentSheet } = usePaymentSheet();
+  const [stripeReady, setStripeReady] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
+
+  const handleStripePayment = async (): Promise<{ success: boolean; paymentIntentId?: string }> => {
+    try {
+      setStripeLoading(true);
+      const stripeCurrency = currency === "USD" ? "usd" : "eur";
+      const amountInForeign = convertFromMRU(total, stripeCurrency.toUpperCase() as AppCurrency);
+      // Stripe expects amount in smallest unit (cents)
+      const amountInCents = Math.round(amountInForeign * 100);
+
+      const result = await createPaymentIntent.mutateAsync({
+        amount: total, // MRU amount for conversion on server
+        currency: stripeCurrency,
+        description: `Royal Voyage - ${isFlight ? 'Flight' : 'Hotel'} Booking`,
+        bookingRef: `RV-${isFlight ? 'FL' : 'HT'}-${Date.now().toString().slice(-6)}`,
+        passengerName: `${params.firstName ?? ''} ${params.lastName ?? ''}`.trim(),
+        passengerEmail: params.email || undefined,
+      });
+
+      if (!result.success || !('clientSecret' in result) || !result.clientSecret) {
+        const errorMsg = 'error' in result ? result.error : 'Unknown error';
+        Alert.alert('خطأ في الدفع', `فشل إنشاء جلسة الدفع: ${errorMsg}`);
+        return { success: false };
+      }
+
+      // Initialize Payment Sheet
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: result.clientSecret,
+        merchantDisplayName: 'Royal Voyage',
+        defaultBillingDetails: {
+          name: `${params.firstName ?? ''} ${params.lastName ?? ''}`.trim(),
+          email: params.email || undefined,
+        },
+        style: 'automatic',
+      });
+
+      if (initError) {
+        Alert.alert('خطأ', `فشل تهيئة نافذة الدفع: ${initError.message}`);
+        return { success: false };
+      }
+
+      // Present Payment Sheet
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        if (presentError.code === 'Canceled') {
+          // User cancelled - not an error
+          return { success: false };
+        }
+        Alert.alert('فشل الدفع', presentError.message);
+        return { success: false };
+      }
+
+      // Payment succeeded!
+      if (Platform.OS !== 'web') {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      return { success: true, paymentIntentId: result.paymentIntentId };
+    } catch (err: any) {
+      console.error('[Stripe] Payment error:', err);
+      Alert.alert('خطأ في الدفع', err?.message || 'حدث خطأ أثناء معالجة الدفع');
+      return { success: false };
+    } finally {
+      setStripeLoading(false);
+    }
+  };
 
   const handlePay = async () => {
     // التحقق من اكتمال بيانات الرحلة
@@ -283,6 +356,19 @@ export default function PaymentScreen() {
     ) {
       Alert.alert("تنبيه", "الرجاء إدخال رقم مرجع العملية أو رقم الإيصال لإتمام الحجز");
       return;
+    }
+
+    // ── Stripe: Process card payment first before booking ──
+    let stripePaymentIntentId = "";
+    if (paymentMethod === "stripe") {
+      setIsProcessing(true);
+      const stripeResult = await handleStripePayment();
+      if (!stripeResult.success) {
+        setIsProcessing(false);
+        return; // User cancelled or payment failed
+      }
+      stripePaymentIntentId = stripeResult.paymentIntentId ?? "";
+      // Payment succeeded, continue with booking
     }
 
     setIsProcessing(true);
@@ -473,7 +559,7 @@ export default function PaymentScreen() {
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
-      status: isConfirmedBooking ? "confirmed" : "pending",
+      status: (isConfirmedBooking || paymentMethod === "stripe") ? "confirmed" : "pending",
       reference: (pnr && pnr !== "PENDING") ? pnr : ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
@@ -502,6 +588,7 @@ export default function PaymentScreen() {
       ...(pnr && pnr !== "PENDING" && isFlight ? { realPnr: pnr, realPnrUpdatedAt: new Date().toISOString() } : {}),
       // Business account commission tracking
       ...(params.businessAccountId ? { businessAccountId: params.businessAccountId, businessCommission: businessCommissionRate, commissionAmount } : {}),
+      ...(stripePaymentIntentId ? { stripePaymentIntentId } : {}),
     };
 
     await addBooking(booking);
@@ -991,109 +1078,66 @@ export default function PaymentScreen() {
           </View>
         )}
 
-        {/* تعليمات PayPal */}
-        {paymentMethod === "paypal" && (() => {
-          // عرض السعر بالدولار أولاً ثم اليورو إذا كانت العملة EUR
-          const ppCurrency = currency === "EUR" ? "EUR" : "USD";
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const ppAmount = fromMRU(total, ppCurrency);
-          const ppFormatted = formatCurrency(total, ppCurrency);
+        {/* تعليمات الدفع بالبطاقة عبر Stripe */}
+        {paymentMethod === "stripe" && (() => {
+          const stripeCurrency = currency === "USD" ? "USD" : "EUR";
+          const stripeFormatted = formatCurrency(total, stripeCurrency);
           return (
-            <View style={[styles.card, { backgroundColor: "#003087" + "10", borderColor: "#003087" + "30" }]}>
-              <Text style={[styles.cardTitle, { color: colors.foreground }]}>🌐 الدفع عبر PayPal</Text>
+            <View style={[styles.card, { backgroundColor: "#635BFF" + "10", borderColor: "#635BFF" + "30" }]}>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>💳 الدفع بالبطاقة البنكية</Text>
 
               {/* بطاقة السعر بالعملة الأجنبية */}
-              <View style={[styles.infoBox, { backgroundColor: "#003087" + "15", borderColor: "#003087" + "40", marginBottom: 14 }]}>
-                <Text style={{ color: "#003087", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
-                  المبلغ المطلوب بالعملة الأجنبية
+              <View style={[styles.infoBox, { backgroundColor: "#635BFF" + "15", borderColor: "#635BFF" + "40", marginBottom: 14 }]}>
+                <Text style={{ color: "#635BFF", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  المبلغ المطلوب
                 </Text>
-                <Text style={{ color: "#003087", fontSize: 26, fontWeight: "800", textAlign: "center", marginTop: 4 }}>
-                  {ppFormatted}
+                <Text style={{ color: "#635BFF", fontSize: 26, fontWeight: "800", textAlign: "center", marginTop: 4 }}>
+                  {stripeFormatted}
                 </Text>
                 <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginTop: 2 }}>
                   (يعادل {fmt(total)} بسعر صرف ثابت)
                 </Text>
               </View>
 
-              {/* خطوات الدفع */}
+              {/* معلومات الأمان */}
               <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {[
-                  "افتح تطبيق PayPal أو الموقع الرسمي paypal.com",
-                  `أرسل المبلغ ${ppFormatted} إلى البريد الإلكتروني:`,
-                  "angolamirlda@gmail.com",
-                  "في خانة الملاحظة اكتب: اسمك الكامل + رقم حجزك",
-                  "أدخل رقم معرّف العملية (Transaction ID) أدناه",
+                  "اضغط على زر \"الدفع بالبطاقة\" أدناه",
+                  "سيتم فتح نافذة دفع آمنة من Stripe",
+                  "أدخل بيانات بطاقتك (Visa أو Mastercard)",
+                  "سيتم تأكيد الحجز تلقائياً بعد نجاح الدفع",
                 ].map((step, i) => (
-                  <View key={i} style={[styles.stepRow, i === 2 && { paddingRight: 32 }]}>
-                    {i !== 2 ? (
-                      <View style={[styles.stepNum, { backgroundColor: "#003087" }]}>
-                        <Text style={styles.stepNumText}>{i < 2 ? i + 1 : i}</Text>
-                      </View>
-                    ) : (
-                      <View style={{ width: 28 }} />
-                    )}
-                    <Text style={[
-                      styles.stepText,
-                      { color: i === 2 ? "#003087" : colors.foreground, fontWeight: i === 2 ? "700" : "400", fontSize: i === 2 ? 15 : 13 }
-                    ]}>{step}</Text>
+                  <View key={i} style={styles.stepRow}>
+                    <View style={[styles.stepNum, { backgroundColor: "#635BFF" }]}>
+                      <Text style={styles.stepNumText}>{i + 1}</Text>
+                    </View>
+                    <Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text>
                   </View>
                 ))}
               </View>
 
-              {/* زر فتح PayPal مباشرة */}
-              <Pressable
-                style={({ pressed }) => [{
-                  backgroundColor: "#003087",
-                  flexDirection: "row",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  paddingVertical: 14,
-                  borderRadius: 12,
-                  marginTop: 10,
-                  marginBottom: 6,
-                  gap: 8,
-                  opacity: pressed ? 0.85 : 1,
-                }]}
-                onPress={async () => {
-                  // فتح صفحة الدفع المستضافة على السيرفر مع زر PayPal الرسمي
-                  const baseUrl = getApiBaseUrl();
-                  const customerFullName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim();
-                  const rawScheme = Constants.expoConfig?.scheme;
-                  const appScheme = typeof rawScheme === "string" ? rawScheme : "manus20260323015034";
-                  const checkoutUrl = `${baseUrl}/api/paypal-checkout?amount=${ppAmount.toFixed(2)}&currency=${ppCurrency}&name=${encodeURIComponent(customerFullName)}&booking=${encodeURIComponent("Royal Voyage")}&scheme=${encodeURIComponent(appScheme)}`;
-                  try {
-                    await Linking.openURL(checkoutUrl);
-                  } catch {
-                    // Fallback: فتح paypal.me مباشرة
-                    await Linking.openURL(`https://paypal.me/angolamir/${ppAmount.toFixed(2)}${ppCurrency}`);
-                  }
-                }}
-              >
-                <Text style={{ color: "#FFF", fontSize: 18 }}>🌐</Text>
-                <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>فتح PayPal للدفع الآن</Text>
-              </Pressable>
-              <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginBottom: 10 }}>
-                سيتم فتح PayPal بالمبلغ {ppFormatted} — أدخل Transaction ID بعد إتمام الدفع
-              </Text>
+              {/* شعارات البطاقات المدعومة */}
+              <View style={{ flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 8, marginBottom: 12 }}>
+                <View style={{ backgroundColor: "#1A1F71", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "700" }}>VISA</Text>
+                </View>
+                <View style={{ backgroundColor: "#EB001B", paddingHorizontal: 8, paddingVertical: 6, borderRadius: 6, flexDirection: "row", gap: 2 }}>
+                  <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: "#EB001B", borderWidth: 1, borderColor: "#FFF" }} />
+                  <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: "#F79E1B", borderWidth: 1, borderColor: "#FFF", marginLeft: -6 }} />
+                </View>
+              </View>
 
-              {/* حقل رقم العملية */}
-              <View style={styles.inputGroup}>
-                <Text style={[styles.label, { color: colors.foreground }]}>رقم معرّف العملية (Transaction ID) *</Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
-                  placeholder="مثال: 5AB12345CD678901E"
-                  placeholderTextColor={colors.muted}
-                  value={transferRef}
-                  onChangeText={setTransferRef}
-                  autoCapitalize="characters"
-                  returnKeyType="done"
-                />
+              {/* ملاحظة الأمان */}
+              <View style={[styles.infoBox, { backgroundColor: colors.success + "10", borderColor: colors.success + "30" }]}>
+                <Text style={{ color: colors.success, fontSize: 12, textAlign: "center", lineHeight: 18 }}>
+                  🔒 جميع المعاملات مشفرة ومحمية بواسطة Stripe. لا يتم تخزين بيانات بطاقتك على خوادمنا.
+                </Text>
               </View>
 
               {/* تحذير سعر الصرف */}
-              <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
+              <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40", marginTop: 8 }]}>
                 <Text style={[styles.warningText, { color: colors.warning }]}>
-                  ⚠️ سعر الصرف المستخدم ثابت (1 USD = 39.5 MRU). قد يختلف السعر الفعلي في PayPal بحسب يوم التحويل.
+                  ⚠️ سيتم خصم المبلغ بالعملة الأجنبية ({stripeCurrency}). قد يختلف السعر الفعلي بحسب سعر صرف بنكك.
                 </Text>
               </View>
             </View>
@@ -1445,7 +1489,7 @@ export default function PaymentScreen() {
             <>
               <Text style={{ fontSize: 18 }}>{selectedMethod.icon}</Text>
               <Text style={styles.payBtnText}>
-                {paymentMethod === "cash" ? "تأكيد الحجز والدفع لاحقاً" : "تأكيد الدفع وإتمام الحجز"}
+                {paymentMethod === "cash" ? "تأكيد الحجز والدفع لاحقاً" : paymentMethod === "stripe" ? "الدفع بالبطاقة البنكية" : "تأكيد الدفع وإتمام الحجز"}
               </Text>
             </>
           )}

@@ -1152,3 +1152,21 @@
 - [x] تحديث admin/notifications.tsx لمزامنة الحجوزات عند فتح الشاشة
 - [x] إضافة عدد الإشعارات غير المقروءة في admin/index.tsx
 - [x] 6 اختبارات ناجحة
+
+## ربط Stripe API للدفع الإلكتروني وإزالة PayPal
+- [x] تثبيت stripe في الخادم و @stripe/stripe-react-native في الواجهة
+- [x] إعداد STRIPE_SECRET_KEY و STRIPE_PUBLISHABLE_KEY
+- [x] إنشاء route tRPC لإنشاء PaymentIntent
+- [x] إضافة Stripe كطريقة دفع في شاشة الدفع (Visa/Mastercard)
+- [x] معالجة الدفع عبر Stripe وتأكيد الحجز بعد النجاح
+- [x] إزالة PayPal من قائمة طرق الدفع
+- [x] إضافة StripeProvider في _layout.tsx
+- [x] تنفيذ Stripe Payment Sheet للدفع بالبطاقة
+- [x] تحديث شاشات الإدارة (confirm-payment, booking-detail, profit-report, financial-reports)
+- [x] تحديث صفحة طرق الدفع في الملف الشخصي
+- [x] تحديث admin-notification-sync.ts بليبل Stripe
+- [x] إنشاء platform-specific wrappers (stripe-provider.web.tsx, stripe-provider.native.tsx)
+- [x] إنشاء platform-specific hooks (use-stripe-payment.web.ts, use-stripe-payment.native.ts)
+- [x] إصلاح Metro web bundling error لـ @stripe/stripe-react-native
+- [x] إضافة stripePaymentIntentId في Booking type
+- [x] كتابة وتشغيل اختبارات Stripe integration

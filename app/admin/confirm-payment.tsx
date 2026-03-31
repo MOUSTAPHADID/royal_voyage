@@ -30,8 +30,10 @@ const PAYMENT_LABELS: PaymentMethodLabel = {
   bankily: "بنكيلي",
   masrvi: "مصرفي",
   sedad: "سداد",
+  stripe: "💳 بطاقة بنكية (Visa/Mastercard)",
   paypal: "PayPal (عملة أجنبية)",
   multicaixa: "Multicaixa Express (AOA)",
+  hold_24h: "حجز مؤكد 24 ساعة",
 };
 
 export default function ConfirmPaymentScreen() {

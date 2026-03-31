@@ -119,6 +119,8 @@ export default function FinancialReportsScreen() {
     bankily: "بنكيلي",
     masrvi: "مصرفي",
     sedad: "سداد",
+    stripe: "بطاقة بنكية (Stripe)",
+    multicaixa: "Multicaixa Express",
     hold_24h: "حجز مؤكد 24 ساعة",
     unknown: "غير محدد",
   };

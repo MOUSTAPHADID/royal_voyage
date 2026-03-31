@@ -111,6 +111,8 @@ export type Booking = {
   businessAccountId?: string; // ID of the business account this booking belongs to
   businessCommission?: number; // Commission rate percentage applied
   commissionAmount?: number; // Actual commission amount in MRU
+  // Stripe payment tracking
+  stripePaymentIntentId?: string; // Stripe PaymentIntent ID for card payments
 };
 
 export const DESTINATIONS: Destination[] = [

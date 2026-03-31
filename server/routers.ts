@@ -36,6 +36,7 @@ import {
   pingDuffelWebhook,
 } from "./duffel-webhooks";
 import { transcribeAudio } from "./_core/voiceTranscription";
+import { createPaymentIntent, getPaymentIntent, isStripeConfigured, getPublishableKey } from "./stripe";
 import { storagePut } from "./storage";
 import {
   getBusinessAccounts,
@@ -1239,6 +1240,67 @@ export const appRouter = router({
           return { success: false, error: err.message };
         }
       }),
+  }),
+  // ─── Stripe Payments ─────────────────────────────────────────────────
+  stripe: router({
+    createPaymentIntent: publicProcedure
+      .input(
+        z.object({
+          amount: z.number().min(1), // Amount in MRU
+          currency: z.string().default("eur"), // Target Stripe currency: "eur" or "usd"
+          description: z.string().optional(),
+          bookingRef: z.string().optional(),
+          passengerName: z.string().optional(),
+          passengerEmail: z.string().email().optional(),
+          usdToMRU: z.number().optional(),
+          eurToMRU: z.number().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          if (!isStripeConfigured()) {
+            return { success: false as const, error: "STRIPE_NOT_CONFIGURED" };
+          }
+          const result = await createPaymentIntent({
+            amount: input.amount,
+            currency: input.currency,
+            description: input.description || `Royal Voyage Booking${input.bookingRef ? ` - ${input.bookingRef}` : ""}`,
+            metadata: {
+              ...(input.bookingRef ? { bookingRef: input.bookingRef } : {}),
+              ...(input.passengerName ? { passengerName: input.passengerName } : {}),
+            },
+            receiptEmail: input.passengerEmail,
+            rates: {
+              usdToMRU: input.usdToMRU,
+              eurToMRU: input.eurToMRU,
+            },
+          });
+          return { success: true as const, ...result };
+        } catch (err: any) {
+          console.error("[Stripe] createPaymentIntent error:", err?.message);
+          return { success: false as const, error: err?.message || "PAYMENT_INTENT_ERROR" };
+        }
+      }),
+
+    getPaymentStatus: publicProcedure
+      .input(z.object({ paymentIntentId: z.string() }))
+      .query(async ({ input }) => {
+        try {
+          const result = await getPaymentIntent(input.paymentIntentId);
+          return { success: true, ...result };
+        } catch (err: any) {
+          console.error("[Stripe] getPaymentStatus error:", err?.message);
+          return { success: false, error: err?.message || "STATUS_ERROR" };
+        }
+      }),
+
+    isConfigured: publicProcedure.query(() => {
+      return { configured: isStripeConfigured() };
+    }),
+
+    getPublishableKey: publicProcedure.query(() => {
+      return { key: getPublishableKey() };
+    }),
   }),
 });
 
