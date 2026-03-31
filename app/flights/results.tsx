@@ -53,6 +53,7 @@ export default function FlightResultsScreen() {
     tripType: string;
     passengers: string;
     children: string;
+    infants: string;
     useMock: string;
   }>();
 
@@ -76,6 +77,8 @@ export default function FlightResultsScreen() {
       departureDate: params.date || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       returnDate: isRoundTrip ? params.returnDate : undefined,
       adults: parseInt(params.passengers || "1", 10),
+      children: parseInt(params.children || "0", 10),
+      infants: parseInt(params.infants || "0", 10),
       max: 15,
     },
     {
@@ -91,6 +94,8 @@ export default function FlightResultsScreen() {
       destinationCode: params.originCode || "",
       departureDate: params.returnDate || new Date(Date.now() + 37 * 86400000).toISOString().slice(0, 10),
       adults: parseInt(params.passengers || "1", 10),
+      children: parseInt(params.children || "0", 10),
+      infants: parseInt(params.infants || "0", 10),
       max: 10,
     },
     {
@@ -151,10 +156,11 @@ export default function FlightResultsScreen() {
             class: item.class,
             seatsLeft: String(item.seatsLeft),
             passengers: params.passengers || "1",
-            children: params.children || "0",
-            tripType: params.tripType || "oneway",
-            returnDate: params.returnDate || "",
-          },
+             children: params.children || "0",
+             infants: params.infants || "0",
+             tripType: params.tripType || "oneway",
+             returnDate: params.returnDate || "",
+           },
         })
       }
     >
@@ -256,10 +262,11 @@ export default function FlightResultsScreen() {
                 class: item.class,
                 seatsLeft: String(item.seatsLeft),
                 passengers: params.passengers || "1",
-                children: params.children || "0",
-                tripType: params.tripType || "oneway",
-                returnDate: params.returnDate || "",
-              },
+                 children: params.children || "0",
+                 infants: params.infants || "0",
+                 tripType: params.tripType || "oneway",
+                 returnDate: params.returnDate || "",
+               },
             })
           }
         >

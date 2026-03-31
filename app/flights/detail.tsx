@@ -40,6 +40,7 @@ export default function FlightDetailScreen() {
     returnDate: string;
     passengers: string;
     children: string;
+    infants: string;
   }>();
 
   // If params have flight data (from Amadeus), use them; otherwise fall back to mock
@@ -69,6 +70,7 @@ export default function FlightDetailScreen() {
   const isRoundTrip = params.tripType === "roundtrip";
   const adultCount = parseInt(params.passengers || "1", 10);
   const childCount = parseInt(params.children || "0", 10);
+  const infantCount = parseInt(params.infants || "0", 10);
   const currency = flight.currency || "EUR";
   // Duffel API: total_amount = السعر الإجمالي لكل الركاب + كل الرحلات (ذهاب وإياب)
   // لا نحتاج لضرب × عدد الركاب أو × 2 لأن السعر شامل بالفعل
@@ -77,7 +79,7 @@ export default function FlightDetailScreen() {
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
   const totalMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
   // سعر الشخص الواحد (للعرض في البادج)
-  const totalPersons = adultCount + childCount;
+  const totalPersons = adultCount + childCount + infantCount;
   const perPersonMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
 
   const amenities = [
@@ -183,7 +185,7 @@ export default function FlightDetailScreen() {
           {/* عدد الركاب */}
           <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.infoLabel, { color: colors.muted }]}>
-              {adultCount} بالغ{childCount > 0 ? ` + ${childCount} طفل` : ""}
+              {adultCount} بالغ{childCount > 0 ? ` + ${childCount} طفل` : ""}{infantCount > 0 ? ` + ${infantCount} رضيع` : ""}
             </Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
               {fmt(perPersonMRU)}/شخص
@@ -219,7 +221,7 @@ export default function FlightDetailScreen() {
             {fmt(totalMRU)}
           </Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
-            {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""}{isRoundTrip ? " · ذهاب وإياب" : ""}
+            {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""}{infantCount > 0 ? ` · ${infantCount} رضيع` : ""}{isRoundTrip ? " · ذهاب وإياب" : ""}
           </Text>
         </View>
         <Pressable
@@ -247,6 +249,7 @@ export default function FlightDetailScreen() {
                 returnDate: params.returnDate || "",
                 passengers: String(adultCount),
                 children: String(childCount),
+                infants: String(infantCount),
               },
             })
           }

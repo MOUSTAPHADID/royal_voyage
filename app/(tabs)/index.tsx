@@ -273,6 +273,8 @@ export default function HomeScreen() {
 
   // Children count
   const [children, setChildren] = useState(0);
+  // Infant count (under 2 years)
+  const [infants, setInfants] = useState(0);
   const [hotelChildren, setHotelChildren] = useState(0);
 
   // Hotel search state
@@ -319,6 +321,7 @@ export default function HomeScreen() {
         tripType,
         passengers: passengers.toString(),
         children: children.toString(),
+        infants: infants.toString(),
         cabinClass,
         useMock: "false",
       },
@@ -573,6 +576,23 @@ export default function HomeScreen() {
                         <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
                       </Pressable>
                     </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Infants */}
+              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <IconSymbol name="heart.fill" size={18} color={colors.primary} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "رضع (أقل من سنتين)" : "Infants (under 2)"}</Text>
+                  <View style={styles.counterRow}>
+                    <Pressable onPress={() => setInfants(Math.max(0, infants - 1))}>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                    </Pressable>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{infants}</Text>
+                    <Pressable onPress={() => setInfants(Math.min(infants + 1, passengers))}>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                    </Pressable>
                   </View>
                 </View>
               </View>

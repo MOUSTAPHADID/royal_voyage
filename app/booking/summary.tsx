@@ -44,6 +44,7 @@ export default function BookingSummaryScreen() {
     cabinClass?: string;
     passengers?: string;
     children?: string;
+    infants?: string;
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
@@ -63,6 +64,7 @@ export default function BookingSummaryScreen() {
 
   const adultCount = parseInt(params.passengers ?? params.guests ?? "1", 10);
   const childCount = parseInt(params.children ?? "0", 10);
+  const infantCount = parseInt(params.infants ?? "0", 10);
 
   const passedPrice = parseFloat(params.price ?? "0");
   const passedRoomPrice = parseFloat(params.roomPrice ?? "0");
@@ -105,6 +107,7 @@ export default function BookingSummaryScreen() {
         cabinClass: params.cabinClass,
         passengers: params.passengers,
         children: params.children,
+        infants: params.infants,
         tripType: params.tripType,
         returnDate: params.returnDate,
         hotelName: params.hotelName,
@@ -278,6 +281,13 @@ export default function BookingSummaryScreen() {
             <SummaryRow
               label={`الأطفال (${childCount})`}
               value={childCount.toString()}
+              colors={colors}
+            />
+          )}
+          {infantCount > 0 && (
+            <SummaryRow
+              label={`الرضع (${infantCount})`}
+              value={infantCount.toString()}
               colors={colors}
             />
           )}

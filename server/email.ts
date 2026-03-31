@@ -116,6 +116,7 @@ export interface FlightTicketData {
   cabinClass: string;
   passengers: number;
   children: number;
+  infants: number;
   totalPrice: string;
   currency: string;
   tripType: "one-way" | "round-trip";
@@ -169,7 +170,7 @@ function flightTicketHtml(data: FlightTicketData): string {
         <div class="info-item"><label>Arrival</label><span>${data.arrivalTime}</span></div>
         <div class="info-item"><label>Flight</label><span>${data.airline} ${data.flightNumber}</span></div>
         <div class="info-item"><label>Class</label><span>${data.cabinClass}</span></div>
-        <div class="info-item"><label>Passengers</label><span>${data.passengers} Adult${data.passengers > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}</span></div>
+        <div class="info-item"><label>Passengers</label><span>${data.passengers} Adult${data.passengers > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}${data.infants > 0 ? ` + ${data.infants} Infant${data.infants > 1 ? "s" : ""}` : ""}</span></div>
       </div>
     </div>
 

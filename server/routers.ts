@@ -61,6 +61,8 @@ export const appRouter = router({
           departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
           returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
           adults: z.number().min(1).max(9).default(1),
+          children: z.number().min(0).max(8).default(0),
+          infants: z.number().min(0).max(4).default(0),
           travelClass: z
             .enum(["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"])
             .optional(),
@@ -75,6 +77,8 @@ export const appRouter = router({
             departureDate: input.departureDate,
             returnDate: input.returnDate,
             adults: input.adults,
+            children: input.children,
+            infants: input.infants,
             travelClass: input.travelClass,
             max: input.max,
           });
@@ -377,6 +381,7 @@ export const appRouter = router({
           cabinClass: z.string(),
           passengers: z.number(),
           children: z.number().default(0),
+          infants: z.number().default(0),
           totalPrice: z.string(),
           currency: z.string().default("MRU"),
           tripType: z.enum(["one-way", "round-trip"]).default("one-way"),
@@ -509,6 +514,7 @@ export const appRouter = router({
           cabinClass: z.string().default("ECONOMY"),
           passengers: z.number().default(1),
           children: z.number().default(0),
+          infants: z.number().default(0),
           totalPrice: z.string().default(""),
           currency: z.string().default("MRU"),
           tripType: z.enum(["one-way", "round-trip"]).default("one-way"),

@@ -38,6 +38,7 @@ export interface FlightTicketData {
   cabinClass: string;
   adults: number;
   children: number;
+  infants: number;
   tripType: "oneway" | "roundtrip";
   returnDate?: string;
   totalPrice: string;
@@ -58,6 +59,7 @@ export interface HotelVoucherData {
   roomType: string;
   adults: number;
   children: number;
+  infants: number;
   totalPrice: string;
   currency: string;
   issueDate: string;
@@ -78,8 +80,8 @@ function center(text: string, width = 50): string {
 export function generateFlightTicket(data: FlightTicketData): string {
   const passengerCount =
     data.adults + data.children > 1
-      ? `${data.adults} Adult${data.adults > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}`
-      : "1 Adult";
+      ? `${data.adults} Adult${data.adults > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}${data.infants > 0 ? ` + ${data.infants} Infant${data.infants > 1 ? "s" : ""}` : ""}`
+      : `1 Adult${data.infants > 0 ? ` + ${data.infants} Infant${data.infants > 1 ? "s" : ""}` : ""}`;
 
   const ticket = [
     line("═"),
@@ -155,8 +157,8 @@ export function generateFlightTicket(data: FlightTicketData): string {
 export function generateHotelVoucher(data: HotelVoucherData): string {
   const guestCount =
     data.adults + data.children > 1
-      ? `${data.adults} Adult${data.adults > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}`
-      : "1 Adult";
+      ? `${data.adults} Adult${data.adults > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child${data.children > 1 ? "ren" : ""}` : ""}${data.infants > 0 ? ` + ${data.infants} Infant${data.infants > 1 ? "s" : ""}` : ""}`
+      : `1 Adult${data.infants > 0 ? ` + ${data.infants} Infant${data.infants > 1 ? "s" : ""}` : ""}`;
 
   const voucher = [
     line("═"),

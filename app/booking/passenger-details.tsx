@@ -43,6 +43,7 @@ export default function PassengerDetailsScreen() {
     cabinClass?: string;
     passengers?: string;
     children?: string;
+    infants?: string;
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
@@ -70,6 +71,7 @@ export default function PassengerDetailsScreen() {
   const [dobError, setDobError] = useState("");
 
   const childrenCount = parseInt(params.children ?? "0", 10);
+  const infantCount = parseInt(params.infants ?? "0", 10);
 
   const validateDOB = (val: string) => {
     setDateOfBirth(val);
@@ -116,6 +118,7 @@ export default function PassengerDetailsScreen() {
         cabinClass: params.cabinClass,
         passengers: params.passengers,
         children: params.children,
+        infants: params.infants,
         tripType: params.tripType,
         returnDate: params.returnDate,
         hotelName: params.hotelName,
@@ -189,6 +192,14 @@ export default function PassengerDetailsScreen() {
                   <IconSymbol name="figure.and.child.holdinghands" size={13} color={colors.success} />
                   <Text style={[styles.badgeText, { color: colors.success }]}>
                     {childrenCount} Child{childrenCount > 1 ? "ren" : ""}
+                  </Text>
+                </View>
+              )}
+              {infantCount > 0 && (
+                <View style={[styles.badge, { backgroundColor: colors.error + "18" }]}>
+                  <IconSymbol name="heart.fill" size={13} color={colors.error} />
+                  <Text style={[styles.badgeText, { color: colors.error }]}>
+                    {infantCount} Infant{infantCount > 1 ? "s" : ""}
                   </Text>
                 </View>
               )}

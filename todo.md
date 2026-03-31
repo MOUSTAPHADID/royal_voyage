@@ -890,3 +890,11 @@
 
 ## إعادة تسمية حقل Order ID
 - [x] تغيير amadeusOrderId/duffelOrderId إلى royalOrderId في جميع الملفات (mock-data, payment, detail, admin/booking-detail, use-ticket-polling, tests)
+
+## إضافة الرضيع (Infant) في البحث والحجز
+- [x] إضافة عداد الرضع في شاشة البحث (tabs/index.tsx)
+- [x] تحديث Duffel API لإرسال infant_without_seat في البحث (duffel.ts + routers.ts + results.tsx)
+- [x] تحديث شاشة تفاصيل الرحلة لعرض عدد الرضع
+- [x] تحديث passenger-details.tsx لتمرير infants
+- [x] تحديث تدفق الحجز (summary, payment, confirmation) لتمرير infants
+- [x] تحديث قوالب البريد وPDF وticket-generator وpdf-ticket-generator لعرض الرضع

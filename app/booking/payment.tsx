@@ -138,6 +138,7 @@ export default function PaymentScreen() {
     cabinClass?: string;
     passengers?: string;
     children?: string;
+    infants?: string;
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
@@ -157,6 +158,7 @@ export default function PaymentScreen() {
 
   const adultCount = parseInt(params.passengers ?? "1", 10);
   const childCount = parseInt(params.children ?? "0", 10);
+  const infantCount = parseInt(params.infants ?? "0", 10);
 
   // السعر المُمرَّر من flights/detail أو hotels/detail هو بالأوقية (MRU) دائماً
   const passedPrice = parseFloat(params.price ?? "0");
@@ -481,6 +483,7 @@ export default function PaymentScreen() {
             cabinClass: params.cabinClass ?? "Economy",
             passengers: adultCount,
             children: childCount,
+            infants: infantCount,
             totalPrice: totalMRU,
             currency: "MRU",
             tripType: params.tripType === "roundtrip" ? "round-trip" : "one-way",
@@ -552,6 +555,7 @@ export default function PaymentScreen() {
         cabinClass: params.cabinClass ?? "Economy",
         passengers: params.passengers ?? "1",
         children: params.children ?? "0",
+        infants: params.infants ?? "0",
         tripType: params.tripType ?? "oneway",
         returnDate: params.returnDate,
         hotelName: params.hotelName ?? hotel?.name ?? "",

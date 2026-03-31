@@ -33,6 +33,7 @@ describe("Email Service", () => {
       cabinClass: "Economy",
       passengers: 1,
       children: 0,
+      infants: 0,
       totalPrice: "45,000 أوق",
       currency: "MRU",
       tripType: "one-way",

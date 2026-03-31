@@ -64,6 +64,7 @@ export default function ConfirmationScreen() {
     cabinClass?: string;
     passengers?: string;
     children?: string;
+    infants?: string;
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
@@ -144,6 +145,7 @@ export default function ConfirmationScreen() {
     try {
       const adults = parseInt(params.passengers ?? params.guests ?? "1", 10);
       const children = parseInt(params.children ?? "0", 10);
+      const infants = parseInt(params.infants ?? "0", 10);
 
       if (isFlight) {
         const result = await sendFlightEmail.mutateAsync({
@@ -166,6 +168,7 @@ export default function ConfirmationScreen() {
           cabinClass: params.cabinClass ?? "Economy",
           passengers: adults,
           children,
+          infants,
           totalPrice: formattedTotal,
           currency: "MRU",
           tripType: params.tripType === "roundtrip" ? "round-trip" : "one-way",
@@ -237,6 +240,7 @@ export default function ConfirmationScreen() {
   const getTicketText = (): string => {
     const adults = parseInt(params.passengers ?? params.guests ?? "1", 10);
     const children = parseInt(params.children ?? "0", 10);
+    const infants = parseInt(params.infants ?? "0", 10);
 
     if (isFlight) {
       return generateFlightTicket({
@@ -259,6 +263,7 @@ export default function ConfirmationScreen() {
         cabinClass: params.cabinClass ?? "Economy",
         adults,
         children,
+        infants,
         tripType: (params.tripType as "oneway" | "roundtrip") ?? "oneway",
         returnDate: params.returnDate,
         totalPrice: formattedTotal,
@@ -279,6 +284,7 @@ export default function ConfirmationScreen() {
         roomType: params.roomType ?? "Standard Room",
         adults,
         children,
+        infants,
         totalPrice: formattedTotal,
         currency: "MRU",
         issueDate: today,

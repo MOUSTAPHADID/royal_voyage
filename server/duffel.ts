@@ -232,6 +232,7 @@ export async function searchFlights(params: {
   returnDate?: string;
   adults: number;
   children?: number;
+  infants?: number;
   travelClass?: string;
   max?: number;
 }): Promise<FlightOffer[]> {
@@ -261,6 +262,11 @@ export async function searchFlights(params: {
   if (params.children) {
     for (let i = 0; i < params.children; i++) {
       passengers.push({ age: 10 }); // Default child age
+    }
+  }
+  if (params.infants) {
+    for (let i = 0; i < params.infants; i++) {
+      passengers.push({ type: "infant_without_seat" as const });
     }
   }
 

@@ -235,7 +235,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       const grid2Y = gridY + 36;
       infoCell(doc, M + 16, grid2Y, cellW, "Class", data.cabinClass);
       infoCell(doc, M + 16 + cellW, grid2Y, cellW * 2, "Passenger",
-        `${data.passengers} Adult${data.passengers > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child` : ""}`);
+        `${data.passengers} Adult${data.passengers > 1 ? "s" : ""}${data.children > 0 ? ` + ${data.children} Child` : ""}${(data as any).infants > 0 ? ` + ${(data as any).infants} Infant` : ""}`);
       infoCell(doc, M + 16 + cellW * 3, grid2Y, cellW, "Total", `${data.totalPrice} ${data.currency}`);
 
       // ── Passenger name bar ─────────────────────────────────────────────────
