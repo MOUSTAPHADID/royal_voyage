@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   ListRenderItemInfo,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -71,6 +72,9 @@ export default function FlightResultsScreen() {
   const [sortBy, setSortBy] = useState<SortOption>("price");
   const [filterClass, setFilterClass] = useState<string>("All");
   const [activeSection, setActiveSection] = useState<"outbound" | "return">("outbound");
+  const [showPriceFilter, setShowPriceFilter] = useState(false);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 999999]);
+  const [priceRangeInitialized, setPriceRangeInitialized] = useState(false);
 
   // Always use Duffel Production API — useMock is kept for emergency fallback only
   const useMock = false;const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
@@ -126,15 +130,45 @@ export default function FlightResultsScreen() {
 
   const activeFlights = activeSection === "outbound" ? rawFlights : rawReturnFlights;
 
+  // Calculate min/max prices for slider
+  const { minPrice, maxPrice } = useMemo(() => {
+    if (activeFlights.length === 0) return { minPrice: 0, maxPrice: 999999 };
+    const prices = activeFlights.map((f) => toMRU(f.price, f.currency || "EUR"));
+    return { minPrice: Math.floor(Math.min(...prices)), maxPrice: Math.ceil(Math.max(...prices)) };
+  }, [activeFlights]);
+
+  // Initialize price range when data loads
+  useEffect(() => {
+    if (activeFlights.length > 0 && !priceRangeInitialized) {
+      setPriceRange([minPrice, maxPrice]);
+      setPriceRangeInitialized(true);
+    }
+  }, [activeFlights.length, minPrice, maxPrice, priceRangeInitialized]);
+
+  // Reset price range when switching sections
+  useEffect(() => {
+    setPriceRangeInitialized(false);
+  }, [activeSection]);
+
   const filteredFlights = useMemo(() => {
     return activeFlights
       .filter((f) => filterClass === "All" || f.class === filterClass)
+      .filter((f) => {
+        const priceMRU = toMRU(f.price, f.currency || "EUR");
+        return priceMRU >= priceRange[0] && priceMRU <= priceRange[1];
+      })
       .sort((a, b) => {
         if (sortBy === "price") return a.price - b.price;
         if (sortBy === "duration") return a.duration.localeCompare(b.duration);
         return a.departureTime.localeCompare(b.departureTime);
       });
-  }, [activeFlights, filterClass, sortBy]);
+  }, [activeFlights, filterClass, sortBy, priceRange]);
+
+  // Airline logo helper - uses IATA code to get logo from public CDN
+  const getAirlineLogo = (airlineCode: string) => {
+    if (!airlineCode) return null;
+    return `https://images.kiwi.com/airlines/64/${airlineCode}.png`;
+  };
 
   const renderFlight = ({ item }: ListRenderItemInfo<AnyFlight>) => (
     <Pressable
@@ -148,6 +182,7 @@ export default function FlightResultsScreen() {
           params: {
             id: item.id,
             airline: item.airline,
+            airlineCode: item.airlineCode || "",
             flightNumber: item.flightNumber,
             originCode: item.originCode,
             origin: item.origin,
@@ -175,7 +210,16 @@ export default function FlightResultsScreen() {
       <View style={styles.cardHeader}>
         <View style={styles.airlineRow}>
           <View style={[styles.airlineIconBox, { backgroundColor: colors.primary + "15" }]}>
-            <Text style={{ fontSize: 22 }}>✈</Text>
+            {item.airlineCode ? (
+              <Image
+                source={{ uri: getAirlineLogo(item.airlineCode) || '' }}
+                style={styles.airlineLogo}
+                resizeMode="contain"
+                defaultSource={undefined}
+              />
+            ) : (
+              <Text style={{ fontSize: 22 }}>✈</Text>
+            )}
           </View>
           <View>
             <Text style={[styles.airlineName, { color: colors.foreground }]}>{item.airline}</Text>
@@ -259,6 +303,7 @@ export default function FlightResultsScreen() {
               params: {
                 id: item.id,
                 airline: item.airline,
+                airlineCode: item.airlineCode || "",
                 flightNumber: item.flightNumber,
                 originCode: item.originCode,
                 origin: item.origin,
@@ -313,7 +358,8 @@ export default function FlightResultsScreen() {
           </Text>
         </View>
         <Pressable
-          style={[styles.filterBtn, { backgroundColor: "rgba(255,255,255,0.15)" }]}
+          style={[styles.filterBtn, { backgroundColor: showPriceFilter ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.15)" }]}
+          onPress={() => setShowPriceFilter(!showPriceFilter)}
         >
           <IconSymbol name="slider.horizontal.3" size={20} color="#FFFFFF" />
         </Pressable>
@@ -347,6 +393,100 @@ export default function FlightResultsScreen() {
             </Text>
             {returnLoading && <ActivityIndicator size="small" color={colors.secondary} style={{ marginLeft: 4 }} />}
           </Pressable>
+        </View>
+      )}
+
+      {/* Price Range Filter */}
+      {showPriceFilter && activeFlights.length > 0 && (
+        <View style={[styles.priceFilterBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <View style={styles.priceFilterHeader}>
+            <Text style={[styles.priceFilterTitle, { color: colors.foreground }]}>نطاق السعر (MRU)</Text>
+            <Pressable
+              onPress={() => { setPriceRange([minPrice, maxPrice]); }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            >
+              <Text style={[styles.priceFilterReset, { color: colors.primary }]}>إعادة تعيين</Text>
+            </Pressable>
+          </View>
+          <View style={styles.priceLabels}>
+            <Text style={[styles.priceLabel, { color: colors.primary }]}>
+              {Math.round(priceRange[0]).toLocaleString()} MRU
+            </Text>
+            <Text style={[styles.priceLabel, { color: colors.muted }]}>—</Text>
+            <Text style={[styles.priceLabel, { color: colors.primary }]}>
+              {Math.round(priceRange[1]).toLocaleString()} MRU
+            </Text>
+          </View>
+          {/* Min slider */}
+          <View style={styles.sliderContainer}>
+            <Text style={[styles.sliderLabel, { color: colors.muted }]}>الحد الأدنى</Text>
+            <View style={styles.sliderTrack}>
+              <View
+                style={[
+                  styles.sliderFill,
+                  {
+                    backgroundColor: colors.primary + "30",
+                    left: `${((priceRange[0] - minPrice) / Math.max(maxPrice - minPrice, 1)) * 100}%`,
+                    right: `${100 - ((priceRange[1] - minPrice) / Math.max(maxPrice - minPrice, 1)) * 100}%`,
+                  },
+                ]}
+              />
+            </View>
+            <View style={styles.sliderBtns}>
+              {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
+                const val = Math.round(minPrice + (maxPrice - minPrice) * pct);
+                const isActive = priceRange[0] <= val && val <= priceRange[1];
+                return (
+                  <Pressable
+                    key={`min-${pct}`}
+                    style={[styles.sliderDot, { backgroundColor: isActive ? colors.primary : colors.border }]}
+                    onPress={() => setPriceRange([val, Math.max(val, priceRange[1])])}
+                  />
+                );
+              })}
+            </View>
+          </View>
+          {/* Max slider */}
+          <View style={styles.sliderContainer}>
+            <Text style={[styles.sliderLabel, { color: colors.muted }]}>الحد الأقصى</Text>
+            <View style={styles.sliderBtns}>
+              {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
+                const val = Math.round(minPrice + (maxPrice - minPrice) * pct);
+                const isActive = priceRange[0] <= val && val <= priceRange[1];
+                return (
+                  <Pressable
+                    key={`max-${pct}`}
+                    style={[styles.sliderDot, { backgroundColor: isActive ? colors.primary : colors.border }]}
+                    onPress={() => setPriceRange([Math.min(priceRange[0], val), val])}
+                  />
+                );
+              })}
+            </View>
+          </View>
+          {/* Quick presets */}
+          <View style={styles.presetRow}>
+            {[
+              { label: "< 10K", max: 10000 },
+              { label: "10-20K", min: 10000, max: 20000 },
+              { label: "20-50K", min: 20000, max: 50000 },
+              { label: "> 50K", min: 50000 },
+            ].map((preset) => {
+              const pMin = preset.min ?? minPrice;
+              const pMax = preset.max ?? maxPrice;
+              const isActive = priceRange[0] === pMin && priceRange[1] === pMax;
+              return (
+                <Pressable
+                  key={preset.label}
+                  style={[styles.presetChip, { backgroundColor: isActive ? colors.primary : colors.border + "40" }]}
+                  onPress={() => setPriceRange([pMin, pMax])}
+                >
+                  <Text style={[styles.presetText, { color: isActive ? "#FFF" : colors.muted }]}>
+                    {preset.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
       )}
 
@@ -501,6 +641,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
+    overflow: "hidden",
+  },
+  airlineLogo: {
+    width: 34,
+    height: 34,
+    borderRadius: 4,
   },
   airlineName: { fontSize: 15, fontWeight: "600" },
   flightNumber: { fontSize: 12, marginTop: 2 },
@@ -559,4 +705,61 @@ const styles = StyleSheet.create({
   },
   sectionTabText: { fontSize: 14, fontWeight: "700" },
   sectionTabDate: { fontSize: 12 },
+  // Price filter styles
+  priceFilterBar: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+    borderBottomWidth: 1,
+  },
+  priceFilterHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  priceFilterTitle: { fontSize: 14, fontWeight: "700" },
+  priceFilterReset: { fontSize: 13, fontWeight: "600" },
+  priceLabels: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  priceLabel: { fontSize: 16, fontWeight: "700" },
+  sliderContainer: { gap: 6 },
+  sliderLabel: { fontSize: 11, fontWeight: "600" },
+  sliderTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#E5E7EB",
+    position: "relative",
+    overflow: "hidden",
+  },
+  sliderFill: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    borderRadius: 2,
+  },
+  sliderBtns: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  sliderDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  presetRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  presetChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  presetText: { fontSize: 12, fontWeight: "600" },
 });

@@ -5,6 +5,7 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -42,11 +43,15 @@ export default function FlightDetailScreen() {
     children: string;
     infants: string;
     passengerPricingJson: string;
+    airlineCode: string;
   }>();
 
   // If params have flight data (from Amadeus), use them; otherwise fall back to mock
   const hasFlight = !!params.airline;
   const mockFlight = FLIGHTS.find((f) => f.id === params.id) ?? FLIGHTS[0];
+
+  // Airline logo helper
+  const getAirlineLogo = (code: string) => code ? `https://images.kiwi.com/airlines/64/${code}.png` : null;
 
   const flight = hasFlight
     ? {
@@ -131,7 +136,15 @@ export default function FlightDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.airlineRow}>
             <View style={[styles.airlineIcon, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={{ fontSize: 28 }}>✈</Text>
+              {(params.airlineCode || flight.flightNumber?.split(' ')[0]) ? (
+                <Image
+                  source={{ uri: getAirlineLogo(params.airlineCode || flight.flightNumber?.split(' ')[0]?.replace(/[0-9]/g, '') || '') || '' }}
+                  style={{ width: 38, height: 38, borderRadius: 6 }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <Text style={{ fontSize: 28 }}>✈</Text>
+              )}
             </View>
             <View>
               <Text style={[styles.airlineName, { color: colors.foreground }]}>{flight.airline}</Text>
