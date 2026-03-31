@@ -2,7 +2,7 @@ import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, router, adminProcedure } from "./_core/trpc";
 import {
   searchFlights,
   searchLocations,
@@ -28,6 +28,20 @@ import {
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
+import {
+  getBusinessAccounts,
+  getBusinessAccountById,
+  createBusinessAccount,
+  updateBusinessAccount,
+  deleteBusinessAccount,
+  getEmployees,
+  getEmployeeById,
+  getEmployeeByEmail,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+  verifyPassword,
+} from "./db";
 
 export const appRouter = router({
   system: systemRouter,
@@ -857,6 +871,149 @@ export const appRouter = router({
           console.error("[Push] Failed to send push notification:", err?.message);
           return { success: false, error: err?.message };
         }
+      }),
+  }),
+
+  // ─── Business Accounts Management (Admin) ──────────────────────────────────
+  businessAccounts: router({
+    list: publicProcedure.query(async () => {
+      return await getBusinessAccounts();
+    }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await getBusinessAccountById(input.id);
+      }),
+
+    create: publicProcedure
+      .input(z.object({
+        companyName: z.string().min(1).max(255),
+        contactName: z.string().min(1).max(255),
+        contactEmail: z.string().max(320).optional(),
+        contactPhone: z.string().max(32).optional(),
+        commissionPercent: z.string(),
+        creditLimit: z.string().optional(),
+        notes: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await createBusinessAccount(input);
+        return { success: true, id };
+      }),
+
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        companyName: z.string().min(1).max(255).optional(),
+        contactName: z.string().min(1).max(255).optional(),
+        contactEmail: z.string().max(320).optional(),
+        contactPhone: z.string().max(32).optional(),
+        commissionPercent: z.string().optional(),
+        creditLimit: z.string().optional(),
+        status: z.enum(["active", "suspended", "closed"]).optional(),
+        notes: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateBusinessAccount(id, data);
+        return { success: true };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteBusinessAccount(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Employee Management (Admin) ───────────────────────────────────────────
+  employees: router({
+    list: publicProcedure.query(async () => {
+      const emps = await getEmployees();
+      // Strip password hashes from response
+      return emps.map(({ passwordHash, ...rest }) => rest);
+    }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const emp = await getEmployeeById(input.id);
+        if (!emp) return null;
+        const { passwordHash, ...rest } = emp;
+        return rest;
+      }),
+
+    create: publicProcedure
+      .input(z.object({
+        fullName: z.string().min(1).max(255),
+        email: z.string().email().max(320),
+        phone: z.string().max(32).optional(),
+        password: z.string().min(4),
+        role: z.enum(["manager", "accountant", "booking_agent", "support"]),
+        permissions: z.string().optional(),
+        department: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Check if email already exists
+        const existing = await getEmployeeByEmail(input.email);
+        if (existing) {
+          throw new Error("البريد الإلكتروني مستخدم بالفعل");
+        }
+        const id = await createEmployee(input);
+        return { success: true, id };
+      }),
+
+    update: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        fullName: z.string().min(1).max(255).optional(),
+        email: z.string().email().max(320).optional(),
+        phone: z.string().max(32).optional(),
+        password: z.string().min(4).optional(),
+        role: z.enum(["manager", "accountant", "booking_agent", "support"]).optional(),
+        permissions: z.string().optional(),
+        status: z.enum(["active", "inactive"]).optional(),
+        department: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await updateEmployee(id, data);
+        return { success: true };
+      }),
+
+    delete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteEmployee(input.id);
+        return { success: true };
+      }),
+
+    // Verify employee login
+    verifyLogin: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        password: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        const emp = await getEmployeeByEmail(input.email);
+        if (!emp || emp.status !== "active") {
+          return { success: false, error: "بيانات الدخول غير صحيحة" };
+        }
+        const valid = verifyPassword(input.password, emp.passwordHash);
+        if (!valid) {
+          return { success: false, error: "كلمة المرور غير صحيحة" };
+        }
+        const { passwordHash, ...safeEmp } = emp;
+        return { success: true, employee: safeEmp };
       }),
   }),
 });

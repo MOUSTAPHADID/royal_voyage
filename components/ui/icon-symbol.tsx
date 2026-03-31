@@ -117,6 +117,9 @@ const MAPPING = {
   "chart.line.uptrend.xyaxis": "trending-up",
   "calendar.badge.clock": "pending-actions",
   "doc.richtext": "article",
+  "tv": "tv",
+  "dollarsign.circle.fill": "attach-money",
+  "briefcase.fill": "work",
 } as IconMapping;
 
 /**

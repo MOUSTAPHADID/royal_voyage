@@ -2,6 +2,7 @@ export type Flight = {
   id: string;
   airline: string;
   airlineLogo: string;
+  airlineCode?: string;
   flightNumber: string;
   origin: string;
   originCode: string;
@@ -13,7 +14,7 @@ export type Flight = {
   stops: number;
   price: number;
   currency: string;
-  class: "Economy" | "Business" | "First";
+  class: "Economy" | "Business" | "First" | string;
   seatsLeft: number;
 };
 
@@ -174,6 +175,7 @@ export const FLIGHTS: Flight[] = [
     id: "f1",
     airline: "Emirates",
     airlineLogo: "✈",
+    airlineCode: "EK",
     flightNumber: "EK 201",
     origin: "Casablanca",
     originCode: "CMN",
@@ -192,6 +194,7 @@ export const FLIGHTS: Flight[] = [
     id: "f2",
     airline: "Air France",
     airlineLogo: "✈",
+    airlineCode: "AF",
     flightNumber: "AF 550",
     origin: "Casablanca",
     originCode: "CMN",
@@ -210,6 +213,7 @@ export const FLIGHTS: Flight[] = [
     id: "f3",
     airline: "Qatar Airways",
     airlineLogo: "✈",
+    airlineCode: "QR",
     flightNumber: "QR 1350",
     origin: "Casablanca",
     originCode: "CMN",
@@ -228,6 +232,7 @@ export const FLIGHTS: Flight[] = [
     id: "f4",
     airline: "British Airways",
     airlineLogo: "✈",
+    airlineCode: "BA",
     flightNumber: "BA 493",
     origin: "Casablanca",
     originCode: "CMN",
@@ -246,6 +251,7 @@ export const FLIGHTS: Flight[] = [
     id: "f5",
     airline: "Emirates",
     airlineLogo: "✈",
+    airlineCode: "EK",
     flightNumber: "EK 201",
     origin: "Casablanca",
     originCode: "CMN",
@@ -264,6 +270,7 @@ export const FLIGHTS: Flight[] = [
     id: "f6",
     airline: "Turkish Airlines",
     airlineLogo: "✈",
+    airlineCode: "TK",
     flightNumber: "TK 702",
     origin: "Casablanca",
     originCode: "CMN",

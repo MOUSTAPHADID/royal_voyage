@@ -32,12 +32,14 @@ export default function ExploreScreen() {
   const renderDestination = ({ item }: ListRenderItemInfo<Destination>) => (
     <Pressable
       style={({ pressed }) => [styles.destCard, { opacity: pressed ? 0.9 : 1 }]}
-      onPress={() =>
+      onPress={() => {
+        const checkIn = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+        const checkOut = new Date(Date.now() + 19 * 86400000).toISOString().slice(0, 10);
         router.push({
           pathname: "/hotels/results" as any,
-          params: { destination: item.city, checkIn: "Apr 20, 2024", checkOut: "Apr 25, 2024", guests: "2" },
-        })
-      }
+          params: { destination: item.city, checkIn, checkOut, guests: "2" },
+        });
+      }}
     >
       <Image source={{ uri: item.image }} style={styles.destImage} />
       <View style={styles.destOverlay} />
