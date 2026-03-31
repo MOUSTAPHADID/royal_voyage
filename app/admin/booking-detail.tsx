@@ -351,7 +351,7 @@ export default function AdminBookingDetailScreen() {
         )}
 
         {/* Check Ticket Issuance from Duffel */}
-        {booking.type === "flight" && booking.amadeusOrderId && !booking.ticketNumber && (
+        {booking.type === "flight" && booking.royalOrderId && !booking.ticketNumber && (
           <Pressable
             style={({ pressed }) => [{
               flexDirection: "row",
@@ -369,7 +369,7 @@ export default function AdminBookingDetailScreen() {
               setCheckingTicket(true);
               try {
                 const res = await fetch(
-                  `http://127.0.0.1:3000/trpc/amadeus.checkTicketIssuance?input=${encodeURIComponent(JSON.stringify({ orderId: booking.amadeusOrderId }))}`
+                  `http://127.0.0.1:3000/trpc/amadeus.checkTicketIssuance?input=${encodeURIComponent(JSON.stringify({ orderId: booking.royalOrderId }))}`
                 );
                 const json = await res.json();
                 const result = json?.result?.data;
@@ -406,7 +406,7 @@ export default function AdminBookingDetailScreen() {
         )}
 
         {/* Queue to Consolidator */}
-        {booking.type === "flight" && booking.amadeusOrderId && (
+        {booking.type === "flight" && booking.royalOrderId && (
           <Pressable
             style={({ pressed }) => [{
               flexDirection: "row",
@@ -423,7 +423,7 @@ export default function AdminBookingDetailScreen() {
             onPress={async () => {
               setQueuingConsolidator(true);
               try {
-                const result = await queueToConsolidatorMut.mutateAsync({ orderId: booking.amadeusOrderId! });
+                const result = await queueToConsolidatorMut.mutateAsync({ orderId: booking.royalOrderId! });
                 if (result.success && result.data) {
                   Alert.alert(
                     "\u2705 Consolidator",
@@ -452,7 +452,7 @@ export default function AdminBookingDetailScreen() {
         )}
 
         {/* View Booking Status (Duffel) */}
-        {booking.type === "flight" && booking.amadeusOrderId && (
+        {booking.type === "flight" && booking.royalOrderId && (
           <Pressable
             style={({ pressed }) => [{
               flexDirection: "row",
@@ -466,7 +466,7 @@ export default function AdminBookingDetailScreen() {
               backgroundColor: "#0a7ea4",
               opacity: pressed ? 0.7 : 1,
             }]}
-            onPress={() => router.push({ pathname: "/pnr-status" as any, params: { orderId: booking.amadeusOrderId } })}
+            onPress={() => router.push({ pathname: "/pnr-status" as any, params: { orderId: booking.royalOrderId } })}
           >
             <IconSymbol name="doc.text.magnifyingglass" size={20} color="#FFFFFF" />
             <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>

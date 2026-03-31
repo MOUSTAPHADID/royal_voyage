@@ -629,13 +629,13 @@ export default function BookingDetailScreen() {
         )}
 
         {/* Booking Status (Duffel) */}
-        {booking.type === "flight" && booking.status !== "cancelled" && booking.amadeusOrderId && (
+        {booking.type === "flight" && booking.status !== "cancelled" && booking.royalOrderId && (
           <Pressable
             style={({ pressed }) => [
               styles.pnrStatusBtn,
               { borderColor: "#6366F1", opacity: pressed ? 0.7 : 1 },
             ]}
-            onPress={() => router.push({ pathname: "/pnr-status" as any, params: { orderId: booking.amadeusOrderId, bookingId: booking.id } })}
+            onPress={() => router.push({ pathname: "/pnr-status" as any, params: { orderId: booking.royalOrderId, bookingId: booking.id } })}
           >
             <IconSymbol name="doc.text.magnifyingglass" size={18} color="#6366F1" />
             <Text style={[styles.pnrStatusText, { color: "#6366F1" }]}>Booking Status</Text>

@@ -364,6 +364,7 @@ export const appRouter = router({
           passengerEmail: z.string().email(),
           bookingRef: z.string(),
           pnr: z.string().optional(),
+          ticketNumber: z.string().optional(),
           origin: z.string(),
           originCity: z.string(),
           destination: z.string(),

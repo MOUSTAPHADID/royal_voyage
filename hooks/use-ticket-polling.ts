@@ -39,12 +39,12 @@ export function useTicketPolling() {
     });
   }, []);
 
-  // Get pending flight bookings with amadeusOrderId (Duffel order ID)
+  // Get pending flight bookings with royalOrderId (Duffel order ID)
   const getPendingBookings = useCallback(() => {
     return bookings.filter(
       (b) =>
         b.type === "flight" &&
-        b.amadeusOrderId && // This field stores the Duffel order ID (e.g., ord_xxx)
+        b.royalOrderId &&
         b.status !== "cancelled" &&
         !b.ticketNumber &&
         !notifiedRef.current.has(b.id)
@@ -59,7 +59,7 @@ export function useTicketPolling() {
         const resp = await fetch(`${apiUrl}/api/trpc/amadeus.checkTicketIssuance`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ json: { orderId: booking.amadeusOrderId! } }),
+          body: JSON.stringify({ json: { orderId: booking.royalOrderId! } }),
         });
         const json = await resp.json();
         const result = json?.result?.data?.json;

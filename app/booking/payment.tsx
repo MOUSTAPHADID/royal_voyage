@@ -270,7 +270,8 @@ export default function PaymentScreen() {
 
     // ── Try to get real PNR from Duffel for flights ──
     let pnr = "";
-    let amadeusOrderId = "";
+    let royalOrderId = "";
+    let ticketNumber = "";
     
     if (isFlight && params.id) {
       try {
@@ -288,8 +289,14 @@ export default function PaymentScreen() {
 
         if (result.success && result.pnr) {
           pnr = result.pnr;
-          amadeusOrderId = result.orderId ?? "";
-          console.log(`[Payment] \u2705 Got real Duffel PNR: ${pnr}`);
+          royalOrderId = result.orderId ?? "";
+          // Extract ticket number from Duffel documents (instant ticketing)
+          const docs = (result as any).documents || [];
+          if (docs.length > 0 && docs[0].unique_identifier) {
+            ticketNumber = docs[0].unique_identifier;
+            console.log(`[Payment] 🎫 Got Duffel Ticket Number: ${ticketNumber}`);
+          }
+          console.log(`[Payment] ✅ Got real Duffel PNR: ${pnr}`);
         } else {
           console.warn(`[Payment] Duffel booking failed: ${result.error}. Using fallback PNR.`);
         }
@@ -377,7 +384,8 @@ export default function PaymentScreen() {
       paymentMethod,
       ...(transferRef.trim() ? { transferRef: transferRef.trim() } : {}),
       ...(receiptImage ? { receiptImage, receiptImageAt: new Date().toISOString() } : {}),
-      ...(amadeusOrderId ? { amadeusOrderId } : {}),
+      ...(royalOrderId ? { royalOrderId } : {}),
+      ...(ticketNumber ? { ticketNumber } : {}),
     };
 
     await addBooking(booking);
@@ -458,6 +466,7 @@ export default function PaymentScreen() {
             passengerEmail,
             bookingRef: ref,
             pnr,
+            ticketNumber: ticketNumber || undefined,
             origin: params.originCode ?? flight?.originCode ?? "",
             originCity: params.origin ?? flight?.origin ?? "",
             destination: params.destinationCode ?? flight?.destinationCode ?? "",
@@ -519,6 +528,7 @@ export default function PaymentScreen() {
       params: {
         reference: ref,
         pnr,
+        ticketNumber: ticketNumber || "",
         total: total.toString(),
         type: params.type,
         currency: "MRU",

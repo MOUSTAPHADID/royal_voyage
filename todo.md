@@ -878,3 +878,15 @@
 
 ## إصلاح مشكلة السعر المضروب في 2
 - [x] إصلاح السعر المضاعف لرحلات الذهاب والإياب — إزالة ×2 و×عدد الركاب (Duffel total_amount شامل)
+
+## اختبار حجز كامل + Ticket Number + تنظيف أسماء المتغيرات
+- [x] اختبار تدفق الحجز الكامل — 21 اختبار ناجح للتحقق من السعر الصحيح في كل المراحل
+- [x] إضافة Ticket Number في شاشة التأكيد (confirmation.tsx)
+- [x] إضافة Ticket Number في قالب البريد الإلكتروني (email.ts) — صندوق أزرق داكن بعد PNR
+- [x] إضافة Ticket Number في شاشة تفاصيل الحجز (booking/detail.tsx) — كان موجوداً بالفعل
+- [x] إعادة تسمية amadeusOrderId إلى duffelOrderId في mock-data.ts (مع backward compat)
+- [x] إعادة تسمية amadeusOrderId إلى duffelOrderId في app-context.ts (لم يكن موجوداً)
+- [x] تحديث جميع الملفات لاستخدام duffelOrderId مع fallback إلى amadeusOrderId (booking-detail, admin/booking-detail, use-ticket-polling, payment)
+
+## إعادة تسمية حقل Order ID
+- [x] تغيير amadeusOrderId/duffelOrderId إلى royalOrderId في جميع الملفات (mock-data, payment, detail, admin/booking-detail, use-ticket-polling, tests)

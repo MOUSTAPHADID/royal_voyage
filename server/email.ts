@@ -142,6 +142,14 @@ function flightTicketHtml(data: FlightTicketData): string {
     </div>
     ` : ""}
 
+    ${data.ticketNumber ? `
+    <div style="background:#1B2B5E;border-radius:12px;padding:14px 24px;text-align:center;margin-bottom:20px;">
+      <div style="font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:2px;text-transform:uppercase;font-weight:700;">E-Ticket Number</div>
+      <div style="font-size:22px;font-weight:800;color:#C9A84C;letter-spacing:4px;margin-top:6px;font-family:monospace;">${data.ticketNumber}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;">Electronic ticket issued by the airline</div>
+    </div>
+    ` : ""}
+
     <div class="section-title">✈ Outbound Flight</div>
     <div class="card">
       <div class="flight-route">

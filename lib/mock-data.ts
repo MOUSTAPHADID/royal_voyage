@@ -104,8 +104,8 @@ export type Booking = {
   seatChangeFee?: number; // Total fee for seat changes in MRU
   // Travel checklist
   travelChecklist?: Record<string, boolean>; // Checklist items completion status
-  // Amadeus Order Management
-  amadeusOrderId?: string; // Amadeus flight order ID for PNR status retrieval and cancellation
+  // Order Management
+  royalOrderId?: string; // Flight order ID for PNR status retrieval and cancellation (stores Duffel ord_xxx)
 };
 
 export const DESTINATIONS: Destination[] = [

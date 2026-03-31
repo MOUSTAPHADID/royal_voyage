@@ -76,6 +76,7 @@ export default function ConfirmationScreen() {
     stars?: string;
     currency?: string;
     pnr?: string;
+    ticketNumber?: string;
   }>();
 
   const scaleAnim = useRef(new Animated.Value(0)).current;
@@ -150,6 +151,7 @@ export default function ConfirmationScreen() {
           passengerEmail: targetEmail,
           bookingRef: params.reference ?? "RV000",
           pnr: params.pnr || undefined,
+          ticketNumber: params.ticketNumber || undefined,
           origin: params.originCode ?? "",
           originCity: params.origin ?? "",
           destination: params.destinationCode ?? "",
@@ -394,6 +396,18 @@ export default function ConfirmationScreen() {
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
             </>
           )}
+
+          {/* E-Ticket Number */}
+          {params.ticketNumber ? (
+            <>
+              <View style={[styles.pnrBox, { backgroundColor: "#C9A84C" + "15", borderColor: "#C9A84C" }]}>
+                <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم التذكرة الإلكترونية</Text>
+                <Text style={[styles.pnrValue, { color: "#C9A84C", fontSize: 18, letterSpacing: 2 }]}>{params.ticketNumber}</Text>
+                <Text style={[styles.pnrHint, { color: colors.muted }]}>E-Ticket — صادرة من شركة الطيران</Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            </>
+          ) : null}
 
           <View style={styles.refRow}>
             <Text style={[styles.refLabel, { color: colors.muted }]}>رقم المرجع</Text>
