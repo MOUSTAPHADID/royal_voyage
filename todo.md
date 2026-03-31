@@ -866,3 +866,12 @@
 ## اختبار Duffel API الحقيقي وتنظيف Amadeus
 - [x] اختبار بحث حقيقي عن رحلة NKC → CMN عبر Duffel API (5 رحلات حقيقية)
 - [x] إزالة ملف amadeus.ts القديم وملفات الاختبار المعتمدة عليه
+
+## اختبار حجز كامل عبر Duffel + PNR في البريد الإلكتروني
+- [x] اختبار تدفق الحجز الكامل عبر Duffel API (23 اختبار ناجح + بحث حقيقي curl)
+- [x] إضافة حقل pnr إلى FlightTicketData وHotelConfirmationData في server/email.ts (كان موجوداً بالفعل)
+- [x] عرض PNR بشكل بارز في قالب HTML للتذكرة (كان موجوداً بالفعل — صندوق ذهبي كبير)
+- [x] تحديث Zod schema في server/routers.ts لقبول pnr (كان موجوداً بالفعل)
+- [x] تمرير pnr من payment.tsx عند استدعاء mutation البريد (كان موجوداً بالفعل)
+- [x] إصلاح confirmation.tsx — تمرير pnr عند إعادة إرسال البريد الإلكتروني
+- [x] إصلاح use-ticket-polling.ts — تحديث التعليقات والمسار لاستخدام Duffel API

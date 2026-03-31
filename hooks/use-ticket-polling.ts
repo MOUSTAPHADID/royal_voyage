@@ -9,8 +9,11 @@ const STORAGE_KEY = "@ticket_polling_enabled";
 const NOTIFIED_KEY = "@ticket_polling_notified";
 
 /**
- * Hook that polls Amadeus API for ticket issuance status on pending flight bookings.
+ * Hook that polls Duffel API for ticket issuance status on pending flight bookings.
  * When a ticket is found, it updates the booking and sends a local notification.
+ * 
+ * Note: Duffel issues tickets instantly for most orders, so polling is mainly
+ * a safety net for edge cases where ticket issuance is delayed.
  */
 export function useTicketPolling() {
   const { bookings, updateBookingTicketNumber, updateBookingStatus } = useApp();
@@ -36,25 +39,24 @@ export function useTicketPolling() {
     });
   }, []);
 
-  // Get pending flight bookings with amadeusOrderId
+  // Get pending flight bookings with amadeusOrderId (Duffel order ID)
   const getPendingBookings = useCallback(() => {
     return bookings.filter(
       (b) =>
         b.type === "flight" &&
-        b.amadeusOrderId &&
+        b.amadeusOrderId && // This field stores the Duffel order ID (e.g., ord_xxx)
         b.status !== "cancelled" &&
         !b.ticketNumber &&
         !notifiedRef.current.has(b.id)
     );
   }, [bookings]);
 
-  // Check a single booking for ticket issuance
+  // Check a single booking for ticket issuance via Duffel API
   const checkBooking = useCallback(
     async (booking: (typeof bookings)[0]) => {
       try {
-        // Use fetch directly since we're outside React component
         const apiUrl = `http://127.0.0.1:3000`;
-        const resp = await fetch(`${apiUrl}/trpc/amadeus.checkTicketIssuance`, {
+        const resp = await fetch(`${apiUrl}/api/trpc/amadeus.checkTicketIssuance`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ json: { orderId: booking.amadeusOrderId! } }),
