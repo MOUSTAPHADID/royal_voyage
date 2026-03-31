@@ -37,7 +37,7 @@ const PAYMENT_LABELS: PaymentMethodLabel = {
 export default function ConfirmPaymentScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingStatus, confirmBookingPayment, rejectBookingPayment } = useApp();
+  const { bookings, updateBookingStatus, confirmBookingPayment, rejectBookingPayment, updateBookingPnr, updateBookingTicketNumber } = useApp();
   const confirmPaymentMutation = trpc.email.confirmPayment.useMutation();
   const sendPushMutation = trpc.email.sendPushNotification.useMutation();
   const payHoldOrder = trpc.amadeus.payHoldOrder.useMutation();
@@ -87,13 +87,26 @@ export default function ConfirmPaymentScreen() {
             try {
               // If this is a Duffel hold order, pay for it first to issue tickets
               let duffelTicketNumber = "";
+              let duffelRealPnr = "";
               if (booking.type === "flight" && booking.royalOrderId) {
                 try {
                   console.log(`[Admin] Paying Duffel hold order: ${booking.royalOrderId}`);
                   const payResult = await payHoldOrder.mutateAsync({ orderId: booking.royalOrderId });
                   if (payResult.success) {
                     duffelTicketNumber = payResult.ticketNumber || "";
-                    console.log(`[Admin] ✅ Hold order paid! Ticket: ${duffelTicketNumber}`);
+                    duffelRealPnr = payResult.pnr || "";
+                    console.log(`[Admin] ✅ Hold order paid! PNR: ${duffelRealPnr}, Ticket: ${duffelTicketNumber}`);
+                    
+                    // Persist real PNR from airline into booking state
+                    if (duffelRealPnr) {
+                      await updateBookingPnr(bookingId, duffelRealPnr);
+                      console.log(`[Admin] ✅ Real PNR saved: ${duffelRealPnr}`);
+                    }
+                    // Persist ticket number from airline into booking state
+                    if (duffelTicketNumber) {
+                      await updateBookingTicketNumber(bookingId, duffelTicketNumber);
+                      console.log(`[Admin] 🎫 Ticket number saved: ${duffelTicketNumber}`);
+                    }
                   } else {
                     console.warn(`[Admin] Duffel payment failed: ${payResult.error}`);
                   }
@@ -119,7 +132,7 @@ export default function ConfirmPaymentScreen() {
                   passengerName: booking.passengerName ?? "Valued Customer",
                   passengerEmail: booking.passengerEmail,
                   bookingRef: booking.reference,
-                  pnr: booking.realPnr ?? booking.pnr,
+                  pnr: duffelRealPnr || booking.realPnr || booking.pnr,
                   bookingType: booking.type,
                   // Flight fields
                   origin: booking.flight?.originCode,

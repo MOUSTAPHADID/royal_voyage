@@ -107,6 +107,10 @@ export type Booking = {
   travelChecklist?: Record<string, boolean>; // Checklist items completion status
   // Order Management
   royalOrderId?: string; // Flight order ID for PNR status retrieval and cancellation (stores Duffel ord_xxx)
+  // Business Account Commission
+  businessAccountId?: string; // ID of the business account this booking belongs to
+  businessCommission?: number; // Commission rate percentage applied
+  commissionAmount?: number; // Actual commission amount in MRU
 };
 
 export const DESTINATIONS: Destination[] = [

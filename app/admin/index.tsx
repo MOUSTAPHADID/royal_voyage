@@ -859,6 +859,40 @@ export default function AdminScreen() {
               <IconSymbol name="chevron.right" size={18} color={colors.muted} />
             </Pressable>
 
+            {/* بطاقة التقارير المالية */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/financial-reports" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#EC4899", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 20 }}>📈</Text>
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>التقارير المالية</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>الإيرادات والعمولات والتقارير الشهرية</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
+            {/* بوابة الموظفين */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/employee-login" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#0EA5E9", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontSize: 20 }}>👨‍💼</Text>
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>بوابة الموظفين</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>تسجيل دخول الموظفين والوصول حسب الصلاحيات</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* Revenue Card */}
             <View style={s.revenueCard}>
               <View>

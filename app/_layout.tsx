@@ -121,6 +121,9 @@ export default function RootLayout() {
             <Stack.Screen name="admin/sales-reports" />
             <Stack.Screen name="admin/business-accounts" />
             <Stack.Screen name="admin/employees" />
+            <Stack.Screen name="admin/financial-reports" />
+            <Stack.Screen name="employee-login" />
+            <Stack.Screen name="employee-dashboard" />
             <Stack.Screen name="oauth/callback" />
           </Stack>
           <StatusBar style="auto" />

@@ -31,7 +31,7 @@ import { addAdminNotification } from "@/lib/admin-notifications";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { getApiBaseUrl } from "@/constants/oauth";
 
-type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal" | "multicaixa";
+type PaymentMethod = "cash" | "bank_transfer" | "bankily" | "masrvi" | "sedad" | "paypal" | "multicaixa" | "hold_24h";
 
 const PAYMENT_METHODS: {
   id: PaymentMethod;
@@ -88,6 +88,13 @@ const PAYMENT_METHODS: {
     sublabel: "الدفع عبر Multicaixa Express (بالكوانزا AOA)",
     icon: "🇦🇴",
     color: "#E31937",
+  },
+  {
+    id: "hold_24h",
+    label: "حجز مؤكد 24 ساعة",
+    sublabel: "احجز الآن وادفع خلال 24 ساعة — حجز مؤكد من شركة الطيران",
+    icon: "⏰",
+    color: "#0EA5E9",
   },
 ];
 
@@ -151,6 +158,8 @@ export default function PaymentScreen() {
     guests?: string;
     roomType?: string;
     roomPrice?: string;
+    businessAccountId?: string;
+    businessCommission?: string;
   }>();
 
   const isFlight = params.type === "flight";
@@ -177,9 +186,14 @@ export default function PaymentScreen() {
   const mockTotalUSD = adultUnitPrice * adultCount + childUnitPrice * childCount;
 
   // total دائماً بالأوقية
-  const total = totalMRUPassed > 0
+  const baseTotal = totalMRUPassed > 0
     ? totalMRUPassed
     : Math.round(mockTotalUSD * 39.5);
+
+  // تطبيق العمولة التجارية إذا كان الحجز لحساب تجاري
+  const businessCommissionRate = parseFloat(params.businessCommission ?? "0");
+  const commissionAmount = businessCommissionRate > 0 ? Math.round(baseTotal * (businessCommissionRate / 100)) : 0;
+  const total = baseTotal + commissionAmount;
 
   // وحدة سعر الشخص الواحد بالأوقية (للعرض فقط)
   const totalPersons = adultCount + childCount * 0.75;
@@ -279,6 +293,8 @@ export default function PaymentScreen() {
     let duffelPaymentDeadline = "";
     
     const isCashPayment = paymentMethod === "cash";
+    const isHold24h = paymentMethod === "hold_24h";
+    const needsHoldOrder = isCashPayment || isHold24h;
     
     if (isFlight && params.id) {
       try {
@@ -307,9 +323,9 @@ export default function PaymentScreen() {
           infantDetails: infantDetails.length > 0 ? infantDetails : undefined,
         };
 
-        if (isCashPayment) {
-          // ── Cash payment: Create HOLD order (reserve without payment) ──
-          console.log("[Payment] 💵 Cash payment — Creating HOLD order for offer:", params.id);
+        if (needsHoldOrder) {
+          // ── Cash / Hold 24h: Create HOLD order (reserve without payment) ──
+          console.log(`[Payment] ${isHold24h ? '⏰ Hold 24h' : '💵 Cash'} — Creating HOLD order for offer:`, params.id);
           try {
             const holdResult = await holdFlightOrder.mutateAsync(bookingParams);
             if (holdResult.success && holdResult.pnr) {
@@ -366,13 +382,15 @@ export default function PaymentScreen() {
       }
     }
 
-    // Fallback: Generate local PNR if Duffel didn't return one
-    if (!pnr) {
-      const PNR_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      pnr = Array.from({ length: 6 }, () =>
-        PNR_CHARS[Math.floor(Math.random() * PNR_CHARS.length)]
-      ).join("");
-      console.log(`[Payment] Using fallback PNR: ${pnr}`);
+    // If Duffel returned a real PNR, mark it as confirmed airline reference
+    // No more fake/fallback PNR generation — only real airline references
+    if (!pnr && isFlight) {
+      // No PNR from Duffel — booking will show "في انتظار تأكيد شركة الطيران"
+      console.log("[Payment] No PNR from Duffel — booking awaits airline confirmation");
+      pnr = "PENDING";
+    } else if (!pnr) {
+      // Hotel bookings get a reference-style ID
+      pnr = "HT-" + Date.now().toString().slice(-8);
     }
 
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
@@ -413,15 +431,15 @@ export default function PaymentScreen() {
       address: hotel?.address ?? "",
     } : null;
 
-    // For cash payments, use Duffel hold deadline or fallback to 24h
-    const paymentDeadline = isCashPayment
+    // For cash/hold_24h payments, use Duffel hold deadline or fallback to 24h
+    const paymentDeadline = needsHoldOrder
       ? (duffelPaymentDeadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
       : undefined;
 
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
-      status: paymentMethod === "cash" ? "pending" : "confirmed",
+      status: needsHoldOrder ? "pending" : "confirmed",
       reference: ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
@@ -445,7 +463,11 @@ export default function PaymentScreen() {
       ...(transferRef.trim() ? { transferRef: transferRef.trim() } : {}),
       ...(receiptImage ? { receiptImage, receiptImageAt: new Date().toISOString() } : {}),
       ...(royalOrderId ? { royalOrderId } : {}),
-      ...(ticketNumber ? { ticketNumber } : {}),
+      ...(ticketNumber ? { ticketNumber, ticketNumberUpdatedAt: new Date().toISOString() } : {}),
+      // Store real PNR directly if Duffel returned one (not PENDING)
+      ...(pnr && pnr !== "PENDING" && isFlight ? { realPnr: pnr, realPnrUpdatedAt: new Date().toISOString() } : {}),
+      // Business account commission tracking
+      ...(params.businessAccountId ? { businessAccountId: params.businessAccountId, businessCommission: businessCommissionRate, commissionAmount } : {}),
     };
 
     await addBooking(booking);
@@ -507,8 +529,8 @@ export default function PaymentScreen() {
       }
     }
 
-    // Schedule cash payment reminder (1h before 24h deadline)
-    if (isCashPayment && paymentDeadline) {
+    // Schedule payment reminder (1h before deadline) for cash and hold_24h
+    if (needsHoldOrder && paymentDeadline) {
       scheduleCashPaymentReminder(ref, paymentDeadline).catch(() => {});
     }
 
@@ -699,6 +721,17 @@ export default function PaymentScreen() {
 
           {/* الضرائب مشمولة في سعر Amadeus - لا تُعرض منفصلة */}
 
+          {commissionAmount > 0 && (
+            <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.summaryLabel, { color: colors.muted }]}>عمولة تجارية ({businessCommissionRate}%)</Text>
+              </View>
+              <Text style={[styles.summaryValue, { color: colors.warning }]}>
+                +{fmt(commissionAmount)}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
@@ -711,7 +744,11 @@ export default function PaymentScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.cardTitle, { color: colors.foreground }]}>طريقة الدفع</Text>
           <View style={{ gap: 10 }}>
-            {PAYMENT_METHODS.map((method) => {
+            {PAYMENT_METHODS.filter((m) => {
+              // Hold 24h only available for flights
+              if (m.id === "hold_24h" && !isFlight) return false;
+              return true;
+            }).map((method) => {
               const isSelected = paymentMethod === method.id;
               return (
                 <Pressable
@@ -769,6 +806,31 @@ export default function PaymentScreen() {
             <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
               <Text style={[styles.warningText, { color: colors.warning }]}>
                 ⚠️ يُحجز المقعد لمدة 24 ساعة فقط. يرجى الدفع في أقرب وقت لتأكيد الحجز.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* تعليمات حجز مؤكد 24 ساعة */}
+        {paymentMethod === "hold_24h" && (
+          <View style={[styles.card, { backgroundColor: "#0EA5E910", borderColor: "#0EA5E930" }]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>⏰ حجز مؤكد من شركة الطيران</Text>
+            <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              {[
+                "سيتم حجز مقعدك مباشرةً لدى شركة الطيران",
+                "ستحصل على رقم تعريف حقيقي (PNR) من شركة الطيران",
+                "يجب إكمال الدفع خلال 24 ساعة لإصدار التذكرة",
+                "بعد الدفع، ستصلك التذكرة الإلكترونية عبر البريد",
+              ].map((step, i) => (
+                <View key={i} style={{ flexDirection: "row", alignItems: "flex-start", marginBottom: 8 }}>
+                  <Text style={{ fontSize: 14, color: "#0EA5E9", fontWeight: "700", marginLeft: 8, width: 22 }}>{i + 1}.</Text>
+                  <Text style={{ fontSize: 13, color: colors.foreground, flex: 1, lineHeight: 20 }}>{step}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={[styles.warningBox, { backgroundColor: "#0EA5E915", borderColor: "#0EA5E940" }]}>
+              <Text style={[styles.warningText, { color: "#0EA5E9" }]}>
+                ℹ️ هذا حجز مؤكد لدى شركة الطيران. إذا لم يتم الدفع خلال 24 ساعة، سيتم إلغاء الحجز تلقائياً.
               </Text>
             </View>
           </View>
