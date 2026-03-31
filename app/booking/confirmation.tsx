@@ -379,10 +379,14 @@ export default function ConfirmationScreen() {
           { opacity: fadeAnim, transform: [{ translateY: slideAnim }] },
         ]}
       >
-        <Text style={[styles.title, { color: colors.foreground }]}>Booking Confirmed!</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>
+          {params.pnr === "PENDING" ? "Booking Received!" : "Booking Confirmed!"}
+        </Text>
         <Text style={[styles.subtitle, { color: colors.muted }]}>
-          Your {isFlight ? "flight" : "hotel"} has been successfully booked.
-          {"\n"}A ticket has been prepared for you.
+          {params.pnr === "PENDING" 
+            ? `Your ${isFlight ? "flight" : "hotel"} booking has been received.\nPayment confirmation is required to issue your ticket.`
+            : `Your ${isFlight ? "flight" : "hotel"} has been successfully booked.\nA ticket has been prepared for you.`
+          }
         </Text>
 
         {/* Email Status Banner */}
@@ -392,12 +396,23 @@ export default function ConfirmationScreen() {
         <View style={[styles.refCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 
           {/* PNR - Most prominent */}
-          {params.pnr && (
+          {params.pnr && params.pnr !== "PENDING" && (
             <>
               <View style={[styles.pnrBox, { backgroundColor: colors.primary + "12", borderColor: colors.primary }]}>
                 <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم الحجز PNR</Text>
                 <Text style={[styles.pnrValue, { color: colors.primary }]}>{params.pnr}</Text>
                 <Text style={[styles.pnrHint, { color: colors.muted }]}>احتفظ بهذا الرقم للمراجعة في المطار</Text>
+              </View>
+              <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            </>
+          )}
+          {/* PNR Pending - awaiting airline confirmation */}
+          {params.pnr === "PENDING" && (
+            <>
+              <View style={[styles.pnrBox, { backgroundColor: "#F59E0B" + "15", borderColor: "#F59E0B" }]}>
+                <Text style={[styles.pnrLabel, { color: colors.muted }]}>رقم الحجز PNR</Text>
+                <Text style={[styles.pnrValue, { color: "#F59E0B", fontSize: 16 }]}>في انتظار تأكيد شركة الطيران</Text>
+                <Text style={[styles.pnrHint, { color: colors.muted }]}>سيتم إرسال رقم الحجز بعد تأكيد الدفع</Text>
               </View>
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
             </>
@@ -433,9 +448,15 @@ export default function ConfirmationScreen() {
 
           <View style={styles.refRow}>
             <Text style={[styles.refLabel, { color: colors.muted }]}>الحالة</Text>
-            <View style={[styles.statusBadge, { backgroundColor: colors.success + "15" }]}>
-              <Text style={[styles.statusText, { color: colors.success }]}>✓ مؤكد</Text>
-            </View>
+            {params.pnr === "PENDING" ? (
+              <View style={[styles.statusBadge, { backgroundColor: "#F59E0B" + "15" }]}>
+                <Text style={[styles.statusText, { color: "#F59E0B" }]}>⏳ في الانتظار</Text>
+              </View>
+            ) : (
+              <View style={[styles.statusBadge, { backgroundColor: colors.success + "15" }]}>
+                <Text style={[styles.statusText, { color: colors.success }]}>✓ مؤكد</Text>
+              </View>
+            )}
           </View>
 
           <View style={[styles.divider, { backgroundColor: colors.border }]} />

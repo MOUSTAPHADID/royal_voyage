@@ -326,38 +326,40 @@ export default function PaymentScreen() {
         if (needsHoldOrder) {
           // ── Cash / Hold 24h: Create HOLD order (reserve without payment) ──
           console.log(`[Payment] ${isHold24h ? '⏰ Hold 24h' : '💵 Cash'} — Creating HOLD order for offer:`, params.id);
+          let holdSucceeded = false;
           try {
             const holdResult = await holdFlightOrder.mutateAsync(bookingParams);
             if (holdResult.success && holdResult.pnr) {
               pnr = holdResult.pnr;
               royalOrderId = holdResult.orderId ?? "";
               duffelPaymentDeadline = holdResult.paymentRequiredBy ?? "";
+              holdSucceeded = true;
               console.log(`[Payment] ✅ Hold order created! PNR: ${pnr}, Pay by: ${duffelPaymentDeadline}`);
             } else {
-              // Hold not supported — fallback to instant booking
-              console.warn(`[Payment] Hold failed: ${holdResult.error}. Trying instant booking...`);
+              console.warn(`[Payment] Hold failed: ${holdResult.error}. Trying instant confirmed booking...`);
+            }
+          } catch (holdErr: any) {
+            console.warn("[Payment] Hold API error, trying instant confirmed booking:", holdErr?.message);
+          }
+
+          // If hold failed, create a confirmed instant booking instead (PNR will be real)
+          if (!holdSucceeded) {
+            try {
+              console.log("[Payment] Creating instant confirmed booking as fallback...");
               const result = await bookFlightWithPNR.mutateAsync(bookingParams);
               if (result.success && result.pnr) {
                 pnr = result.pnr;
                 royalOrderId = result.orderId ?? "";
+                // Instant booking = confirmed, no payment deadline needed
+                duffelPaymentDeadline = "";
                 const docs = (result as any).documents || [];
                 if (docs.length > 0 && docs[0].unique_identifier) {
                   ticketNumber = docs[0].unique_identifier;
                 }
-                console.log(`[Payment] ✅ Fallback instant booking PNR: ${pnr}`);
+                console.log(`[Payment] ✅ Instant confirmed booking PNR: ${pnr}, Ticket: ${ticketNumber || 'pending'}`);
               }
-            }
-          } catch (holdErr: any) {
-            // Hold API error — fallback to instant booking
-            console.warn("[Payment] Hold API error, trying instant booking:", holdErr?.message);
-            const result = await bookFlightWithPNR.mutateAsync(bookingParams);
-            if (result.success && result.pnr) {
-              pnr = result.pnr;
-              royalOrderId = result.orderId ?? "";
-              const docs = (result as any).documents || [];
-              if (docs.length > 0 && docs[0].unique_identifier) {
-                ticketNumber = docs[0].unique_identifier;
-              }
+            } catch (instantErr: any) {
+              console.error("[Payment] Instant booking also failed:", instantErr?.message);
             }
           }
         } else {
@@ -432,15 +434,25 @@ export default function PaymentScreen() {
     } : null;
 
     // For cash/hold_24h payments, use Duffel hold deadline or fallback to 24h
-    const paymentDeadline = needsHoldOrder
-      ? (duffelPaymentDeadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
-      : undefined;
+    // If hold failed and instant booking succeeded (duffelPaymentDeadline is empty), no deadline needed
+    const paymentDeadline = (needsHoldOrder && duffelPaymentDeadline)
+      ? duffelPaymentDeadline
+      : (needsHoldOrder && !pnr) 
+        ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        : undefined;
+
+    // Determine booking status:
+    // - If we got a real PNR and ticket (instant booking succeeded), it's confirmed
+    // - If we got a hold PNR (no ticket yet), it's pending payment
+    // - If no PNR at all, it's pending
+    const isConfirmedBooking = pnr && pnr !== "PENDING" && (ticketNumber || !needsHoldOrder);
+    const isHoldWithPNR = pnr && pnr !== "PENDING" && needsHoldOrder && !ticketNumber;
 
     const booking: Booking = {
       id: "b" + Date.now(),
       type: isFlight ? "flight" : "hotel",
-      status: needsHoldOrder ? "pending" : "confirmed",
-      reference: ref,
+      status: isConfirmedBooking ? "confirmed" : "pending",
+      reference: (pnr && pnr !== "PENDING") ? pnr : ref,
       pnr,
       date: new Date().toISOString().split("T")[0],
       ...(paymentDeadline ? { paymentDeadline } : {}),
@@ -615,7 +627,7 @@ export default function PaymentScreen() {
     router.replace({
       pathname: "/booking/confirmation" as any,
       params: {
-        reference: ref,
+        reference: (pnr && pnr !== "PENDING") ? pnr : ref,
         pnr,
         ticketNumber: ticketNumber || "",
         total: total.toString(),
