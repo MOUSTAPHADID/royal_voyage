@@ -1048,3 +1048,12 @@
 
 ## إصلاح crash التطبيق المنشور (APK)
 - [x] نشر تحديث مع إصلاح Hold Order
+
+## إضافة دعم Duffel Webhooks
+- [x] البحث عن توثيق Duffel Webhooks وفهم الأحداث المدعومة (17 نوع حدث)
+- [x] إنشاء endpoint لاستقبال Webhooks على الخادم (/api/webhooks/duffel) مع التحقق من التوقيع (HMAC-SHA256)
+- [x] معالجة أحداث: order.created, order.creation_failed, airline_initiated_change, air.order.changed, order_cancellation.created/confirmed, payment events
+- [x] إضافة إشعارات للوحة الإدارة عند كل حدث (مع تمييز الأحداث العاجلة)
+- [x] حماية من التكرار (idempotency check) مع سجل أحداث (آخر 200 حدث)
+- [x] إضافة routes tRPC لإدارة Webhooks (تسجيل، حذف، قائمة، ping، سجل الأحداث، إشعارات)
+- [x] اختبار ناجح: ping, order.created, airline_change, cancellation, idempotency

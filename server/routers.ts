@@ -26,6 +26,15 @@ import {
   getDuffelStatus,
 } from "./duffel";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail } from "./email";
+import {
+  getWebhookLog,
+  getWebhookNotifications,
+  clearWebhookNotifications,
+  createDuffelWebhook,
+  listDuffelWebhooks,
+  deleteDuffelWebhook,
+  pingDuffelWebhook,
+} from "./duffel-webhooks";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
 import {
@@ -1097,6 +1106,87 @@ export const appRouter = router({
         }
         const { passwordHash, ...safeEmp } = emp;
         return { success: true, employee: safeEmp };
+      }),
+  }),
+  // ─── Duffel Webhooks Management ──────────────────────────────────────────
+  webhooks: router({
+    // Get webhook event log
+    getLog: adminProcedure
+      .input(z.object({}).optional())
+      .query(async () => {
+        return { log: getWebhookLog() };
+      }),
+
+    // Get webhook notifications
+    getNotifications: adminProcedure
+      .input(z.object({}).optional())
+      .query(async () => {
+        return { notifications: getWebhookNotifications() };
+      }),
+
+    // Clear webhook notifications
+    clearNotifications: adminProcedure
+      .input(z.object({}).optional())
+      .mutation(async () => {
+        clearWebhookNotifications();
+        return { success: true };
+      }),
+
+    // Register a new webhook with Duffel
+    register: adminProcedure
+      .input(
+        z.object({
+          url: z.string().url(),
+          events: z.array(z.string()).min(1),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const result = await createDuffelWebhook(input.url, input.events);
+          return {
+            success: true,
+            webhook: result.data,
+            message: "تم تسجيل Webhook بنجاح. احفظ السر (secret) — لن يظهر مرة أخرى!",
+          };
+        } catch (err: any) {
+          return { success: false, error: err.message };
+        }
+      }),
+
+    // List all registered webhooks
+    list: adminProcedure
+      .input(z.object({}).optional())
+      .query(async () => {
+        try {
+          const result = await listDuffelWebhooks();
+          return { success: true, webhooks: result.data || [] };
+        } catch (err: any) {
+          return { success: false, webhooks: [], error: err.message };
+        }
+      }),
+
+    // Delete a webhook
+    delete: adminProcedure
+      .input(z.object({ webhookId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          await deleteDuffelWebhook(input.webhookId);
+          return { success: true };
+        } catch (err: any) {
+          return { success: false, error: err.message };
+        }
+      }),
+
+    // Ping a webhook to test it
+    ping: adminProcedure
+      .input(z.object({ webhookId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          await pingDuffelWebhook(input.webhookId);
+          return { success: true, message: "تم إرسال Ping بنجاح" };
+        } catch (err: any) {
+          return { success: false, error: err.message };
+        }
       }),
   }),
 });
