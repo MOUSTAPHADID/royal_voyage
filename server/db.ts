@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -335,4 +335,134 @@ export async function updateBookingContactPnr(duffelOrderId: string, pnr: string
   const db = await getDb();
   if (!db) return;
   await db.update(bookingContacts).set({ pnr }).where(eq(bookingContacts.duffelOrderId, duffelOrderId));
+}
+
+
+// ─── Top-Up Requests (طلبات شحن الرصيد) ──────────────────────────────────────
+
+export async function getTopUpRequests(status?: "pending" | "approved" | "rejected"): Promise<TopUpRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  if (status) {
+    return db.select().from(topUpRequests).where(eq(topUpRequests.status, status)).orderBy(desc(topUpRequests.createdAt));
+  }
+  return db.select().from(topUpRequests).orderBy(desc(topUpRequests.createdAt));
+}
+
+export async function getTopUpRequestsByAccount(businessAccountId: number): Promise<TopUpRequest[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(topUpRequests).where(eq(topUpRequests.businessAccountId, businessAccountId)).orderBy(desc(topUpRequests.createdAt));
+}
+
+export async function getTopUpRequestById(id: number): Promise<TopUpRequest | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(topUpRequests).where(eq(topUpRequests.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createTopUpRequest(data: {
+  businessAccountId: number;
+  amount: string;
+  paymentMethod?: string;
+  paymentReference?: string;
+  receiptImage?: string;
+  requestNotes?: string;
+}): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(topUpRequests).values({
+    businessAccountId: data.businessAccountId,
+    amount: data.amount,
+    paymentMethod: data.paymentMethod || null,
+    paymentReference: data.paymentReference || null,
+    receiptImage: data.receiptImage || null,
+    requestNotes: data.requestNotes || null,
+  });
+  return result[0].insertId;
+}
+
+export async function approveTopUpRequest(id: number, processedBy: string, adminNotes?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const request = await getTopUpRequestById(id);
+  if (!request) throw new Error("Top-up request not found");
+  if (request.status !== "pending") throw new Error("Request already processed");
+
+  const account = await getBusinessAccountById(request.businessAccountId);
+  if (!account) throw new Error("Business account not found");
+
+  const amount = parseFloat(request.amount);
+  const currentBalance = parseFloat(account.currentBalance);
+  const newBalance = currentBalance + amount;
+
+  await db.update(topUpRequests).set({
+    status: "approved",
+    processedBy,
+    adminNotes: adminNotes || null,
+    processedAt: new Date(),
+  }).where(eq(topUpRequests.id, id));
+
+  await db.update(businessAccounts).set({
+    currentBalance: newBalance.toFixed(2),
+  }).where(eq(businessAccounts.id, request.businessAccountId));
+
+  await db.insert(balanceTransactions).values({
+    businessAccountId: request.businessAccountId,
+    type: "top_up",
+    amount: amount.toFixed(2),
+    balanceAfter: newBalance.toFixed(2),
+    description: `شحن رصيد - طلب #${id}`,
+    topUpRequestId: id,
+  });
+}
+
+export async function rejectTopUpRequest(id: number, processedBy: string, adminNotes: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const request = await getTopUpRequestById(id);
+  if (!request) throw new Error("Top-up request not found");
+  if (request.status !== "pending") throw new Error("Request already processed");
+
+  await db.update(topUpRequests).set({
+    status: "rejected",
+    processedBy,
+    adminNotes,
+    processedAt: new Date(),
+  }).where(eq(topUpRequests.id, id));
+}
+
+// ─── Balance Transactions (سجل معاملات الرصيد) ──────────────────────────────
+
+export async function getBalanceTransactions(businessAccountId: number): Promise<BalanceTransaction[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(balanceTransactions).where(eq(balanceTransactions.businessAccountId, businessAccountId)).orderBy(desc(balanceTransactions.createdAt));
+}
+
+export async function deductBalance(businessAccountId: number, amount: number, bookingRef: string, description: string): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const account = await getBusinessAccountById(businessAccountId);
+  if (!account) throw new Error("Business account not found");
+
+  const currentBalance = parseFloat(account.currentBalance);
+  const newBalance = currentBalance - amount;
+
+  await db.update(businessAccounts).set({
+    currentBalance: newBalance.toFixed(2),
+  }).where(eq(businessAccounts.id, businessAccountId));
+
+  await db.insert(balanceTransactions).values({
+    businessAccountId,
+    type: "booking_deduction",
+    amount: (-amount).toFixed(2),
+    balanceAfter: newBalance.toFixed(2),
+    description,
+    bookingRef,
+  });
 }

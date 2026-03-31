@@ -416,7 +416,25 @@ export default function BusinessAccountsScreen() {
           </View>
         )}
 
+        {/* عرض الرصيد الحالي */}
+        <View style={[s.balanceRow, { backgroundColor: colors.border + "20" }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <IconSymbol name="creditcard.fill" size={16} color="#C9A84C" />
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>الرصيد الحالي</Text>
+          </View>
+          <Text style={{ color: "#C9A84C", fontSize: 16, fontWeight: "800" }}>
+            {formatMRU(parseFloat(item.currentBalance || "0"))}
+          </Text>
+        </View>
+
         <View style={s.cardActions}>
+          <Pressable
+            onPress={() => router.push(`/admin/account-balance?id=${item.id}&name=${encodeURIComponent(item.companyName)}` as any)}
+            style={({ pressed }) => [s.actionBtn, { opacity: pressed ? 0.7 : 1 }]}
+          >
+            <IconSymbol name="creditcard.fill" size={16} color="#C9A84C" />
+            <Text style={{ fontSize: 12, color: "#C9A84C" }}>الرصيد</Text>
+          </Pressable>
           <Pressable
             onPress={() => handleToggleStatus(item)}
             style={({ pressed }) => [s.actionBtn, { opacity: pressed ? 0.7 : 1 }]}
@@ -575,4 +593,5 @@ const s = StyleSheet.create({
   inputField: { flex: 1, fontSize: 14, textAlign: "left" },
   divider: { height: 0.5, marginLeft: 16 },
   notesInput: { padding: 16, fontSize: 14, minHeight: 80, textAlignVertical: "top" },
+  balanceRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, marginTop: 10 },
 });

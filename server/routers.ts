@@ -52,6 +52,14 @@ import {
   deleteEmployee,
   verifyPassword,
   upsertBookingContact,
+  getTopUpRequests,
+  getTopUpRequestsByAccount,
+  getTopUpRequestById,
+  createTopUpRequest,
+  approveTopUpRequest,
+  rejectTopUpRequest,
+  getBalanceTransactions,
+  deductBalance,
 } from "./db";
 
 export const appRouter = router({
@@ -1301,6 +1309,72 @@ export const appRouter = router({
     getPublishableKey: publicProcedure.query(() => {
       return { key: getPublishableKey() };
     }),
+  }),
+
+  // ─── Top-Up Requests (طلبات شحن الرصيد) ────────────────────────────────────────────
+  topUp: router({
+    list: publicProcedure
+      .input(z.object({ status: z.enum(["pending", "approved", "rejected"]).optional() }).optional())
+      .query(async ({ input }) => {
+        return await getTopUpRequests(input?.status);
+      }),
+
+    listByAccount: publicProcedure
+      .input(z.object({ businessAccountId: z.number() }))
+      .query(async ({ input }) => {
+        return await getTopUpRequestsByAccount(input.businessAccountId);
+      }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await getTopUpRequestById(input.id);
+      }),
+
+    create: publicProcedure
+      .input(z.object({
+        businessAccountId: z.number(),
+        amount: z.string(),
+        paymentMethod: z.string().optional(),
+        paymentReference: z.string().optional(),
+        receiptImage: z.string().optional(),
+        requestNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await createTopUpRequest(input);
+        return { success: true, id };
+      }),
+
+    approve: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        processedBy: z.string(),
+        adminNotes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await approveTopUpRequest(input.id, input.processedBy, input.adminNotes);
+        return { success: true };
+      }),
+
+    reject: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        processedBy: z.string(),
+        adminNotes: z.string(),
+      }))
+      .mutation(async ({ input }) => {
+        await rejectTopUpRequest(input.id, input.processedBy, input.adminNotes);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Balance Transactions (سجل معاملات الرصيد) ───────────────────────────────────
+  balanceTransactions: router({
+    list: publicProcedure
+      .input(z.object({ businessAccountId: z.number() }))
+      .query(async ({ input }) => {
+        return await getBalanceTransactions(input.businessAccountId);
+      }),
   }),
 });
 

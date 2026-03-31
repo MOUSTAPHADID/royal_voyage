@@ -1170,3 +1170,13 @@
 - [x] إصلاح Metro web bundling error لـ @stripe/stripe-react-native
 - [x] إضافة stripePaymentIntentId في Booking type
 - [x] كتابة وتشغيل اختبارات Stripe integration
+
+## نظام شحن رصيد الحسابات التجارية
+- [x] إنشاء جدول top_up_requests في قاعدة البيانات
+- [x] إنشاء جدول balance_transactions لسجل المعاملات
+- [x] إضافة دوال DB (createTopUpRequest, approveTopUpRequest, rejectTopUpRequest, getBalanceTransactions, deductBalance)
+- [x] إضافة tRPC routes (topUp.list, topUp.create, topUp.approve, topUp.reject, balanceTransactions.list)
+- [x] إنشاء شاشة إدارة رصيد الحساب (account-balance.tsx) - عرض الرصيد + طلبات الشحن + سجل المعاملات
+- [x] إنشاء شاشة طلبات شحن الرصيد للإدارة (topup-requests.tsx) - عرض كل الطلبات + موافقة/رفض
+- [x] تحديث بطاقة الحساب التجاري لعرض الرصيد الحالي وزر إدارة الرصيد
+- [x] إضافة بطاقة طلبات شحن الرصيد في لوحة الإدارة الرئيسية

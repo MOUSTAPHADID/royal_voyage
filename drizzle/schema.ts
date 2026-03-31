@@ -125,3 +125,58 @@ export const bookingContacts = mysqlTable("booking_contacts", {
 
 export type BookingContact = typeof bookingContacts.$inferSelect;
 export type InsertBookingContact = typeof bookingContacts.$inferInsert;
+
+// ─── Top-Up Requests (طلبات شحن الرصيد) ──────────────────────────────────────
+// Business accounts request balance top-ups, admin approves or rejects
+export const topUpRequests = mysqlTable("top_up_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Business account ID */
+  businessAccountId: int("businessAccountId").notNull(),
+  /** Requested amount in MRU */
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  /** Request status */
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  /** Payment method used for top-up */
+  paymentMethod: varchar("paymentMethod", { length: 64 }),
+  /** Payment reference / receipt number */
+  paymentReference: varchar("paymentReference", { length: 255 }),
+  /** Receipt image URL */
+  receiptImage: text("receiptImage"),
+  /** Notes from the requester */
+  requestNotes: text("requestNotes"),
+  /** Admin notes (reason for rejection, etc.) */
+  adminNotes: text("adminNotes"),
+  /** Admin who processed the request */
+  processedBy: varchar("processedBy", { length: 255 }),
+  /** When the request was processed */
+  processedAt: timestamp("processedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type TopUpRequest = typeof topUpRequests.$inferSelect;
+export type InsertTopUpRequest = typeof topUpRequests.$inferInsert;
+
+// ─── Balance Transactions (سجل معاملات الرصيد) ──────────────────────────────
+// Tracks all balance changes: top-ups, booking deductions, refunds
+export const balanceTransactions = mysqlTable("balance_transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Business account ID */
+  businessAccountId: int("businessAccountId").notNull(),
+  /** Transaction type */
+  type: mysqlEnum("type", ["top_up", "booking_deduction", "refund", "adjustment"]).notNull(),
+  /** Amount (positive for credits, negative for debits) */
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  /** Balance after this transaction */
+  balanceAfter: decimal("balanceAfter", { precision: 12, scale: 2 }).notNull(),
+  /** Description of the transaction */
+  description: text("description"),
+  /** Related booking reference (for deductions) */
+  bookingRef: varchar("bookingRef", { length: 64 }),
+  /** Related top-up request ID */
+  topUpRequestId: int("topUpRequestId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BalanceTransaction = typeof balanceTransactions.$inferSelect;
+export type InsertBalanceTransaction = typeof balanceTransactions.$inferInsert;
