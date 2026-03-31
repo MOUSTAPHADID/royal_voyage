@@ -5,6 +5,9 @@ import {
   ScrollView,
   Pressable,
   StyleSheet,
+  Alert,
+  ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -12,6 +15,8 @@ import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useApp } from "@/lib/app-context";
 import { formatMRU } from "@/lib/currency";
+import * as Print from "expo-print";
+import { shareAsync } from "expo-sharing";
 
 type Period = "today" | "week" | "month" | "year" | "all";
 
@@ -28,6 +33,7 @@ export default function FinancialReportsScreen() {
   const colors = useColors();
   const { bookings } = useApp();
   const [period, setPeriod] = useState<Period>("month");
+  const [exporting, setExporting] = useState(false);
 
   const filteredBookings = useMemo(() => {
     const now = new Date();
@@ -117,6 +123,94 @@ export default function FinancialReportsScreen() {
     unknown: "غير محدد",
   };
 
+  const exportPDF = async () => {
+    setExporting(true);
+    try {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("ar-SA", { day: "2-digit", month: "long", year: "numeric" });
+      const periodLabel = PERIOD_LABELS[period];
+      const paymentRows = Object.entries(stats.paymentMethods)
+        .map(([method, data]) => `<tr><td>${PAYMENT_METHOD_LABELS[method] || method}</td><td style="text-align:left;font-weight:700;">${formatMRU((data as any).amount ?? data)}</td></tr>`)
+        .join("");
+      const dailyRows = Object.entries(stats.dailyRevenue)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .slice(0, 30)
+        .map(([day, amount]) => `<tr><td>${new Date(day).toLocaleDateString("ar-SA", { month: "short", day: "numeric" })}</td><td style="text-align:left;font-weight:700;">${formatMRU(amount)}</td></tr>`)
+        .join("");
+
+      const html = `<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8"/>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:24px;color:#1a1a2e;direction:rtl}
+.header{background:linear-gradient(135deg,#1B2B5E,#0d1a3a);color:#fff;padding:24px;border-radius:12px;text-align:center;margin-bottom:24px}
+.header h1{color:#C9A84C;font-size:24px;margin-bottom:4px}.header p{color:rgba(255,255,255,.7);font-size:13px}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}th,td{padding:10px 12px;border:1px solid #e2e8f0;font-size:13px}
+th{background:#f8fafc;font-weight:700;text-align:right}
+.card{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px;margin-bottom:16px}
+.card h3{color:#1B2B5E;margin-bottom:10px;font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center}
+.stat .val{font-size:20px;font-weight:800;color:#1B2B5E}.stat .lbl{font-size:11px;color:#64748b;margin-top:4px}
+.footer{text-align:center;margin-top:24px;font-size:11px;color:#94a3b8}
+</style></head><body>
+<div class="header"><h1>✈ Royal Voyage</h1><p>التقرير المالي — ${periodLabel} | ${dateStr}</p></div>
+<div class="grid">
+<div class="stat"><div class="val">${formatMRU(stats.totalRevenue)}</div><div class="lbl">إجمالي الإيرادات</div></div>
+<div class="stat"><div class="val">${formatMRU(stats.pendingRevenue)}</div><div class="lbl">الإيرادات المعلقة</div></div>
+<div class="stat"><div class="val">${formatMRU(stats.totalCommission)}</div><div class="lbl">إجمالي العمولات</div></div>
+<div class="stat"><div class="val">${formatMRU(stats.avgBookingValue)}</div><div class="lbl">متوسط قيمة الحجز</div></div>
+<div class="stat"><div class="val">${stats.totalBookings}</div><div class="lbl">إجمالي الحجوزات</div></div>
+<div class="stat"><div class="val">${stats.confirmedCount}</div><div class="lbl">مؤكدة</div></div>
+</div>
+<div class="card"><h3>توزيع طرق الدفع</h3><table><thead><tr><th>الطريقة</th><th style="text-align:left">المبلغ</th></tr></thead><tbody>${paymentRows}</tbody></table></div>
+<div class="card"><h3>الإيرادات اليومية</h3><table><thead><tr><th>التاريخ</th><th style="text-align:left">المبلغ</th></tr></thead><tbody>${dailyRows}</tbody></table></div>
+<div class="footer">Royal Voyage Travel Agency — ${dateStr}</div>
+</body></html>`;
+
+      const { uri } = await Print.printToFileAsync({ html, margins: { left: 10, top: 10, right: 10, bottom: 10 } });
+      await shareAsync(uri, { mimeType: "application/pdf", dialogTitle: "تصدير التقرير المالي", UTI: ".pdf" });
+    } catch (err) {
+      Alert.alert("خطأ", "تعذّر إنشاء التقرير. حاول مرة أخرى.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const exportCSV = async () => {
+    setExporting(true);
+    try {
+      const header = "المرجع,النوع,الحالة,المبلغ,طريقة الدفع,التاريخ,العميل";
+      const rows = filteredBookings.map(b => {
+        const ref = b.reference || "—";
+        const type = b.type === "flight" ? "رحلة" : "فندق";
+        const status = b.status === "confirmed" ? "مؤكد" : b.status === "pending" ? "معلق" : b.status;
+        const amount = b.totalPrice?.toString() || "0";
+        const method = PAYMENT_METHOD_LABELS[b.paymentMethod ?? "unknown"] || b.paymentMethod || "—";
+        const date = b.date || "—";
+        const name = (b as any).passengerName || (b as any).guestName || "—";
+        return `${ref},${type},${status},${amount},${method},${date},${name}`;
+      }).join("\n");
+      const csv = `\uFEFF${header}\n${rows}`;
+
+      if (Platform.OS === "web") {
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `royal_voyage_report_${period}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // On native, use Print to create a simple text file and share
+        const html = `<html><body><pre style="font-family:monospace;font-size:12px;direction:rtl;">${csv.replace(/\n/g, "<br/>")}</pre></body></html>`;
+        const { uri } = await Print.printToFileAsync({ html });
+        await shareAsync(uri, { mimeType: "text/csv", dialogTitle: "تصدير CSV" });
+      }
+    } catch (err) {
+      Alert.alert("خطأ", "تعذّر تصدير البيانات.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       {/* Header */}
@@ -125,7 +219,22 @@ export default function FinancialReportsScreen() {
           <IconSymbol name="chevron.right" size={20} color={colors.primary} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>التقارير المالية</Text>
-        <View style={{ width: 40 }} />
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable
+            onPress={exportPDF}
+            disabled={exporting}
+            style={({ pressed }) => [styles.exportSmallBtn, { backgroundColor: "#1B2B5E", opacity: pressed || exporting ? 0.7 : 1 }]}
+          >
+            {exporting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>PDF</Text>}
+          </Pressable>
+          <Pressable
+            onPress={exportCSV}
+            disabled={exporting}
+            style={({ pressed }) => [styles.exportSmallBtn, { backgroundColor: "#22C55E", opacity: pressed || exporting ? 0.7 : 1 }]}
+          >
+            <Text style={{ color: "#fff", fontSize: 11, fontWeight: "700" }}>CSV</Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -446,5 +555,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     width: 80,
     textAlign: "left",
+  },
+  exportSmallBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    minWidth: 44,
   },
 });

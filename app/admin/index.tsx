@@ -18,10 +18,20 @@ import { useTicketPolling } from "@/hooks/use-ticket-polling";
 import {
   getAdminPin,
   setAdminPin,
+  getAdminEmail,
+  setAdminEmail,
+  getAdminPassword,
+  setAdminPassword,
   checkBiometricAvailability,
   isBiometricEnabled,
   setBiometricEnabled,
   authenticateWithBiometric,
+  is2FAEnabled,
+  set2FAEnabled,
+  generateNew2FASecret,
+  set2FASecret,
+  get2FASecret,
+  generate2FACode,
 } from "@/lib/admin-security";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -78,6 +88,20 @@ export default function AdminScreen() {
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
   const [biometricOn, setBiometricOn] = useState(false);
+  // Password change state
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [currentPasswordInput, setCurrentPasswordInput] = useState("");
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  const [passwordChangeError, setPasswordChangeError] = useState("");
+  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
+  // 2FA state
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [show2FASetupModal, setShow2FASetupModal] = useState(false);
+  const [twoFASetupSecret, setTwoFASetupSecret] = useState("");
+  const [twoFASetupCode, setTwoFASetupCode] = useState("");
+  const [twoFASetupError, setTwoFASetupError] = useState("");
+  const [currentAdminEmail, setCurrentAdminEmail] = useState("");
 
   // Multi-Consolidator state
   const [showConsolidatorModal, setShowConsolidatorModal] = useState(false);
@@ -96,14 +120,86 @@ export default function AdminScreen() {
   // Ticket polling
   const ticketPolling = useTicketPolling();
 
-  // Load biometric state
+  // Load biometric, 2FA, and email state
   useEffect(() => {
     checkBiometricAvailability().then(({ available, type }) => {
       setBiometricAvailable(available);
       setBiometricType(type);
     });
     isBiometricEnabled().then(setBiometricOn);
+    is2FAEnabled().then(setTwoFAEnabled);
+    getAdminEmail().then(setCurrentAdminEmail);
   }, []);
+
+  const handleChangePasswordSubmit = async () => {
+    setPasswordChangeError("");
+    setPasswordChangeSuccess(false);
+    const currentPwd = await getAdminPassword();
+    if (currentPasswordInput !== currentPwd) {
+      setPasswordChangeError("كلمة المرور الحالية غير صحيحة");
+      return;
+    }
+    if (newPasswordInput.length < 6) {
+      setPasswordChangeError("كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل");
+      return;
+    }
+    if (newPasswordInput !== confirmPasswordInput) {
+      setPasswordChangeError("كلمة المرور الجديدة غير متطابقة");
+      return;
+    }
+    const ok = await setAdminPassword(newPasswordInput);
+    if (ok) {
+      setPasswordChangeSuccess(true);
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setTimeout(() => {
+        setShowChangePasswordModal(false);
+        setCurrentPasswordInput("");
+        setNewPasswordInput("");
+        setConfirmPasswordInput("");
+        setPasswordChangeSuccess(false);
+      }, 1200);
+    } else {
+      setPasswordChangeError("فشل في حفظ كلمة المرور الجديدة");
+    }
+  };
+
+  const handleEnable2FA = async () => {
+    const secret = generateNew2FASecret();
+    setTwoFASetupSecret(secret);
+    setTwoFASetupCode("");
+    setTwoFASetupError("");
+    setShow2FASetupModal(true);
+  };
+
+  const handleConfirm2FASetup = async () => {
+    const expectedCode = generate2FACode(twoFASetupSecret);
+    if (twoFASetupCode === expectedCode) {
+      await set2FASecret(twoFASetupSecret);
+      await set2FAEnabled(true);
+      setTwoFAEnabled(true);
+      setShow2FASetupModal(false);
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("تم التفعيل", "تم تفعيل التحقق الثنائي بنجاح");
+    } else {
+      setTwoFASetupError("رمز التحقق خاطئ. حاول مرة أخرى.");
+      setTwoFASetupCode("");
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    Alert.alert("تعطيل التحقق الثنائي", "هل أنت متأكد من تعطيل التحقق الثنائي؟", [
+      { text: "إلغاء", style: "cancel" },
+      {
+        text: "تعطيل",
+        style: "destructive",
+        onPress: async () => {
+          await set2FAEnabled(false);
+          setTwoFAEnabled(false);
+          if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        },
+      },
+    ]);
+  };
 
   const handleChangePinSubmit = async () => {
     setPinChangeError("");
@@ -1073,7 +1169,7 @@ export default function AdminScreen() {
               {biometricAvailable && (
                 <View style={{
                   flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-                  backgroundColor: colors.background, borderRadius: 12, padding: 14,
+                  backgroundColor: colors.background, borderRadius: 12, padding: 14, marginBottom: 10,
                 }}>
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
                     <IconSymbol name={biometricType === "face" ? "faceid" as any : "touchid" as any} size={18} color={colors.primary} />
@@ -1093,6 +1189,64 @@ export default function AdminScreen() {
                   />
                 </View>
               )}
+
+              {/* Change Password */}
+              <Pressable
+                style={({ pressed }) => [{
+                  flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                  backgroundColor: colors.background, borderRadius: 12, padding: 14, marginBottom: 10,
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+                onPress={() => {
+                  setCurrentPasswordInput(""); setNewPasswordInput(""); setConfirmPasswordInput("");
+                  setPasswordChangeError(""); setPasswordChangeSuccess(false);
+                  setShowChangePasswordModal(true);
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <IconSymbol name="lock.fill" size={18} color="#E67E22" />
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>تغيير كلمة المرور</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>تحديث كلمة مرور دخول الإدارة</Text>
+                  </View>
+                </View>
+                <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+              </Pressable>
+
+              {/* Admin Email Display */}
+              <View style={{
+                flexDirection: "row", alignItems: "center",
+                backgroundColor: colors.background, borderRadius: 12, padding: 14, marginBottom: 10,
+              }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                  <IconSymbol name="paperplane.fill" size={18} color="#3B82F6" />
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>البريد الإلكتروني</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{currentAdminEmail || "suporte@royalvoyage.online"}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* 2FA Toggle */}
+              <View style={{
+                flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                backgroundColor: colors.background, borderRadius: 12, padding: 14,
+              }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
+                  <IconSymbol name="shield.fill" size={18} color={twoFAEnabled ? "#22C55E" : colors.muted} />
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>التحقق الثنائي (2FA)</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>
+                      {twoFAEnabled ? "مفعل - رمز تحقق إضافي عند الدخول" : "معطل - تفعيل لحماية إضافية"}
+                    </Text>
+                  </View>
+                </View>
+                <Switch
+                  value={twoFAEnabled}
+                  onValueChange={(val) => val ? handleEnable2FA() : handleDisable2FA()}
+                  trackColor={{ false: colors.border, true: "#22C55E" }}
+                />
+              </View>
             </View>
 
             {/* Distribution Bar Chart */}
@@ -1425,6 +1579,156 @@ export default function AdminScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Change Password Modal */}
+      <Modal
+        visible={showChangePasswordModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowChangePasswordModal(false)}
+      >
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }} onPress={() => setShowChangePasswordModal(false)}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, width: "85%", maxWidth: 360 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "#E67E22", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 }}>
+              <IconSymbol name="lock.fill" size={24} color="#FFFFFF" />
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center", marginBottom: 6 }}>
+              تغيير كلمة المرور
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20 }}>
+              أدخل كلمة المرور الحالية ثم الجديدة
+            </Text>
+
+            {passwordChangeSuccess && (
+              <View style={{ backgroundColor: "#22C55E18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: "#22C55E", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  تم تغيير كلمة المرور بنجاح
+                </Text>
+              </View>
+            )}
+
+            {passwordChangeError !== "" && (
+              <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  {passwordChangeError}
+                </Text>
+              </View>
+            )}
+
+            <TextInput
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 15, color: colors.foreground, backgroundColor: colors.background, marginBottom: 10 }}
+              placeholder="كلمة المرور الحالية"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={currentPasswordInput}
+              onChangeText={setCurrentPasswordInput}
+              autoFocus
+            />
+            <TextInput
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 15, color: colors.foreground, backgroundColor: colors.background, marginBottom: 10 }}
+              placeholder="كلمة المرور الجديدة"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={newPasswordInput}
+              onChangeText={setNewPasswordInput}
+            />
+            <TextInput
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 15, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16 }}
+              placeholder="تأكيد كلمة المرور الجديدة"
+              placeholderTextColor={colors.muted}
+              secureTextEntry
+              value={confirmPasswordInput}
+              onChangeText={setConfirmPasswordInput}
+              returnKeyType="done"
+              onSubmitEditing={handleChangePasswordSubmit}
+            />
+
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable
+                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center", opacity: pressed ? 0.7 : 1 }]}
+                onPress={() => setShowChangePasswordModal(false)}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>إلغاء</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: "#E67E22", alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
+                onPress={handleChangePasswordSubmit}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>حفظ</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* 2FA Setup Modal */}
+      <Modal
+        visible={show2FASetupModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShow2FASetupModal(false)}
+      >
+        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }} onPress={() => setShow2FASetupModal(false)}>
+          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, width: "85%", maxWidth: 360 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "#22C55E", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 }}>
+              <IconSymbol name="shield.fill" size={24} color="#FFFFFF" />
+            </View>
+            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center", marginBottom: 6 }}>
+              تفعيل التحقق الثنائي
+            </Text>
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 16 }}>
+              احفظ هذا المفتاح السري في تطبيق المصادقة (Google Authenticator)
+            </Text>
+
+            {/* Secret Key Display */}
+            <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 16, marginBottom: 16, alignItems: "center" }}>
+              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 6 }}>المفتاح السري</Text>
+              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground, letterSpacing: 3, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" }}>
+                {twoFASetupSecret}
+              </Text>
+            </View>
+
+            {twoFASetupError !== "" && (
+              <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                  {twoFASetupError}
+                </Text>
+              </View>
+            )}
+
+            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 10 }}>
+              أدخل الرمز المكون من 6 أرقام للتأكيد
+            </Text>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 20, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16, textAlign: "center", letterSpacing: 8 }}
+              placeholder="000000"
+              placeholderTextColor={colors.muted}
+              keyboardType="number-pad"
+              maxLength={6}
+              value={twoFASetupCode}
+              onChangeText={setTwoFASetupCode}
+              returnKeyType="done"
+              onSubmitEditing={handleConfirm2FASetup}
+            />
+
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable
+                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center", opacity: pressed ? 0.7 : 1 }]}
+                onPress={() => setShow2FASetupModal(false)}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>إلغاء</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: "#22C55E", alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
+                onPress={handleConfirm2FASetup}
+              >
+                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>تفعيل</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+
       {/* Add/Edit Consolidator Modal */}
       <Modal visible={showConsolidatorModal} transparent animationType="fade" onRequestClose={() => setShowConsolidatorModal(false)}>
         <Pressable

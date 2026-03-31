@@ -175,6 +175,107 @@ export async function scheduleFlightReminder(
 }
 
 /**
+ * Schedule hold expiry reminders for 24-hour confirmed bookings.
+ * Sends 3 notifications: 6 hours before, 2 hours before, and at expiry.
+ */
+export async function scheduleHoldExpiryReminders(
+  bookingRef: string,
+  deadlineISO: string
+): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
+  try {
+    const deadline = new Date(deadlineISO).getTime();
+    const now = Date.now();
+
+    // Reminder 1: 6 hours before expiry
+    const sixHoursBefore = deadline - 6 * 60 * 60 * 1000;
+    if (sixHoursBefore > now) {
+      const seconds = Math.floor((sixHoursBefore - now) / 1000);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "\u23F0 \u062A\u0630\u0643\u064A\u0631 \u0628\u0627\u0644\u062D\u062C\u0632 \u0627\u0644\u0645\u0624\u0643\u062F",
+          body: `\u062A\u0628\u0642\u0649 6 \u0633\u0627\u0639\u0627\u062A \u0639\u0644\u0649 \u0627\u0646\u062A\u0647\u0627\u0621 \u0645\u0647\u0644\u0629 \u062D\u062C\u0632\u0643 ${bookingRef}. \u064A\u0631\u062C\u0649 \u0625\u062A\u0645\u0627\u0645 \u0627\u0644\u062F\u0641\u0639.`,
+          sound: true,
+          data: { bookingRef, type: "hold_expiry_6h" },
+        },
+        trigger: { seconds, repeats: false } as any,
+      });
+    }
+
+    // Reminder 2: 2 hours before expiry
+    const twoHoursBefore = deadline - 2 * 60 * 60 * 1000;
+    if (twoHoursBefore > now) {
+      const seconds = Math.floor((twoHoursBefore - now) / 1000);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "\u26A0\uFE0F \u062D\u062C\u0632\u0643 \u0639\u0644\u0649 \u0648\u0634\u0643 \u0627\u0644\u0627\u0646\u062A\u0647\u0627\u0621",
+          body: `\u062A\u0628\u0642\u0649 \u0633\u0627\u0639\u062A\u0627\u0646 \u0641\u0642\u0637 \u0639\u0644\u0649 \u0627\u0646\u062A\u0647\u0627\u0621 \u0645\u0647\u0644\u0629 \u062D\u062C\u0632\u0643 ${bookingRef}. \u0623\u0633\u0631\u0639 \u0628\u0627\u0644\u062F\u0641\u0639!`,
+          sound: true,
+          data: { bookingRef, type: "hold_expiry_2h" },
+        },
+        trigger: { seconds, repeats: false } as any,
+      });
+    }
+
+    // Reminder 3: At expiry
+    if (deadline > now) {
+      const seconds = Math.floor((deadline - now) / 1000);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "\u274C \u0627\u0646\u062A\u0647\u062A \u0645\u0647\u0644\u0629 \u0627\u0644\u062D\u062C\u0632",
+          body: `\u0627\u0646\u062A\u0647\u062A \u0645\u0647\u0644\u0629 \u062D\u062C\u0632\u0643 ${bookingRef}. \u0642\u062F \u064A\u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u0627\u0644\u062D\u062C\u0632 \u062A\u0644\u0642\u0627\u0626\u064A\u0627\u064B.`,
+          sound: true,
+          data: { bookingRef, type: "hold_expired" },
+        },
+        trigger: { seconds, repeats: false } as any,
+      });
+    }
+  } catch {
+    // Silently fail in Expo Go
+  }
+}
+
+/**
+ * Schedule an admin notification for hold expiry.
+ */
+export async function scheduleAdminHoldExpiryNotification(
+  bookingRef: string,
+  customerName: string,
+  deadlineISO: string
+): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
+  try {
+    const deadline = new Date(deadlineISO).getTime();
+    const now = Date.now();
+
+    // Notify admin 1 hour before expiry
+    const oneHourBefore = deadline - 60 * 60 * 1000;
+    if (oneHourBefore > now) {
+      const seconds = Math.floor((oneHourBefore - now) / 1000);
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "\u{1F6A8} \u062D\u062C\u0632 \u0639\u0644\u0649 \u0648\u0634\u0643 \u0627\u0644\u0627\u0646\u062A\u0647\u0627\u0621",
+          body: `\u062D\u062C\u0632 ${customerName} (${bookingRef}) \u0633\u064A\u0646\u062A\u0647\u064A \u062E\u0644\u0627\u0644 \u0633\u0627\u0639\u0629. \u062A\u0623\u0643\u062F \u0645\u0646 \u0627\u0644\u062F\u0641\u0639.`,
+          sound: true,
+          data: { bookingRef, type: "admin_hold_expiry" },
+        },
+        trigger: { seconds, repeats: false } as any,
+      });
+    }
+  } catch {
+    // Silently fail
+  }
+}
+
+/**
  * Schedule an immediate local notification (same device only).
  */
 export async function scheduleLocalNotification(

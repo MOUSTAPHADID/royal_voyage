@@ -26,7 +26,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU, fromMRU, formatCurrency } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
-import { scheduleCashPaymentReminder } from "@/lib/push-notifications";
+import { scheduleCashPaymentReminder, scheduleHoldExpiryReminders, scheduleAdminHoldExpiryNotification } from "@/lib/push-notifications";
 import { addAdminNotification } from "@/lib/admin-notifications";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { getApiBaseUrl } from "@/constants/oauth";
@@ -532,6 +532,12 @@ export default function PaymentScreen() {
     // Schedule payment reminder (1h before deadline) for cash and hold_24h
     if (needsHoldOrder && paymentDeadline) {
       scheduleCashPaymentReminder(ref, paymentDeadline).catch(() => {});
+      // For hold_24h, schedule additional expiry reminders (6h, 2h, at expiry)
+      if (isHold24h) {
+        scheduleHoldExpiryReminders(ref, paymentDeadline).catch(() => {});
+        const customerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "عميل";
+        scheduleAdminHoldExpiryNotification(ref, customerName, paymentDeadline).catch(() => {});
+      }
     }
 
     // إرسال التذكرة مباشرةً بعد تأكيد الدفع

@@ -1,22 +1,96 @@
 /**
  * Admin Security Module
- * Manages admin PIN, lockout, and biometric authentication
+ * Manages admin credentials (email/password), lockout, biometric, password change, and 2FA
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
 const STORAGE_KEYS = {
   ADMIN_PIN: "@royal_voyage_admin_pin",
+  ADMIN_EMAIL: "@royal_voyage_admin_email",
+  ADMIN_PASSWORD: "@royal_voyage_admin_password",
   LOCKOUT_UNTIL: "@royal_voyage_lockout_until",
   FAILED_ATTEMPTS: "@royal_voyage_failed_attempts",
   BIOMETRIC_ENABLED: "@royal_voyage_biometric_admin",
+  TWO_FA_ENABLED: "@royal_voyage_2fa_enabled",
+  TWO_FA_SECRET: "@royal_voyage_2fa_secret",
 };
 
+// Default credentials
 const DEFAULT_PIN = "36380112";
+const DEFAULT_EMAIL = "suporte@royalvoyage.online";
+const DEFAULT_PASSWORD = "RoyalVoyage2024!";
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 
-// ─── PIN Management ────────────────────────────────────────
+// ─── Email/Password Management ────────────────────────────────
+
+export async function getAdminEmail(): Promise<string> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.ADMIN_EMAIL);
+    return stored || DEFAULT_EMAIL;
+  } catch {
+    return DEFAULT_EMAIL;
+  }
+}
+
+export async function setAdminEmail(email: string): Promise<boolean> {
+  try {
+    if (!email.includes("@")) return false;
+    await AsyncStorage.setItem(STORAGE_KEYS.ADMIN_EMAIL, email);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function getAdminPassword(): Promise<string> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEYS.ADMIN_PASSWORD);
+    return stored || DEFAULT_PASSWORD;
+  } catch {
+    return DEFAULT_PASSWORD;
+  }
+}
+
+export async function setAdminPassword(newPassword: string): Promise<boolean> {
+  try {
+    if (newPassword.length < 6) return false;
+    await AsyncStorage.setItem(STORAGE_KEYS.ADMIN_PASSWORD, newPassword);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function validateEmailPassword(
+  email: string,
+  password: string
+): Promise<{
+  success: boolean;
+  locked: boolean;
+  attemptsLeft: number;
+  lockoutSeconds: number;
+}> {
+  // Check lockout first
+  const lockStatus = await isLockedOut();
+  if (lockStatus.locked) {
+    return { success: false, locked: true, attemptsLeft: 0, lockoutSeconds: lockStatus.remainingSeconds };
+  }
+
+  const correctEmail = await getAdminEmail();
+  const correctPassword = await getAdminPassword();
+
+  if (email.toLowerCase().trim() === correctEmail.toLowerCase().trim() && password === correctPassword) {
+    await resetFailedAttempts();
+    return { success: true, locked: false, attemptsLeft: MAX_ATTEMPTS, lockoutSeconds: 0 };
+  }
+
+  const result = await recordFailedAttempt();
+  return { success: false, locked: result.locked, attemptsLeft: result.attemptsLeft, lockoutSeconds: result.lockoutSeconds };
+}
+
+// ─── PIN Management (backward compat) ─────────────────────────
 
 export async function getAdminPin(): Promise<string> {
   try {
@@ -146,7 +220,88 @@ export async function authenticateWithBiometric(promptMessage: string): Promise<
   }
 }
 
-// ─── Validate PIN ──────────────────────────────────────────
+// ─── 2FA (TOTP-like) Management ──────────────────────────────
+
+export async function is2FAEnabled(): Promise<boolean> {
+  try {
+    const val = await AsyncStorage.getItem(STORAGE_KEYS.TWO_FA_ENABLED);
+    return val === "true";
+  } catch {
+    return false;
+  }
+}
+
+export async function set2FAEnabled(enabled: boolean): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.TWO_FA_ENABLED, enabled ? "true" : "false");
+  if (!enabled) {
+    await AsyncStorage.removeItem(STORAGE_KEYS.TWO_FA_SECRET);
+  }
+}
+
+export async function get2FASecret(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(STORAGE_KEYS.TWO_FA_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+export async function set2FASecret(secret: string): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEYS.TWO_FA_SECRET, secret);
+}
+
+/**
+ * Generate a simple 6-digit code based on the secret and current time window (30s).
+ * This is a simplified TOTP for local use.
+ */
+export function generate2FACode(secret: string): string {
+  const timeStep = Math.floor(Date.now() / 30000);
+  let hash = 0;
+  const combined = secret + timeStep.toString();
+  for (let i = 0; i < combined.length; i++) {
+    const char = combined.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  const code = Math.abs(hash % 1000000);
+  return code.toString().padStart(6, "0");
+}
+
+/**
+ * Validate a 2FA code against the current and previous time windows.
+ */
+export async function validate2FACode(inputCode: string): Promise<boolean> {
+  const secret = await get2FASecret();
+  if (!secret) return false;
+
+  // Check current and previous time window (allows 30s drift)
+  const currentCode = generate2FACode(secret);
+  const timeStep = Math.floor(Date.now() / 30000);
+  const prevSecret = secret + (timeStep - 1).toString();
+  let prevHash = 0;
+  for (let i = 0; i < prevSecret.length; i++) {
+    const char = prevSecret.charCodeAt(i);
+    prevHash = ((prevHash << 5) - prevHash) + char;
+    prevHash = prevHash & prevHash;
+  }
+  const prevCode = Math.abs(prevHash % 1000000).toString().padStart(6, "0");
+
+  return inputCode === currentCode || inputCode === prevCode;
+}
+
+/**
+ * Generate a random secret for 2FA setup.
+ */
+export function generateNew2FASecret(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let secret = "";
+  for (let i = 0; i < 16; i++) {
+    secret += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return secret;
+}
+
+// ─── Validate PIN (backward compat) ──────────────────────────
 
 export async function validatePin(input: string): Promise<{
   success: boolean;
@@ -170,4 +325,4 @@ export async function validatePin(input: string): Promise<{
   return { success: false, locked: result.locked, attemptsLeft: result.attemptsLeft, lockoutSeconds: result.lockoutSeconds };
 }
 
-export { DEFAULT_PIN, MAX_ATTEMPTS, LOCKOUT_DURATION_MS };
+export { DEFAULT_PIN, DEFAULT_EMAIL, DEFAULT_PASSWORD, MAX_ATTEMPTS, LOCKOUT_DURATION_MS };

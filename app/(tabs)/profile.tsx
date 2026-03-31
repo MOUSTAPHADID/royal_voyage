@@ -15,10 +15,13 @@ import {
 import * as Haptics from "expo-haptics";
 import {
   validatePin,
+  validateEmailPassword,
   isLockedOut,
   checkBiometricAvailability,
   isBiometricEnabled,
   authenticateWithBiometric,
+  is2FAEnabled,
+  validate2FACode,
 } from "@/lib/admin-security";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useRouter } from "expo-router";
@@ -55,6 +58,14 @@ export default function ProfileScreen() {
   const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
   const [biometricReady, setBiometricReady] = useState(false);
   const lockoutIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  // Email/Password login state
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
+  const [loginMode, setLoginMode] = useState<"email" | "pin">("email");
+  // 2FA state
+  const [show2FAInput, setShow2FAInput] = useState(false);
+  const [twoFACode, setTwoFACode] = useState("");
+  const [twoFAError, setTwoFAError] = useState("");
 
   // Check biometric availability on mount
   useEffect(() => {
@@ -108,9 +119,14 @@ export default function ProfileScreen() {
       // Biometric failed or cancelled — fall through to PIN
     }
 
-    // Show PIN modal
+    // Show login modal
     setAdminPinInput("");
+    setAdminEmail("");
+    setAdminPassword("");
     setPinError("");
+    setShow2FAInput(false);
+    setTwoFACode("");
+    setTwoFAError("");
     setShowAdminPinModal(true);
   };
 
@@ -139,6 +155,61 @@ export default function ProfileScreen() {
           : `Wrong PIN. ${result.attemptsLeft} attempts left`
         );
       }
+    }
+  };
+
+  const handleEmailPasswordSubmit = async () => {
+    if (lockoutTimer > 0) return;
+    const result = await validateEmailPassword(adminEmail, adminPassword);
+    if (result.success) {
+      // Check if 2FA is enabled
+      const has2FA = await is2FAEnabled();
+      if (has2FA) {
+        setShow2FAInput(true);
+        setTwoFACode("");
+        setTwoFAError("");
+        return;
+      }
+      setShowAdminPinModal(false);
+      setAdminEmail("");
+      setAdminPassword("");
+      setPinError("");
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.push("/admin" as any);
+    } else {
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setAdminPassword("");
+      if (result.locked) {
+        const mins = Math.ceil(result.lockoutSeconds / 60);
+        setLockoutTimer(result.lockoutSeconds);
+        setPinError(
+          language === "ar" ? `3 محاولات خاطئة. تم القفل لمدة ${mins} دقائق`
+          : `3 wrong attempts. Locked for ${mins} minutes`
+        );
+      } else {
+        setPinError(
+          language === "ar" ? `بيانات خاطئة. متبقي ${result.attemptsLeft} محاولات`
+          : `Wrong credentials. ${result.attemptsLeft} attempts left`
+        );
+      }
+    }
+  };
+
+  const handle2FASubmit = async () => {
+    const valid = await validate2FACode(twoFACode);
+    if (valid) {
+      setShowAdminPinModal(false);
+      setAdminEmail("");
+      setAdminPassword("");
+      setTwoFACode("");
+      setShow2FAInput(false);
+      setPinError("");
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.push("/admin" as any);
+    } else {
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setTwoFAError(language === "ar" ? "رمز التحقق خاطئ" : "Invalid verification code");
+      setTwoFACode("");
     }
   };
 
@@ -454,101 +525,183 @@ export default function ProfileScreen() {
         </Pressable>
       </Modal>
 
-      {/* Admin PIN Modal — triggered by long press on version text */}
+      {/* Admin Login Modal — Email/Password + 2FA */}
       <Modal
         visible={showAdminPinModal}
         transparent
         animationType="fade"
-        onRequestClose={() => { setShowAdminPinModal(false); setPinError(""); }}
+        onRequestClose={() => { setShowAdminPinModal(false); setPinError(""); setShow2FAInput(false); }}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => { setShowAdminPinModal(false); setPinError(""); }}>
+        <Pressable style={styles.modalOverlay} onPress={() => { setShowAdminPinModal(false); setPinError(""); setShow2FAInput(false); }}>
           <View style={[styles.adminPinSheet, { backgroundColor: colors.surface }]}>
             <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "#1B2B5E", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 }}>
               <IconSymbol name="shield.fill" size={24} color="#C9A84C" />
             </View>
             <Text style={[styles.adminPinTitle, { color: colors.foreground }]}>
-              {language === "ar" ? "دخول الإدارة" : language === "fr" ? "Acc\u00e8s Admin" : "Admin Access"}
+              {show2FAInput
+                ? (language === "ar" ? "التحقق الثنائي" : "Two-Factor Auth")
+                : (language === "ar" ? "دخول الإدارة" : "Admin Access")}
             </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20 }}>
-              {language === "ar" ? "أدخل رمز PIN للوصول للوحة الإدارة" : language === "fr" ? "Entrez le code PIN" : "Enter PIN to access admin panel"}
-            </Text>
 
-            {/* Error / Lockout message */}
-            {pinError !== "" && (
-              <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
-                <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
-                  {lockoutTimer > 0
-                    ? `${pinError} (${Math.floor(lockoutTimer / 60)}:${(lockoutTimer % 60).toString().padStart(2, "0")})`
-                    : pinError}
+            {show2FAInput ? (
+              <>
+                <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20 }}>
+                  {language === "ar" ? "أدخل رمز التحقق المكون من 6 أرقام" : "Enter 6-digit verification code"}
                 </Text>
-              </View>
+                {twoFAError !== "" && (
+                  <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                    <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{twoFAError}</Text>
+                  </View>
+                )}
+                <TextInput
+                  style={[styles.adminPinInput, { color: colors.foreground, borderColor: twoFAError ? colors.error : colors.border, backgroundColor: colors.background, textAlign: "center", letterSpacing: 8 }]}
+                  placeholder="000000"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="number-pad"
+                  maxLength={6}
+                  value={twoFACode}
+                  onChangeText={setTwoFACode}
+                  autoFocus
+                  returnKeyType="done"
+                  onSubmitEditing={handle2FASubmit}
+                />
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+                  <Pressable
+                    style={({ pressed }) => [styles.adminPinCancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                    onPress={() => { setShow2FAInput(false); setTwoFACode(""); setTwoFAError(""); }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>
+                      {language === "ar" ? "رجوع" : "Back"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.adminPinConfirmBtn, { opacity: pressed ? 0.5 : 1 }]}
+                    onPress={handle2FASubmit}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>
+                      {language === "ar" ? "تحقق" : "Verify"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
+            ) : (
+              <>
+                {/* Mode toggle: Email vs PIN */}
+                <View style={{ flexDirection: "row", alignSelf: "center", marginBottom: 16, borderRadius: 10, overflow: "hidden", borderWidth: 1, borderColor: colors.border }}>
+                  <Pressable
+                    style={({ pressed }) => [{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: loginMode === "email" ? colors.primary : "transparent", opacity: pressed ? 0.7 : 1 }]}
+                    onPress={() => setLoginMode("email")}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: loginMode === "email" ? "#FFF" : colors.muted }}>
+                      {language === "ar" ? "بريد إلكتروني" : "Email"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: loginMode === "pin" ? colors.primary : "transparent", opacity: pressed ? 0.7 : 1 }]}
+                    onPress={() => setLoginMode("pin")}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: "600", color: loginMode === "pin" ? "#FFF" : colors.muted }}>PIN</Text>
+                  </Pressable>
+                </View>
+
+                {/* Error / Lockout message */}
+                {pinError !== "" && (
+                  <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+                    <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
+                      {lockoutTimer > 0
+                        ? `${pinError} (${Math.floor(lockoutTimer / 60)}:${(lockoutTimer % 60).toString().padStart(2, "0")})`
+                        : pinError}
+                    </Text>
+                  </View>
+                )}
+
+                {loginMode === "email" ? (
+                  <>
+                    <TextInput
+                      style={[styles.adminPinInput, { color: colors.foreground, borderColor: pinError ? colors.error : colors.border, backgroundColor: colors.background, opacity: lockoutTimer > 0 ? 0.5 : 1, fontSize: 15, textAlign: "left", letterSpacing: 0, marginBottom: 10 }]}
+                      placeholder={language === "ar" ? "البريد الإلكتروني" : "Email"}
+                      placeholderTextColor={colors.muted}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      value={adminEmail}
+                      onChangeText={setAdminEmail}
+                      autoFocus
+                      editable={lockoutTimer === 0}
+                    />
+                    <TextInput
+                      style={[styles.adminPinInput, { color: colors.foreground, borderColor: pinError ? colors.error : colors.border, backgroundColor: colors.background, opacity: lockoutTimer > 0 ? 0.5 : 1, fontSize: 15, textAlign: "left", letterSpacing: 0 }]}
+                      placeholder={language === "ar" ? "كلمة المرور" : "Password"}
+                      placeholderTextColor={colors.muted}
+                      secureTextEntry
+                      value={adminPassword}
+                      onChangeText={setAdminPassword}
+                      editable={lockoutTimer === 0}
+                      returnKeyType="done"
+                      onSubmitEditing={handleEmailPasswordSubmit}
+                    />
+                  </>
+                ) : (
+                  <TextInput
+                    style={[styles.adminPinInput, { color: colors.foreground, borderColor: pinError ? colors.error : colors.border, backgroundColor: colors.background, opacity: lockoutTimer > 0 ? 0.5 : 1 }]}
+                    placeholder="PIN"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="number-pad"
+                    secureTextEntry
+                    maxLength={8}
+                    value={adminPinInput}
+                    onChangeText={setAdminPinInput}
+                    autoFocus
+                    editable={lockoutTimer === 0}
+                    returnKeyType="done"
+                    onSubmitEditing={handlePinSubmit}
+                  />
+                )}
+
+                {/* Biometric button if available */}
+                {biometricReady && biometricType !== "none" && lockoutTimer === 0 && (
+                  <Pressable
+                    style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, opacity: pressed ? 0.6 : 1 }]}
+                    onPress={async () => {
+                      const promptMsg = language === "ar" ? "تحقق للدخول للوحة الإدارة" : "Authenticate for admin access";
+                      const success = await authenticateWithBiometric(promptMsg);
+                      if (success) {
+                        setShowAdminPinModal(false);
+                        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        router.push("/admin" as any);
+                      }
+                    }}
+                  >
+                    <IconSymbol name={biometricType === "face" ? "faceid" as any : "touchid" as any} size={22} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
+                      {biometricType === "face"
+                        ? (language === "ar" ? "استخدم Face ID" : "Use Face ID")
+                        : (language === "ar" ? "استخدم البصمة" : "Use Fingerprint")}
+                    </Text>
+                  </Pressable>
+                )}
+
+                <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+                  <Pressable
+                    style={({ pressed }) => [styles.adminPinCancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
+                    onPress={() => { setShowAdminPinModal(false); setAdminPinInput(""); setAdminEmail(""); setAdminPassword(""); setPinError(""); }}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>
+                      {language === "ar" ? "إلغاء" : "Cancel"}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={({ pressed }) => [styles.adminPinConfirmBtn, { opacity: (pressed || lockoutTimer > 0) ? 0.5 : 1 }]}
+                    onPress={loginMode === "email" ? handleEmailPasswordSubmit : handlePinSubmit}
+                    disabled={lockoutTimer > 0}
+                  >
+                    <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>
+                      {language === "ar" ? "دخول" : "Enter"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </>
             )}
-
-            <TextInput
-              style={[
-                styles.adminPinInput,
-                {
-                  color: colors.foreground,
-                  borderColor: pinError ? colors.error : colors.border,
-                  backgroundColor: colors.background,
-                  opacity: lockoutTimer > 0 ? 0.5 : 1,
-                },
-              ]}
-              placeholder="PIN"
-              placeholderTextColor={colors.muted}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={8}
-              value={adminPinInput}
-              onChangeText={setAdminPinInput}
-              autoFocus
-              editable={lockoutTimer === 0}
-              returnKeyType="done"
-              onSubmitEditing={handlePinSubmit}
-            />
-
-            {/* Biometric button if available */}
-            {biometricReady && biometricType !== "none" && lockoutTimer === 0 && (
-              <Pressable
-                style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, opacity: pressed ? 0.6 : 1 }]}
-                onPress={async () => {
-                  const promptMsg = language === "ar" ? "تحقق للدخول للوحة الإدارة" : "Authenticate for admin access";
-                  const success = await authenticateWithBiometric(promptMsg);
-                  if (success) {
-                    setShowAdminPinModal(false);
-                    if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    router.push("/admin" as any);
-                  }
-                }}
-              >
-                <IconSymbol name={biometricType === "face" ? "faceid" as any : "touchid" as any} size={22} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontSize: 14, fontWeight: "600" }}>
-                  {biometricType === "face"
-                    ? (language === "ar" ? "استخدم Face ID" : "Use Face ID")
-                    : (language === "ar" ? "استخدم البصمة" : "Use Fingerprint")}
-                </Text>
-              </Pressable>
-            )}
-
-            <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-              <Pressable
-                style={({ pressed }) => [styles.adminPinCancelBtn, { borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
-                onPress={() => { setShowAdminPinModal(false); setAdminPinInput(""); setPinError(""); }}
-              >
-                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>
-                  {language === "ar" ? "إلغاء" : language === "fr" ? "Annuler" : "Cancel"}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [styles.adminPinConfirmBtn, { opacity: (pressed || lockoutTimer > 0) ? 0.5 : 1 }]}
-                onPress={handlePinSubmit}
-                disabled={lockoutTimer > 0}
-              >
-                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>
-                  {language === "ar" ? "دخول" : language === "fr" ? "Entrer" : "Enter"}
-                </Text>
-              </Pressable>
-            </View>
           </View>
         </Pressable>
       </Modal>
