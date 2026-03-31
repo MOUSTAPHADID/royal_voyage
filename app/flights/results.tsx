@@ -195,7 +195,9 @@ export default function FlightResultsScreen() {
         <View style={styles.routePoint}>
           <Text style={[styles.time, { color: colors.foreground }]}>{item.departureTime}</Text>
           <Text style={[styles.code, { color: colors.primary }]}>{item.originCode}</Text>
-          <Text style={[styles.city, { color: colors.muted }]}>{item.origin}</Text>
+          <Text style={[styles.city, { color: colors.muted }]} numberOfLines={1} ellipsizeMode="tail">
+            {item.origin?.replace(/\s*(International|Airport|Intl\.?)\s*/gi, ' ').trim()}
+          </Text>
         </View>
 
         <View style={styles.routeMiddle}>
@@ -220,7 +222,9 @@ export default function FlightResultsScreen() {
         <View style={[styles.routePoint, { alignItems: "flex-end" }]}>
           <Text style={[styles.time, { color: colors.foreground }]}>{item.arrivalTime}</Text>
           <Text style={[styles.code, { color: colors.secondary }]}>{item.destinationCode}</Text>
-          <Text style={[styles.city, { color: colors.muted }]}>{item.destination}</Text>
+          <Text style={[styles.city, { color: colors.muted }]} numberOfLines={1} ellipsizeMode="tail">
+            {item.destination?.replace(/\s*(International|Airport|Intl\.?)\s*/gi, ' ').trim()}
+          </Text>
         </View>
       </View>
 
@@ -510,10 +514,10 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     gap: 8,
   },
-  routePoint: { alignItems: "flex-start", minWidth: 70 },
+  routePoint: { alignItems: "flex-start", minWidth: 70, maxWidth: 110 },
   time: { fontSize: 20, fontWeight: "700" },
   code: { fontSize: 14, fontWeight: "700", marginTop: 2 },
-  city: { fontSize: 11, marginTop: 1 },
+  city: { fontSize: 10, marginTop: 1 },
   routeMiddle: { flex: 1, alignItems: "center", gap: 4 },
   duration: { fontSize: 12 },
   routeLine: { flexDirection: "row", alignItems: "center", width: "100%" },
