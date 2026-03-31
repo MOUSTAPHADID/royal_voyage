@@ -1132,3 +1132,8 @@
 - [x] تنظيف admin/index.tsx من مراجع PIN
 - [x] إزالة getAdminPin/setAdminPin/validatePin من lib/admin-security.ts
 - [x] تحديث login-audit.tsx لإزالة تسمية PIN
+
+## إصلاح مشكلة الدخول للوحة الإدارة ✅
+- [x] توحيد بيانات الاعتماد بين app-context.tsx و admin-security.ts
+- [x] ربط login بـ getAdminEmail/getAdminPassword لدعم تغيير كلمة المرور
+- [x] البريد: suporte@royalvoyage.online / كلمة المرور: RoyalVoyage2024!

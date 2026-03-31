@@ -16,8 +16,9 @@ export type User = {
 };
 
 // Admin credentials — stored only in app logic, never shown to customers
-const ADMIN_EMAIL = "admin@royalvoyage.mr";
-const ADMIN_PASSWORD = "RV@Admin2024!";
+// Fallback defaults — actual credentials come from admin-security (AsyncStorage)
+const DEFAULT_ADMIN_EMAIL = "suporte@royalvoyage.online";
+const DEFAULT_ADMIN_PASSWORD = "RoyalVoyage2024!";
 
 type AppContextType = {
   // Auth
@@ -124,12 +125,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const verificationCodes = React.useRef<Record<string, string>>({});
 
   const login = useCallback(async (emailOrPhone: string, password: string): Promise<"admin" | "user" | false> => {
-    // Admin login check
-    if (emailOrPhone.toLowerCase() === ADMIN_EMAIL.toLowerCase() && password === ADMIN_PASSWORD) {
+    // Admin login check — read current credentials from admin-security (supports password change)
+    let adminEmail = DEFAULT_ADMIN_EMAIL;
+    let adminPassword = DEFAULT_ADMIN_PASSWORD;
+    try {
+      const { getAdminEmail, getAdminPassword } = require("@/lib/admin-security");
+      adminEmail = await getAdminEmail();
+      adminPassword = await getAdminPassword();
+    } catch {}
+    if (emailOrPhone.toLowerCase() === adminEmail.toLowerCase() && password === adminPassword) {
       const adminUser: User = {
         id: "admin",
         name: "مدير Royal Voyage",
-        email: ADMIN_EMAIL,
+        email: adminEmail,
         isAdmin: true,
       };
       setUser(adminUser);
