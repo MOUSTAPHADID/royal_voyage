@@ -41,6 +41,8 @@ import { Booking } from "@/lib/mock-data";
 import { formatMRU } from "@/lib/currency";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { trpc } from "@/lib/trpc";
+import { syncBookingsToNotifications } from "@/lib/admin-notification-sync";
+import { getUnreadCount } from "@/lib/admin-notifications";
 
 
 // Derive unique clients from bookings
@@ -102,6 +104,18 @@ export default function AdminScreen() {
   const [consolidatorError, setConsolidatorError] = useState("");
   const [consolidatorModalMode, setConsolidatorModalMode] = useState<"add" | "edit">("add");
   const [editConsolidatorIndex, setEditConsolidatorIndex] = useState(-1);
+  const [notifUnread, setNotifUnread] = useState(0);
+
+  // Sync bookings to notifications and get unread count
+  useEffect(() => {
+    (async () => {
+      try {
+        await syncBookingsToNotifications(bookings);
+        const count = await getUnreadCount();
+        setNotifUnread(count);
+      } catch {}
+    })();
+  }, [bookings]);
   const consolidatorConfig = trpc.amadeus.getConsolidatorConfig.useQuery();
   const setConsolidatorMut = trpc.amadeus.setConsolidatorOfficeId.useMutation();
   const setActiveMut = trpc.amadeus.setActiveConsolidator.useMutation();
@@ -968,6 +982,7 @@ export default function AdminScreen() {
                 <View>
                   <Text style={[s.sectionTitle, { marginBottom: 2 }]}>سجل الإشعارات</Text>
                   <Text style={{ fontSize: 12, color: colors.muted }}>مراجعة جميع إشعارات الحجوزات والإلغاءات</Text>
+                  {notifUnread > 0 && <Text style={{ fontSize: 12, color: "#EF4444", fontWeight: "700" }}>{notifUnread} غير مقروءة</Text>}
                 </View>
               </View>
               <IconSymbol name="chevron.right" size={18} color={colors.muted} />

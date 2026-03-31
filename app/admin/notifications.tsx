@@ -22,6 +22,7 @@ import {
   clearAdminNotifications,
 } from "@/lib/admin-notifications";
 import { syncPayPalNotifications } from "@/lib/paypal-notification-sync";
+import { syncBookingsToNotifications, resetNotificationSync } from "@/lib/admin-notification-sync";
 
 export default function AdminNotificationsScreen() {
   const router = useRouter();
@@ -32,14 +33,21 @@ export default function AdminNotificationsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const loadNotifications = useCallback(async () => {
-    // Sync PayPal notifications from server first
+    // 1. Sync bookings → notifications (creates notifications for bookings that don't have one)
+    try {
+      await syncBookingsToNotifications(bookings);
+    } catch {}
+
+    // 2. Sync PayPal notifications from server
     try {
       await syncPayPalNotifications();
     } catch {}
+
+    // 3. Load all notifications
     const data = await getAdminNotifications();
     setNotifications(data);
     setIsLoading(false);
-  }, []);
+  }, [bookings]);
 
   useEffect(() => {
     loadNotifications();
@@ -86,6 +94,7 @@ export default function AdminNotificationsScreen() {
           style: "destructive",
           onPress: async () => {
             await clearAdminNotifications();
+            await resetNotificationSync();
             setNotifications([]);
           },
         },
@@ -103,6 +112,8 @@ export default function AdminNotificationsScreen() {
         return { icon: "checkmark.seal.fill" as const, color: "#22C55E", bg: "#DCFCE7" };
       case "paypal_payment":
         return { icon: "creditcard.fill" as const, color: "#003087", bg: "#E6F0FF" };
+      case "payment_rejected":
+        return { icon: "xmark.circle.fill" as const, color: "#EF4444", bg: "#FEE2E2" };
       default:
         return { icon: "bell.fill" as const, color: "#F59E0B", bg: "#FEF3C7" };
     }
