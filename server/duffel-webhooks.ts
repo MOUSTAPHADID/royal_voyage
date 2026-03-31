@@ -5,6 +5,8 @@
  */
 import crypto from "crypto";
 import type { Express, Request, Response } from "express";
+import { getBookingContactByOrderId } from "./db";
+import { sendPnrUpdateEmail, sendCancellationEmail } from "./email";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -137,6 +139,27 @@ async function handleOrderCancellationConfirmed(event: DuffelWebhookEvent): Prom
     timestamp: new Date().toISOString(),
   });
 
+  // Send cancellation email to customer
+  try {
+    const contact = await getBookingContactByOrderId(orderId);
+    if (contact?.passengerEmail) {
+      await sendCancellationEmail({
+        passengerEmail: contact.passengerEmail,
+        passengerName: contact.passengerName,
+        bookingRef: contact.bookingRef,
+        pnr: contact.pnr || undefined,
+        routeSummary: contact.routeSummary || undefined,
+        refundAmount: String(refundAmount),
+        refundCurrency: refundCurrency || undefined,
+      } as any);
+      console.log(`[Webhook] ✉️ Cancellation email sent to ${contact.passengerEmail}`);
+    } else {
+      console.log(`[Webhook] No email found for order ${orderId} - skipping cancellation email`);
+    }
+  } catch (emailErr) {
+    console.error(`[Webhook] Failed to send cancellation email:`, emailErr);
+  }
+
   return `Cancellation confirmed: ${orderId}`;
 }
 
@@ -156,6 +179,32 @@ async function handleAirlineChange(event: DuffelWebhookEvent): Promise<string> {
     timestamp: new Date().toISOString(),
     urgent: true,
   });
+
+  // Send email notification to customer
+  try {
+    const contact = await getBookingContactByOrderId(orderId);
+    if (contact?.passengerEmail) {
+      const changeDetails = change.changes?.map((c: any) => {
+        const sliceChanges = c.slices?.updated?.map((s: any) => {
+          const seg = s.segments?.[0];
+          return seg ? `${seg.origin?.iata_code || ''} → ${seg.destination?.iata_code || ''} (${seg.departing_at || 'TBD'})` : '';
+        }).filter(Boolean).join(', ') || 'تغيير في تفاصيل الرحلة';
+        return sliceChanges;
+      }).join(' | ') || 'تغيير في تفاصيل الرحلة';
+
+      await sendPnrUpdateEmail({
+        passengerName: contact.passengerName,
+        passengerEmail: contact.passengerEmail,
+        bookingRef: contact.bookingRef,
+        pnr: contact.pnr || 'N/A',
+      });
+      console.log(`[Webhook] ✉️ Airline change email sent to ${contact.passengerEmail}`);
+    } else {
+      console.log(`[Webhook] No email found for order ${orderId} - skipping email notification`);
+    }
+  } catch (emailErr) {
+    console.error(`[Webhook] Failed to send airline change email:`, emailErr);
+  }
 
   return `Airline change detected: ${orderId}`;
 }

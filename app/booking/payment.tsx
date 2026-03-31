@@ -234,6 +234,7 @@ export default function PaymentScreen() {
   const sendAdminPush = trpc.email.sendPushNotification.useMutation();
   const bookFlightWithPNR = trpc.amadeus.bookFlightWithPNR.useMutation();
   const holdFlightOrder = trpc.amadeus.holdFlightOrder.useMutation();
+  const registerBookingContact = trpc.amadeus.registerBookingContact.useMutation();
 
   const handlePay = async () => {
     // التحقق من اكتمال بيانات الرحلة
@@ -336,7 +337,12 @@ export default function PaymentScreen() {
               holdSucceeded = true;
               console.log(`[Payment] ✅ Hold order created! PNR: ${pnr}, Pay by: ${duffelPaymentDeadline}`);
             } else {
-              console.warn(`[Payment] Hold failed: ${holdResult.error}. Trying instant confirmed booking...`);
+              const holdError = holdResult.error || '';
+              console.warn(`[Payment] Hold failed: ${holdError}. Trying instant confirmed booking...`);
+              // Check if hold is not allowed in live mode
+              if (holdError.includes('not allowed to create hold orders')) {
+                console.log('[Payment] Hold orders not supported on this account, falling back to instant booking');
+              }
             }
           } catch (holdErr: any) {
             console.warn("[Payment] Hold API error, trying instant confirmed booking:", holdErr?.message);
@@ -360,6 +366,14 @@ export default function PaymentScreen() {
               }
             } catch (instantErr: any) {
               console.error("[Payment] Instant booking also failed:", instantErr?.message);
+              const errMsg = instantErr?.message || '';
+              if (errMsg.includes('insufficient balance')) {
+                Alert.alert(
+                  'تنبيه',
+                  'لا يمكن تأكيد الحجز حالياً. سيتم حفظ الحجز وتأكيده لاحقاً من قبل الإدارة.',
+                  [{ text: 'حسناً' }]
+                );
+              }
             }
           }
         } else {
@@ -376,7 +390,15 @@ export default function PaymentScreen() {
             }
             console.log(`[Payment] ✅ Got real Duffel PNR: ${pnr}`);
           } else {
-            console.warn(`[Payment] Duffel booking failed: ${result.error}. Using fallback PNR.`);
+            const bookError = result.error || '';
+            console.warn(`[Payment] Duffel booking failed: ${bookError}. Using fallback PNR.`);
+            if (bookError.includes('insufficient balance')) {
+              Alert.alert(
+                'تنبيه',
+                'لا يمكن تأكيد الحجز حالياً. سيتم حفظ الحجز وتأكيده لاحقاً من قبل الإدارة.',
+                [{ text: 'حسناً' }]
+              );
+            }
           }
         }
       } catch (err: any) {
@@ -483,6 +505,22 @@ export default function PaymentScreen() {
     };
 
     await addBooking(booking);
+
+    // Register booking contact for webhook email notifications
+    if (royalOrderId && isFlight) {
+      const routeSummary = `${params.originCode ?? ''} → ${params.destinationCode ?? ''}`;
+      registerBookingContact.mutateAsync({
+        duffelOrderId: royalOrderId,
+        bookingRef: ref,
+        passengerName: `${params.firstName ?? ''} ${params.lastName ?? ''}`.trim(),
+        passengerEmail: params.email ?? undefined,
+        customerPushToken: expoPushToken ?? undefined,
+        pnr: pnr !== 'PENDING' ? pnr : undefined,
+        routeSummary,
+        totalPrice: total.toString(),
+        currency: 'MRU',
+      }).catch(e => console.warn('[Payment] Failed to register booking contact:', e));
+    }
 
     // إرسال إشعار Push للمدير عند إنشاء حجز جديد
     {

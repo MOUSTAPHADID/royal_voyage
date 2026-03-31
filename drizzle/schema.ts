@@ -96,3 +96,32 @@ export const employees = mysqlTable("employees", {
 
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = typeof employees.$inferInsert;
+
+// ─── Booking Contacts (ربط حجوزات Duffel ببيانات العملاء) ──────────────────
+// Maps Duffel order IDs to customer contact info for webhook email notifications
+export const bookingContacts = mysqlTable("booking_contacts", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Duffel order ID (ord_xxx) */
+  duffelOrderId: varchar("duffelOrderId", { length: 128 }).notNull().unique(),
+  /** Local booking reference (RV-FL-XXXXXX) */
+  bookingRef: varchar("bookingRef", { length: 64 }).notNull(),
+  /** Passenger full name */
+  passengerName: varchar("passengerName", { length: 255 }).notNull(),
+  /** Passenger email for notifications */
+  passengerEmail: varchar("passengerEmail", { length: 320 }),
+  /** Customer push token for mobile notifications */
+  customerPushToken: text("customerPushToken"),
+  /** PNR from airline */
+  pnr: varchar("pnr", { length: 32 }),
+  /** Flight route summary (e.g., NKC → CDG) */
+  routeSummary: varchar("routeSummary", { length: 255 }),
+  /** Total price */
+  totalPrice: varchar("totalPrice", { length: 32 }),
+  /** Currency */
+  currency: varchar("currency", { length: 8 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BookingContact = typeof bookingContacts.$inferSelect;
+export type InsertBookingContact = typeof bookingContacts.$inferInsert;

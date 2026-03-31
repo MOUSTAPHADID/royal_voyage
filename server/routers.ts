@@ -50,6 +50,7 @@ import {
   updateEmployee,
   deleteEmployee,
   verifyPassword,
+  upsertBookingContact,
 } from "./db";
 
 export const appRouter = router({
@@ -239,6 +240,18 @@ export const appRouter = router({
           const order = await createFlightOrder(priced.pricedOffer, travelers);
 
           console.log(`[Duffel] ✅ PNR: ${order.pnr}, OrderID: ${order.orderId}, Status: ${order.status}`);
+
+          // Save booking contact for webhook email notifications
+          if (order.orderId) {
+            upsertBookingContact({
+              duffelOrderId: order.orderId,
+              bookingRef: `RV-FL-${Date.now().toString().slice(-6)}`,
+              passengerName: `${input.firstName} ${input.lastName}`,
+              passengerEmail: input.email,
+              pnr: order.pnr || undefined,
+            }).catch(e => console.warn("[DB] Failed to save booking contact:", e));
+          }
+
           return {
             success: true,
             pnr: order.pnr,
@@ -390,6 +403,19 @@ export const appRouter = router({
           // Step 3: Create hold order (no payment)
           console.log(`[Duffel] Creating HOLD order for ${input.firstName} ${input.lastName} with ${travelers.length} traveler(s)...`);
           const holdResult = await createHoldOrder(priced.pricedOffer, travelers);
+
+          // Save booking contact for webhook email notifications
+          if (holdResult.orderId) {
+            upsertBookingContact({
+              duffelOrderId: holdResult.orderId,
+              bookingRef: `RV-FL-${Date.now().toString().slice(-6)}`,
+              passengerName: `${input.firstName} ${input.lastName}`,
+              passengerEmail: input.email,
+              pnr: holdResult.pnr || undefined,
+              totalPrice: holdResult.totalAmount || undefined,
+              currency: holdResult.totalCurrency || undefined,
+            }).catch(e => console.warn("[DB] Failed to save booking contact:", e));
+          }
 
           return {
             success: true,
@@ -553,6 +579,31 @@ export const appRouter = router({
         } catch (err: any) {
           console.error("[Duffel] searchHotels error:", err?.code || err?.message);
           return { success: false, data: [], error: err?.code || "SEARCH_ERROR" };
+        }
+      }),
+
+    // ─── Register Booking Contact (client calls after successful booking) ───
+    registerBookingContact: publicProcedure
+      .input(
+        z.object({
+          duffelOrderId: z.string(),
+          bookingRef: z.string(),
+          passengerName: z.string(),
+          passengerEmail: z.string().optional(),
+          customerPushToken: z.string().optional(),
+          pnr: z.string().optional(),
+          routeSummary: z.string().optional(),
+          totalPrice: z.string().optional(),
+          currency: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          await upsertBookingContact(input);
+          return { success: true };
+        } catch (err: any) {
+          console.error("[DB] registerBookingContact error:", err?.message);
+          return { success: false, error: err?.message };
         }
       }),
   }),

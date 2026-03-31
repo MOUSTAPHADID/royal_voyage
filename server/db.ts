@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -275,4 +275,64 @@ export async function updateEmployeeLastLogin(id: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db.update(employees).set({ lastLogin: new Date() }).where(eq(employees.id, id));
+}
+
+// ─── Booking Contacts (ربط حجوزات Duffel ببيانات العملاء) ──────────────────
+
+export async function upsertBookingContact(data: {
+  duffelOrderId: string;
+  bookingRef: string;
+  passengerName: string;
+  passengerEmail?: string;
+  customerPushToken?: string;
+  pnr?: string;
+  routeSummary?: string;
+  totalPrice?: string;
+  currency?: string;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot upsert booking contact: database not available");
+    return;
+  }
+  try {
+    await db.insert(bookingContacts).values({
+      duffelOrderId: data.duffelOrderId,
+      bookingRef: data.bookingRef,
+      passengerName: data.passengerName,
+      passengerEmail: data.passengerEmail || null,
+      customerPushToken: data.customerPushToken || null,
+      pnr: data.pnr || null,
+      routeSummary: data.routeSummary || null,
+      totalPrice: data.totalPrice || null,
+      currency: data.currency || null,
+    }).onDuplicateKeyUpdate({
+      set: {
+        bookingRef: data.bookingRef,
+        passengerName: data.passengerName,
+        passengerEmail: data.passengerEmail || null,
+        customerPushToken: data.customerPushToken || null,
+        pnr: data.pnr || null,
+        routeSummary: data.routeSummary || null,
+        totalPrice: data.totalPrice || null,
+        currency: data.currency || null,
+      },
+    });
+    console.log(`[Database] ✅ Booking contact saved for order ${data.duffelOrderId}`);
+  } catch (error) {
+    console.error("[Database] ❌ Failed to upsert booking contact:", error);
+  }
+}
+
+export async function getBookingContactByOrderId(duffelOrderId: string): Promise<BookingContact | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(bookingContacts).where(eq(bookingContacts.duffelOrderId, duffelOrderId)).limit(1);
+  return result[0];
+}
+
+export async function updateBookingContactPnr(duffelOrderId: string, pnr: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(bookingContacts).set({ pnr }).where(eq(bookingContacts.duffelOrderId, duffelOrderId));
 }

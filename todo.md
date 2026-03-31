@@ -1057,3 +1057,22 @@
 - [x] حماية من التكرار (idempotency check) مع سجل أحداث (آخر 200 حدث)
 - [x] إضافة routes tRPC لإدارة Webhooks (تسجيل، حذف، قائمة، ping، سجل الأحداث، إشعارات)
 - [x] اختبار ناجح: ping, order.created, airline_change, cancellation, idempotency
+
+## شاشة Webhooks في لوحة الإدارة
+- [x] إنشاء شاشة admin/webhooks.tsx لعرض سجل الأحداث والإشعارات
+- [x] عرض قائمة Webhooks المسجلة مع إمكانية الحذف والـ Ping
+- [x] عرض سجل الأحداث المستلمة مع تفاصيل كل حدث
+- [x] عرض الإشعارات العاجلة بشكل مميز
+- [x] إضافة زر تسجيل Webhook جديد مع modal URL
+
+## بريد تلقائي عند تغيير شركة الطيران
+- [x] إنشاء جدول booking_contacts في قاعدة البيانات لربط Duffel order IDs ببيانات العملاء
+- [x] تسجيل بيانات العميل تلقائياً عند كل حجز ناجح (bookFlightWithPNR + holdFlightOrder + client)
+- [x] ربط حدث airline_initiated_change بإرسال بريد PNR Update تلقائي للعميل
+- [x] ربط حدث order_cancellation.confirmed بإرسال بريد إلغاء تلقائي للعميل
+- [x] إضافة route registerBookingContact لتسجيل بيانات العميل من التطبيق
+
+## تحسين رسائل الخطأ عند فشل الحجز
+- [x] عرض رسالة Alert واضحة عند عدم كفاية رصيد محفظة Duffel (insufficient balance)
+- [x] عرض log واضح عند عدم دعم Hold Orders في الحساب
+- [x] تحسين تجربة المستخدم: الحجز يُحفظ ويؤكد لاحقاً من قبل الإدارة بدلاً من الفشل الصامت
