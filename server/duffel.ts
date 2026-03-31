@@ -182,14 +182,168 @@ function formatTime(isoDateTime: string): string {
 
 // ─── Airport / City Search (using Duffel Places API) ────────────────────────
 
+// ─── Arabic/French → English City/Airport Translation Map ────────────────────
+// Duffel suggestions API only supports English queries.
+// This map translates common Arabic & French city names so users can search in their language.
+const CITY_TRANSLATION_MAP: Record<string, string> = {
+  // Arabic names
+  "بيروت": "Beirut",
+  "اسطنبول": "Istanbul",
+  "إسطنبول": "Istanbul",
+  "اسطمبول": "Istanbul",
+  "إسطمبول": "Istanbul",
+  "استانبول": "Istanbul",
+  "دبي": "Dubai",
+  "الدوحة": "Doha",
+  "القاهرة": "Cairo",
+  "الرياض": "Riyadh",
+  "جدة": "Jeddah",
+  "نواكشوط": "Nouakchott",
+  "الدار البيضاء": "Casablanca",
+  "مراكش": "Marrakech",
+  "تونس": "Tunis",
+  "الجزائر": "Algiers",
+  "عمان": "Amman",
+  "بغداد": "Baghdad",
+  "دمشق": "Damascus",
+  "أبوظبي": "Abu Dhabi",
+  "ابوظبي": "Abu Dhabi",
+  "المنامة": "Bahrain",
+  "مسقط": "Muscat",
+  "الكويت": "Kuwait",
+  "باريس": "Paris",
+  "لندن": "London",
+  "مدريد": "Madrid",
+  "روما": "Rome",
+  "برلين": "Berlin",
+  "أمستردام": "Amsterdam",
+  "نيويورك": "New York",
+  "واشنطن": "Washington",
+  "لوس أنجلوس": "Los Angeles",
+  "شيكاغو": "Chicago",
+  "تورنتو": "Toronto",
+  "مونتريال": "Montreal",
+  "طوكيو": "Tokyo",
+  "بكين": "Beijing",
+  "شنغهاي": "Shanghai",
+  "سنغافورة": "Singapore",
+  "بانكوك": "Bangkok",
+  "كوالالمبور": "Kuala Lumpur",
+  "جاكرتا": "Jakarta",
+  "سيول": "Seoul",
+  "ميلانو": "Milan",
+  "برشلونة": "Barcelona",
+  "فرانكفورت": "Frankfurt",
+  "ميونخ": "Munich",
+  "زيورخ": "Zurich",
+  "جنيف": "Geneva",
+  "فيينا": "Vienna",
+  "بروكسل": "Brussels",
+  "لشبونة": "Lisbon",
+  "أثينا": "Athens",
+  "موسكو": "Moscow",
+  "أنقرة": "Ankara",
+  "طرابلس": "Tripoli",
+  "الخرطوم": "Khartoum",
+  "أديس أبابا": "Addis Ababa",
+  "نيروبي": "Nairobi",
+  "لاغوس": "Lagos",
+  "أكرا": "Accra",
+  "داكار": "Dakar",
+  "أبيدجان": "Abidjan",
+  "جوهانسبرغ": "Johannesburg",
+  "كيب تاون": "Cape Town",
+  "المدينة المنورة": "Medina",
+  "مكة": "Mecca",
+  "الطائف": "Taif",
+  "أنطاليا": "Antalya",
+  "بودروم": "Bodrum",
+  "شرم الشيخ": "Sharm El Sheikh",
+  "الغردقة": "Hurghada",
+  "الأقصر": "Luxor",
+  "أسوان": "Aswan",
+  "طنجة": "Tangier",
+  "فاس": "Fez",
+  "أغادير": "Agadir",
+  "وهران": "Oran",
+  "قسنطينة": "Constantine",
+  // French names
+  "Le Caire": "Cairo",
+  "Riyad": "Riyadh",
+  "Djeddah": "Jeddah",
+  "Beyrouth": "Beirut",
+  "Damas": "Damascus",
+  "Koweït": "Kuwait",
+  "Pékin": "Beijing",
+  "Moscou": "Moscow",
+  "Athènes": "Athens",
+  "Vienne": "Vienna",
+  "Bruxelles": "Brussels",
+  "Lisbonne": "Lisbon",
+  "Genève": "Geneva",
+  "Zurich": "Zurich",
+  "Francfort": "Frankfurt",
+  "Barcelone": "Barcelona",
+  "Milan": "Milan",
+  "Séoul": "Seoul",
+  "Singapour": "Singapore",
+  "Abidjan": "Abidjan",
+  "Alger": "Algiers",
+  "Tripoli": "Tripoli",
+  "Khartoum": "Khartoum",
+  "Addis-Abeba": "Addis Ababa",
+  "Le Cap": "Cape Town",
+  "Charm el-Cheikh": "Sharm El Sheikh",
+  "Hurghada": "Hurghada",
+  "Louxor": "Luxor",
+  "Assouan": "Aswan",
+  "Tanger": "Tangier",
+  "Fès": "Fez",
+  "Oran": "Oran",
+  "Médine": "Medina",
+  "La Mecque": "Mecca",
+  "Antalya": "Antalya",
+};
+
+/**
+ * Translate a non-English keyword to English using the city map.
+ * Tries exact match first, then partial/fuzzy match.
+ */
+function translateToEnglish(keyword: string): string {
+  // Exact match
+  if (CITY_TRANSLATION_MAP[keyword]) return CITY_TRANSLATION_MAP[keyword];
+  // Case-insensitive match
+  const lower = keyword.toLowerCase();
+  for (const [key, value] of Object.entries(CITY_TRANSLATION_MAP)) {
+    if (key.toLowerCase() === lower) return value;
+  }
+  // Partial match (keyword contains or is contained in a key)
+  for (const [key, value] of Object.entries(CITY_TRANSLATION_MAP)) {
+    if (key.includes(keyword) || keyword.includes(key)) return value;
+  }
+  return keyword; // No translation found, return as-is
+}
+
+/**
+ * Detect if keyword contains non-Latin characters (Arabic, French accented, etc.)
+ */
+function hasNonLatinChars(text: string): boolean {
+  return /[^\x00-\x7F]/.test(text);
+}
+
 export async function searchLocations(
   keyword: string
 ): Promise<LocationSuggestion[]> {
   if (keyword.length < 2) return [];
 
+  // Always try translation (for Arabic, French, and accented Latin keywords)
+  const translatedKeyword = translateToEnglish(keyword);
+  const searchKeyword = translatedKeyword;
+
   try {
+    console.log(`[Duffel] searchLocations: "${keyword}" → "${searchKeyword}"`);
     const response = await duffel.suggestions.list({
-      query: keyword,
+      query: searchKeyword,
     });
 
     return response.data
@@ -207,7 +361,7 @@ export async function searchLocations(
     // Fallback: try airports endpoint
     try {
       const airportsResponse = await fetch(
-        `https://api.duffel.com/air/airports?name=${encodeURIComponent(keyword)}&limit=8`,
+        `https://api.duffel.com/air/airports?name=${encodeURIComponent(searchKeyword)}&limit=8`,
         {
           headers: {
             Authorization: `Bearer ${DUFFEL_TOKEN}`,
