@@ -23,6 +23,7 @@ import {
   is2FAEnabled,
   validate2FACode,
 } from "@/lib/admin-security";
+import { recordLoginAttempt } from "@/lib/admin-login-audit";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -134,12 +135,14 @@ export default function ProfileScreen() {
     if (lockoutTimer > 0) return;
     const result = await validatePin(adminPinInput);
     if (result.success) {
+      await recordLoginAttempt({ status: "success", method: "pin" });
       setShowAdminPinModal(false);
       setAdminPinInput("");
       setPinError("");
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.push("/admin" as any);
     } else {
+      await recordLoginAttempt({ status: "failed", method: "pin", detail: result.locked ? "تم القفل" : `متبقي ${result.attemptsLeft} محاولات` });
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setAdminPinInput("");
       if (result.locked) {
@@ -170,6 +173,7 @@ export default function ProfileScreen() {
         setTwoFAError("");
         return;
       }
+      await recordLoginAttempt({ status: "success", method: "email", email: adminEmail.trim() });
       setShowAdminPinModal(false);
       setAdminEmail("");
       setAdminPassword("");
@@ -177,6 +181,7 @@ export default function ProfileScreen() {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.push("/admin" as any);
     } else {
+      await recordLoginAttempt({ status: "failed", method: "email", email: adminEmail.trim(), detail: result.locked ? "تم القفل" : `متبقي ${result.attemptsLeft} محاولات` });
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setAdminPassword("");
       if (result.locked) {
@@ -198,6 +203,7 @@ export default function ProfileScreen() {
   const handle2FASubmit = async () => {
     const valid = await validate2FACode(twoFACode);
     if (valid) {
+      await recordLoginAttempt({ status: "success", method: "2fa" });
       setShowAdminPinModal(false);
       setAdminEmail("");
       setAdminPassword("");
@@ -207,6 +213,7 @@ export default function ProfileScreen() {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.push("/admin" as any);
     } else {
+      await recordLoginAttempt({ status: "failed", method: "2fa", detail: "رمز التحقق خاطئ" });
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setTwoFAError(language === "ar" ? "رمز التحقق خاطئ" : "Invalid verification code");
       setTwoFACode("");

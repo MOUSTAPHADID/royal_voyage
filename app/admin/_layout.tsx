@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Platform,
   KeyboardAvoidingView,
+  Modal,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -24,10 +25,16 @@ import {
   is2FAEnabled,
   validate2FACode,
 } from "@/lib/admin-security";
+import { recordLoginAttempt } from "@/lib/admin-login-audit";
+
+// ─── Inactivity timeout config ───
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const WARNING_BEFORE_MS = 60 * 1000; // Show warning 60s before logout
 
 /**
  * Admin Layout with mandatory authentication gate.
  * No admin screen can be accessed without passing PIN, email/password, or biometric auth.
+ * Auto-logout after 10 minutes of inactivity with 60s warning.
  */
 export default function AdminLayout() {
   const colors = useColors();
@@ -55,6 +62,82 @@ export default function AdminLayout() {
   const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
   const [biometricReady, setBiometricReady] = useState(false);
 
+  // ─── Inactivity auto-logout state ───
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false);
+  const [warningCountdown, setWarningCountdown] = useState(60);
+  const inactivityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastActivityRef = useRef(Date.now());
+
+  // Reset inactivity timer on any user activity
+  const resetInactivityTimer = useCallback(() => {
+    if (!isAuthenticated) return;
+    lastActivityRef.current = Date.now();
+
+    // Clear existing timers
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    if (warningTimerRef.current) clearInterval(warningTimerRef.current);
+    setShowInactivityWarning(false);
+
+    // Set new inactivity timer (fires warning at TIMEOUT - 60s)
+    inactivityTimerRef.current = setTimeout(() => {
+      // Show warning
+      setShowInactivityWarning(true);
+      setWarningCountdown(60);
+
+      // Start countdown
+      warningTimerRef.current = setInterval(() => {
+        setWarningCountdown((prev) => {
+          if (prev <= 1) {
+            // Time's up — auto logout
+            if (warningTimerRef.current) clearInterval(warningTimerRef.current);
+            handleAutoLogout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }, INACTIVITY_TIMEOUT_MS - WARNING_BEFORE_MS);
+  }, [isAuthenticated]);
+
+  const handleAutoLogout = useCallback(() => {
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    if (warningTimerRef.current) clearInterval(warningTimerRef.current);
+    setShowInactivityWarning(false);
+    setIsAuthenticated(false);
+    // Reset form
+    setEmail(""); setPassword(""); setPin("");
+    setError(""); setShow2FA(false); setTwoFACode(""); setTwoFAError("");
+  }, []);
+
+  const handleExtendSession = useCallback(() => {
+    setShowInactivityWarning(false);
+    if (warningTimerRef.current) clearInterval(warningTimerRef.current);
+    resetInactivityTimer();
+    if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [resetInactivityTimer]);
+
+  // Start inactivity timer when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      resetInactivityTimer();
+    }
+    return () => {
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+      if (warningTimerRef.current) clearInterval(warningTimerRef.current);
+    };
+  }, [isAuthenticated, resetInactivityTimer]);
+
+  // Track user activity via a periodic check (touch events are handled by wrapping the Stack)
+  // We use a simple approach: any navigation or screen interaction resets the timer
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      // This runs every 30s to keep the timer logic alive
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   // Check biometric on mount and try auto-auth
   useEffect(() => {
     (async () => {
@@ -67,7 +150,10 @@ export default function AdminLayout() {
           const success = await authenticateWithBiometric("تحقق للدخول للوحة الإدارة");
           if (success) {
             if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await recordLoginAttempt({ status: "success", method: "biometric" });
             setIsAuthenticated(true);
+          } else {
+            await recordLoginAttempt({ status: "failed", method: "biometric", detail: "فشل التحقق البيومتري" });
           }
         }
       }
@@ -118,9 +204,15 @@ export default function AdminLayout() {
         return;
       }
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await recordLoginAttempt({ status: "success", method: "pin" });
       setIsAuthenticated(true);
     } else {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await recordLoginAttempt({
+        status: "failed",
+        method: "pin",
+        detail: result.locked ? "تم القفل بعد 3 محاولات" : `متبقي ${result.attemptsLeft} محاولات`,
+      });
       setPin("");
       if (result.locked) {
         setLockoutTimer(result.lockoutSeconds);
@@ -145,9 +237,16 @@ export default function AdminLayout() {
         return;
       }
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await recordLoginAttempt({ status: "success", method: "email", email: email.trim() });
       setIsAuthenticated(true);
     } else {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await recordLoginAttempt({
+        status: "failed",
+        method: "email",
+        email: email.trim(),
+        detail: result.locked ? "تم القفل بعد 3 محاولات" : `متبقي ${result.attemptsLeft} محاولات`,
+      });
       setPassword("");
       if (result.locked) {
         setLockoutTimer(result.lockoutSeconds);
@@ -163,9 +262,11 @@ export default function AdminLayout() {
     const valid = await validate2FACode(twoFACode);
     if (valid) {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await recordLoginAttempt({ status: "success", method: "2fa" });
       setIsAuthenticated(true);
     } else {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await recordLoginAttempt({ status: "failed", method: "2fa", detail: "رمز التحقق خاطئ" });
       setTwoFAError("رمز التحقق خاطئ");
       setTwoFACode("");
     }
@@ -175,7 +276,10 @@ export default function AdminLayout() {
     const success = await authenticateWithBiometric("تحقق للدخول للوحة الإدارة");
     if (success) {
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await recordLoginAttempt({ status: "success", method: "biometric" });
       setIsAuthenticated(true);
+    } else {
+      await recordLoginAttempt({ status: "failed", method: "biometric", detail: "فشل التحقق البيومتري" });
     }
   };
 
@@ -354,14 +458,67 @@ export default function AdminLayout() {
     );
   }
 
-  // Authenticated - render admin screens
+  // Authenticated - render admin screens with inactivity tracking
   return (
-    <Stack
-      screenOptions={{
-        headerShown: false,
-        animation: "slide_from_right",
-      }}
-    />
+    <Pressable
+      style={s.flex1}
+      onPress={resetInactivityTimer}
+      onLongPress={resetInactivityTimer}
+    >
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "slide_from_right",
+        }}
+      />
+
+      {/* Inactivity Warning Modal */}
+      <Modal
+        visible={showInactivityWarning}
+        transparent
+        animationType="fade"
+        onRequestClose={handleExtendSession}
+      >
+        <View style={s.modalOverlay}>
+          <View style={[s.warningCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={{ fontSize: 40, textAlign: "center", marginBottom: 12 }}>⏰</Text>
+            <Text style={[s.warningTitle, { color: colors.foreground }]}>
+              تحذير عدم النشاط
+            </Text>
+            <Text style={[s.warningSubtitle, { color: colors.muted }]}>
+              سيتم تسجيل خروجك تلقائياً بعد
+            </Text>
+            <View style={[s.countdownCircle, { borderColor: warningCountdown <= 10 ? colors.error : colors.primary }]}>
+              <Text style={[s.countdownText, { color: warningCountdown <= 10 ? colors.error : colors.primary }]}>
+                {warningCountdown}
+              </Text>
+              <Text style={[s.countdownLabel, { color: colors.muted }]}>ثانية</Text>
+            </View>
+
+            <View style={s.warningBtnRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  s.warningBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1, flex: 1 },
+                ]}
+                onPress={handleExtendSession}
+              >
+                <Text style={s.warningBtnText}>تمديد الجلسة</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  s.warningBtn,
+                  { backgroundColor: colors.error, opacity: pressed ? 0.85 : 1, flex: 1 },
+                ]}
+                onPress={handleAutoLogout}
+              >
+                <Text style={s.warningBtnText}>تسجيل خروج</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </Pressable>
   );
 }
 
@@ -465,5 +622,65 @@ const s = StyleSheet.create({
   backBtnText: {
     fontSize: 14,
     fontWeight: "600",
+  },
+  // Inactivity warning modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  warningCard: {
+    width: "100%",
+    maxWidth: 360,
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 28,
+    alignItems: "center",
+  },
+  warningTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 6,
+  },
+  warningSubtitle: {
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 16,
+  },
+  countdownCircle: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  countdownText: {
+    fontSize: 32,
+    fontWeight: "900",
+  },
+  countdownLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginTop: -2,
+  },
+  warningBtnRow: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  warningBtn: {
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  warningBtnText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "700",
   },
 });

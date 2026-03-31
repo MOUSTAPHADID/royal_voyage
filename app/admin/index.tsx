@@ -1247,7 +1247,7 @@ export default function AdminScreen() {
               {/* 2FA Toggle */}
               <View style={{
                 flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-                backgroundColor: colors.background, borderRadius: 12, padding: 14,
+                backgroundColor: colors.background, borderRadius: 12, padding: 14, marginBottom: 10,
               }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}>
                   <IconSymbol name="shield.fill" size={18} color={twoFAEnabled ? "#22C55E" : colors.muted} />
@@ -1264,6 +1264,44 @@ export default function AdminScreen() {
                   trackColor={{ false: colors.border, true: "#22C55E" }}
                 />
               </View>
+
+              {/* Credentials Management */}
+              <Pressable
+                style={({ pressed }) => [{
+                  flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                  backgroundColor: colors.background, borderRadius: 12, padding: 14, marginBottom: 10,
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+                onPress={() => router.push("/admin/credentials" as any)}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <IconSymbol name="lock.fill" size={18} color="#8B5CF6" />
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>إدارة بيانات الاعتماد</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>تغيير PIN والبريد وكلمة المرور</Text>
+                  </View>
+                </View>
+                <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+              </Pressable>
+
+              {/* Login Audit Log */}
+              <Pressable
+                style={({ pressed }) => [{
+                  flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                  backgroundColor: colors.background, borderRadius: 12, padding: 14,
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+                onPress={() => router.push("/admin/login-audit" as any)}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <IconSymbol name="doc.text.fill" size={18} color="#06B6D4" />
+                  <View>
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>سجل محاولات الدخول</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>عرض تاريخ جميع محاولات تسجيل الدخول</Text>
+                  </View>
+                </View>
+                <IconSymbol name="chevron.right" size={16} color={colors.muted} />
+              </Pressable>
             </View>
 
             {/* Distribution Bar Chart */}
