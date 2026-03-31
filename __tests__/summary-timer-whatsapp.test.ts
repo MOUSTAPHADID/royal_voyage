@@ -59,11 +59,11 @@ describe("Booking Summary Screen", () => {
   });
 });
 
-describe("Passenger Details routes to Summary", () => {
-  it("passenger-details.tsx navigates to /booking/summary", () => {
+describe("Passenger Details routes to Payment", () => {
+  it("passenger-details.tsx navigates to /booking/payment", () => {
     const pdPath = path.join(__dirname, "../app/booking/passenger-details.tsx");
     const content = fs.readFileSync(pdPath, "utf-8");
-    expect(content).toContain("/booking/summary");
+    expect(content).toContain("/booking/payment");
   });
 });
 

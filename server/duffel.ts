@@ -69,6 +69,13 @@ export type FlightOffer = {
   class: string;
   seatsLeft: number;
   rawOffer: unknown;
+  // Per-passenger-type pricing from Duffel
+  passengerPricing?: Array<{
+    type: string; // "adult" | "child" | "infant_without_seat"
+    quantity: number;
+    totalAmount: number; // Total for all passengers of this type
+    perPersonAmount: number; // Per-person amount for this type
+  }>;
 };
 
 export type HotelOffer = {
@@ -341,6 +348,98 @@ export async function searchFlights(params: {
       firstSeg?.passengers?.[0]?.cabin_class ||
       "economy";
 
+    // Extract per-passenger-type pricing from Duffel offer
+    const passengerPricing: FlightOffer["passengerPricing"] = [];
+    const offerPassengers = offer.passengers || [];
+    const typeMap = new Map<string, { quantity: number; total: number }>();
+    for (const p of offerPassengers) {
+      const pType = p.type || (p.age && p.age < 2 ? "infant_without_seat" : p.age && p.age < 12 ? "child" : "adult");
+      const existing = typeMap.get(pType) || { quantity: 0, total: 0 };
+      existing.quantity += 1;
+      // Duffel provides per-passenger fare in passenger object or we can derive from total
+      // The passenger object may have fare_amount or we use total_amount / count
+      existing.total += 0; // Will be computed from slices below
+      typeMap.set(pType, existing);
+    }
+    // Try to get per-passenger pricing from slices
+    for (const slice of (offer.slices || [])) {
+      for (const seg of (slice.segments || [])) {
+        for (const pax of (seg.passengers || [])) {
+          // Each segment passenger has a passenger_id that maps to offer.passengers
+          const matchedPax = offerPassengers.find((op: any) => op.id === pax.passenger_id);
+          if (matchedPax) {
+            // We only need to count once per passenger across segments
+            // Skip — pricing is at offer level, not segment level
+          }
+        }
+      }
+    }
+    // Simpler approach: use total_amount and divide proportionally
+    // Duffel doesn't always provide per-type breakdown in the offer object
+    // But we can check if passengers have individual amounts
+    const totalAmount = parseFloat(offer.total_amount || "0");
+    if (typeMap.size > 0) {
+      // Check if Duffel provides per-passenger amounts in the offer
+      let hasIndividualPricing = false;
+      for (const p of offerPassengers) {
+        if (p.fare_amount || p.loyalty_programme_accounts) {
+          hasIndividualPricing = true;
+          break;
+        }
+      }
+      
+      if (!hasIndividualPricing && typeMap.size === 1) {
+        // All same type — simple division
+        for (const [type, data] of typeMap) {
+          passengerPricing.push({
+            type,
+            quantity: data.quantity,
+            totalAmount: totalAmount,
+            perPersonAmount: Math.round((totalAmount / data.quantity) * 100) / 100,
+          });
+        }
+      } else {
+        // Multiple types — estimate infant at ~10% of adult price
+        const adultData = typeMap.get("adult") || { quantity: 1, total: 0 };
+        const childData = typeMap.get("child");
+        const infantData = typeMap.get("infant_without_seat");
+        
+        // Typical airline pricing: infant ~10% of adult, child ~75% of adult
+        const infantRatio = 0.10;
+        const childRatio = 0.75;
+        let weightedTotal = adultData.quantity * 1.0;
+        if (childData) weightedTotal += childData.quantity * childRatio;
+        if (infantData) weightedTotal += infantData.quantity * infantRatio;
+        
+        const adultPerPerson = totalAmount / weightedTotal;
+        
+        passengerPricing.push({
+          type: "adult",
+          quantity: adultData.quantity,
+          totalAmount: Math.round(adultPerPerson * adultData.quantity * 100) / 100,
+          perPersonAmount: Math.round(adultPerPerson * 100) / 100,
+        });
+        if (childData) {
+          const childPerPerson = adultPerPerson * childRatio;
+          passengerPricing.push({
+            type: "child",
+            quantity: childData.quantity,
+            totalAmount: Math.round(childPerPerson * childData.quantity * 100) / 100,
+            perPersonAmount: Math.round(childPerPerson * 100) / 100,
+          });
+        }
+        if (infantData) {
+          const infantPerPerson = adultPerPerson * infantRatio;
+          passengerPricing.push({
+            type: "infant_without_seat",
+            quantity: infantData.quantity,
+            totalAmount: Math.round(infantPerPerson * infantData.quantity * 100) / 100,
+            perPersonAmount: Math.round(infantPerPerson * 100) / 100,
+          });
+        }
+      }
+    }
+
     return {
       id: offerId,
       airline: airlineName,
@@ -354,11 +453,12 @@ export async function searchFlights(params: {
       arrivalTime: lastSeg ? formatTime(lastSeg.arriving_at) : "",
       duration,
       stops: Math.max(0, segments.length - 1),
-      price: parseFloat(offer.total_amount || "0"),
+      price: totalAmount,
       currency: offer.total_currency || "USD",
       class: cabinClassDisplay.toUpperCase(),
       seatsLeft: offer.available_services?.length ?? 9,
       rawOffer: offer,
+      passengerPricing: passengerPricing.length > 0 ? passengerPricing : undefined,
     };
   });
 }
@@ -513,6 +613,163 @@ export async function createFlightOrder(
     ticketingDeadline: undefined, // Duffel handles ticketing automatically
     status,
     documents,
+  };
+}
+
+// ─── Create Hold Order (Reserve without payment — 24h hold) ─────────────────
+
+export type HoldOrderResult = {
+  orderId: string;
+  pnr: string;
+  status: string;
+  paymentRequiredBy: string; // ISO deadline
+  totalAmount: string;
+  totalCurrency: string;
+  associatedRecords: Array<{ reference: string; originSystemCode?: string }>;
+};
+
+export async function createHoldOrder(
+  pricedOffer: any,
+  travelers: TravelerInput[]
+): Promise<HoldOrderResult> {
+  const offerId = pricedOffer?.id || pricedOffer;
+  const offerData = typeof pricedOffer === "object" ? pricedOffer : getCachedOffer(offerId);
+  if (!offerData) {
+    throw new Error("Offer not found or expired. Please search again.");
+  }
+
+  // Check if the offer supports hold
+  const requiresInstant = offerData.payment_requirements?.requires_instant_payment;
+  if (requiresInstant === true) {
+    throw new Error("INSTANT_PAYMENT_REQUIRED: This offer does not support hold. Please use instant payment.");
+  }
+
+  const offerPassengers = offerData.passengers || [];
+  const passengersPayload = travelers.map((t, idx) => {
+    const passengerFromOffer = offerPassengers[idx];
+    return {
+      id: passengerFromOffer?.id || t.id,
+      phone_number: `+${t.countryCallingCode}${t.phone}`,
+      email: t.email,
+      born_on: t.dateOfBirth,
+      title: t.gender === "MALE" ? "mr" : "ms",
+      gender: t.gender === "MALE" ? "m" : "f",
+      family_name: t.lastName.toUpperCase(),
+      given_name: t.firstName.toUpperCase(),
+    };
+  });
+
+  console.log(`[Duffel] Creating HOLD order for offer ${offerId} with ${travelers.length} passenger(s)...`);
+
+  const orderResponse = await duffel.orders.create({
+    type: "hold" as any,
+    selected_offers: [offerId],
+    passengers: passengersPayload as any,
+    metadata: {
+      agency: "Royal Voyage",
+      agency_phone: "+22233700000",
+      agency_email: "royal-voyage@gmail.com",
+    },
+  });
+
+  const order = orderResponse.data;
+  const pnr = order.booking_reference || "";
+  const orderId = order.id || "";
+
+  // Get payment deadline from Duffel
+  const paymentRequiredBy = (order as any).payment_status?.payment_required_by
+    || (order as any).payment_required_by
+    || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  const associatedRecords: Array<{ reference: string; originSystemCode: string }> = [];
+  if (order.booking_reference) {
+    associatedRecords.push({
+      reference: order.booking_reference,
+      originSystemCode: order.owner?.iata_code || "",
+    });
+  }
+
+  console.log(`[Duffel] ✅ Hold order created! ID: ${orderId}, PNR: ${pnr}, Pay by: ${paymentRequiredBy}`);
+
+  return {
+    orderId,
+    pnr,
+    status: "AWAITING_PAYMENT",
+    paymentRequiredBy,
+    totalAmount: order.total_amount || "0",
+    totalCurrency: order.total_currency || "USD",
+    associatedRecords,
+  };
+}
+
+// ─── Pay for Hold Order (Confirm payment and issue tickets) ─────────────────
+
+export type PayHoldOrderResult = {
+  orderId: string;
+  pnr: string;
+  status: string;
+  documents: Array<{ type: string; unique_identifier: string }>;
+  ticketNumber?: string;
+};
+
+export async function payForHoldOrder(orderId: string): Promise<PayHoldOrderResult> {
+  console.log(`[Duffel] Paying for hold order: ${orderId}`);
+
+  // First get the order to know the amount
+  const orderResponse = await duffel.orders.get(orderId);
+  const order = orderResponse.data;
+
+  if (order.cancelled_at) {
+    throw new Error("ORDER_CANCELLED: This order has been cancelled.");
+  }
+
+  const awaitingPayment = (order as any).payment_status?.awaiting_payment;
+  if (awaitingPayment === false) {
+    // Already paid — just return current state
+    const documents = (order.documents || []).map((doc: any) => ({
+      type: doc.type || "electronic_ticket",
+      unique_identifier: doc.unique_identifier || "",
+    }));
+    return {
+      orderId: order.id,
+      pnr: order.booking_reference || "",
+      status: "CONFIRMED",
+      documents,
+      ticketNumber: documents[0]?.unique_identifier || undefined,
+    };
+  }
+
+  // Create payment
+  const paymentResponse = await duffel.payments.create({
+    order_id: orderId,
+    payment: {
+      type: "balance" as any,
+      amount: order.total_amount || "0",
+      currency: order.total_currency || "USD",
+    },
+  });
+
+  console.log(`[Duffel] ✅ Payment confirmed for order ${orderId}`);
+
+  // Re-fetch order to get documents (tickets)
+  const updatedOrderResponse = await duffel.orders.get(orderId);
+  const updatedOrder = updatedOrderResponse.data;
+
+  const documents = (updatedOrder.documents || []).map((doc: any) => ({
+    type: doc.type || "electronic_ticket",
+    unique_identifier: doc.unique_identifier || "",
+  }));
+
+  const ticketNumber = documents[0]?.unique_identifier || undefined;
+
+  console.log(`[Duffel] 🎫 ${documents.length} ticket(s) issued after payment. Ticket: ${ticketNumber || "pending"}`);
+
+  return {
+    orderId: updatedOrder.id,
+    pnr: updatedOrder.booking_reference || "",
+    status: "CONFIRMED",
+    documents,
+    ticketNumber,
   };
 }
 

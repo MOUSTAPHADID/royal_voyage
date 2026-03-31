@@ -38,6 +38,12 @@ type AnyFlight = {
   currency: string;
   class: string;
   seatsLeft: number;
+  passengerPricing?: Array<{
+    type: string;
+    quantity: number;
+    totalAmount: number;
+    perPersonAmount: number;
+  }>;
 };
 
 export default function FlightResultsScreen() {
@@ -151,20 +157,21 @@ export default function FlightResultsScreen() {
             arrivalTime: item.arrivalTime,
             duration: item.duration,
             stops: String(item.stops),
-            price: String(item.price),
-            currency: item.currency || "USD",
-            class: item.class,
-            seatsLeft: String(item.seatsLeft),
-            passengers: params.passengers || "1",
-             children: params.children || "0",
-             infants: params.infants || "0",
-             tripType: params.tripType || "oneway",
-             returnDate: params.returnDate || "",
-           },
-        })
-      }
-    >
-      {/* Airline header */}
+             price: String(item.price),
+             currency: item.currency || "USD",
+             class: item.class,
+             seatsLeft: String(item.seatsLeft),
+             passengers: params.passengers || "1",
+              children: params.children || "0",
+              infants: params.infants || "0",
+              tripType: params.tripType || "oneway",
+              returnDate: params.returnDate || "",
+              passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",
+            },
+         })
+       }
+     >
+       {/* Airline header */}
       <View style={styles.cardHeader}>
         <View style={styles.airlineRow}>
           <View style={[styles.airlineIconBox, { backgroundColor: colors.primary + "15" }]}>
@@ -257,18 +264,19 @@ export default function FlightResultsScreen() {
                 arrivalTime: item.arrivalTime,
                 duration: item.duration,
                 stops: String(item.stops),
-                price: String(item.price),
-                currency: item.currency || "USD",
-                class: item.class,
-                seatsLeft: String(item.seatsLeft),
-                passengers: params.passengers || "1",
-                 children: params.children || "0",
-                 infants: params.infants || "0",
-                 tripType: params.tripType || "oneway",
-                 returnDate: params.returnDate || "",
-               },
-            })
-          }
+             price: String(item.price),
+                 currency: item.currency || "USD",
+                 class: item.class,
+                 seatsLeft: String(item.seatsLeft),
+                 passengers: params.passengers || "1",
+                  children: params.children || "0",
+                  infants: params.infants || "0",
+                  tripType: params.tripType || "oneway",
+                  returnDate: params.returnDate || "",
+                  passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",
+                },
+             })
+           }
         >
           <Text style={styles.selectBtnText}>{t.flights.select}</Text>
         </Pressable>

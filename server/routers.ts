@@ -12,6 +12,8 @@ import {
   getCachedRawOffer,
   getFlightOrder,
   cancelFlightOrder,
+  createHoldOrder,
+  payForHoldOrder,
   getAmadeusStatus,
   checkTicketIssuance,
   queueToConsolidator,
@@ -114,6 +116,15 @@ export const appRouter = router({
           email: z.string(),
           phone: z.string(),
           countryCallingCode: z.string().default("222"),
+          passengers: z.number().min(1).max(9).default(1),
+          children: z.number().min(0).max(8).default(0),
+          infantDetails: z.array(
+            z.object({
+              firstName: z.string(),
+              lastName: z.string(),
+              dateOfBirth: z.string(),
+            })
+          ).optional(),
         })
       )
       .mutation(async ({ input }) => {
@@ -129,11 +140,35 @@ export const appRouter = router({
           console.log(`[Duffel] Pricing offer ${input.offerId}...`);
           const priced = await priceFlightOffer(rawOffer);
 
-          // Step 3: Create the order with instant confirmation
-          console.log(`[Duffel] Creating flight order for ${input.firstName} ${input.lastName}...`);
-          const order = await createFlightOrder(priced.pricedOffer, [
-            {
-              id: "1",
+          // Step 3: Build travelers array (adults + children + infants)
+          // Order must match the offer passengers: adults first, then children, then infants
+          const travelers: Array<{
+            id: string;
+            dateOfBirth: string;
+            firstName: string;
+            lastName: string;
+            gender: "MALE" | "FEMALE";
+            email: string;
+            phone: string;
+            countryCallingCode: string;
+          }> = [];
+
+          // Primary adult
+          travelers.push({
+            id: "1",
+            dateOfBirth: input.dateOfBirth,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            gender: input.gender,
+            email: input.email,
+            phone: input.phone,
+            countryCallingCode: input.countryCallingCode,
+          });
+
+          // Additional adults (duplicate primary info for now)
+          for (let i = 1; i < input.passengers; i++) {
+            travelers.push({
+              id: String(travelers.length + 1),
               dateOfBirth: input.dateOfBirth,
               firstName: input.firstName,
               lastName: input.lastName,
@@ -141,8 +176,44 @@ export const appRouter = router({
               email: input.email,
               phone: input.phone,
               countryCallingCode: input.countryCallingCode,
-            },
-          ]);
+            });
+          }
+
+          // Children (use primary adult info with adjusted age)
+          for (let i = 0; i < input.children; i++) {
+            const childDob = new Date();
+            childDob.setFullYear(childDob.getFullYear() - 10);
+            travelers.push({
+              id: String(travelers.length + 1),
+              dateOfBirth: childDob.toISOString().split("T")[0],
+              firstName: input.firstName,
+              lastName: input.lastName,
+              gender: input.gender,
+              email: input.email,
+              phone: input.phone,
+              countryCallingCode: input.countryCallingCode,
+            });
+          }
+
+          // Infants (use actual infant details if provided)
+          const infantDetails = input.infantDetails || [];
+          for (let i = 0; i < infantDetails.length; i++) {
+            const inf = infantDetails[i];
+            travelers.push({
+              id: String(travelers.length + 1),
+              dateOfBirth: inf.dateOfBirth,
+              firstName: inf.firstName,
+              lastName: inf.lastName,
+              gender: "MALE",
+              email: input.email,
+              phone: input.phone,
+              countryCallingCode: input.countryCallingCode,
+            });
+          }
+
+          // Step 4: Create the order with instant confirmation
+          console.log(`[Duffel] Creating flight order for ${input.firstName} ${input.lastName} with ${travelers.length} traveler(s)...`);
+          const order = await createFlightOrder(priced.pricedOffer, travelers);
 
           console.log(`[Duffel] ✅ PNR: ${order.pnr}, OrderID: ${order.orderId}, Status: ${order.status}`);
           return {
@@ -192,7 +263,150 @@ export const appRouter = router({
         }
       }),
 
-    // ─── Get Flight Order Status (PNR Lookup) ─────────────────────
+       // ─── Hold Flight Order (Reserve without payment — office payment) ─────
+    holdFlightOrder: publicProcedure
+      .input(
+        z.object({
+          offerId: z.string(),
+          firstName: z.string(),
+          lastName: z.string(),
+          dateOfBirth: z.string(),
+          gender: z.enum(["MALE", "FEMALE"]),
+          email: z.string(),
+          phone: z.string(),
+          countryCallingCode: z.string().default("222"),
+          passengers: z.number().min(1).max(9).default(1),
+          children: z.number().min(0).max(8).default(0),
+          infantDetails: z.array(
+            z.object({
+              firstName: z.string(),
+              lastName: z.string(),
+              dateOfBirth: z.string(),
+            })
+          ).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          // Step 1: Price the offer
+          const priced = await priceFlightOffer(input.offerId);
+          if (!(priced as any).available) {
+            return { success: false, pnr: null, error: "OFFER_UNAVAILABLE" };
+          }
+
+          // Step 2: Build travelers array (adults + children + infants)
+          const travelers: Array<{
+            id: string;
+            dateOfBirth: string;
+            firstName: string;
+            lastName: string;
+            gender: "MALE" | "FEMALE";
+            email: string;
+            phone: string;
+            countryCallingCode: string;
+          }> = [];
+
+          // Primary adult
+          travelers.push({
+            id: "1",
+            dateOfBirth: input.dateOfBirth,
+            firstName: input.firstName,
+            lastName: input.lastName,
+            gender: input.gender,
+            email: input.email,
+            phone: input.phone,
+            countryCallingCode: input.countryCallingCode,
+          });
+
+          // Additional adults
+          for (let i = 1; i < input.passengers; i++) {
+            travelers.push({
+              id: String(travelers.length + 1),
+              dateOfBirth: input.dateOfBirth,
+              firstName: input.firstName,
+              lastName: input.lastName,
+              gender: input.gender,
+              email: input.email,
+              phone: input.phone,
+              countryCallingCode: input.countryCallingCode,
+            });
+          }
+
+          // Children
+          for (let i = 0; i < input.children; i++) {
+            const childDob = new Date();
+            childDob.setFullYear(childDob.getFullYear() - 10);
+            travelers.push({
+              id: String(travelers.length + 1),
+              dateOfBirth: childDob.toISOString().split("T")[0],
+              firstName: input.firstName,
+              lastName: input.lastName,
+              gender: input.gender,
+              email: input.email,
+              phone: input.phone,
+              countryCallingCode: input.countryCallingCode,
+            });
+          }
+
+          // Infants (use actual infant details if provided)
+          const infantDetails = input.infantDetails || [];
+          for (let i = 0; i < infantDetails.length; i++) {
+            const inf = infantDetails[i];
+            travelers.push({
+              id: String(travelers.length + 1),
+              dateOfBirth: inf.dateOfBirth,
+              firstName: inf.firstName,
+              lastName: inf.lastName,
+              gender: "MALE",
+              email: input.email,
+              phone: input.phone,
+              countryCallingCode: input.countryCallingCode,
+            });
+          }
+
+          // Step 3: Create hold order (no payment)
+          console.log(`[Duffel] Creating HOLD order for ${input.firstName} ${input.lastName} with ${travelers.length} traveler(s)...`);
+          const holdResult = await createHoldOrder(priced.pricedOffer, travelers);
+
+          return {
+            success: true,
+            pnr: holdResult.pnr,
+            orderId: holdResult.orderId,
+            status: holdResult.status,
+            paymentRequiredBy: holdResult.paymentRequiredBy,
+            totalAmount: holdResult.totalAmount,
+            totalCurrency: holdResult.totalCurrency,
+          };
+        } catch (err: any) {
+          console.error("[Duffel] holdFlightOrder error:", err?.message || err);
+          const detail = err?.errors?.[0]?.message || err?.message || "HOLD_ERROR";
+          return { success: false, pnr: null, error: detail };
+        }
+      }),
+
+    // ─── Pay for Hold Order (Admin confirms payment → issue tickets) ───
+    payHoldOrder: publicProcedure
+      .input(z.object({ orderId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await payForHoldOrder(input.orderId);
+          console.log(`[Duffel] ✅ Hold order paid! PNR: ${result.pnr}, Ticket: ${result.ticketNumber || "pending"}`);
+          return {
+            success: true,
+            pnr: result.pnr,
+            orderId: result.orderId,
+            status: result.status,
+            ticketNumber: result.ticketNumber || null,
+            documents: result.documents,
+          };
+        } catch (err: any) {
+          console.error("[Duffel] payHoldOrder error:", err?.message || err);
+          const detail = err?.errors?.[0]?.message || err?.message || "PAYMENT_ERROR";
+          return { success: false, error: detail };
+        }
+      }),
+
+    // ─── Get Flight Order Status (PNR Lookup) ─────────────────
     getFlightOrder: publicProcedure
       .input(z.object({ orderId: z.string() }))
       .query(async ({ input }) => {

@@ -100,7 +100,8 @@ describe("Booking Flow Pricing — Duffel total_amount is used correctly", () =>
     });
 
     it("returns price in FlightOffer", () => {
-      expect(src).toMatch(/price:\s*parseFloat\(offer\.total_amount/);
+      // price is now set from totalAmount variable (which is parseFloat(offer.total_amount))
+      expect(src).toContain("price: totalAmount");
     });
 
     it("creates order with Duffel API", () => {

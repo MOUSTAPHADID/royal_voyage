@@ -8,6 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -73,6 +74,19 @@ export default function PassengerDetailsScreen() {
   const childrenCount = parseInt(params.children ?? "0", 10);
   const infantCount = parseInt(params.infants ?? "0", 10);
 
+  // Infant details: name and date of birth for each infant
+  const [infantDetails, setInfantDetails] = useState<Array<{ firstName: string; lastName: string; dateOfBirth: string }>>(
+    Array.from({ length: infantCount }, () => ({ firstName: "", lastName: "", dateOfBirth: "" }))
+  );
+
+  const updateInfantDetail = (index: number, field: "firstName" | "lastName" | "dateOfBirth", value: string) => {
+    setInfantDetails((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
+
   const validateDOB = (val: string) => {
     setDateOfBirth(val);
     if (!val) { setDobError(""); return; }
@@ -90,6 +104,26 @@ export default function PassengerDetailsScreen() {
   const handleContinue = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) return;
     if (dobError) return;
+    // Validate infant details if any
+    if (infantCount > 0) {
+      for (let i = 0; i < infantCount; i++) {
+        const inf = infantDetails[i];
+        if (!inf?.firstName?.trim() || !inf?.lastName?.trim() || !inf?.dateOfBirth) return;
+        // Validate infant age: must be under 2 years old at time of travel
+        const infantDob = new Date(inf.dateOfBirth);
+        const now = new Date();
+        const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+        if (infantDob < twoYearsAgo) {
+          // Infant is 2 or older — not valid as infant
+          Alert.alert(
+            "عمر الرضيع غير صالح",
+            `الرضيع ${i + 1} يجب أن يكون عمره أقل من سنتين. يرجى التحقق من تاريخ الميلاد.`,
+            [{ text: "حسناً" }]
+          );
+          return;
+        }
+      }
+    }
     router.push({
       pathname: "/booking/payment" as any,
       params: {
@@ -119,6 +153,7 @@ export default function PassengerDetailsScreen() {
         passengers: params.passengers,
         children: params.children,
         infants: params.infants,
+        infantDetailsJson: infantCount > 0 ? JSON.stringify(infantDetails) : undefined,
         tripType: params.tripType,
         returnDate: params.returnDate,
         hotelName: params.hotelName,
@@ -330,6 +365,68 @@ export default function PassengerDetailsScreen() {
               </>
             )}
           </View>
+
+          {/* Infant Details Forms */}
+          {infantCount > 0 && (
+            <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.formTitle, { color: colors.foreground }]}>
+                بيانات الرضع (Infant Details)
+              </Text>
+              <Text style={[{ color: colors.muted, fontSize: 13, marginBottom: 12 }]}>
+                يجب أن يكون عمر الرضيع أقل من سنتين عند السفر. الرضيع يجلس في حضن البالغ.
+              </Text>
+              {infantDetails.map((infant, idx) => (
+                <View key={`infant-${idx}`} style={{ marginBottom: 16 }}>
+                  {infantCount > 1 && (
+                    <Text style={[{ color: colors.primary, fontSize: 14, fontWeight: "700", marginBottom: 8 }]}>
+                      الرضيع {idx + 1}
+                    </Text>
+                  )}
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: colors.foreground }]}>
+                      First Name <Text style={{ color: colors.error }}>*</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                      placeholder="Baby"
+                      placeholderTextColor={colors.muted}
+                      value={infant.firstName}
+                      onChangeText={(v) => updateInfantDetail(idx, "firstName", v)}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: colors.foreground }]}>
+                      Last Name <Text style={{ color: colors.error }}>*</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                      placeholder="Doe"
+                      placeholderTextColor={colors.muted}
+                      value={infant.lastName}
+                      onChangeText={(v) => updateInfantDetail(idx, "lastName", v)}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: colors.foreground }]}>
+                      تاريخ الميلاد <Text style={{ color: colors.error }}>*</Text>
+                    </Text>
+                    <DatePickerField
+                      value={infant.dateOfBirth}
+                      onChange={(d) => updateInfantDetail(idx, "dateOfBirth", d)}
+                      placeholder="اختر تاريخ الميلاد"
+                      maximumDate={new Date()}
+                      minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 2))}
+                      backgroundColor={colors.background}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Security note */}
           <View style={[styles.termsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>

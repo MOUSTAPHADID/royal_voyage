@@ -40,6 +40,7 @@ export default function ConfirmPaymentScreen() {
   const { bookings, updateBookingStatus, confirmBookingPayment, rejectBookingPayment } = useApp();
   const confirmPaymentMutation = trpc.email.confirmPayment.useMutation();
   const sendPushMutation = trpc.email.sendPushNotification.useMutation();
+  const payHoldOrder = trpc.amadeus.payHoldOrder.useMutation();
 
   const [confirming, setConfirming] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -84,6 +85,23 @@ export default function ConfirmPaymentScreen() {
           onPress: async () => {
             setConfirming(bookingId);
             try {
+              // If this is a Duffel hold order, pay for it first to issue tickets
+              let duffelTicketNumber = "";
+              if (booking.type === "flight" && booking.royalOrderId) {
+                try {
+                  console.log(`[Admin] Paying Duffel hold order: ${booking.royalOrderId}`);
+                  const payResult = await payHoldOrder.mutateAsync({ orderId: booking.royalOrderId });
+                  if (payResult.success) {
+                    duffelTicketNumber = payResult.ticketNumber || "";
+                    console.log(`[Admin] ✅ Hold order paid! Ticket: ${duffelTicketNumber}`);
+                  } else {
+                    console.warn(`[Admin] Duffel payment failed: ${payResult.error}`);
+                  }
+                } catch (duffelErr: any) {
+                  console.warn(`[Admin] Duffel payHoldOrder error: ${duffelErr?.message}`);
+                }
+              }
+
               // Update booking payment confirmed
               await confirmBookingPayment(bookingId);
               if (booking.status === "pending") {

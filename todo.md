@@ -898,3 +898,23 @@
 - [x] تحديث passenger-details.tsx لتمرير infants
 - [x] تحديث تدفق الحجز (summary, payment, confirmation) لتمرير infants
 - [x] تحديث قوالب البريد وPDF وticket-generator وpdf-ticket-generator لعرض الرضع
+
+## حجز مؤكد لمدة 24 ساعة (Hold Order) عند الدفع في المكتب
+- [x] إضافة دالة createHoldOrder في server/duffel.ts (حجز مؤقت)
+- [x] إضافة دالة payForHoldOrder في server/duffel.ts (دفع لإصدار التذكرة)
+- [x] إضافة tRPC routes holdFlightOrder وpayHoldOrder في server/routers.ts
+- [x] تحديث payment.tsx — استخدام holdFlightOrder عند اختيار "دفع نقدي" مع fallback
+- [x] عرض مهلة الدفع (payment_required_by) — Duffel deadline أو fallback 24h
+- [x] تحديث confirm-payment.tsx — استدعاء payHoldOrder عند تأكيد الدفع لإصدار التذكرة
+
+## نموذج بيانات الرضيع (اسم + تاريخ ميلاد)
+- [x] إضافة نموذج إدخال اسم الرضيع وتاريخ ميلاده في passenger-details.tsx
+- [x] تمرير بيانات الرضيع عبر تدفق الحجز (summary → payment → Duffel)
+- [x] تحديث Duffel createFlightOrder لتضمين بيانات الرضيع (type: infant_without_seat)
+- [x] إضافة التحقق من عمر الرضيع (أقل من سنتين)
+- [x] تحديث holdFlightOrder لتضمين بيانات الرضيع
+
+## عرض سعر الرضيع منفصلاً
+- [x] استخراج سعر الرضيع من Duffel API (passenger type pricing)
+- [x] عرض سعر الرضيع منفصلاً في شاشة تفاصيل الرحلة
+- [x] عرض أسعار البالغين والأطفال والرضع بشكل منفصل في تفصيل الأسعار

@@ -41,6 +41,7 @@ export default function FlightDetailScreen() {
     passengers: string;
     children: string;
     infants: string;
+    passengerPricingJson: string;
   }>();
 
   // If params have flight data (from Amadeus), use them; otherwise fall back to mock
@@ -72,8 +73,17 @@ export default function FlightDetailScreen() {
   const childCount = parseInt(params.children || "0", 10);
   const infantCount = parseInt(params.infants || "0", 10);
   const currency = flight.currency || "EUR";
+  // Parse passenger pricing from JSON if available
+  type PassengerPricingItem = { type: string; quantity: number; totalAmount: number; perPersonAmount: number };
+  let passengerPricing: PassengerPricingItem[] = [];
+  if (params.passengerPricingJson) {
+    try {
+      const parsed = JSON.parse(params.passengerPricingJson);
+      if (Array.isArray(parsed)) passengerPricing = parsed;
+    } catch (e) { /* ignore */ }
+  }
+
   // Duffel API: total_amount = السعر الإجمالي لكل الركاب + كل الرحلات (ذهاب وإياب)
-  // لا نحتاج لضرب × عدد الركاب أو × 2 لأن السعر شامل بالفعل
   const totalPrice = flight.price;
   // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
@@ -81,6 +91,22 @@ export default function FlightDetailScreen() {
   // سعر الشخص الواحد (للعرض في البادج)
   const totalPersons = adultCount + childCount + infantCount;
   const perPersonMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
+
+  // Compute per-type pricing in MRU (with agency fee distributed proportionally)
+  const adultPricing = passengerPricing.find(p => p.type === "adult");
+  const childPricing = passengerPricing.find(p => p.type === "child");
+  const infantPricing = passengerPricing.find(p => p.type === "infant_without_seat");
+  // Distribute agency fee proportionally across passenger types
+  const feePerPerson = totalPersons > 0 ? agencyFee / totalPersons : 0;
+  const adultPerPersonMRU = adultPricing
+    ? Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson)
+    : perPersonMRU;
+  const childPerPersonMRU = childPricing
+    ? Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson)
+    : Math.round(adultPerPersonMRU * 0.75);
+  const infantPerPersonMRU = infantPricing
+    ? Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson)
+    : Math.round(adultPerPersonMRU * 0.10);
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -182,15 +208,39 @@ export default function FlightDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>تفصيل الأسعار</Text>
 
-          {/* عدد الركاب */}
+          {/* سعر البالغين */}
           <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.infoLabel, { color: colors.muted }]}>
-              {adultCount} بالغ{childCount > 0 ? ` + ${childCount} طفل` : ""}{infantCount > 0 ? ` + ${infantCount} رضيع` : ""}
+              {adultCount} بالغ{adultCount > 1 ? "ين" : ""}
             </Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {fmt(perPersonMRU)}/شخص
+              {fmt(adultPerPersonMRU)} × {adultCount}
             </Text>
           </View>
+
+          {/* سعر الأطفال */}
+          {childCount > 0 && (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>
+                {childCount} طفل{childCount > 1 ? "" : ""}
+              </Text>
+              <Text style={[styles.infoValue, { color: colors.foreground }]}>
+                {fmt(childPerPersonMRU)} × {childCount}
+              </Text>
+            </View>
+          )}
+
+          {/* سعر الرضع */}
+          {infantCount > 0 && (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>
+                {infantCount} رضيع{infantCount > 1 ? "" : ""}
+              </Text>
+              <Text style={[styles.infoValue, { color: colors.success }]}>
+                {fmt(infantPerPersonMRU)} × {infantCount}
+              </Text>
+            </View>
+          )}
 
           {/* نوع الرحلة */}
           {isRoundTrip && (

@@ -139,6 +139,7 @@ export default function PaymentScreen() {
     passengers?: string;
     children?: string;
     infants?: string;
+    infantDetailsJson?: string;
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
@@ -218,6 +219,7 @@ export default function PaymentScreen() {
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
   const sendAdminPush = trpc.email.sendPushNotification.useMutation();
   const bookFlightWithPNR = trpc.amadeus.bookFlightWithPNR.useMutation();
+  const holdFlightOrder = trpc.amadeus.holdFlightOrder.useMutation();
 
   const handlePay = async () => {
     // التحقق من اكتمال بيانات الرحلة
@@ -274,11 +276,24 @@ export default function PaymentScreen() {
     let pnr = "";
     let royalOrderId = "";
     let ticketNumber = "";
+    let duffelPaymentDeadline = "";
+    
+    const isCashPayment = paymentMethod === "cash";
     
     if (isFlight && params.id) {
       try {
-        console.log("[Payment] Attempting Duffel booking for offer:", params.id);
-        const result = await bookFlightWithPNR.mutateAsync({
+        // Parse infant details from JSON if available
+        const infantDetails: Array<{ firstName: string; lastName: string; dateOfBirth: string }> = [];
+        if (params.infantDetailsJson) {
+          try {
+            const parsed = JSON.parse(params.infantDetailsJson);
+            if (Array.isArray(parsed)) infantDetails.push(...parsed);
+          } catch (e) {
+            console.warn("[Payment] Failed to parse infantDetailsJson:", e);
+          }
+        }
+
+        const bookingParams = {
           offerId: params.id,
           firstName: params.firstName ?? "GUEST",
           lastName: params.lastName ?? "PASSENGER",
@@ -287,20 +302,64 @@ export default function PaymentScreen() {
           email: params.email ?? "guest@royalvoyage.mr",
           phone: params.phone ?? "33700000",
           countryCallingCode: "222",
-        });
+          passengers: adultCount,
+          children: childCount,
+          infantDetails: infantDetails.length > 0 ? infantDetails : undefined,
+        };
 
-        if (result.success && result.pnr) {
-          pnr = result.pnr;
-          royalOrderId = result.orderId ?? "";
-          // Extract ticket number from Duffel documents (instant ticketing)
-          const docs = (result as any).documents || [];
-          if (docs.length > 0 && docs[0].unique_identifier) {
-            ticketNumber = docs[0].unique_identifier;
-            console.log(`[Payment] 🎫 Got Duffel Ticket Number: ${ticketNumber}`);
+        if (isCashPayment) {
+          // ── Cash payment: Create HOLD order (reserve without payment) ──
+          console.log("[Payment] 💵 Cash payment — Creating HOLD order for offer:", params.id);
+          try {
+            const holdResult = await holdFlightOrder.mutateAsync(bookingParams);
+            if (holdResult.success && holdResult.pnr) {
+              pnr = holdResult.pnr;
+              royalOrderId = holdResult.orderId ?? "";
+              duffelPaymentDeadline = holdResult.paymentRequiredBy ?? "";
+              console.log(`[Payment] ✅ Hold order created! PNR: ${pnr}, Pay by: ${duffelPaymentDeadline}`);
+            } else {
+              // Hold not supported — fallback to instant booking
+              console.warn(`[Payment] Hold failed: ${holdResult.error}. Trying instant booking...`);
+              const result = await bookFlightWithPNR.mutateAsync(bookingParams);
+              if (result.success && result.pnr) {
+                pnr = result.pnr;
+                royalOrderId = result.orderId ?? "";
+                const docs = (result as any).documents || [];
+                if (docs.length > 0 && docs[0].unique_identifier) {
+                  ticketNumber = docs[0].unique_identifier;
+                }
+                console.log(`[Payment] ✅ Fallback instant booking PNR: ${pnr}`);
+              }
+            }
+          } catch (holdErr: any) {
+            // Hold API error — fallback to instant booking
+            console.warn("[Payment] Hold API error, trying instant booking:", holdErr?.message);
+            const result = await bookFlightWithPNR.mutateAsync(bookingParams);
+            if (result.success && result.pnr) {
+              pnr = result.pnr;
+              royalOrderId = result.orderId ?? "";
+              const docs = (result as any).documents || [];
+              if (docs.length > 0 && docs[0].unique_identifier) {
+                ticketNumber = docs[0].unique_identifier;
+              }
+            }
           }
-          console.log(`[Payment] ✅ Got real Duffel PNR: ${pnr}`);
         } else {
-          console.warn(`[Payment] Duffel booking failed: ${result.error}. Using fallback PNR.`);
+          // ── Non-cash payment: Instant booking with PNR + ticket ──
+          console.log("[Payment] Attempting Duffel instant booking for offer:", params.id);
+          const result = await bookFlightWithPNR.mutateAsync(bookingParams);
+          if (result.success && result.pnr) {
+            pnr = result.pnr;
+            royalOrderId = result.orderId ?? "";
+            const docs = (result as any).documents || [];
+            if (docs.length > 0 && docs[0].unique_identifier) {
+              ticketNumber = docs[0].unique_identifier;
+              console.log(`[Payment] 🎫 Got Duffel Ticket Number: ${ticketNumber}`);
+            }
+            console.log(`[Payment] ✅ Got real Duffel PNR: ${pnr}`);
+          } else {
+            console.warn(`[Payment] Duffel booking failed: ${result.error}. Using fallback PNR.`);
+          }
         }
       } catch (err: any) {
         console.warn("[Payment] Duffel API error, using fallback PNR:", err?.message);
@@ -354,10 +413,9 @@ export default function PaymentScreen() {
       address: hotel?.address ?? "",
     } : null;
 
-    // For cash payments, set 24h deadline and schedule a reminder notification
-    const isCashPayment = paymentMethod === "cash";
+    // For cash payments, use Duffel hold deadline or fallback to 24h
     const paymentDeadline = isCashPayment
-      ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+      ? (duffelPaymentDeadline || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
       : undefined;
 
     const booking: Booking = {
