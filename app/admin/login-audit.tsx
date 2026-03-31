@@ -45,9 +45,9 @@ function formatDateTime(iso: string): string {
 
 const methodLabels: Record<string, string> = {
   email: "بريد/كلمة مرور",
-  pin: "رمز PIN",
   biometric: "بصمة/وجه",
   "2fa": "تحقق ثنائي",
+  direct: "دخول مباشر",
 };
 
 export default function LoginAuditScreen() {

@@ -6,7 +6,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
 const STORAGE_KEYS = {
-  ADMIN_PIN: "@royal_voyage_admin_pin",
   ADMIN_EMAIL: "@royal_voyage_admin_email",
   ADMIN_PASSWORD: "@royal_voyage_admin_password",
   LOCKOUT_UNTIL: "@royal_voyage_lockout_until",
@@ -17,7 +16,6 @@ const STORAGE_KEYS = {
 };
 
 // Default credentials
-const DEFAULT_PIN = "36380112";
 const DEFAULT_EMAIL = "suporte@royalvoyage.online";
 const DEFAULT_PASSWORD = "RoyalVoyage2024!";
 const MAX_ATTEMPTS = 3;
@@ -90,28 +88,7 @@ export async function validateEmailPassword(
   return { success: false, locked: result.locked, attemptsLeft: result.attemptsLeft, lockoutSeconds: result.lockoutSeconds };
 }
 
-// ─── PIN Management (backward compat) ─────────────────────────
-
-export async function getAdminPin(): Promise<string> {
-  try {
-    const stored = await AsyncStorage.getItem(STORAGE_KEYS.ADMIN_PIN);
-    return stored || DEFAULT_PIN;
-  } catch {
-    return DEFAULT_PIN;
-  }
-}
-
-export async function setAdminPin(newPin: string): Promise<boolean> {
-  try {
-    if (newPin.length < 4 || newPin.length > 8) return false;
-    await AsyncStorage.setItem(STORAGE_KEYS.ADMIN_PIN, newPin);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// ─── Lockout Management ────────────────────────────────────
+// ─── Lockout Managementment ────────────────────────────────────
 
 export async function getFailedAttempts(): Promise<number> {
   try {
@@ -301,28 +278,4 @@ export function generateNew2FASecret(): string {
   return secret;
 }
 
-// ─── Validate PIN (backward compat) ──────────────────────────
-
-export async function validatePin(input: string): Promise<{
-  success: boolean;
-  locked: boolean;
-  attemptsLeft: number;
-  lockoutSeconds: number;
-}> {
-  // Check lockout first
-  const lockStatus = await isLockedOut();
-  if (lockStatus.locked) {
-    return { success: false, locked: true, attemptsLeft: 0, lockoutSeconds: lockStatus.remainingSeconds };
-  }
-
-  const correctPin = await getAdminPin();
-  if (input === correctPin) {
-    await resetFailedAttempts();
-    return { success: true, locked: false, attemptsLeft: MAX_ATTEMPTS, lockoutSeconds: 0 };
-  }
-
-  const result = await recordFailedAttempt();
-  return { success: false, locked: result.locked, attemptsLeft: result.attemptsLeft, lockoutSeconds: result.lockoutSeconds };
-}
-
-export { DEFAULT_PIN, DEFAULT_EMAIL, DEFAULT_PASSWORD, MAX_ATTEMPTS, LOCKOUT_DURATION_MS };
+export { DEFAULT_EMAIL, DEFAULT_PASSWORD, MAX_ATTEMPTS, LOCKOUT_DURATION_MS };

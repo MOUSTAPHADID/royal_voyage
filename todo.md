@@ -1124,3 +1124,11 @@
 - [x] إضافة قاموس ترجمة عربي/فرنسي → إنجليزي (90+ مدينة) في searchLocations
 - [x] دعم البحث بالعربية: بيروت، اسطنبول، اسطمبول، دبي، القاهرة، نواكشوط...
 - [x] دعم البحث بالفرنسية: Beyrouth, Le Caire, Djeddah, Moscou, Pékin...
+
+## إزالة نظام PIN والدخول مباشرة للوحة الإدارة ✅
+- [x] إزالة شاشة المصادقة من admin/_layout.tsx والدخول مباشرة
+- [x] إزالة PIN من admin/credentials.tsx
+- [x] إزالة مودال PIN من profile.tsx
+- [x] تنظيف admin/index.tsx من مراجع PIN
+- [x] إزالة getAdminPin/setAdminPin/validatePin من lib/admin-security.ts
+- [x] تحديث login-audit.tsx لإزالة تسمية PIN

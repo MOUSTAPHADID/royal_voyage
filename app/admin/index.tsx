@@ -16,8 +16,6 @@ import {
 import * as Haptics from "expo-haptics";
 import { useTicketPolling } from "@/hooks/use-ticket-polling";
 import {
-  getAdminPin,
-  setAdminPin,
   getAdminEmail,
   setAdminEmail,
   getAdminPassword,
@@ -44,7 +42,6 @@ import { formatMRU } from "@/lib/currency";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { trpc } from "@/lib/trpc";
 
-// ADMIN_PIN is now managed via admin-security module
 
 // Derive unique clients from bookings
 type ClientRecord = {
@@ -79,12 +76,6 @@ export default function AdminScreen() {
   const [activeTab, setActiveTab] = useState<"overview" | "bookings" | "clients" | "profits">("overview");
 
   // Security settings state
-  const [showChangePinModal, setShowChangePinModal] = useState(false);
-  const [currentPinInput, setCurrentPinInput] = useState("");
-  const [newPinInput, setNewPinInput] = useState("");
-  const [confirmPinInput, setConfirmPinInput] = useState("");
-  const [pinChangeError, setPinChangeError] = useState("");
-  const [pinChangeSuccess, setPinChangeSuccess] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricType, setBiometricType] = useState<"face" | "fingerprint" | "none">("none");
   const [biometricOn, setBiometricOn] = useState(false);
@@ -199,38 +190,6 @@ export default function AdminScreen() {
         },
       },
     ]);
-  };
-
-  const handleChangePinSubmit = async () => {
-    setPinChangeError("");
-    setPinChangeSuccess(false);
-    const currentPin = await getAdminPin();
-    if (currentPinInput !== currentPin) {
-      setPinChangeError("الرمز الحالي غير صحيح");
-      return;
-    }
-    if (newPinInput.length < 4) {
-      setPinChangeError("الرمز الجديد يجب أن يكون 4 أرقام على الأقل");
-      return;
-    }
-    if (newPinInput !== confirmPinInput) {
-      setPinChangeError("الرمز الجديد غير متطابق");
-      return;
-    }
-    const ok = await setAdminPin(newPinInput);
-    if (ok) {
-      setPinChangeSuccess(true);
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setTimeout(() => {
-        setShowChangePinModal(false);
-        setCurrentPinInput("");
-        setNewPinInput("");
-        setConfirmPinInput("");
-        setPinChangeSuccess(false);
-      }, 1200);
-    } else {
-      setPinChangeError("فشل في حفظ الرمز الجديد");
-    }
   };
 
   const handleBiometricToggle = async (val: boolean) => {
@@ -352,63 +311,6 @@ export default function AdminScreen() {
       fontWeight: "700",
       color: "#FFFFFF",
       textAlign: "center",
-    },
-    pinContainer: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 32,
-    },
-    lockIcon: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      backgroundColor: "#1B2B5E",
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 24,
-    },
-    pinTitle: {
-      fontSize: 22,
-      fontWeight: "700",
-      color: colors.foreground,
-      marginBottom: 8,
-    },
-    pinHint: {
-      fontSize: 13,
-      color: colors.muted,
-      marginBottom: 32,
-    },
-    pinInput: {
-      width: "100%",
-      borderWidth: 1.5,
-      borderColor: colors.border,
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      fontSize: 20,
-      letterSpacing: 8,
-      color: colors.foreground,
-      backgroundColor: colors.surface,
-      textAlign: "center",
-      marginBottom: 12,
-    },
-    pinError: {
-      fontSize: 13,
-      color: colors.error,
-      marginBottom: 16,
-    },
-    pinBtn: {
-      width: "100%",
-      backgroundColor: "#1B2B5E",
-      paddingVertical: 15,
-      borderRadius: 12,
-      alignItems: "center",
-    },
-    pinBtnText: {
-      color: "#FFFFFF",
-      fontWeight: "700",
-      fontSize: 16,
     },
     tabRow: {
       flexDirection: "row",
@@ -1159,29 +1061,6 @@ export default function AdminScreen() {
                 <Text style={[s.sectionTitle, { marginBottom: 0 }]}>إعدادات الأمان</Text>
               </View>
 
-              {/* Change PIN */}
-              <Pressable
-                style={({ pressed }) => [{
-                  flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-                  backgroundColor: colors.background, borderRadius: 12, padding: 14, marginBottom: 10,
-                  opacity: pressed ? 0.7 : 1,
-                }]}
-                onPress={() => {
-                  setCurrentPinInput(""); setNewPinInput(""); setConfirmPinInput("");
-                  setPinChangeError(""); setPinChangeSuccess(false);
-                  setShowChangePinModal(true);
-                }}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                  <IconSymbol name="lock.fill" size={18} color={colors.primary} />
-                  <View>
-                    <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>تغيير رمز PIN</Text>
-                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>تحديث رمز الدخول للوحة الإدارة</Text>
-                  </View>
-                </View>
-                <IconSymbol name="chevron.right" size={16} color={colors.muted} />
-              </Pressable>
-
               {/* Biometric Toggle */}
               {biometricAvailable && (
                 <View style={{
@@ -1278,7 +1157,7 @@ export default function AdminScreen() {
                   <IconSymbol name="lock.fill" size={18} color="#8B5CF6" />
                   <View>
                     <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>إدارة بيانات الاعتماد</Text>
-                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>تغيير PIN والبريد وكلمة المرور</Text>
+                    <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>تغيير البريد وكلمة المرور</Text>
                   </View>
                 </View>
                 <IconSymbol name="chevron.right" size={16} color={colors.muted} />
@@ -1547,93 +1426,6 @@ export default function AdminScreen() {
 
         <View style={{ height: 40 }} />
       </ScrollView>
-
-      {/* Change PIN Modal */}
-      <Modal
-        visible={showChangePinModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowChangePinModal(false)}
-      >
-        <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", alignItems: "center" }} onPress={() => setShowChangePinModal(false)}>
-          <View style={{ backgroundColor: colors.surface, borderRadius: 20, padding: 24, width: "85%", maxWidth: 360 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 14, backgroundColor: "#1B2B5E", alignItems: "center", justifyContent: "center", alignSelf: "center", marginBottom: 16 }}>
-              <IconSymbol name="lock.fill" size={24} color="#C9A84C" />
-            </View>
-            <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center", marginBottom: 6 }}>
-              تغيير رمز PIN
-            </Text>
-            <Text style={{ fontSize: 13, color: colors.muted, textAlign: "center", marginBottom: 20 }}>
-              أدخل الرمز الحالي ثم الرمز الجديد
-            </Text>
-
-            {pinChangeSuccess && (
-              <View style={{ backgroundColor: "#22C55E18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
-                <Text style={{ color: "#22C55E", fontSize: 13, fontWeight: "600", textAlign: "center" }}>
-                  ✅ تم تغيير الرمز بنجاح
-                </Text>
-              </View>
-            )}
-
-            {pinChangeError !== "" && (
-              <View style={{ backgroundColor: colors.error + "18", borderRadius: 10, padding: 10, marginBottom: 12 }}>
-                <Text style={{ color: colors.error, fontSize: 13, fontWeight: "600", textAlign: "center" }}>
-                  {pinChangeError}
-                </Text>
-              </View>
-            )}
-
-            <TextInput
-              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 16, color: colors.foreground, backgroundColor: colors.background, marginBottom: 10, textAlign: "center", letterSpacing: 4 }}
-              placeholder="الرمز الحالي"
-              placeholderTextColor={colors.muted}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={8}
-              value={currentPinInput}
-              onChangeText={setCurrentPinInput}
-              autoFocus
-            />
-            <TextInput
-              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 16, color: colors.foreground, backgroundColor: colors.background, marginBottom: 10, textAlign: "center", letterSpacing: 4 }}
-              placeholder="الرمز الجديد"
-              placeholderTextColor={colors.muted}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={8}
-              value={newPinInput}
-              onChangeText={setNewPinInput}
-            />
-            <TextInput
-              style={{ borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, fontSize: 16, color: colors.foreground, backgroundColor: colors.background, marginBottom: 16, textAlign: "center", letterSpacing: 4 }}
-              placeholder="تأكيد الرمز الجديد"
-              placeholderTextColor={colors.muted}
-              keyboardType="number-pad"
-              secureTextEntry
-              maxLength={8}
-              value={confirmPinInput}
-              onChangeText={setConfirmPinInput}
-              returnKeyType="done"
-              onSubmitEditing={handleChangePinSubmit}
-            />
-
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Pressable
-                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, borderWidth: 1, borderColor: colors.border, alignItems: "center", opacity: pressed ? 0.7 : 1 }]}
-                onPress={() => setShowChangePinModal(false)}
-              >
-                <Text style={{ fontSize: 15, fontWeight: "600", color: colors.muted }}>إلغاء</Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [{ flex: 1, padding: 14, borderRadius: 12, backgroundColor: "#1B2B5E", alignItems: "center", opacity: pressed ? 0.8 : 1 }]}
-                onPress={handleChangePinSubmit}
-              >
-                <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>حفظ</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Pressable>
-      </Modal>
 
       {/* Change Password Modal */}
       <Modal

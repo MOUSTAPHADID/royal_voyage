@@ -6,7 +6,6 @@ import {
   TextInput,
   Pressable,
   StyleSheet,
-  Alert,
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
@@ -15,15 +14,13 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import {
-  getAdminPin,
-  setAdminPin,
   getAdminEmail,
   setAdminEmail,
   getAdminPassword,
   setAdminPassword,
 } from "@/lib/admin-security";
 
-type Section = "pin" | "email" | "password" | null;
+type Section = "email" | "password" | null;
 
 export default function CredentialsScreen() {
   const router = useRouter();
@@ -31,11 +28,6 @@ export default function CredentialsScreen() {
 
   const [activeSection, setActiveSection] = useState<Section>(null);
   const [currentAdminEmail, setCurrentAdminEmail] = useState("");
-
-  // PIN fields
-  const [currentPin, setCurrentPin] = useState("");
-  const [newPin, setNewPin] = useState("");
-  const [confirmPin, setConfirmPin] = useState("");
 
   // Email fields
   const [currentPassword, setCurrentPassword] = useState("");
@@ -54,7 +46,6 @@ export default function CredentialsScreen() {
   }, []);
 
   const resetFields = () => {
-    setCurrentPin(""); setNewPin(""); setConfirmPin("");
     setCurrentPassword(""); setNewEmail("");
     setCurrentPwd(""); setNewPwd(""); setConfirmPwd("");
     setError(""); setSuccess("");
@@ -63,32 +54,6 @@ export default function CredentialsScreen() {
   const toggleSection = (s: Section) => {
     resetFields();
     setActiveSection(activeSection === s ? null : s);
-  };
-
-  // ─── Change PIN ───
-  const handleChangePIN = async () => {
-    setError(""); setSuccess("");
-    const storedPin = await getAdminPin();
-    if (currentPin !== storedPin) {
-      setError("رمز PIN الحالي غير صحيح");
-      return;
-    }
-    if (newPin.length < 4) {
-      setError("رمز PIN الجديد يجب أن يكون 4 أرقام على الأقل");
-      return;
-    }
-    if (newPin !== confirmPin) {
-      setError("رمز PIN الجديد غير متطابق");
-      return;
-    }
-    const ok = await setAdminPin(newPin);
-    if (ok) {
-      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setSuccess("تم تغيير رمز PIN بنجاح");
-      setTimeout(() => { resetFields(); setActiveSection(null); }, 1500);
-    } else {
-      setError("فشل في حفظ رمز PIN الجديد");
-    }
   };
 
   // ─── Change Email ───
@@ -183,54 +148,10 @@ export default function CredentialsScreen() {
             <Text style={[s.infoValue, { color: colors.foreground }]}>{currentAdminEmail}</Text>
           </View>
           <View style={s.infoRow}>
-            <Text style={[s.infoLabel, { color: colors.muted }]}>رمز PIN</Text>
-            <Text style={[s.infoValue, { color: colors.foreground }]}>••••••••</Text>
-          </View>
-          <View style={s.infoRow}>
             <Text style={[s.infoLabel, { color: colors.muted }]}>كلمة المرور</Text>
             <Text style={[s.infoValue, { color: colors.foreground }]}>••••••••</Text>
           </View>
         </View>
-
-        {/* Change PIN Section */}
-        <Pressable
-          style={({ pressed }) => [
-            s.sectionHeader,
-            {
-              backgroundColor: activeSection === "pin" ? colors.primary + "15" : colors.surface,
-              borderColor: activeSection === "pin" ? colors.primary : colors.border,
-              opacity: pressed ? 0.8 : 1,
-            },
-          ]}
-          onPress={() => toggleSection("pin")}
-        >
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-            <View style={[s.iconCircle, { backgroundColor: "#6366F120" }]}>
-              <IconSymbol name="lock.fill" size={18} color="#6366F1" />
-            </View>
-            <View>
-              <Text style={[s.sectionTitle, { color: colors.foreground }]}>تغيير رمز PIN</Text>
-              <Text style={[s.sectionSubtitle, { color: colors.muted }]}>تحديث رمز الدخول السريع</Text>
-            </View>
-          </View>
-          <IconSymbol name={activeSection === "pin" ? "chevron.down" as any : "chevron.right"} size={16} color={colors.muted} />
-        </Pressable>
-
-        {activeSection === "pin" && (
-          <View style={[s.sectionBody, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {renderInput("رمز PIN الحالي", currentPin, setCurrentPin, { secure: true, keyboard: "number-pad", maxLength: 8 })}
-            {renderInput("رمز PIN الجديد", newPin, setNewPin, { secure: true, keyboard: "number-pad", maxLength: 8 })}
-            {renderInput("تأكيد رمز PIN الجديد", confirmPin, setConfirmPin, { secure: true, keyboard: "number-pad", maxLength: 8 })}
-            {error ? <Text style={[s.errorText, { color: colors.error }]}>{error}</Text> : null}
-            {success ? <Text style={[s.successText, { color: "#22C55E" }]}>{success}</Text> : null}
-            <Pressable
-              style={({ pressed }) => [s.submitBtn, { backgroundColor: colors.primary, opacity: pressed ? 0.85 : 1 }]}
-              onPress={handleChangePIN}
-            >
-              <Text style={s.submitBtnText}>حفظ التغييرات</Text>
-            </Pressable>
-          </View>
-        )}
 
         {/* Change Email Section */}
         <Pressable
