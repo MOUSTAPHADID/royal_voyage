@@ -173,7 +173,7 @@ export default function FlightResultsScreen() {
           <Text style={[styles.price, { color: colors.primary }]}>
             {fmt(toMRU(item.price, item.currency || "EUR"))}
           </Text>
-          <Text style={[styles.perPerson, { color: colors.muted }]}>{t.flights.perPerson}</Text>
+          <Text style={[styles.perPerson, { color: colors.muted }]}>الإجمالي</Text>
         </View>
       </View>
 

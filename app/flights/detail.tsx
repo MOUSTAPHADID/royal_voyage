@@ -69,19 +69,16 @@ export default function FlightDetailScreen() {
   const isRoundTrip = params.tripType === "roundtrip";
   const adultCount = parseInt(params.passengers || "1", 10);
   const childCount = parseInt(params.children || "0", 10);
-  const adultPrice = flight.price;
-  const childPrice = Math.round(flight.price * pricing.childDiscountRate);
   const currency = flight.currency || "EUR";
-  // الإجمالي = (سعر البالغ × عدد البالغين) + (سعر الطفل × عدد الأطفال)
-  const totalPrice = isRoundTrip
-    ? (adultPrice * adultCount + childPrice * childCount) * 2
-    : adultPrice * adultCount + childPrice * childCount;
+  // Duffel API: total_amount = السعر الإجمالي لكل الركاب + كل الرحلات (ذهاب وإياب)
+  // لا نحتاج لضرب × عدد الركاب أو × 2 لأن السعر شامل بالفعل
+  const totalPrice = flight.price;
   // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
   const totalMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
-  // سعر البالغ للشخص الواحد شاملاً رسوم الوكالة (لعرض في البادج)
-  const totalPersons = adultCount + childCount * pricing.childDiscountRate;
-  const adultUnitMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
+  // سعر الشخص الواحد (للعرض في البادج)
+  const totalPersons = adultCount + childCount;
+  const perPersonMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
 
   const amenities = [
     { icon: "wifi", label: "Wi-Fi" },
@@ -113,7 +110,7 @@ export default function FlightDetailScreen() {
               <Text style={[styles.flightNum, { color: colors.muted }]}>{flight.flightNumber} · {flight.class}</Text>
             </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
-              <Text style={styles.priceText}>{fmt(adultUnitMRU)}</Text>
+              <Text style={styles.priceText}>{fmt(perPersonMRU)}</Text>
               <Text style={styles.priceLabel}>للشخص</Text>
             </View>
           </View>
@@ -183,44 +180,27 @@ export default function FlightDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>تفصيل الأسعار</Text>
 
-          {/* سعر البالغ */}
+          {/* عدد الركاب */}
           <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <Text style={[styles.infoLabel, { color: colors.muted }]}>
-              بالغ × {adultCount}
+              {adultCount} بالغ{childCount > 0 ? ` + ${childCount} طفل` : ""}
             </Text>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {fmt(toMRUWithSettings(adultPrice * adultCount, currency))}
+              {fmt(perPersonMRU)}/شخص
             </Text>
           </View>
 
-          {/* سعر الطفل (إن وجد) */}
-          {childCount > 0 && (
-            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.infoLabel, { color: colors.muted }]}>
-                  طفل × {childCount}
-                </Text>
-                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>خصم 25%</Text>
-              </View>
-              <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {fmt(toMRUWithSettings(childPrice * childCount, currency))}
-              </Text>
-            </View>
-          )}
-
-          {/* رحلة العودة */}
+          {/* نوع الرحلة */}
           {isRoundTrip && (
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.infoLabel, { color: colors.muted }]}>رحلة العودة (×2)</Text>
-              <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {fmt(toMRUWithSettings(adultPrice * adultCount + childPrice * childCount, currency))}
-              </Text>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>نوع الرحلة</Text>
+              <Text style={[styles.infoValue, { color: colors.foreground }]}>ذهاب وإياب</Text>
             </View>
           )}
 
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
-              الإجمالي{isRoundTrip ? " (ذهاب وإياب)" : ""}
+              الإجمالي{isRoundTrip ? " (شامل الذهاب والإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
               {fmt(totalMRU)}
