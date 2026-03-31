@@ -25,7 +25,7 @@ import {
   getConsolidatorForBooking,
   getDuffelStatus,
 } from "./duffel";
-import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail } from "./email";
+import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail } from "./email";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { storagePut } from "./storage";
 import {
@@ -871,6 +871,89 @@ export const appRouter = router({
           console.error("[Push] Failed to send push notification:", err?.message);
           return { success: false, error: err?.message };
         }
+      }),
+    // ─── Cancellation Email ─────────────────────────────────────────────
+    sendCancellation: publicProcedure
+      .input(
+        z.object({
+          passengerEmail: z.string().email(),
+          passengerName: z.string(),
+          bookingRef: z.string(),
+          pnr: z.string().optional(),
+          route: z.string().optional(),
+          date: z.string().optional(),
+          refundAmount: z.string().optional(),
+          refundCurrency: z.string().optional(),
+          reason: z.string().optional(),
+          expoPushToken: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { expoPushToken, ...emailData } = input;
+        const emailSent = await sendCancellationEmail(emailData);
+        let pushSent = false;
+        if (expoPushToken) {
+          try {
+            const response = await fetch("https://exp.host/--/api/v2/push/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({
+                to: expoPushToken,
+                sound: "default",
+                title: "\u274C \u062A\u0645 \u0625\u0644\u063A\u0627\u0621 \u062D\u062C\u0632\u0643",
+                body: `\u062D\u062C\u0632\u0643 ${input.bookingRef} \u062A\u0645 \u0625\u0644\u063A\u0627\u0624\u0647. \u062A\u062D\u0642\u0642 \u0645\u0646 \u0628\u0631\u064A\u062F\u0643 \u0644\u0644\u062A\u0641\u0627\u0635\u064A\u0644.`,
+                data: { bookingRef: input.bookingRef, type: "booking_cancelled" },
+              }),
+            });
+            const result = await response.json();
+            pushSent = result?.data?.[0]?.status === "ok";
+          } catch (err: any) {
+            console.warn("[Push] Failed to send cancellation push:", err?.message);
+          }
+        }
+        return { emailSent, pushSent };
+      }),
+
+    // ─── Hold Confirmation Email (Hold → Confirmed & Paid) ──────────────
+    sendHoldConfirmation: publicProcedure
+      .input(
+        z.object({
+          passengerEmail: z.string().email(),
+          passengerName: z.string(),
+          bookingRef: z.string(),
+          pnr: z.string(),
+          ticketNumber: z.string().optional(),
+          route: z.string().optional(),
+          date: z.string().optional(),
+          totalAmount: z.string(),
+          currency: z.string().default("MRU"),
+          expoPushToken: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const { expoPushToken, ...emailData } = input;
+        const emailSent = await sendHoldConfirmationEmail(emailData);
+        let pushSent = false;
+        if (expoPushToken) {
+          try {
+            const response = await fetch("https://exp.host/--/api/v2/push/send", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Accept": "application/json" },
+              body: JSON.stringify({
+                to: expoPushToken,
+                sound: "default",
+                title: "\u2705 \u062A\u0645 \u062A\u0623\u0643\u064A\u062F \u062D\u062C\u0632\u0643!",
+                body: `\u062D\u062C\u0632\u0643 ${input.bookingRef} \u062A\u0645 \u062A\u0623\u0643\u064A\u062F\u0647 \u0648\u062F\u0641\u0639\u0647 \u0628\u0646\u062C\u0627\u062D. PNR: ${input.pnr}`,
+                data: { bookingRef: input.bookingRef, pnr: input.pnr, type: "hold_confirmed" },
+              }),
+            });
+            const result = await response.json();
+            pushSent = result?.data?.[0]?.status === "ok";
+          } catch (err: any) {
+            console.warn("[Push] Failed to send hold confirmation push:", err?.message);
+          }
+        }
+        return { emailSent, pushSent };
       }),
   }),
 

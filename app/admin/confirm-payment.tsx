@@ -41,6 +41,7 @@ export default function ConfirmPaymentScreen() {
   const confirmPaymentMutation = trpc.email.confirmPayment.useMutation();
   const sendPushMutation = trpc.email.sendPushNotification.useMutation();
   const payHoldOrder = trpc.amadeus.payHoldOrder.useMutation();
+  const sendHoldConfirmation = trpc.email.sendHoldConfirmation.useMutation();
 
   const [confirming, setConfirming] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -106,6 +107,31 @@ export default function ConfirmPaymentScreen() {
                     if (duffelTicketNumber) {
                       await updateBookingTicketNumber(bookingId, duffelTicketNumber);
                       console.log(`[Admin] 🎫 Ticket number saved: ${duffelTicketNumber}`);
+                    }
+
+                    // Send hold-confirmation email to customer
+                    if (booking.passengerEmail) {
+                      try {
+                        const route = booking.flight
+                          ? `${booking.flight.originCode || ""} → ${booking.flight.destinationCode || ""}`
+                          : undefined;
+                        const date = booking.flight?.departureTime?.split("T")[0];
+                        await sendHoldConfirmation.mutateAsync({
+                          passengerEmail: booking.passengerEmail,
+                          passengerName: booking.passengerName ?? "Valued Customer",
+                          bookingRef: booking.reference,
+                          pnr: duffelRealPnr || booking.realPnr || booking.pnr || "",
+                          ticketNumber: duffelTicketNumber || undefined,
+                          route,
+                          date,
+                          totalAmount: formatMRU(booking.totalPrice),
+                          currency: booking.currency || "MRU",
+                          expoPushToken: booking.customerPushToken,
+                        });
+                        console.log(`[Admin] ✅ Hold confirmation email sent to ${booking.passengerEmail}`);
+                      } catch (emailErr) {
+                        console.warn(`[Admin] Failed to send hold confirmation email:`, emailErr);
+                      }
                     }
                   } else {
                     console.warn(`[Admin] Duffel payment failed: ${payResult.error}`);

@@ -39,13 +39,13 @@ function getStatusColor(status: string, colors: any) {
 function getStatusLabel(status: string): string {
   switch (status.toUpperCase()) {
     case "CONFIRMED":
-      return "Confirmed";
+      return "مؤكد";
     case "TICKETED":
-      return "Ticketed";
+      return "تم إصدار التذكرة";
     case "CANCELLED":
-      return "Cancelled";
+      return "ملغى";
     case "PENDING":
-      return "Pending";
+      return "معلق";
     default:
       return status;
   }
@@ -101,10 +101,11 @@ export default function PnrStatusScreen() {
   const utils = trpc.useUtils();
 
   const cancelMutation = trpc.amadeus.cancelFlightOrder.useMutation();
+  const sendCancellationMutation = trpc.email.sendCancellation.useMutation();
 
   const lookupPnr = useCallback(async () => {
     if (!orderId.trim()) {
-      Alert.alert("Error", "Please enter an Order ID or PNR");
+      Alert.alert("خطأ", "الرجاء إدخال معرف الطلب");
       return;
     }
 
@@ -121,23 +122,28 @@ export default function PnrStatusScreen() {
       if (result.success && result.data) {
         setOrderData(result.data);
       } else {
-        setError(result.error || "Could not retrieve order. Please check the Order ID.");
+              setError(result.error || "تعذر استرجاع الطلب. تحقق من معرف الطلب.");
       }
     } catch (err: any) {
-      setError(err?.message || "Failed to connect to Duffel API");
+      setError(err?.message || "فشل الاتصال بـ Duffel API");
     } finally {
       setLoading(false);
     }
   }, [orderId, utils]);
 
   const handleCancel = useCallback(() => {
+    // Find the local booking to get customer email/push token
+    const localBooking = params.bookingId
+      ? bookings.find((b: any) => b.id === params.bookingId)
+      : null;
+
     Alert.alert(
-      "Cancel Booking",
-      `Are you sure you want to cancel this booking?\n\nOrder ID: ${orderData?.orderId}\nPNR: ${orderData?.pnr}`,
+      "إلغاء الحجز",
+      `هل أنت متأكد من إلغاء هذا الحجز؟\n\nمعرف الطلب: ${orderData?.orderId}\nPNR: ${orderData?.pnr}`,
       [
-        { text: "No", style: "cancel" },
+        { text: "لا", style: "cancel" },
         {
-          text: "Yes, Cancel",
+          text: "نعم، إلغاء",
           style: "destructive",
           onPress: async () => {
             if (Platform.OS !== "web") {
@@ -154,15 +160,46 @@ export default function PnrStatusScreen() {
                   updateBookingStatus(params.bookingId, "cancelled");
                 }
                 setOrderData((prev: any) => prev ? { ...prev, status: "CANCELLED" } : prev);
+
+                // Send cancellation email to customer
+                const customerEmail = localBooking?.passengerEmail;
+                const customerName = localBooking?.passengerName || localBooking?.guestName || "";
+                const pushToken = localBooking?.customerPushToken;
+                if (customerEmail) {
+                  try {
+                    const route = orderData.segments?.length > 0
+                      ? `${orderData.segments[0]?.departure?.iataCode || ""} → ${orderData.segments[orderData.segments.length - 1]?.arrival?.iataCode || ""}`
+                      : undefined;
+                    const date = orderData.segments?.[0]?.departure?.at
+                      ? formatDate(orderData.segments[0].departure.at)
+                      : undefined;
+                    await sendCancellationMutation.mutateAsync({
+                      passengerEmail: customerEmail,
+                      passengerName: customerName,
+                      bookingRef: localBooking?.reference || orderData.orderId,
+                      pnr: orderData.pnr,
+                      route,
+                      date,
+                      refundAmount: orderData.price?.total,
+                      refundCurrency: orderData.price?.currency,
+                      reason: "تم الإلغاء بواسطة المسؤول",
+                      expoPushToken: pushToken,
+                    });
+                    console.log("[Cancel] Cancellation email sent to customer");
+                  } catch (emailErr) {
+                    console.warn("[Cancel] Failed to send cancellation email:", emailErr);
+                  }
+                }
+
                 if (Platform.OS !== "web") {
                   Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 }
-                Alert.alert("Success", "Booking has been cancelled successfully.");
+                Alert.alert("تم", "تم إلغاء الحجز بنجاح وإرسال إشعار للعميل.");
               } else {
-                Alert.alert("Error", result.error || "Failed to cancel booking");
+                Alert.alert("خطأ", result.error || "فشل إلغاء الحجز");
               }
             } catch (err: any) {
-              Alert.alert("Error", err?.message || "Failed to cancel booking");
+              Alert.alert("خطأ", err?.message || "فشل إلغاء الحجز");
             } finally {
               setCancelling(false);
             }
@@ -170,7 +207,7 @@ export default function PnrStatusScreen() {
         },
       ]
     );
-  }, [orderData, params.bookingId, updateBookingStatus, utils]);
+  }, [orderData, params.bookingId, bookings, updateBookingStatus, sendCancellationMutation]);
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -183,17 +220,17 @@ export default function PnrStatusScreen() {
           >
             <IconSymbol name="arrow.left" size={24} color={colors.foreground} />
           </Pressable>
-          <Text style={[styles.title, { color: colors.foreground }]}>Booking Status</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>حالة الحجز</Text>
           <View style={{ width: 40 }} />
         </View>
 
         {/* Search Section */}
         <View style={[styles.searchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.searchLabel, { color: colors.foreground }]}>
-            Duffel Order ID
+            معرف الطلب
           </Text>
           <Text style={[styles.searchHint, { color: colors.muted }]}>
-            Enter the Duffel Order ID to retrieve booking status from the airline system
+            أدخل معرف الطلب لاسترجاع حالة الحجز من نظام شركة الطيران
           </Text>
           <View style={styles.searchRow}>
             <TextInput
@@ -246,7 +283,7 @@ export default function PnrStatusScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
             <Text style={[styles.loadingText, { color: colors.muted }]}>
-              Retrieving order from Duffel...
+              جاري استرجاع الطلب من Duffel...
             </Text>
           </View>
         )}
@@ -258,7 +295,7 @@ export default function PnrStatusScreen() {
             <View style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.statusRow}>
                 <View>
-                  <Text style={[styles.statusLabel, { color: colors.muted }]}>Booking Status</Text>
+                  <Text style={[styles.statusLabel, { color: colors.muted }]}>حالة الحجز</Text>
                   <View style={[styles.statusBadge, { backgroundColor: getStatusColor(orderData.status, colors) + "20" }]}>
                     <View style={[styles.statusDot, { backgroundColor: getStatusColor(orderData.status, colors) }]} />
                     <Text style={[styles.statusText, { color: getStatusColor(orderData.status, colors) }]}>
@@ -278,13 +315,13 @@ export default function PnrStatusScreen() {
 
               <View style={styles.infoRow}>
                 <View style={styles.infoItem}>
-                  <Text style={[styles.infoLabel, { color: colors.muted }]}>Order ID</Text>
+                  <Text style={[styles.infoLabel, { color: colors.muted }]}>معرف الطلب</Text>
                   <Text style={[styles.infoValue, { color: colors.foreground }]} numberOfLines={1}>
                     {orderData.orderId}
                   </Text>
                 </View>
                 <View style={styles.infoItem}>
-                  <Text style={[styles.infoLabel, { color: colors.muted }]}>Total Price</Text>
+                  <Text style={[styles.infoLabel, { color: colors.muted }]}>السعر الإجمالي</Text>
                   <Text style={[styles.infoValue, { color: colors.foreground }]}>
                     {orderData.price?.currency} {orderData.price?.total}
                   </Text>
@@ -295,7 +332,7 @@ export default function PnrStatusScreen() {
                 <View style={[styles.deadlineRow, { backgroundColor: colors.warning + "15" }]}>
                   <IconSymbol name="clock.fill" size={16} color={colors.warning} />
                   <Text style={[styles.deadlineText, { color: colors.warning }]}>
-                    Ticketing Deadline: {formatDateTime(orderData.ticketingDeadline)}
+                    موعد إصدار التذكرة: {formatDateTime(orderData.ticketingDeadline)}
                   </Text>
                 </View>
               )}
@@ -305,7 +342,7 @@ export default function PnrStatusScreen() {
             {orderData.travelers?.length > 0 && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  Travelers ({orderData.travelers.length})
+                  المسافرون ({orderData.travelers.length})
                 </Text>
                 {orderData.travelers.map((t: any, i: number) => (
                   <View key={i} style={[styles.travelerRow, i > 0 && { borderTopWidth: 1, borderTopColor: colors.border }]}>
@@ -316,7 +353,7 @@ export default function PnrStatusScreen() {
                       </Text>
                       {t.dateOfBirth && (
                         <Text style={[styles.travelerDob, { color: colors.muted }]}>
-                          DOB: {t.dateOfBirth}
+                          تاريخ الميلاد: {t.dateOfBirth}
                         </Text>
                       )}
                     </View>
@@ -329,7 +366,7 @@ export default function PnrStatusScreen() {
             {orderData.segments?.length > 0 && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  Flight Segments ({orderData.segments.length})
+                  رحلات الطيران ({orderData.segments.length})
                 </Text>
                 {orderData.segments.map((seg: any, i: number) => (
                   <View key={i} style={[styles.segmentCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -402,7 +439,7 @@ export default function PnrStatusScreen() {
             {orderData.associatedRecords?.length > 0 && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  Associated Records
+                  السجلات المرتبطة
                 </Text>
                 {orderData.associatedRecords.map((rec: any, i: number) => (
                   <View key={i} style={styles.recordRow}>
@@ -421,7 +458,7 @@ export default function PnrStatusScreen() {
             {orderData.ticketing?.length > 0 && orderData.ticketing[0]?.number && (
               <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-                  Ticket Information
+                  معلومات التذكرة
                 </Text>
                 {orderData.ticketing.map((tk: any, i: number) => (
                   <View key={i} style={styles.ticketRow}>
@@ -456,7 +493,7 @@ export default function PnrStatusScreen() {
                 ) : (
                   <>
                     <IconSymbol name="xmark" size={20} color="#fff" />
-                    <Text style={styles.cancelBtnText}>Cancel Booking</Text>
+                    <Text style={styles.cancelBtnText}>إلغاء الحجز</Text>
                   </>
                 )}
               </Pressable>
@@ -466,7 +503,7 @@ export default function PnrStatusScreen() {
               <View style={[styles.cancelledBanner, { backgroundColor: colors.error + "15", borderColor: colors.error + "40" }]}>
                 <IconSymbol name="xmark" size={20} color={colors.error} />
                 <Text style={[styles.cancelledText, { color: colors.error }]}>
-                  This booking has been cancelled
+                  تم إلغاء هذا الحجز
                 </Text>
               </View>
             )}
@@ -478,10 +515,10 @@ export default function PnrStatusScreen() {
           <View style={styles.emptyState}>
             <IconSymbol name="doc.text.magnifyingglass" size={48} color={colors.muted} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
-              Check Booking Status
+              تحقق من حالة الحجز
             </Text>
             <Text style={[styles.emptyDesc, { color: colors.muted }]}>
-              Enter a Duffel Order ID to retrieve the real-time booking status, flight details, and traveler information directly from the airline system.
+              أدخل معرف الطلب لاسترجاع حالة الحجز في الوقت الفعلي، وتفاصيل الرحلة، ومعلومات المسافرين مباشرة من نظام شركة الطيران.
             </Text>
           </View>
         )}

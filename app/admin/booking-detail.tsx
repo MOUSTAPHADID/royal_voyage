@@ -19,15 +19,18 @@ import { trpc } from "@/lib/trpc";
 export default function AdminBookingDetailScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, updateBookingTicketSent, updateBookingTicketNumber } = useApp();
+  const { bookings, updateBookingTicketSent, updateBookingTicketNumber, updateBookingStatus } = useApp();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [resending, setResending] = useState(false);
   const [checkingTicket, setCheckingTicket] = useState(false);
   const [queuingConsolidator, setQueuingConsolidator] = useState(false);
+  const [cancellingOrder, setCancellingOrder] = useState(false);
 
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
   const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
   const queueToConsolidatorMut = trpc.amadeus.queueToConsolidator.useMutation();
+  const cancelFlightOrder = trpc.amadeus.cancelFlightOrder.useMutation();
+  const sendCancellationEmail = trpc.email.sendCancellation.useMutation();
 
   const booking = bookings.find((b) => b.id === id);
 
@@ -471,6 +474,81 @@ export default function AdminBookingDetailScreen() {
             <IconSymbol name="doc.text.magnifyingglass" size={20} color="#FFFFFF" />
             <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
               عرض حالة الحجز
+            </Text>
+          </Pressable>
+        )}
+
+        {/* Cancel Booking via Duffel */}
+        {booking.type === "flight" && booking.royalOrderId && booking.status !== "cancelled" && (
+          <Pressable
+            style={({ pressed }) => [{
+              flexDirection: "row" as const,
+              alignItems: "center" as const,
+              justifyContent: "center" as const,
+              gap: 8,
+              margin: 16,
+              marginBottom: 0,
+              paddingVertical: 16,
+              borderRadius: 14,
+              backgroundColor: "#EF4444",
+              opacity: pressed || cancellingOrder ? 0.7 : 1,
+            }]}
+            disabled={cancellingOrder}
+            onPress={() => {
+              Alert.alert(
+                "إلغاء الحجز",
+                `هل أنت متأكد من إلغاء هذا الحجز؟\n\nالمرجع: ${booking.reference}\nPNR: ${booking.realPnr || booking.pnr || "—"}\n\nسيتم إلغاء الحجز من نظام شركة الطيران وإرسال إشعار للعميل.`,
+                [
+                  { text: "لا", style: "cancel" },
+                  {
+                    text: "نعم، إلغاء",
+                    style: "destructive",
+                    onPress: async () => {
+                      setCancellingOrder(true);
+                      try {
+                        const result = await cancelFlightOrder.mutateAsync({ orderId: booking.royalOrderId! });
+                        if (result.success) {
+                          await updateBookingStatus(booking.id, "cancelled");
+                          // Send cancellation email
+                          if (booking.passengerEmail) {
+                            try {
+                              const route = booking.flight
+                                ? `${booking.flight.originCode || ""} → ${booking.flight.destinationCode || ""}`
+                                : undefined;
+                              await sendCancellationEmail.mutateAsync({
+                                passengerEmail: booking.passengerEmail,
+                                passengerName: booking.passengerName || "",
+                                bookingRef: booking.reference,
+                                pnr: booking.realPnr || booking.pnr,
+                                route,
+                                date: booking.date,
+                                reason: "تم الإلغاء بواسطة المسؤول",
+                                expoPushToken: booking.customerPushToken,
+                              });
+                            } catch {}
+                          }
+                          Alert.alert("تم", "تم إلغاء الحجز بنجاح وإرسال إشعار للعميل.");
+                        } else {
+                          Alert.alert("خطأ", result.error || "فشل إلغاء الحجز");
+                        }
+                      } catch (err: any) {
+                        Alert.alert("خطأ", err?.message || "فشل إلغاء الحجز");
+                      } finally {
+                        setCancellingOrder(false);
+                      }
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            {cancellingOrder ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <IconSymbol name="xmark" size={20} color="#FFFFFF" />
+            )}
+            <Text style={{ fontSize: 16, fontWeight: "700", color: "#FFFFFF" }}>
+              إلغاء الحجز من شركة الطيران
             </Text>
           </Pressable>
         )}

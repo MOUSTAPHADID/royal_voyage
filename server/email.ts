@@ -556,3 +556,179 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
     return false;
   }
 }
+
+// ─── Cancellation Email ──────────────────────────────────────────────────────
+
+export type CancellationEmailData = {
+  passengerEmail: string;
+  passengerName: string;
+  bookingRef: string;
+  pnr?: string;
+  route?: string; // e.g. "NKC → CDG"
+  date?: string;
+  refundAmount?: string;
+  refundCurrency?: string;
+  reason?: string;
+};
+
+function cancellationHtml(data: CancellationEmailData): string {
+  const content = `
+    <div class="body">
+      <h2 style="color: #EF4444; margin-bottom: 8px;">Booking Cancelled</h2>
+      <p style="color: #687076; margin-bottom: 24px;">
+        Dear ${data.passengerName}, your booking has been cancelled.
+      </p>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Booking Reference</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.bookingRef}</td>
+        </tr>
+        ${data.pnr ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">PNR</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.pnr}</td>
+        </tr>` : ""}
+        ${data.route ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Route</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.route}</td>
+        </tr>` : ""}
+        ${data.date ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Date</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.date}</td>
+        </tr>` : ""}
+        ${data.refundAmount ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Refund Amount</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; color: #22C55E; text-align: right;">${data.refundCurrency || ""} ${data.refundAmount}</td>
+        </tr>` : ""}
+        ${data.reason ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Reason</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; text-align: right;">${data.reason}</td>
+        </tr>` : ""}
+      </table>
+
+      <p style="color: #687076; font-size: 14px;">
+        If you have any questions, please contact us at <strong>${COMPANY.phone}</strong> or <strong>${COMPANY.email}</strong>.
+      </p>
+    </div>
+    <div class="footer">
+      <p>${COMPANY.name} — ${COMPANY.address}</p>
+      <p>${COMPANY.phone} | ${COMPANY.email}</p>
+    </div>
+  `;
+  return baseLayout(content, `Booking Cancelled — ${data.bookingRef}`);
+}
+
+export async function sendCancellationEmail(data: CancellationEmailData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = cancellationHtml(data);
+
+  if (!transporter) {
+    console.log(`[Email] Would send cancellation email to: ${data.passengerEmail}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.passengerEmail,
+      subject: `❌ Booking Cancelled — ${data.bookingRef} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ Cancellation email sent to ${data.passengerEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send cancellation email:", error);
+    return false;
+  }
+}
+
+// ─── Hold Confirmation Email ─────────────────────────────────────────────────
+
+export type HoldConfirmationEmailData = {
+  passengerEmail: string;
+  passengerName: string;
+  bookingRef: string;
+  pnr: string;
+  ticketNumber?: string;
+  route?: string;
+  date?: string;
+  totalAmount: string;
+  currency: string;
+};
+
+function holdConfirmationHtml(data: HoldConfirmationEmailData): string {
+  const content = `
+    <div class="body">
+      <h2 style="color: #22C55E; margin-bottom: 8px;">✅ Booking Confirmed!</h2>
+      <p style="color: #687076; margin-bottom: 24px;">
+        Dear ${data.passengerName}, your hold booking has been confirmed and paid. Your ticket has been issued.
+      </p>
+
+      <div style="background: #F0FDF4; border: 2px solid #22C55E; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+        <p style="color: #687076; font-size: 12px; margin-bottom: 4px;">PNR (Booking Reference)</p>
+        <p style="font-size: 28px; font-weight: 800; color: #22C55E; letter-spacing: 4px; margin-bottom: 8px;">${data.pnr}</p>
+        <p style="color: #687076; font-size: 12px;">Keep this number for check-in at the airport</p>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Reference</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.bookingRef}</td>
+        </tr>
+        ${data.ticketNumber ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Ticket Number</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.ticketNumber}</td>
+        </tr>` : ""}
+        ${data.route ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Route</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.route}</td>
+        </tr>` : ""}
+        ${data.date ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Date</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.date}</td>
+        </tr>` : ""}
+        <tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Amount Paid</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; color: #22C55E; text-align: right;">${data.currency} ${data.totalAmount}</td>
+        </tr>
+        <tr>
+          <td style="padding: 12px 16px; color: #687076;">Status</td>
+          <td style="padding: 12px 16px; font-weight: 700; color: #22C55E; text-align: right;">✅ Confirmed & Paid</td>
+        </tr>
+      </table>
+
+      <p style="color: #687076; font-size: 14px;">
+        Your flight ticket will be sent separately. For any questions, contact us at <strong>${COMPANY.phone}</strong> or <strong>${COMPANY.email}</strong>.
+      </p>
+    </div>
+    <div class="footer">
+      <p>${COMPANY.name} — ${COMPANY.address}</p>
+      <p>${COMPANY.phone} | ${COMPANY.email}</p>
+    </div>
+  `;
+  return baseLayout(content, `Booking Confirmed — ${data.pnr}`);
+}
+
+export async function sendHoldConfirmationEmail(data: HoldConfirmationEmailData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = holdConfirmationHtml(data);
+
+  if (!transporter) {
+    console.log(`[Email] Would send hold confirmation to: ${data.passengerEmail}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.passengerEmail,
+      subject: `✅ Booking Confirmed — PNR: ${data.pnr} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ Hold confirmation email sent to ${data.passengerEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send hold confirmation email:", error);
+    return false;
+  }
+}
