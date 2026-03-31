@@ -302,9 +302,9 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          // Step 1: Price the offer
+          // Step 1: Price the offer (refresh to get latest price)
           const priced = await priceFlightOffer(input.offerId);
-          if (!(priced as any).available) {
+          if (!priced || !priced.pricedOffer) {
             return { success: false, pnr: null, error: "OFFER_UNAVAILABLE" };
           }
 

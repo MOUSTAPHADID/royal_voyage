@@ -1040,3 +1040,11 @@
 - [x] تشخيص سبب توقف البحث عن الرحلات عند انتهاء رصيد Manus
 - [x] التأكد من أن الخادم (tRPC + Duffel API) يعمل بشكل مستقل عن sandbox Manus
 - [x] تم التأكد: الخادم المنشور يعمل بشكل مستقل والمشكلة كانت في استخدام Expo Go
+
+## إصلاح Hold Order يفشل دائماً بخطأ OFFER_UNAVAILABLE
+- [x] تشخيص: holdFlightOrder كان يفحص (priced as any).available الذي لا يوجد أبداً
+- [x] إصلاح الفحص ليتحقق من priced.pricedOffer بدلاً من available
+- [x] تشخيص: Hold Orders غير مصرح بها في حساب Duffel Live + رصيد المحفظة غير كافٍ للحجز الفوري
+
+## إصلاح crash التطبيق المنشور (APK)
+- [x] نشر تحديث مع إصلاح Hold Order
