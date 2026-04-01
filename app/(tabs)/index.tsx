@@ -839,7 +839,7 @@ export default function HomeScreen() {
                 <View style={styles.destInfo}>
                   <Text style={styles.destCity}>{item.city}</Text>
                   <Text style={styles.destCountry}>{item.country}</Text>
-                  <Text style={styles.destPrice}>{t.home.fromPrice} ${item.flightPrice}</Text>
+                  <Text style={styles.destPrice}>{isRTL ? "ابحث الآن" : "Search now"}</Text>
                 </View>
               </Pressable>
             )}
@@ -865,8 +865,8 @@ export default function HomeScreen() {
         >
           <Text style={{ fontSize: 28 }}>{"\uD83D\uDD25"}</Text>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{"\u0639\u0631\u0648\u0636 \u0627\u0644\u064A\u0648\u0645 \u2014 Today's Deals"}</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{"\u062E\u0635\u0648\u0645\u0627\u062A \u062A\u0635\u0644 \u0625\u0644\u0649 30% \u0639\u0644\u0649 \u0631\u062D\u0644\u0627\u062A \u0648\u0641\u0646\u0627\u062F\u0642 \u0645\u062E\u062A\u0627\u0631\u0629"}</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{isRTL ? "عروض خاصة" : "Special Offers"}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "استكشف أفضل العروض على الرحلات والفنادق" : "Discover the best deals on flights and hotels"}</Text>
           </View>
           <IconSymbol name="chevron.right" size={18} color={"#EF4444"} />
         </Pressable>
@@ -890,8 +890,8 @@ export default function HomeScreen() {
         >
           <IconSymbol name="doc.text.magnifyingglass" size={24} color="#6366F1" />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>Booking Status</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>Check booking status from airline system</Text>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{isRTL ? "حالة الحجز" : "Booking Status"}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "تحقق من حالة حجزك برقم المرجع" : "Check your booking status by reference number"}</Text>
           </View>
           <IconSymbol name="chevron.right" size={18} color="#6366F1" />
         </Pressable>
@@ -900,7 +900,7 @@ export default function HomeScreen() {
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {isRTL ? "لماذا Royal Voyage؟" : "Why Royal Voyage?"}
+              {isRTL ? "لماذا Royal Service؟" : "Why Royal Service?"}
             </Text>
           </View>
           {[

@@ -35,12 +35,12 @@ describe("PDF Ticket Generator", () => {
     expect(content).toContain("COMPANY_INFO.address");
   });
 
-  it("should generate branded flight ticket HTML with Royal Voyage header", () => {
+  it("should generate branded flight ticket HTML with Royal Service header", () => {
     expect(content).toContain("ROYAL VOYAGE");
     expect(content).toContain("ELECTRONIC TICKET / BOARDING PASS");
   });
 
-  it("should generate hotel voucher HTML with Royal Voyage header", () => {
+  it("should generate hotel voucher HTML with Royal Service header", () => {
     expect(content).toContain("HOTEL RESERVATION VOUCHER");
   });
 

@@ -52,7 +52,7 @@ const PAYMENT_METHODS: {
   {
     id: "bank_transfer",
     label: "تحويل بنكي",
-    sublabel: "تحويل مباشر إلى حساب Royal Voyage",
+    sublabel: "تحويل مباشر إلى حساب Royal Service",
     icon: "🏦",
     color: "#3B82F6",
   },
@@ -103,7 +103,7 @@ const PAYMENT_METHODS: {
 // بيانات التحويل البنكي
 const BANK_INFO = {
   bankName: "بنك موريتانيا للتجارة الدولية (BMCI)",
-  accountName: "Royal Voyage SARL",
+  accountName: "Royal Service SARL",
   accountNumber: "MR46 0002 0001 0123 4567 8901 234",
   rib: "00020001012345678901234",
 };
@@ -256,7 +256,7 @@ export default function PaymentScreen() {
       const result = await createPaymentIntent.mutateAsync({
         amount: total, // MRU amount for conversion on server
         currency: stripeCurrency,
-        description: `Royal Voyage - ${isFlight ? 'Flight' : 'Hotel'} Booking`,
+        description: `Royal Service - ${isFlight ? 'Flight' : 'Hotel'} Booking`,
         bookingRef: `RV-${isFlight ? 'FL' : 'HT'}-${Date.now().toString().slice(-6)}`,
         passengerName: `${params.firstName ?? ''} ${params.lastName ?? ''}`.trim(),
         passengerEmail: params.email || undefined,
@@ -271,7 +271,7 @@ export default function PaymentScreen() {
       // Initialize Payment Sheet
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: result.clientSecret,
-        merchantDisplayName: 'Royal Voyage',
+        merchantDisplayName: 'Royal Service',
         defaultBillingDetails: {
           name: `${params.firstName ?? ''} ${params.lastName ?? ''}`.trim(),
           email: params.email || undefined,
@@ -946,7 +946,7 @@ export default function PaymentScreen() {
           <View style={[styles.card, { backgroundColor: "#22C55E10", borderColor: "#22C55E30" }]}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]}>📍 عنوان المكتب</Text>
             <Text style={[styles.infoText, { color: colors.foreground }]}>
-              Royal Voyage — نواكشوط، موريتانيا
+              Royal Service — نواكشوط، موريتانيا
             </Text>
             <Text style={[styles.infoSub, { color: colors.muted }]}>
               شارع جمال عبد الناصر، بجانب البنك المركزي

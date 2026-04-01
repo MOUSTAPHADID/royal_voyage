@@ -119,7 +119,7 @@ describe("WhatsApp Confirmation Button", () => {
 
   it("includes booking details in WhatsApp message", () => {
     const content = fs.readFileSync(confirmPath, "utf-8");
-    expect(content).toContain("تأكيد حجز Royal Voyage");
+    expect(content).toContain("تأكيد حجز Royal Service");
     expect(content).toContain("رقم المرجع");
     expect(content).toContain("المبلغ");
   });

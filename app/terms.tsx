@@ -15,11 +15,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. القبول بالشروط",
-        body: "باستخدامك لتطبيق Royal Voyage أو موقعنا الإلكتروني، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام خدماتنا.",
+        body: "باستخدامك لتطبيق Royal Service أو موقعنا الإلكتروني، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام خدماتنا.",
       },
       {
         heading: "2. خدماتنا",
-        body: "تقدم Royal Voyage خدمات حجز تذاكر الطيران والفنادق والرحلات السياحية. نعمل كوسيط بين المسافرين وشركات الطيران والفنادق، ولسنا مسؤولين مباشرة عن تقديم خدمات النقل أو الإقامة.",
+        body: "تقدم Royal Service خدمات حجز تذاكر الطيران والفنادق والرحلات السياحية. نعمل كوسيط بين المسافرين وشركات الطيران والفنادق، ولسنا مسؤولين مباشرة عن تقديم خدمات النقل أو الإقامة.",
       },
       {
         heading: "3. الحجز والدفع",
@@ -31,15 +31,15 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "5. مسؤولية المسافر",
-        body: "أنت مسؤول عن التأكد من صلاحية جواز سفرك وحصولك على التأشيرات اللازمة. Royal Voyage غير مسؤولة عن أي خسائر ناتجة عن وثائق سفر غير صالحة أو رفض الدخول.",
+        body: "أنت مسؤول عن التأكد من صلاحية جواز سفرك وحصولك على التأشيرات اللازمة. Royal Service غير مسؤولة عن أي خسائر ناتجة عن وثائق سفر غير صالحة أو رفض الدخول.",
       },
       {
         heading: "6. حدود المسؤولية",
-        body: "لا تتحمل Royal Voyage المسؤولية عن: تأخيرات الرحلات أو إلغاءاتها من قِبل شركات الطيران، الأضرار الناتجة عن ظروف خارجة عن إرادتنا (قوة قاهرة)، فقدان الأمتعة أو تلفها (مسؤولية شركة الطيران).",
+        body: "لا تتحمل Royal Service المسؤولية عن: تأخيرات الرحلات أو إلغاءاتها من قِبل شركات الطيران، الأضرار الناتجة عن ظروف خارجة عن إرادتنا (قوة قاهرة)، فقدان الأمتعة أو تلفها (مسؤولية شركة الطيران).",
       },
       {
         heading: "7. الملكية الفكرية",
-        body: "جميع محتويات التطبيق والموقع، بما في ذلك الشعارات والنصوص والصور، هي ملك حصري لـ Royal Voyage ومحمية بموجب قوانين حقوق الملكية الفكرية. يُحظر نسخها أو توزيعها دون إذن مسبق.",
+        body: "جميع محتويات التطبيق والموقع، بما في ذلك الشعارات والنصوص والصور، هي ملك حصري لـ Royal Service ومحمية بموجب قوانين حقوق الملكية الفكرية. يُحظر نسخها أو توزيعها دون إذن مسبق.",
       },
       {
         heading: "8. القانون المطبق",
@@ -47,7 +47,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "9. التواصل",
-        body: "Royal Voyage — طفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00\nالبريد: royal-voyage@gmail.com",
+        body: "Royal Service — طفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00\nالبريد: royal-voyage@gmail.com",
       },
     ],
   },
@@ -58,11 +58,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. Acceptance of Terms",
-        body: "By using the Royal Voyage app or website, you agree to be bound by these Terms and Conditions. If you do not agree to any of these terms, please do not use our services.",
+        body: "By using the Royal Service app or website, you agree to be bound by these Terms and Conditions. If you do not agree to any of these terms, please do not use our services.",
       },
       {
         heading: "2. Our Services",
-        body: "Royal Voyage provides flight ticket, hotel, and tour booking services. We act as an intermediary between travelers and airlines/hotels, and are not directly responsible for providing transportation or accommodation services.",
+        body: "Royal Service provides flight ticket, hotel, and tour booking services. We act as an intermediary between travelers and airlines/hotels, and are not directly responsible for providing transportation or accommodation services.",
       },
       {
         heading: "3. Booking and Payment",
@@ -74,15 +74,15 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "5. Traveler Responsibility",
-        body: "You are responsible for ensuring your passport is valid and obtaining necessary visas. Royal Voyage is not responsible for any losses resulting from invalid travel documents or denial of entry.",
+        body: "You are responsible for ensuring your passport is valid and obtaining necessary visas. Royal Service is not responsible for any losses resulting from invalid travel documents or denial of entry.",
       },
       {
         heading: "6. Limitation of Liability",
-        body: "Royal Voyage is not liable for: flight delays or cancellations by airlines, damages resulting from circumstances beyond our control (force majeure), loss or damage of luggage (airline's responsibility).",
+        body: "Royal Service is not liable for: flight delays or cancellations by airlines, damages resulting from circumstances beyond our control (force majeure), loss or damage of luggage (airline's responsibility).",
       },
       {
         heading: "7. Intellectual Property",
-        body: "All content on the app and website, including logos, text, and images, is the exclusive property of Royal Voyage and is protected by intellectual property laws. Copying or distributing without prior permission is prohibited.",
+        body: "All content on the app and website, including logos, text, and images, is the exclusive property of Royal Service and is protected by intellectual property laws. Copying or distributing without prior permission is prohibited.",
       },
       {
         heading: "8. Governing Law",
@@ -90,7 +90,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "9. Contact",
-        body: "Royal Voyage — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00\nEmail: royal-voyage@gmail.com",
+        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00\nEmail: royal-voyage@gmail.com",
       },
     ],
   },
@@ -101,11 +101,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. Acceptation des conditions",
-        body: "En utilisant l'application ou le site web Royal Voyage, vous acceptez d'être lié par ces Conditions Générales. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser nos services.",
+        body: "En utilisant l'application ou le site web Royal Service, vous acceptez d'être lié par ces Conditions Générales. Si vous n'acceptez pas ces conditions, veuillez ne pas utiliser nos services.",
       },
       {
         heading: "2. Nos services",
-        body: "Royal Voyage fournit des services de réservation de billets d'avion, d'hôtels et de circuits touristiques. Nous agissons en tant qu'intermédiaire entre les voyageurs et les compagnies aériennes/hôtels.",
+        body: "Royal Service fournit des services de réservation de billets d'avion, d'hôtels et de circuits touristiques. Nous agissons en tant qu'intermédiaire entre les voyageurs et les compagnies aériennes/hôtels.",
       },
       {
         heading: "3. Réservation et paiement",
@@ -117,15 +117,15 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "5. Responsabilité du voyageur",
-        body: "Vous êtes responsable de vous assurer que votre passeport est valide et d'obtenir les visas nécessaires. Royal Voyage n'est pas responsable des pertes résultant de documents de voyage invalides.",
+        body: "Vous êtes responsable de vous assurer que votre passeport est valide et d'obtenir les visas nécessaires. Royal Service n'est pas responsable des pertes résultant de documents de voyage invalides.",
       },
       {
         heading: "6. Limitation de responsabilité",
-        body: "Royal Voyage n'est pas responsable des retards ou annulations de vols par les compagnies aériennes, des dommages résultant de circonstances indépendantes de notre volonté, ou de la perte/détérioration des bagages.",
+        body: "Royal Service n'est pas responsable des retards ou annulations de vols par les compagnies aériennes, des dommages résultant de circonstances indépendantes de notre volonté, ou de la perte/détérioration des bagages.",
       },
       {
         heading: "7. Propriété intellectuelle",
-        body: "Tout le contenu de l'application et du site web est la propriété exclusive de Royal Voyage et est protégé par les lois sur la propriété intellectuelle.",
+        body: "Tout le contenu de l'application et du site web est la propriété exclusive de Royal Service et est protégé par les lois sur la propriété intellectuelle.",
       },
       {
         heading: "8. Droit applicable",
@@ -133,7 +133,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "9. Contact",
-        body: "Royal Voyage — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00\nEmail : royal-voyage@gmail.com",
+        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00\nEmail : royal-voyage@gmail.com",
       },
     ],
   },

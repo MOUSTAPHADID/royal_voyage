@@ -28,7 +28,7 @@ const schemeFromBundleId = `manus${timestamp}`;
 
 const env = {
   // App branding - update these values directly (do not use env vars)
-  appName: "Royal Voyage",
+  appName: "Royal Service",
   appSlug: "royal_voyage",
   logoUrl: "https://d2xsxph8kpxj0f.cloudfront.net/310519663457917822/dCSeDyLMxwR8uDkjtk8yd3/icon_37ebad54.png",
   scheme: schemeFromBundleId,

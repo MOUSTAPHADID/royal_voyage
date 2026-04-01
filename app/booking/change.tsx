@@ -89,7 +89,7 @@ export default function ChangeBookingScreen() {
             تم إرسال طلب التعديل
           </Text>
           <Text style={[styles.successSubtitle, { color: colors.muted }]}>
-            سيتواصل معك فريق Royal Voyage خلال 24 ساعة لتأكيد التعديل
+            سيتواصل معك فريق Royal Service خلال 24 ساعة لتأكيد التعديل
           </Text>
           <View style={[styles.refCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.refLabel, { color: colors.muted }]}>رقم الحجز</Text>

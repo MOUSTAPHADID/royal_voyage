@@ -1,7 +1,7 @@
-# Royal Voyage — Mobile App Design Plan
+# Royal Service — Mobile App Design Plan
 
 ## App Concept
-A premium flight and hotel booking application with an elegant, luxury travel aesthetic. The name "Royal Voyage" evokes sophistication, comfort, and world-class travel experiences.
+A premium flight and hotel booking application with an elegant, luxury travel aesthetic. The name "Royal Service" evokes sophistication, comfort, and world-class travel experiences.
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   View,
   Text,
@@ -14,14 +14,19 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { DESTINATIONS, Destination } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useTranslation } from "@/lib/i18n";
 
-const CATEGORIES = ["All", "Beach", "City", "Mountain", "Cultural", "Luxury"];
+const CATEGORIES_AR = ["الكل", "شواطئ", "مدن", "جبال", "ثقافة", "فاخر"];
+const CATEGORIES_EN = ["All", "Beach", "City", "Mountain", "Cultural", "Luxury"];
 
 export default function ExploreScreen() {
   const router = useRouter();
   const colors = useColors();
+  const { isRTL } = useTranslation();
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
+  const [categoryIdx, setCategoryIdx] = useState(0);
+
+  const CATEGORIES = isRTL ? CATEGORIES_AR : CATEGORIES_EN;
 
   const filtered = DESTINATIONS.filter((d) =>
     search.trim() === "" ||
@@ -51,13 +56,10 @@ export default function ExploreScreen() {
       <View style={styles.destInfo}>
         <Text style={styles.destCity}>{item.city}</Text>
         <Text style={styles.destCountry}>{item.country}</Text>
-        <View style={styles.destPrices}>
-          <View style={[styles.pricePill, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-            <Text style={{ color: "#C9A84C", fontSize: 11 }}>✈ from ${item.flightPrice}</Text>
-          </View>
-          <View style={[styles.pricePill, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-            <Text style={{ color: "#FFFFFF", fontSize: 11 }}>🏨 from ${item.hotelPrice}/night</Text>
-          </View>
+        <View style={[styles.pricePill, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+          <Text style={{ color: "#C9A84C", fontSize: 11 }}>
+            {isRTL ? "ابحث الآن" : "Search now"}
+          </Text>
         </View>
       </View>
     </Pressable>
@@ -67,15 +69,17 @@ export default function ExploreScreen() {
     <ScreenContainer edges={["top", "left", "right"]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <Text style={styles.headerTitle}>Explore</Text>
-        <Text style={styles.headerSub}>Discover your next adventure</Text>
+        <Text style={styles.headerTitle}>{isRTL ? "استكشف" : "Explore"}</Text>
+        <Text style={styles.headerSub}>
+          {isRTL ? "اكتشف وجهتك القادمة" : "Discover your next adventure"}
+        </Text>
 
         {/* Search */}
         <View style={[styles.searchBar, { backgroundColor: "rgba(255,255,255,0.15)" }]}>
           <IconSymbol name="magnifyingglass" size={18} color="rgba(255,255,255,0.7)" />
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search destinations..."
+            style={[styles.searchInput, { textAlign: isRTL ? "right" : "left" }]}
+            placeholder={isRTL ? "ابحث عن وجهة..." : "Search destinations..."}
             placeholderTextColor="rgba(255,255,255,0.6)"
             value={search}
             onChangeText={setSearch}
@@ -91,18 +95,18 @@ export default function ExploreScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{ paddingHorizontal: 16, gap: 8, paddingVertical: 12 }}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Pressable
               style={[
                 styles.categoryChip,
                 {
-                  backgroundColor: category === item ? colors.primary : colors.background,
-                  borderColor: category === item ? colors.primary : colors.border,
+                  backgroundColor: categoryIdx === index ? colors.primary : colors.background,
+                  borderColor: categoryIdx === index ? colors.primary : colors.border,
                 },
               ]}
-              onPress={() => setCategory(item)}
+              onPress={() => setCategoryIdx(index)}
             >
-              <Text style={[styles.categoryText, { color: category === item ? "#FFFFFF" : colors.muted }]}>
+              <Text style={[styles.categoryText, { color: categoryIdx === index ? "#FFFFFF" : colors.muted }]}>
                 {item}
               </Text>
             </Pressable>
@@ -113,7 +117,7 @@ export default function ExploreScreen() {
       {/* Results count */}
       <View style={[styles.resultsHeader, { backgroundColor: colors.background }]}>
         <Text style={[styles.resultsCount, { color: colors.muted }]}>
-          {filtered.length} destinations
+          {filtered.length} {isRTL ? "وجهة" : "destinations"}
         </Text>
       </View>
 
@@ -198,26 +202,28 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 130,
-    backgroundColor: "rgba(0,0,0,0.55)",
+    backgroundColor: "transparent",
+    // gradient-like overlay using multiple views
   },
   destTag: {
     position: "absolute",
     top: 10,
-    right: 10,
-    paddingHorizontal: 8,
+    left: 10,
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 8,
+    borderRadius: 20,
   },
   destTagText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
   },
   destInfo: {
     position: "absolute",
-    bottom: 12,
-    left: 10,
-    right: 10,
-    gap: 4,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+    gap: 2,
   },
   destCity: {
     color: "#FFFFFF",
@@ -227,15 +233,12 @@ const styles = StyleSheet.create({
   destCountry: {
     color: "rgba(255,255,255,0.8)",
     fontSize: 12,
-  },
-  destPrices: {
-    gap: 4,
-    marginTop: 4,
+    marginBottom: 4,
   },
   pricePill: {
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 6,
     alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
 });

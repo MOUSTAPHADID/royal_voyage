@@ -309,7 +309,7 @@ export default function ConfirmationScreen() {
       const ticket = getTicketText();
       await Share.share({
         message: ticket,
-        title: isFlight ? "Royal Voyage — Boarding Pass" : "Royal Voyage — Hotel Voucher",
+        title: isFlight ? "Royal Service — Boarding Pass" : "Royal Service — Hotel Voucher",
       });
     } catch (e) {
       // ignore
@@ -471,7 +471,7 @@ export default function ConfirmationScreen() {
         <View style={[styles.companyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.companyHeader}>
             <IconSymbol name="crown.fill" size={18} color={colors.primary} />
-            <Text style={[styles.companyName, { color: colors.primary }]}>Royal Voyage</Text>
+            <Text style={[styles.companyName, { color: colors.primary }]}>Royal Service</Text>
           </View>
           <View style={[styles.divider, { backgroundColor: colors.border, marginVertical: 8 }]} />
           <View style={styles.companyRow}>
@@ -566,7 +566,7 @@ export default function ConfirmationScreen() {
             const route = isFlight
               ? `${params.originCode ?? ""} \u2192 ${params.destinationCode ?? ""}`
               : `${params.hotelName ?? ""} - ${params.hotelCity ?? ""}`;
-            const msg = `\u2705 *تأكيد حجز Royal Voyage*\n\n` +
+            const msg = `\u2705 *تأكيد حجز Royal Service*\n\n` +
               `النوع: ${type}\n` +
               `المسار: ${route}\n` +
               `رقم المرجع: ${ref}\n` +
@@ -574,7 +574,7 @@ export default function ConfirmationScreen() {
               `المبلغ: ${formattedTotal}\n` +
               `الاسم: ${params.passengerName ?? ""}\n` +
               `التاريخ: ${today}\n\n` +
-              `شكراً لاختياركم Royal Voyage \uD83D\uDC51`;
+              `شكراً لاختياركم Royal Service \uD83D\uDC51`;
             const encoded = encodeURIComponent(msg);
             const phone = (params.phone ?? "").replace(/[^0-9]/g, "");
             const url = phone

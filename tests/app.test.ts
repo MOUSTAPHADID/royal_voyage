@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { FLIGHTS, HOTELS, DESTINATIONS, MOCK_BOOKINGS } from "../lib/mock-data";
 
-describe("Royal Voyage - Mock Data", () => {
+describe("Royal Service - Mock Data", () => {
   it("should have 6 flights", () => {
     expect(FLIGHTS.length).toBe(6);
   });
@@ -56,7 +56,7 @@ describe("Royal Voyage - Mock Data", () => {
   });
 });
 
-describe("Royal Voyage - Theme Colors", () => {
+describe("Royal Service - Theme Colors", () => {
   it("should have valid theme config", async () => {
     const themeConfig = await import("../theme.config.js");
     const { themeColors } = themeConfig;

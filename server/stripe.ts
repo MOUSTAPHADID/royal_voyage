@@ -73,7 +73,7 @@ export async function createPaymentIntent(params: {
   const paymentIntent = await stripe.paymentIntents.create({
     amount: finalAmountInCents,
     currency,
-    description: params.description || "Royal Voyage Booking",
+    description: params.description || "Royal Service Booking",
     metadata: {
       ...(params.metadata || {}),
       originalAmountMRU: params.amount.toString(),

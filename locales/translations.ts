@@ -1,7 +1,7 @@
 import { T } from "./ar";
 
 export const fr: T = {
-  appName: "Royal Voyage",
+  appName: "Royal Service",
   loading: "Chargement...",
   error: "Une erreur s'est produite",
   retry: "Réessayer",
@@ -295,12 +295,12 @@ export const fr: T = {
     slide2Title: "Réservez facilement",
     slide2Desc: "Réservez votre voyage en quelques étapes simples",
     slide3Title: "Voyagez en confiance",
-    slide3Desc: "Profitez d'une expérience de voyage royale avec Royal Voyage",
+    slide3Desc: "Profitez d'une expérience de voyage royale avec Royal Service",
   },
 };
 
 export const en: T = {
-  appName: "Royal Voyage",
+  appName: "Royal Service",
   loading: "Loading...",
   error: "An error occurred",
   retry: "Retry",
@@ -594,12 +594,12 @@ export const en: T = {
     slide2Title: "Book Easily",
     slide2Desc: "Book your trip in simple steps with instant confirmation",
     slide3Title: "Travel with Confidence",
-    slide3Desc: "Enjoy a royal travel experience with Royal Voyage",
+    slide3Desc: "Enjoy a royal travel experience with Royal Service",
   },
 };
 
 export const pt: T = {
-  appName: "Royal Voyage",
+  appName: "Royal Service",
   loading: "A carregar...",
   error: "Ocorreu um erro",
   retry: "Tentar novamente",
@@ -893,6 +893,6 @@ export const pt: T = {
     slide2Title: "Reserve facilmente",
     slide2Desc: "Reserve a sua viagem em passos simples com confirmação imediata",
     slide3Title: "Viaje com confiança",
-    slide3Desc: "Desfrute de uma experiência de viagem real com Royal Voyage",
+    slide3Desc: "Desfrute de uma experiência de viagem real com Royal Service",
   },
 };

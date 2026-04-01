@@ -69,7 +69,7 @@ export async function scheduleDailyProfitNotification(hour: number = DEFAULT_NOT
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
-        title: "📊 تقرير أرباح Royal Voyage",
+        title: "📊 تقرير أرباح Royal Service",
         body: "اضغط لعرض ملخص حجوزات وأرباح اليوم",
         data: { screen: "admin-profits" },
         sound: true,

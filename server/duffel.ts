@@ -726,7 +726,7 @@ export async function createFlightOrder(
     ],
     passengers: passengersPayload as any,
     metadata: {
-      agency: "Royal Voyage",
+      agency: "Royal Service",
       agency_phone: "+22233700000",
       agency_email: "royal-voyage@gmail.com",
     },
@@ -823,7 +823,7 @@ export async function createHoldOrder(
     selected_offers: [offerId],
     passengers: passengersPayload as any,
     metadata: {
-      agency: "Royal Voyage",
+      agency: "Royal Service",
       agency_phone: "+22233700000",
       agency_email: "royal-voyage@gmail.com",
     },

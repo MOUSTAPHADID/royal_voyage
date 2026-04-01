@@ -16,7 +16,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "مقدمة",
-        body: "تلتزم وكالة Royal Voyage بحماية خصوصية مستخدمي تطبيقها. تصف هذه السياسة كيفية جمع المعلومات الشخصية واستخدامها وحمايتها عند استخدام تطبيق Royal Voyage.",
+        body: "تلتزم وكالة Royal Service بحماية خصوصية مستخدمي تطبيقها. تصف هذه السياسة كيفية جمع المعلومات الشخصية واستخدامها وحمايتها عند استخدام تطبيق Royal Service.",
       },
       {
         heading: "المعلومات التي نجمعها",
@@ -48,7 +48,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "التواصل",
-        body: "Royal Voyage — تفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00",
+        body: "Royal Service — تفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00",
       },
     ],
   },
@@ -59,7 +59,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "Introduction",
-        body: "Royal Voyage is committed to protecting the privacy of its app users. This policy describes how we collect, use, and protect personal information when you use the Royal Voyage app.",
+        body: "Royal Service is committed to protecting the privacy of its app users. This policy describes how we collect, use, and protect personal information when you use the Royal Service app.",
       },
       {
         heading: "Information We Collect",
@@ -91,7 +91,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "Contact",
-        body: "Royal Voyage — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00",
+        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00",
       },
     ],
   },
@@ -102,7 +102,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "Introduction",
-        body: "Royal Voyage s'engage à protéger la vie privée des utilisateurs de son application. Cette politique décrit comment nous collectons, utilisons et protégeons les informations personnelles lors de l'utilisation de l'application Royal Voyage.",
+        body: "Royal Service s'engage à protéger la vie privée des utilisateurs de son application. Cette politique décrit comment nous collectons, utilisons et protégeons les informations personnelles lors de l'utilisation de l'application Royal Service.",
       },
       {
         heading: "Informations que nous collectons",
@@ -134,7 +134,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "Contact",
-        body: "Royal Voyage — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00",
+        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00",
       },
     ],
   },

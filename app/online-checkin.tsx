@@ -108,7 +108,7 @@ function generateBoardingPassText(booking: any, seatNumber: string, boardingGrou
     booking.pnr ? `PNR: ${booking.pnr}` : "",
     "",
     "═══════════════════════════════",
-    "    Royal Voyage Travel Agency",
+    "    Royal Service Travel Agency",
     "    +222 33 70 00 00",
     "    royal-voyage@gmail.com",
     "    Tavragh Zeina, Nouakchott",

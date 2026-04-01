@@ -164,7 +164,7 @@ export default function LandingPage() {
   };
 
   const handleContact = () => {
-    const subject = encodeURIComponent("استفسار من الموقع - Royal Voyage");
+    const subject = encodeURIComponent("استفسار من الموقع - Royal Service");
     const body = encodeURIComponent(`الاسم: ${formName}\nالبريد: ${formEmail}\n\n${formMsg}`);
     Linking.openURL(`mailto:suporte@royalvoyage.online?subject=${subject}&body=${body}`);
     setFormSent(true);
@@ -182,7 +182,7 @@ export default function LandingPage() {
       <View style={[styles.navbar, { backgroundColor: primary, flexDirection: isAr ? "row-reverse" : "row" }]}>
         <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
           <Text style={{ fontSize: 22 }}>👑</Text>
-          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>Royal <Text style={{ color: gold }}>Voyage</Text></Text>
+          <Text style={{ color: "#fff", fontSize: 18, fontWeight: "800" }}>Royal <Text style={{ color: gold }}>Service</Text></Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
           <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={[styles.langBtn, { borderColor: gold }]}>
@@ -733,8 +733,8 @@ export default function LandingPage() {
         </Text>
         <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 15, textAlign: "center", marginBottom: 24, lineHeight: 22 }}>
           {isAr
-            ? "انضم لآلاف المسافرين الذين يثقون بـ Royal Voyage"
-            : "Join thousands of travelers who trust Royal Voyage"}
+            ? "انضم لآلاف المسافرين الذين يثقون بـ Royal Service"
+            : "Join thousands of travelers who trust Royal Service"}
         </Text>
         <Pressable onPress={handleOpenApp} style={[styles.heroCta, { backgroundColor: gold, paddingHorizontal: 40 }]}>
           <Text style={{ color: primary, fontWeight: "800", fontSize: 17 }}>
@@ -748,7 +748,7 @@ export default function LandingPage() {
         {/* Logo & tagline */}
         <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <Text style={{ fontSize: 28 }}>👑</Text>
-          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>Royal <Text style={{ color: gold }}>Voyage</Text></Text>
+          <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>Royal <Text style={{ color: gold }}>Service</Text></Text>
         </View>
         <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, textAlign: "center", lineHeight: 20, marginBottom: 6 }}>
           {isAr ? "تطبيق حجز الرحلات الجوية والفنادق الأول في موريتانيا" : "Mauritania's #1 flight and hotel booking app"}
@@ -788,7 +788,7 @@ export default function LandingPage() {
         </View>
 
         <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
-          © 2026 Royal Voyage. {isAr ? "جميع الحقوق محفوظة." : "All rights reserved."}
+          © 2026 Royal Service. {isAr ? "جميع الحقوق محفوظة." : "All rights reserved."}
         </Text>
       </View>
     </ScrollView>

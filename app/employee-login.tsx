@@ -137,7 +137,7 @@ export default function EmployeeLoginScreen() {
               بوابة الموظفين
             </Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>
-              Royal Voyage — نظام إدارة الحجوزات
+              Royal Service — نظام إدارة الحجوزات
             </Text>
           </View>
 

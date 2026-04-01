@@ -14,7 +14,7 @@ describe("Online Check-in Enhancements", () => {
       expect(src).toContain("generateBoardingPassText");
     });
 
-    it("should include Royal Voyage contact info in boarding pass text", () => {
+    it("should include Royal Service contact info in boarding pass text", () => {
       const src = readFile("app/online-checkin.tsx");
       expect(src).toContain("+222 33 70 00 00");
       expect(src).toContain("royal-voyage@gmail.com");

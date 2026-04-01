@@ -153,7 +153,7 @@ th{background:#f8fafc;font-weight:700;text-align:right}
 .stat .val{font-size:20px;font-weight:800;color:#1B2B5E}.stat .lbl{font-size:11px;color:#64748b;margin-top:4px}
 .footer{text-align:center;margin-top:24px;font-size:11px;color:#94a3b8}
 </style></head><body>
-<div class="header"><h1>✈ Royal Voyage</h1><p>التقرير المالي — ${periodLabel} | ${dateStr}</p></div>
+<div class="header"><h1>✈ Royal Service</h1><p>التقرير المالي — ${periodLabel} | ${dateStr}</p></div>
 <div class="grid">
 <div class="stat"><div class="val">${formatMRU(stats.totalRevenue)}</div><div class="lbl">إجمالي الإيرادات</div></div>
 <div class="stat"><div class="val">${formatMRU(stats.pendingRevenue)}</div><div class="lbl">الإيرادات المعلقة</div></div>
@@ -164,7 +164,7 @@ th{background:#f8fafc;font-weight:700;text-align:right}
 </div>
 <div class="card"><h3>توزيع طرق الدفع</h3><table><thead><tr><th>الطريقة</th><th style="text-align:left">المبلغ</th></tr></thead><tbody>${paymentRows}</tbody></table></div>
 <div class="card"><h3>الإيرادات اليومية</h3><table><thead><tr><th>التاريخ</th><th style="text-align:left">المبلغ</th></tr></thead><tbody>${dailyRows}</tbody></table></div>
-<div class="footer">Royal Voyage Travel Agency — ${dateStr}</div>
+<div class="footer">Royal Service Travel Agency — ${dateStr}</div>
 </body></html>`;
 
       const { uri } = await Print.printToFileAsync({ html, margins: { left: 10, top: 10, right: 10, bottom: 10 } });

@@ -27,7 +27,7 @@
 4. Check status via Flight Order Management API
 5. Ticket number appears in the order when issued
 
-## What Royal Voyage already has:
+## What Royal Service already has:
 - Office ID: NKC26239A (already configured)
 - Flight Create Orders with queuingOfficeId
 - Flight Order Management (get/cancel)

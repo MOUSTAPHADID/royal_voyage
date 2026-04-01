@@ -286,7 +286,7 @@ export default function ProfitReportScreen() {
   </div>
 
   <div class="footer">
-    Royal Voyage — تم الإنشاء تلقائياً بتاريخ ${dateStr}
+    Royal Service — تم الإنشاء تلقائياً بتاريخ ${dateStr}
   </div>
 </body>
 </html>`;

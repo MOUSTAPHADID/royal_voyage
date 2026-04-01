@@ -1,5 +1,5 @@
 /**
- * Royal Voyage — Push Notifications Helper
+ * Royal Service — Push Notifications Helper
  * Registers Expo Push Token for customer notifications.
  *
  * NOTE: expo-notifications remote push was removed from Expo Go in SDK 53.
