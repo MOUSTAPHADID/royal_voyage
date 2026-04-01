@@ -23,7 +23,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "3. الحجز والدفع",
-        body: "جميع الأسعار المعروضة بالمغني الموريتاني (MRU) وتشمل الرسوم والضرائب المطبقة. يُعتبر الحجز مؤكداً فقط بعد استلام الدفع الكامل وإصدار التذكرة. الأسعار قابلة للتغيير حتى إتمام الدفع.",
+        body: "جميع الأسعار المعروضة بالدولار الأمريكي (USD) وتشمل الرسوم والضرائب المطبقة. يُعتبر الحجز مؤكداً فقط بعد استلام الدفع الكامل وإصدار التذكرة. الأسعار قابلة للتغيير حتى إتمام الدفع.",
       },
       {
         heading: "4. سياسة الإلغاء والاسترداد",
@@ -66,7 +66,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "3. Booking and Payment",
-        body: "All prices are displayed in Mauritanian Ouguiya (MRU) and include applicable fees and taxes. A booking is confirmed only after full payment is received and the ticket is issued. Prices are subject to change until payment is completed.",
+        body: "All prices are displayed in US Dollars (USD) and include applicable fees and taxes. A booking is confirmed only after full payment is received and the ticket is issued. Prices are subject to change until payment is completed.",
       },
       {
         heading: "4. Cancellation and Refund Policy",
@@ -109,7 +109,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "3. Réservation et paiement",
-        body: "Tous les prix sont affichés en Ouguiya mauritanienne (MRU) et incluent les frais et taxes applicables. Une réservation n'est confirmée qu'après réception du paiement intégral et émission du billet.",
+        body: "Tous les prix sont affichés en Dollar américain (USD) et incluent les frais et taxes applicables. Une réservation n'est confirmée qu'après réception du paiement intégral et émission du billet.",
       },
       {
         heading: "4. Annulation et remboursement",

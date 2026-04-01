@@ -6,10 +6,10 @@
  * ملاحظة: جميع الأرقام تُعرض باللاتينية (0-9)
  */
 
-// Default fallback rates (used only if PricingSettings not loaded yet)
-const USD_TO_MRU_DEFAULT = 39.5;
-const EUR_TO_MRU_DEFAULT = 43.0;
-const AOA_TO_MRU_DEFAULT = 0.043; // 1 AOA ≈ 0.043 MRU
+// Default fallback rates — Real rates as of 1 Apr 2026 (open.er-api.com)
+const USD_TO_MRU_DEFAULT = 40.08;
+const EUR_TO_MRU_DEFAULT = 46.22;
+const AOA_TO_MRU_DEFAULT = 0.0434; // 1 AOA ≈ 0.0434 MRU
 
 /**
  * رسوم الوكالة الثابتة بالأوقية الموريتانية

@@ -446,7 +446,7 @@ export default function FlightResultsScreen() {
       {showPriceFilter && activeFlights.length > 0 && (
         <View style={[styles.priceFilterBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
           <View style={styles.priceFilterHeader}>
-            <Text style={[styles.priceFilterTitle, { color: colors.foreground }]}>نطاق السعر (MRU)</Text>
+            <Text style={[styles.priceFilterTitle, { color: colors.foreground }]}>نطاق السعر</Text>
             <Pressable
               onPress={() => { setPriceRange([minPrice, maxPrice]); }}
               style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
@@ -456,11 +456,11 @@ export default function FlightResultsScreen() {
           </View>
           <View style={styles.priceLabels}>
             <Text style={[styles.priceLabel, { color: colors.primary }]}>
-              {Math.round(priceRange[0]).toLocaleString()} MRU
+              {fmt(Math.round(priceRange[0]))}
             </Text>
             <Text style={[styles.priceLabel, { color: colors.muted }]}>—</Text>
             <Text style={[styles.priceLabel, { color: colors.primary }]}>
-              {Math.round(priceRange[1]).toLocaleString()} MRU
+              {fmt(Math.round(priceRange[1]))}
             </Text>
           </View>
           {/* Min slider */}
@@ -512,10 +512,10 @@ export default function FlightResultsScreen() {
           {/* Quick presets */}
           <View style={styles.presetRow}>
             {[
-              { label: "< 10K", max: 10000 },
-              { label: "10-20K", min: 10000, max: 20000 },
-              { label: "20-50K", min: 20000, max: 50000 },
-              { label: "> 50K", min: 50000 },
+              { label: "< $250", max: Math.round(250 * 40.08) },
+              { label: "$250-500", min: Math.round(250 * 40.08), max: Math.round(500 * 40.08) },
+              { label: "$500-1K", min: Math.round(500 * 40.08), max: Math.round(1000 * 40.08) },
+              { label: "> $1K", min: Math.round(1000 * 40.08) },
             ].map((preset) => {
               const pMin = preset.min ?? minPrice;
               const pMax = preset.max ?? maxPrice;
