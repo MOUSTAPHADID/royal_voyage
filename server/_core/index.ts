@@ -93,7 +93,7 @@ async function startServer() {
   app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
     const sig = req.headers["stripe-signature"] as string;
     // Use env var first, fall back to hardcoded value if not set
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_7g59fzyKXA7lfayC0FsLLQAR7jJIZUs2";
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_JP1zaXRsKt8ZO86hhojet2vsVsBPtlZe";
 
     if (!sig) {
       console.warn("[Stripe Webhook] Missing stripe-signature header");
