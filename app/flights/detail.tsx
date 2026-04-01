@@ -164,7 +164,7 @@ export default function FlightDetailScreen() {
                   resizeMode="contain"
                 />
               ) : (
-                <Text style={{ fontSize: 28 }}>✈</Text>
+                <MaterialIcons name="flight" size={28} color={colors.primary} />
               )}
             </View>
             <View>
@@ -190,7 +190,7 @@ export default function FlightDetailScreen() {
               <View style={styles.routeLineRow}>
                 <View style={[styles.routeDot, { backgroundColor: colors.primary }]} />
                 <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
-                <Text style={{ fontSize: 18 }}>✈</Text>
+                <MaterialIcons name="flight" size={18} color={colors.primary} />
                 <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
                 <View style={[styles.routeDot, { backgroundColor: colors.secondary }]} />
               </View>

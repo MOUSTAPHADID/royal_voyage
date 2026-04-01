@@ -13,6 +13,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Booking } from "@/lib/mock-data";
 import { trpc } from "@/lib/trpc";
 import { formatMRU } from "@/lib/currency";
@@ -363,16 +364,16 @@ export default function UpdateStatusScreen() {
                     <Text style={[styles.cardName, { color: colors.muted }]}>
                       {booking.type === "flight"
                         ? `${booking.flight?.airline ?? "—"} · ${booking.flight?.originCode ?? ""} → ${booking.flight?.destinationCode ?? ""}`
-                        : `🏨 ${booking.hotel?.name ?? "—"}`}
+                        : booking.hotel?.name ?? "—"}
                     </Text>
                     {booking.passengerName && (
                       <Text style={[styles.cardPassenger, { color: colors.muted }]}>
-                        👤 {booking.passengerName}
+                        {booking.passengerName}
                       </Text>
                     )}
                   </View>
                   <View style={[styles.currentStatus, { backgroundColor: currentStatus.color + "20" }]}>
-                    <Text style={{ fontSize: 16 }}>{currentStatus.icon}</Text>
+                    <MaterialIcons name="info" size={16} color={currentStatus.color} />
                     <Text style={[styles.currentStatusText, { color: currentStatus.color }]}>
                       {currentStatus.labelAr}
                     </Text>
@@ -382,7 +383,7 @@ export default function UpdateStatusScreen() {
                 {/* Push Token Indicator */}
                 <View style={[styles.tokenRow, { borderTopColor: colors.border }]}>
                   <Text style={[styles.tokenText, { color: colors.muted }]}>
-                    {booking.customerPushToken ? "🔔 Push مسجّل — سيصل إشعار للزبون" : "🔕 Push غير مسجّل"}
+                    {booking.customerPushToken ? "Push مسجّل — سيصل إشعار للزبون" : "Push غير مسجّل"}
                   </Text>
                 </View>
 

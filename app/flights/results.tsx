@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   ListRenderItemInfo,
   Image,
+  Animated,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -190,6 +191,15 @@ export default function FlightResultsScreen() {
   }, [filteredFlights]);
 
   const totalPassengers = Math.max(1, parseInt(params.passengers || "1", 10) + parseInt(params.children || "0", 10) + parseInt(params.infants || "0", 10));
+
+  // Fade-in animation when results load
+  const listAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (filteredFlights.length > 0) {
+      listAnim.setValue(0);
+      Animated.timing(listAnim, { toValue: 1, duration: 350, useNativeDriver: true }).start();
+    }
+  }, [filteredFlights.length]);
 
   // Airline logo helper - uses IATA code to get logo from public CDN
   const getAirlineLogo = (airlineCode: string) => {
@@ -626,6 +636,7 @@ export default function FlightResultsScreen() {
             )}
           </View>
 
+          <Animated.View style={{ flex: 1, opacity: listAnim }}>
           <FlatList
             data={filteredFlights}
             keyExtractor={(item) => item.id}
@@ -647,6 +658,7 @@ export default function FlightResultsScreen() {
               </View>
             }
           />
+          </Animated.View>
         </>
       )}
     </ScreenContainer>

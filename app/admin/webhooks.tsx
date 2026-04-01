@@ -17,6 +17,7 @@ import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 
@@ -221,7 +222,7 @@ export default function WebhooksScreen() {
       >
         <View style={styles.cardRow}>
           <View style={[styles.eventIcon, { backgroundColor: isUrgent ? "#FEE2E2" : "#DBEAFE" }]}>
-            <Text style={{ fontSize: 18 }}>{isUrgent ? "🚨" : "🔔"}</Text>
+            <MaterialIcons name={isUrgent ? "warning" : "notifications"} size={18} color={isUrgent ? "#DC2626" : "#3B82F6"} />
           </View>
           <View style={styles.cardContent}>
             <Text style={[styles.cardTitle, { color: isUrgent ? "#DC2626" : colors.foreground }]}>
@@ -255,7 +256,7 @@ export default function WebhooksScreen() {
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.cardRow}>
           <View style={[styles.eventIcon, { backgroundColor: "#EDE9FE" }]}>
-            <Text style={{ fontSize: 18 }}>🔗</Text>
+            <MaterialIcons name="link" size={18} color="#8B5CF6" />
           </View>
           <View style={styles.cardContent}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]} numberOfLines={1}>
@@ -276,13 +277,13 @@ export default function WebhooksScreen() {
             style={({ pressed }) => [styles.actionBtn, { backgroundColor: "#DBEAFE", opacity: pressed ? 0.7 : 1 }]}
             onPress={() => handlePingWebhook(wh.id)}
           >
-            <Text style={{ fontSize: 12, color: "#1E40AF", fontWeight: "600" }}>🏓 Ping</Text>
+            <Text style={{ fontSize: 12, color: "#1E40AF", fontWeight: "600" }}>Ping</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.actionBtn, { backgroundColor: "#FEE2E2", opacity: pressed ? 0.7 : 1 }]}
             onPress={() => handleDeleteWebhook(wh.id)}
           >
-            <Text style={{ fontSize: 12, color: "#DC2626", fontWeight: "600" }}>🗑 حذف</Text>
+            <Text style={{ fontSize: 12, color: "#DC2626", fontWeight: "600" }}>حذف</Text>
           </Pressable>
         </View>
       </View>
@@ -375,7 +376,7 @@ export default function WebhooksScreen() {
           {activeTab === "events" && (
             eventLog.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={{ fontSize: 48 }}>📡</Text>
+                <MaterialIcons name="sensors" size={48} color={colors.muted} style={{ marginBottom: 8 }} />
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>لا توجد أحداث بعد</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                   ستظهر هنا جميع الأحداث المستلمة من Duffel عند حدوث تغييرات على الحجوزات
@@ -397,7 +398,7 @@ export default function WebhooksScreen() {
           {activeTab === "notifications" && (
             notifications.length === 0 ? (
               <View style={styles.emptyState}>
-                <Text style={{ fontSize: 48 }}>🔔</Text>
+                <MaterialIcons name="notifications-none" size={48} color={colors.muted} style={{ marginBottom: 8 }} />
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>لا توجد إشعارات</Text>
                 <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                   ستظهر هنا إشعارات Duffel عند إنشاء حجوزات أو إلغائها أو تغييرها
@@ -441,7 +442,7 @@ export default function WebhooksScreen() {
                 <ActivityIndicator size="small" color="#C9A84C" style={{ marginTop: 20 }} />
               ) : webhooksList.length === 0 ? (
                 <View style={[styles.emptyState, { paddingTop: 40 }]}>
-                  <Text style={{ fontSize: 48 }}>🔗</Text>
+                  <MaterialIcons name="link" size={48} color={colors.muted} style={{ marginBottom: 8 }} />
                   <Text style={[styles.emptyTitle, { color: colors.foreground }]}>لا توجد Webhooks مسجلة</Text>
                   <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
                     سجّل Webhook لاستقبال إشعارات تلقائية من Duffel
