@@ -326,8 +326,12 @@ async function startServer() {
   const webDistPath = path.join(__dirname, "../../web-dist");
   const distPath = path.join(__dirname, "../../dist");
 
-  // Landing Page route
+  // Landing Page - serve at /landing and redirect root to landing
   app.get("/landing", (_req, res) => {
+    res.sendFile(path.join(distPath, "landing.html"));
+  });
+  // Root redirect to landing page
+  app.get("/", (_req, res) => {
     res.sendFile(path.join(distPath, "landing.html"));
   });
   // Serve icon and favicon for landing page

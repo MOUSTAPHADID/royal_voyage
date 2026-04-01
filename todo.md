@@ -1273,3 +1273,8 @@
 - [x] إضافة Footer مع روابط التواصل
 - [x] SEO meta tags وOpen Graph
 - [x] دعم اللغتين العربية والإنجليزية
+
+## تحسينات Landing Page
+- [x] ربط royalvoyage.online مباشرة بالـ Landing Page
+- [x] إضافة صور حقيقية للوجهات السياحية
+- [x] إضافة نموذج تواصل يرسل لـ suporte@royalvoyage.online
