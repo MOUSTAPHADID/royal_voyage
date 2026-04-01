@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
@@ -612,6 +613,20 @@ export default function ConfirmationScreen() {
             <Text style={[styles.secondaryBtnText, { color: colors.foreground }]}>Back to Home</Text>
           </Pressable>
         </View>
+
+        {/* Powered by Duffel */}
+        <Pressable
+          style={{ alignItems: "center", paddingVertical: 20, gap: 6 }}
+          onPress={() => Linking.openURL("https://duffel.com")}
+        >
+          <Text style={{ fontSize: 10, color: colors.muted, letterSpacing: 0.5, textTransform: "uppercase" }}>Powered by</Text>
+          <Image
+            source={{ uri: "https://assets.duffel.com/img/duffel-logo.svg" }}
+            style={{ width: 72, height: 22 }}
+            resizeMode="contain"
+          />
+        </Pressable>
+
       </Animated.View>
     </ScrollView>
   );

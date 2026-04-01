@@ -74,6 +74,7 @@ const AIRLINE_LOGOS = [
   { name: "British Airways", url: "https://cdn.simpleicons.org/britishairways/075AAA" },
   { name: "Royal Air Maroc", url: "https://cdn.simpleicons.org/royalairmaroc/CC0000" },
   { name: "Air Arabia", url: "https://cdn.simpleicons.org/airarabia/E31E24" },
+  { name: "Royal Air Mauritanie", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Royal_Air_Mauritanie_Logo.svg/320px-Royal_Air_Mauritanie_Logo.svg.png" },
 ];
 
 // ── Duffel-powered Airport Autocomplete ─────────────────────────────────────
@@ -518,7 +519,10 @@ export default function LandingPage() {
           <View style={[styles.logosSection, { borderTopWidth: 1, borderTopColor: "#d0d8e4", paddingTop: 20 }]}>
             <Text style={styles.logosSectionTitle}>{isAr ? "شريكنا التقني" : "Technology Partner"}</Text>
             <View style={{ alignItems: "center" }}>
-              <View style={[styles.duffelCard]}>
+              <Pressable
+                style={({ pressed }) => [styles.duffelCard, { opacity: pressed ? 0.8 : 1 }]}
+                onPress={() => Linking.openURL("https://duffel.com")}
+              >
                 <Image
                   source={{ uri: "https://assets.duffel.com/img/duffel-logo.svg" }}
                   style={{ width: 100, height: 32 }}
@@ -531,7 +535,7 @@ export default function LandingPage() {
                     {isAr ? "شريك تقني معتمد" : "Certified API Partner"}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             </View>
           </View>
 
