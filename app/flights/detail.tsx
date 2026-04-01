@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -74,6 +74,7 @@ export default function FlightDetailScreen() {
       }
     : mockFlight;
   const pricing = _usePricingSettings();
+  const [selectedClass, setSelectedClass] = useState<string>(params.class || "ECONOMY");
   const isRoundTrip = params.tripType === "roundtrip";
   const adultCount = parseInt(params.passengers || "1", 10);
   const childCount = parseInt(params.children || "0", 10);
@@ -280,7 +281,7 @@ export default function FlightDetailScreen() {
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>مقارنة أسعار الدرجات</Text>
             <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12 }}>نفس الرحلة بدرجات مختلفة (تقديري)</Text>
             {(["ECONOMY", "BUSINESS", "FIRST"] as const).map((cls) => {
-              const isCurrentClass = flight.class?.toUpperCase() === cls;
+              const isCurrentClass = selectedClass.toUpperCase() === cls;
               const classLabels = { ECONOMY: "اقتصادي", BUSINESS: "أعمال", FIRST: "أولى" };
               const classIcons = { ECONOMY: "✈️", BUSINESS: "💼", FIRST: "👑" };
               // Estimate price for other classes based on multiplier from economy
@@ -307,7 +308,7 @@ export default function FlightDetailScreen() {
                     backgroundColor: isCurrentClass ? colors.primary + "08" : colors.background,
                     opacity: pressed ? 0.8 : 1,
                   }]}
-                  onPress={() => {}}
+                  onPress={() => setSelectedClass(cls)}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
                     <Text style={{ fontSize: 20 }}>{classIcons[cls]}</Text>

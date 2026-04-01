@@ -684,31 +684,44 @@ export default function LandingPage() {
                   <Text style={{ color: primary, fontWeight: "600", fontSize: 13, marginBottom: 6, textAlign: isAr ? "right" : "left" }}>
                     {isAr ? "الاسم الكامل" : "Full Name"}
                   </Text>
-                  <View style={[styles.inputBox, { borderColor: "#dde3f0" }]}>
-                    <Text style={{ color: formName ? "#333" : "#aaa", fontSize: 14 }} onPress={() => {}}>
-                      {formName || (isAr ? "اكتب اسمك..." : "Your name...")}
-                    </Text>
-                  </View>
+                  <TextInput
+                    style={[styles.inputBox, { borderColor: "#dde3f0", color: "#333", fontSize: 14 }]}
+                    value={formName}
+                    onChangeText={setFormName}
+                    placeholder={isAr ? "اكتب اسمك..." : "Your name..."}
+                    placeholderTextColor="#aaa"
+                    textAlign={isAr ? "right" : "left"}
+                  />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: primary, fontWeight: "600", fontSize: 13, marginBottom: 6, textAlign: isAr ? "right" : "left" }}>
                     {isAr ? "البريد الإلكتروني" : "Email"}
                   </Text>
-                  <View style={[styles.inputBox, { borderColor: "#dde3f0" }]}>
-                    <Text style={{ color: formEmail ? "#333" : "#aaa", fontSize: 14 }}>
-                      {formEmail || "email@example.com"}
-                    </Text>
-                  </View>
+                  <TextInput
+                    style={[styles.inputBox, { borderColor: "#dde3f0", color: "#333", fontSize: 14 }]}
+                    value={formEmail}
+                    onChangeText={setFormEmail}
+                    placeholder="email@example.com"
+                    placeholderTextColor="#aaa"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    textAlign={isAr ? "right" : "left"}
+                  />
                 </View>
               </View>
               <Text style={{ color: primary, fontWeight: "600", fontSize: 13, marginBottom: 6, textAlign: isAr ? "right" : "left" }}>
                 {isAr ? "رسالتك" : "Your Message"}
               </Text>
-              <View style={[styles.inputBox, { borderColor: "#dde3f0", height: 100, marginBottom: 16 }]}>
-                <Text style={{ color: formMsg ? "#333" : "#aaa", fontSize: 14 }}>
-                  {formMsg || (isAr ? "اكتب رسالتك هنا..." : "Write your message here...")}
-                </Text>
-              </View>
+              <TextInput
+                style={[styles.inputBox, { borderColor: "#dde3f0", height: 100, marginBottom: 16, color: "#333", fontSize: 14, textAlignVertical: "top" }]}
+                value={formMsg}
+                onChangeText={setFormMsg}
+                placeholder={isAr ? "اكتب رسالتك هنا..." : "Write your message here..."}
+                placeholderTextColor="#aaa"
+                multiline
+                numberOfLines={4}
+                textAlign={isAr ? "right" : "left"}
+              />
               <Pressable
                 onPress={() => Linking.openURL(`mailto:suporte@royalvoyage.online?subject=${encodeURIComponent(isAr ? "استفسار من الموقع" : "Website Inquiry")}`)}
                 style={[styles.sendBtn, { backgroundColor: primary }]}

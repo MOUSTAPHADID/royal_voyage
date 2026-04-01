@@ -138,7 +138,7 @@ export default function ProfileScreen() {
       title: t.profile.support,
       items: [
         { icon: "phone.fill", label: language === "ar" ? "اتصل بنا" : language === "fr" ? "Appelez-nous" : "Call Us", value: "+222 33 70 00 00", onPress: () => Linking.openURL("tel:+22233700000") },
-        { icon: "envelope.fill", label: t.profile.contactUs, value: "", onPress: () => Linking.openURL("mailto:royal-voyage@gmail.com") },
+        { icon: "envelope.fill", label: t.profile.contactUs, value: "", onPress: () => Linking.openURL("mailto:suporte@royalvoyage.online") },
         { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
         { icon: "info.circle.fill", label: language === "ar" ? "عن الوكالة" : language === "fr" ? "À propos" : "About Us", value: "", onPress: () => router.push("/about" as any) },
         { icon: "shield.fill", label: language === "ar" ? "سياسة الخصوصية" : language === "fr" ? "Politique de Confidentialité" : "Privacy Policy", value: "", onPress: () => router.push("/privacy" as any) },

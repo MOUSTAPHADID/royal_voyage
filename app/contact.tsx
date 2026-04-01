@@ -107,7 +107,7 @@ export default function ContactScreen() {
   const channels = [
     { icon: "phone.fill" as const, label: lang === "ar" ? "هاتف" : lang === "en" ? "Phone" : "Téléphone", value: "+222 33 70 00 00", action: () => Linking.openURL("tel:+22233700000") },
     { icon: "paperplane.fill" as const, label: lang === "ar" ? "واتساب" : "WhatsApp", value: "+222 33 70 00 00", action: () => Linking.openURL("https://wa.me/22233700000") },
-    { icon: "paperplane.fill" as const, label: lang === "ar" ? "بريد إلكتروني" : lang === "en" ? "Email" : "Email", value: "royal-voyage@gmail.com", action: () => Linking.openURL("mailto:royal-voyage@gmail.com") },
+    { icon: "paperplane.fill" as const, label: lang === "ar" ? "بريد إلكتروني" : lang === "en" ? "Email" : "Email", value: "suporte@royalvoyage.online", action: () => Linking.openURL("mailto:suporte@royalvoyage.online") },
     { icon: "paperplane.fill" as const, label: lang === "ar" ? "بريد رسمي" : lang === "en" ? "Official Email" : "Email officiel", value: "suporte@royalvoyage.online", action: () => Linking.openURL("mailto:suporte@royalvoyage.online") },
   ];
 

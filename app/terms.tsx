@@ -47,7 +47,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "9. التواصل",
-        body: "Royal Service — طفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00\nالبريد: royal-voyage@gmail.com",
+        body: "Royal Service — طفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00\nالبريد: suporte@royalvoyage.online",
       },
     ],
   },
@@ -90,7 +90,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "9. Contact",
-        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00\nEmail: royal-voyage@gmail.com",
+        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00\nEmail: suporte@royalvoyage.online",
       },
     ],
   },
@@ -133,7 +133,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "9. Contact",
-        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00\nEmail : royal-voyage@gmail.com",
+        body: "Royal Service — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00\nEmail : suporte@royalvoyage.online",
       },
     ],
   },

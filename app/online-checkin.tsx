@@ -110,7 +110,7 @@ function generateBoardingPassText(booking: any, seatNumber: string, boardingGrou
     "═══════════════════════════════",
     "    Royal Service Travel Agency",
     "    +222 33 70 00 00",
-    "    royal-voyage@gmail.com",
+    "    suporte@royalvoyage.online",
     "    Tavragh Zeina, Nouakchott",
     "═══════════════════════════════",
   ].filter(Boolean);

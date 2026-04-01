@@ -728,7 +728,7 @@ export async function createFlightOrder(
     metadata: {
       agency: "Royal Service",
       agency_phone: "+22233700000",
-      agency_email: "royal-voyage@gmail.com",
+      agency_email: "suporte@royalvoyage.online",
     },
   });
 
@@ -825,7 +825,7 @@ export async function createHoldOrder(
     metadata: {
       agency: "Royal Service",
       agency_phone: "+22233700000",
-      agency_email: "royal-voyage@gmail.com",
+      agency_email: "suporte@royalvoyage.online",
     },
   });
 

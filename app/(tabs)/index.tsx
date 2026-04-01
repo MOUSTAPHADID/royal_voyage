@@ -424,7 +424,7 @@ export default function HomeScreen() {
             </View>
             <Pressable
               style={[styles.notifButton, { backgroundColor: "rgba(255,255,255,0.15)" }]}
-              onPress={() => {}}
+              onPress={() => router.push("/pnr-status" as any)}
             >
               <IconSymbol name="bell.fill" size={20} color="#FFFFFF" />
             </Pressable>

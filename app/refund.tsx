@@ -39,7 +39,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "7. كيفية طلب الاسترداد",
-        body: "لطلب استرداد، تواصل معنا عبر:\n• الهاتف: +222 33 70 00 00\n• البريد الإلكتروني: royal-voyage@gmail.com\n• واتساب: +222 33 70 00 00\nيرجى تقديم رقم الحجز وسبب الإلغاء.",
+        body: "لطلب استرداد، تواصل معنا عبر:\n• الهاتف: +222 33 70 00 00\n• البريد الإلكتروني: suporte@royalvoyage.online\n• واتساب: +222 33 70 00 00\nيرجى تقديم رقم الحجز وسبب الإلغاء.",
       },
       {
         heading: "8. الاستثناءات",
@@ -78,7 +78,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "7. How to request a refund",
-        body: "To request a refund, contact us via:\n• Phone: +222 33 70 00 00\n• Email: royal-voyage@gmail.com\n• WhatsApp: +222 33 70 00 00\nPlease provide your booking number and reason for cancellation.",
+        body: "To request a refund, contact us via:\n• Phone: +222 33 70 00 00\n• Email: suporte@royalvoyage.online\n• WhatsApp: +222 33 70 00 00\nPlease provide your booking number and reason for cancellation.",
       },
       {
         heading: "8. Exceptions",
@@ -117,7 +117,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "7. Comment demander un remboursement",
-        body: "Pour demander un remboursement, contactez-nous via:\n• Téléphone : +222 33 70 00 00\n• Email : royal-voyage@gmail.com\n• WhatsApp : +222 33 70 00 00",
+        body: "Pour demander un remboursement, contactez-nous via:\n• Téléphone : +222 33 70 00 00\n• Email : suporte@royalvoyage.online\n• WhatsApp : +222 33 70 00 00",
       },
       {
         heading: "8. Exceptions",

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Booking, MOCK_BOOKINGS } from "./mock-data";
+import { Booking } from "./mock-data";
 
 export type User = {
   id: string;
