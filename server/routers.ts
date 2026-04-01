@@ -1294,6 +1294,8 @@ export const appRouter = router({
             metadata: {
               ...(input.bookingRef ? { bookingRef: input.bookingRef } : {}),
               ...(input.passengerName ? { passengerName: input.passengerName } : {}),
+              ...(input.passengerEmail ? { passengerEmail: input.passengerEmail } : {}),
+              bookingType: "flight",
             },
             receiptEmail: input.passengerEmail,
             rates: {

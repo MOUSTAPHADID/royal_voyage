@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -52,6 +52,22 @@ export default function ConfirmPaymentScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState<"all" | "pending" | "confirmed" | "rejected">("all");
   const [previewReceipt, setPreviewReceipt] = useState<string | null>(null);
+  const [stripeNotifications, setStripeNotifications] = useState<any[]>([]);
+  const [showStripeLog, setShowStripeLog] = useState(false);
+
+  // Fetch Stripe payment log
+  useEffect(() => {
+    const fetchStripeLog = async () => {
+      try {
+        const res = await fetch("/api/stripe-notifications");
+        const data = await res.json();
+        if (data.notifications) setStripeNotifications(data.notifications);
+      } catch {}
+    };
+    fetchStripeLog();
+    const interval = setInterval(fetchStripeLog, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Filter bookings based on payment status
   const pendingBookings = bookings.filter((b) => {
@@ -307,7 +323,43 @@ export default function ConfirmPaymentScreen() {
           <Text style={styles.headerTitle}>تأكيد الدفع</Text>
           <Text style={styles.headerSub}>{pendingBookings.length} حجز</Text>
         </View>
+        <Pressable
+          style={({ pressed }) => [styles.stripeLogBtn, pressed && { opacity: 0.7 }]}
+          onPress={() => setShowStripeLog(!showStripeLog)}
+        >
+          <Text style={{ fontSize: 18 }}>💳</Text>
+          {stripeNotifications.length > 0 && (
+            <View style={styles.stripeBadge}>
+              <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>{stripeNotifications.length}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
+      {/* Stripe Payment Log */}
+      {showStripeLog && (
+        <View style={[styles.stripeLogContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <Text style={[styles.stripeLogTitle, { color: colors.foreground }]}>💳 سجل مدفوعات Stripe ({stripeNotifications.length})</Text>
+          {stripeNotifications.length === 0 ? (
+            <Text style={{ color: colors.muted, textAlign: "center", padding: 12 }}>لا توجد مدفوعات Stripe بعد</Text>
+          ) : (
+            stripeNotifications.slice(0, 10).map((n, i) => (
+              <View key={i} style={[styles.stripeLogItem, { borderBottomColor: colors.border }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.foreground, fontWeight: "600", fontSize: 13 }}>
+                    {n.bookingRef || n.paymentIntentId?.substring(0, 16)}
+                  </Text>
+                  <Text style={{ color: colors.muted, fontSize: 11 }}>
+                    {new Date(n.timestamp).toLocaleString("ar-SA")} • {(n.amount / 100).toFixed(2)} {n.currency?.toUpperCase()}
+                  </Text>
+                </View>
+                <View style={[styles.stripeSuccessBadge]}>
+                  <Text style={{ color: "#fff", fontSize: 10 }}>✅ ناجح</Text>
+                </View>
+              </View>
+            ))
+          )}
+        </View>
+      )}
 
       {/* Search + Filter */}
       <View style={[styles.searchRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
@@ -728,5 +780,48 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
+  },
+  stripeLogBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  stripeBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    backgroundColor: "#EF4444",
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 3,
+  },
+  stripeLogContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  stripeLogTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  stripeLogItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 0.5,
+    gap: 8,
+  },
+  stripeSuccessBadge: {
+    backgroundColor: "#22C55E",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
 });

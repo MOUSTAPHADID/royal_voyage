@@ -131,6 +131,50 @@ async function startServer() {
         (global as any)._stripeNotifications.length = 100;
       }
       console.log(`[Stripe Webhook] Payment succeeded for booking: ${bookingRef}, amount: ${pi.amount} ${pi.currency}`);
+
+      // ── Send Push Notification to Admin ──────────────────────────────
+      const adminToken = (global as any)._adminPushToken;
+      if (adminToken) {
+        try {
+          await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: adminToken,
+              sound: "default",
+              title: "💳 دفع ناجح عبر Stripe",
+              body: `حجز ${bookingRef} - ${(pi.amount / 100).toFixed(2)} ${pi.currency.toUpperCase()}`,
+              data: { bookingRef, paymentIntentId: pi.id, type: "stripe_payment" },
+            }),
+          });
+          console.log(`[Stripe Webhook] Push sent to admin for booking: ${bookingRef}`);
+        } catch (pushErr: any) {
+          console.error("[Stripe Webhook] Push notification failed:", pushErr.message);
+        }
+      }
+
+      // ── Send Confirmation Email to Customer ───────────────────────────
+      const customerEmail = pi.metadata?.passengerEmail || pi.receipt_email;
+      const customerName = pi.metadata?.passengerName || "العميل";
+      const amountEur = (pi.amount / 100).toFixed(2);
+      if (customerEmail) {
+        try {
+          const { sendPaymentConfirmationEmail } = await import("../email.js");
+          await sendPaymentConfirmationEmail({
+            passengerEmail: customerEmail,
+            passengerName: customerName,
+            bookingRef: bookingRef || pi.id,
+            bookingType: (pi.metadata?.bookingType as "flight" | "hotel") || "flight",
+            totalAmount: `${amountEur} ${pi.currency.toUpperCase()}`,
+            paymentMethod: "Visa/Mastercard (Stripe)",
+            pnr: pi.metadata?.pnr,
+            confirmedAt: new Date().toLocaleString("ar-SA"),
+          });
+          console.log(`[Stripe Webhook] Confirmation email sent to: ${customerEmail}`);
+        } catch (emailErr: any) {
+          console.error("[Stripe Webhook] Email failed:", emailErr.message);
+        }
+      }
     }
 
     res.json({ received: true });
@@ -139,6 +183,18 @@ async function startServer() {
   // Admin endpoint to get Stripe notifications
   app.get("/api/stripe-notifications", (_req, res) => {
     res.json({ notifications: (global as any)._stripeNotifications || [] });
+  });
+
+  // Admin endpoint to register push token for Stripe payment alerts
+  app.post("/api/admin/register-push-token", express.json(), (req, res) => {
+    const { token } = req.body || {};
+    if (!token) {
+      res.status(400).json({ error: "token is required" });
+      return;
+    }
+    (global as any)._adminPushToken = token;
+    console.log(`[Admin] Push token registered: ${token.substring(0, 20)}...`);
+    res.json({ success: true });
   });
 
   // PayPal payment notification endpoint with validation
