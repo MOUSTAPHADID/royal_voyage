@@ -1,4 +1,4 @@
-import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image } from "react-native";
+import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 import { useState, useEffect } from "react";
@@ -62,6 +62,84 @@ export default function LandingPage() {
 
   const isAr = lang === "ar";
   const dir = isAr ? "rtl" : "ltr";
+
+  // ── Search Form State ──
+  const [searchTab, setSearchTab] = useState<"flights" | "hotels">("flights");
+  const [tripType, setTripType] = useState<"oneway" | "roundtrip">("oneway");
+  const [flightFrom, setFlightFrom] = useState("");
+  const [flightFromCode, setFlightFromCode] = useState("");
+  const [flightTo, setFlightTo] = useState("");
+  const [flightToCode, setFlightToCode] = useState("");
+  const [departDate, setDepartDate] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [adults, setAdults] = useState(1);
+  const [children2, setChildren2] = useState(0);
+  const [cabinClass, setCabinClass] = useState<"ECONOMY" | "BUSINESS" | "FIRST">("ECONOMY");
+  const [hotelDest, setHotelDest] = useState("");
+  const [hotelDestCode, setHotelDestCode] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [hotelGuests, setHotelGuests] = useState(2);
+  const [searchError, setSearchError] = useState("");
+
+  // Set default dates on mount
+  useEffect(() => {
+    const today = new Date();
+    const dep = new Date(today); dep.setDate(dep.getDate() + 30);
+    const ret = new Date(today); ret.setDate(ret.getDate() + 37);
+    const fmt = (d: Date) => d.toISOString().slice(0, 10);
+    setDepartDate(fmt(dep));
+    setReturnDate(fmt(ret));
+    setCheckIn(fmt(dep));
+    setCheckOut(fmt(ret));
+  }, []);
+
+  const handleWebFlightSearch = () => {
+    if (!flightFrom || !flightTo) {
+      setSearchError(isAr ? "يرجى اختيار مطار المغادرة والوجهة" : "Please select origin and destination airports");
+      return;
+    }
+    setSearchError("");
+    router.push({
+      pathname: "/flights/results" as any,
+      params: {
+        origin: flightFrom,
+        originCode: flightFromCode || flightFrom,
+        destination: flightTo,
+        destinationCode: flightToCode || flightTo,
+        date: departDate,
+        returnDate: tripType === "roundtrip" ? returnDate : "",
+        tripType,
+        passengers: adults.toString(),
+        children: children2.toString(),
+        infants: "0",
+        childAges: "[]",
+        childDobs: "[]",
+        cabinClass,
+        useMock: "false",
+      },
+    });
+  };
+
+  const handleWebHotelSearch = () => {
+    if (!hotelDest) {
+      setSearchError(isAr ? "يرجى اختيار مدينة الوجهة" : "Please select a destination city");
+      return;
+    }
+    setSearchError("");
+    router.push({
+      pathname: "/hotels/results" as any,
+      params: {
+        destination: hotelDest,
+        destinationCode: hotelDestCode || hotelDest,
+        checkIn,
+        checkOut,
+        guests: hotelGuests.toString(),
+        children: "0",
+        useMock: "false",
+      },
+    });
+  };
 
   // Google Analytics - inject script on web
   useEffect(() => {
@@ -156,6 +234,215 @@ export default function LandingPage() {
             </View>
           ))}
         </View>
+      </View>
+
+      {/* ── SEARCH FORM ── */}
+      <View style={[styles.section, { backgroundColor: "#fff", paddingTop: 28, paddingBottom: 28 }]}>
+        <Text style={[styles.sectionBadge, { color: gold }]}>{isAr ? "🔍 ابحث واحجز" : "🔍 Search & Book"}</Text>
+        <Text style={[styles.sectionTitle, { color: primary }]}>
+          {isAr ? "احجز رحلتك الآن" : "Book Your Trip Now"}
+        </Text>
+
+        {/* Tab: Flights / Hotels */}
+        <View style={{ flexDirection: isAr ? "row-reverse" : "row", backgroundColor: "#f0f4ff", borderRadius: 12, padding: 4, marginBottom: 20, alignSelf: "center", width: "100%", maxWidth: 400 }}>
+          {(["flights", "hotels"] as const).map((tab) => (
+            <Pressable
+              key={tab}
+              onPress={() => { setSearchTab(tab); setSearchError(""); }}
+              style={[{
+                flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center",
+                backgroundColor: searchTab === tab ? primary : "transparent",
+              }]}
+            >
+              <Text style={{ color: searchTab === tab ? "#fff" : "#666", fontWeight: "700", fontSize: 14 }}>
+                {tab === "flights" ? (isAr ? "✈️ رحلات" : "✈️ Flights") : (isAr ? "🏨 فنادق" : "🏨 Hotels")}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
+        {searchTab === "flights" ? (
+          <View style={{ gap: 12, width: "100%", maxWidth: 500, alignSelf: "center" }}>
+            {/* Trip type */}
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8 }}>
+              {(["oneway", "roundtrip"] as const).map((t) => (
+                <Pressable key={t} onPress={() => setTripType(t)}
+                  style={{ flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center",
+                    backgroundColor: tripType === t ? primary : "#f0f4ff", borderWidth: 1,
+                    borderColor: tripType === t ? primary : "#dde3f0" }}>
+                  <Text style={{ color: tripType === t ? "#fff" : "#555", fontWeight: "600", fontSize: 13 }}>
+                    {t === "oneway" ? (isAr ? "→ ذهاب فقط" : "→ One Way") : (isAr ? "⇄ ذهاب وعودة" : "⇄ Round Trip")}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            {/* From / To */}
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8, alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "من" : "FROM"}</Text>
+                <TextInput
+                  value={flightFrom}
+                  onChangeText={(v) => { setFlightFrom(v); setFlightFromCode(""); }}
+                  placeholder={isAr ? "مدينة أو مطار" : "City or airport"}
+                  placeholderTextColor="#aaa"
+                  style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                    fontSize: 14, color: primary, backgroundColor: "#f8f9ff", textAlign: isAr ? "right" : "left" }}
+                />
+              </View>
+              <Pressable onPress={() => { const t = flightFrom; setFlightFrom(flightTo); setFlightTo(t); }}
+                style={{ marginTop: 18, width: 36, height: 36, borderRadius: 18, backgroundColor: primary,
+                  alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: gold, fontSize: 16 }}>⇄</Text>
+              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "إلى" : "TO"}</Text>
+                <TextInput
+                  value={flightTo}
+                  onChangeText={(v) => { setFlightTo(v); setFlightToCode(""); }}
+                  placeholder={isAr ? "وجهة السفر" : "Destination"}
+                  placeholderTextColor="#aaa"
+                  style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                    fontSize: 14, color: primary, backgroundColor: "#f8f9ff", textAlign: isAr ? "right" : "left" }}
+                />
+              </View>
+            </View>
+            {/* Dates */}
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "تاريخ السفر" : "DEPARTURE"}</Text>
+                <TextInput value={departDate} onChangeText={setDepartDate} placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#aaa"
+                  style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                    fontSize: 14, color: primary, backgroundColor: "#f8f9ff" }} />
+              </View>
+              {tripType === "roundtrip" && (
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "تاريخ العودة" : "RETURN"}</Text>
+                  <TextInput value={returnDate} onChangeText={setReturnDate} placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#aaa"
+                    style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                      fontSize: 14, color: primary, backgroundColor: "#f8f9ff" }} />
+                </View>
+              )}
+            </View>
+            {/* Passengers + Cabin */}
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8, alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "بالغين" : "ADULTS"}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#dde3f0",
+                  borderRadius: 10, backgroundColor: "#f8f9ff", paddingHorizontal: 8, paddingVertical: 8, gap: 8 }}>
+                  <Pressable onPress={() => setAdults(Math.max(1, adults - 1))}
+                    style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: primary, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>-</Text>
+                  </Pressable>
+                  <Text style={{ flex: 1, textAlign: "center", color: primary, fontWeight: "700", fontSize: 16 }}>{adults}</Text>
+                  <Pressable onPress={() => setAdults(adults + 1)}
+                    style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: primary, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "أطفال" : "CHILDREN"}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#dde3f0",
+                  borderRadius: 10, backgroundColor: "#f8f9ff", paddingHorizontal: 8, paddingVertical: 8, gap: 8 }}>
+                  <Pressable onPress={() => setChildren2(Math.max(0, children2 - 1))}
+                    style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: primary, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>-</Text>
+                  </Pressable>
+                  <Text style={{ flex: 1, textAlign: "center", color: primary, fontWeight: "700", fontSize: 16 }}>{children2}</Text>
+                  <Pressable onPress={() => setChildren2(children2 + 1)}
+                    style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: primary, alignItems: "center", justifyContent: "center" }}>
+                    <Text style={{ color: "#fff", fontWeight: "700" }}>+</Text>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+            {/* Cabin class */}
+            <View>
+              <Text style={{ color: "#888", fontSize: 11, marginBottom: 6, textAlign: isAr ? "right" : "left" }}>{isAr ? "درجة السفر" : "CABIN CLASS"}</Text>
+              <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 6, flexWrap: "wrap" }}>
+                {(["ECONOMY", "BUSINESS", "FIRST"] as const).map((c) => (
+                  <Pressable key={c} onPress={() => setCabinClass(c)}
+                    style={{ paddingHorizontal: 14, paddingVertical: 7, borderRadius: 8,
+                      backgroundColor: cabinClass === c ? primary : "#f0f4ff",
+                      borderWidth: 1, borderColor: cabinClass === c ? primary : "#dde3f0" }}>
+                    <Text style={{ color: cabinClass === c ? "#fff" : "#555", fontWeight: "600", fontSize: 12 }}>
+                      {c === "ECONOMY" ? (isAr ? "اقتصاد" : "Economy") : c === "BUSINESS" ? (isAr ? "أعمال" : "Business") : (isAr ? "أولى" : "First")}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View style={{ gap: 12, width: "100%", maxWidth: 500, alignSelf: "center" }}>
+            {/* Hotel destination */}
+            <View>
+              <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "الوجهة" : "DESTINATION"}</Text>
+              <TextInput
+                value={hotelDest}
+                onChangeText={(v) => { setHotelDest(v); setHotelDestCode(""); }}
+                placeholder={isAr ? "مدينة أو فندق" : "City or hotel name"}
+                placeholderTextColor="#aaa"
+                style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                  fontSize: 14, color: primary, backgroundColor: "#f8f9ff", textAlign: isAr ? "right" : "left" }}
+              />
+            </View>
+            {/* Check-in / Check-out */}
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "تسجيل الدخول" : "CHECK-IN"}</Text>
+                <TextInput value={checkIn} onChangeText={setCheckIn} placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#aaa"
+                  style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                    fontSize: 14, color: primary, backgroundColor: "#f8f9ff" }} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "تسجيل الخروج" : "CHECK-OUT"}</Text>
+                <TextInput value={checkOut} onChangeText={setCheckOut} placeholder="YYYY-MM-DD"
+                  placeholderTextColor="#aaa"
+                  style={{ borderWidth: 1, borderColor: "#dde3f0", borderRadius: 10, padding: 12,
+                    fontSize: 14, color: primary, backgroundColor: "#f8f9ff" }} />
+              </View>
+            </View>
+            {/* Guests */}
+            <View>
+              <Text style={{ color: "#888", fontSize: 11, marginBottom: 4, textAlign: isAr ? "right" : "left" }}>{isAr ? "عدد الضيوف" : "GUESTS"}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#dde3f0",
+                borderRadius: 10, backgroundColor: "#f8f9ff", paddingHorizontal: 8, paddingVertical: 8, gap: 8, maxWidth: 160 }}>
+                <Pressable onPress={() => setHotelGuests(Math.max(1, hotelGuests - 1))}
+                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: primary, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>-</Text>
+                </Pressable>
+                <Text style={{ flex: 1, textAlign: "center", color: primary, fontWeight: "700", fontSize: 16 }}>{hotelGuests}</Text>
+                <Pressable onPress={() => setHotelGuests(hotelGuests + 1)}
+                  style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: primary, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ color: "#fff", fontWeight: "700" }}>+</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Error */}
+        {searchError ? (
+          <Text style={{ color: "#EF4444", textAlign: "center", marginTop: 8, fontSize: 13 }}>{searchError}</Text>
+        ) : null}
+
+        {/* Search Button */}
+        <Pressable
+          onPress={searchTab === "flights" ? handleWebFlightSearch : handleWebHotelSearch}
+          style={({ pressed }) => [{
+            backgroundColor: gold, borderRadius: 14, paddingVertical: 16, alignItems: "center",
+            marginTop: 16, width: "100%", maxWidth: 500, alignSelf: "center",
+            opacity: pressed ? 0.85 : 1,
+          }]}
+        >
+          <Text style={{ color: primary, fontWeight: "800", fontSize: 17 }}>
+            {searchTab === "flights" ? (isAr ? "🔍 بحث عن رحلات" : "🔍 Search Flights") : (isAr ? "🔍 بحث عن فنادق" : "🔍 Search Hotels")}
+          </Text>
+        </Pressable>
       </View>
 
       {/* ── FEATURES ── */}
