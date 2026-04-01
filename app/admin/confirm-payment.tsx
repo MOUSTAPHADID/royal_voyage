@@ -54,6 +54,7 @@ export default function ConfirmPaymentScreen() {
   const [previewReceipt, setPreviewReceipt] = useState<string | null>(null);
   const [stripeNotifications, setStripeNotifications] = useState<any[]>([]);
   const [showStripeLog, setShowStripeLog] = useState(false);
+  const [refunding, setRefunding] = useState<string | null>(null);
 
   // Fetch Stripe payment log
   useEffect(() => {
@@ -352,9 +353,68 @@ export default function ConfirmPaymentScreen() {
                     {new Date(n.timestamp).toLocaleString("ar-SA")} • {(n.amount / 100).toFixed(2)} {n.currency?.toUpperCase()}
                   </Text>
                 </View>
-                <View style={[styles.stripeSuccessBadge]}>
-                  <Text style={{ color: "#fff", fontSize: 10 }}>✅ ناجح</Text>
-                </View>
+                {n.refunded ? (
+                  <View style={[styles.stripeSuccessBadge, { backgroundColor: colors.muted }]}>
+                    <Text style={{ color: "#fff", fontSize: 10 }}>↩ مُسترد</Text>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
+                    <View style={[styles.stripeSuccessBadge]}>
+                      <Text style={{ color: "#fff", fontSize: 10 }}>✅ ناجح</Text>
+                    </View>
+                    <Pressable
+                      style={({ pressed }) => [{
+                        backgroundColor: "#EF4444",
+                        paddingHorizontal: 8,
+                        paddingVertical: 4,
+                        borderRadius: 6,
+                        opacity: pressed ? 0.7 : 1,
+                      }]}
+                      onPress={() => {
+                        Alert.alert(
+                          "استرداد المبلغ",
+                          `هل تريد استرداد ${(n.amount / 100).toFixed(2)} ${n.currency?.toUpperCase()} للحجز ${n.bookingRef || n.paymentIntentId?.substring(0, 16)}؟`,
+                          [
+                            { text: "إلغاء", style: "cancel" },
+                            {
+                              text: "استرداد",
+                              style: "destructive",
+                              onPress: async () => {
+                                setRefunding(n.paymentIntentId);
+                                try {
+                                  const res = await fetch("/api/stripe-refund", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ paymentIntentId: n.paymentIntentId }),
+                                  });
+                                  const data = await res.json();
+                                  if (data.success) {
+                                    setStripeNotifications(prev => prev.map(item =>
+                                      item.paymentIntentId === n.paymentIntentId ? { ...item, refunded: true } : item
+                                    ));
+                                    Alert.alert("✅ تم الاسترداد", `تم استرداد المبلغ بنجاح. رقم الاسترداد: ${data.refundId}`);
+                                  } else {
+                                    Alert.alert("خطأ", data.error || "فشل الاسترداد");
+                                  }
+                                } catch (e: any) {
+                                  Alert.alert("خطأ", e.message || "فشل الاسترداد");
+                                } finally {
+                                  setRefunding(null);
+                                }
+                              },
+                            },
+                          ]
+                        );
+                      }}
+                    >
+                      {refunding === n.paymentIntentId ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                      ) : (
+                        <Text style={{ color: "#fff", fontSize: 10 }}>↩ استرداد</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                )}
               </View>
             ))
           )}

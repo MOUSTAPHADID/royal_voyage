@@ -185,6 +185,40 @@ async function startServer() {
     res.json({ notifications: (global as any)._stripeNotifications || [] });
   });
 
+  // Admin endpoint to issue a Stripe refund
+  app.post("/api/stripe-refund", express.json(), async (req, res) => {
+    const { paymentIntentId, reason } = req.body || {};
+    if (!paymentIntentId) {
+      res.status(400).json({ error: "paymentIntentId is required" });
+      return;
+    }
+    try {
+      const { getStripe } = await import("../stripe.js");
+      const stripe = getStripe();
+      // Retrieve the payment intent to get the charge
+      const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const chargeId = typeof pi.latest_charge === "string" ? pi.latest_charge : pi.latest_charge?.id;
+      if (!chargeId) {
+        res.status(400).json({ error: "No charge found for this payment intent" });
+        return;
+      }
+      const refund = await stripe.refunds.create({
+        charge: chargeId,
+        reason: (reason as any) || "requested_by_customer",
+      });
+      console.log(`[Stripe Refund] Refund created: ${refund.id} for PI: ${paymentIntentId}`);
+      // Update notification status in memory
+      if ((global as any)._stripeNotifications) {
+        const notif = (global as any)._stripeNotifications.find((n: any) => n.paymentIntentId === paymentIntentId);
+        if (notif) notif.refunded = true;
+      }
+      res.json({ success: true, refundId: refund.id, status: refund.status });
+    } catch (err: any) {
+      console.error("[Stripe Refund] Error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Admin endpoint to register push token for Stripe payment alerts
   app.post("/api/admin/register-push-token", express.json(), (req, res) => {
     const { token } = req.body || {};
