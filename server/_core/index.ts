@@ -342,6 +342,24 @@ async function startServer() {
     res.sendFile(path.join(distPath, "favicon.png"));
   });
 
+  // SEO files
+  app.get("/sitemap.xml", (_req, res) => {
+    res.setHeader("Content-Type", "application/xml");
+    res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://royalvoyage.online/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://royalvoyage.online/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://royalvoyage.online/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://royalvoyage.online/refund</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://royalvoyage.online/contact</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+</urlset>`);
+  });
+
+  app.get("/robots.txt", (_req, res) => {
+    res.setHeader("Content-Type", "text/plain");
+    res.send(`User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /admin/\nSitemap: https://royalvoyage.online/sitemap.xml`);
+  });
+
   app.use(express.static(webDistPath));
 
   // SPA fallback — serve index.html for all non-API routes

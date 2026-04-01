@@ -176,6 +176,7 @@ export default function LandingPage() {
   const bg = "#f8f9ff";
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView style={{ flex: 1, backgroundColor: bg }} contentContainerStyle={{ flexGrow: 1 }}>
       {/* ── NAVBAR ── */}
       <View style={[styles.navbar, { backgroundColor: primary, flexDirection: isAr ? "row-reverse" : "row" }]}>
@@ -744,25 +745,78 @@ export default function LandingPage() {
 
       {/* ── FOOTER ── */}
       <View style={[styles.footer, { backgroundColor: "#0d1a3a" }]}>
-        <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        {/* Logo & tagline */}
+        <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <Text style={{ fontSize: 28 }}>👑</Text>
           <Text style={{ color: "#fff", fontSize: 20, fontWeight: "800" }}>Royal <Text style={{ color: gold }}>Voyage</Text></Text>
         </View>
-        <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, textAlign: "center", lineHeight: 20, marginBottom: 16 }}>
-          {isAr
-            ? "تطبيق حجز الرحلات الجوية والفنادق الأول في موريتانيا"
-            : "Mauritania's #1 flight and hotel booking app"}
+        <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 13, textAlign: "center", lineHeight: 20, marginBottom: 6 }}>
+          {isAr ? "تطبيق حجز الرحلات الجوية والفنادق الأول في موريتانيا" : "Mauritania's #1 flight and hotel booking app"}
         </Text>
-        <View style={{ flexDirection: "row", gap: 20, marginBottom: 16 }}>
-          <Pressable onPress={() => Linking.openURL("mailto:suporte@royalvoyage.online")}>
-            <Text style={{ color: gold, fontSize: 13 }}>📧 suporte@royalvoyage.online</Text>
+        <Text style={{ color: "rgba(255,255,255,0.5)", fontSize: 12, textAlign: "center", marginBottom: 20 }}>
+          {isAr ? "طفرغ زينة، نواكشوط — موريتانيا" : "Tevragh Zeina, Nouakchott — Mauritania"}
+        </Text>
+
+        {/* Contact row */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginBottom: 20 }}>
+          <Pressable style={{ flexDirection: "row", alignItems: "center", gap: 6 }} onPress={() => Linking.openURL("https://wa.me/22233700000")}>
+            <Text style={{ fontSize: 16 }}>💬</Text>
+            <Text style={{ color: gold, fontSize: 13, fontWeight: "600" }}>+222 33 70 00 00</Text>
+          </Pressable>
+          <Pressable style={{ flexDirection: "row", alignItems: "center", gap: 6 }} onPress={() => Linking.openURL("tel:+22233700000")}>
+            <Text style={{ fontSize: 16 }}>📞</Text>
+            <Text style={{ color: gold, fontSize: 13, fontWeight: "600" }}>+222 33 70 00 00</Text>
+          </Pressable>
+          <Pressable style={{ flexDirection: "row", alignItems: "center", gap: 6 }} onPress={() => Linking.openURL("mailto:suporte@royalvoyage.online")}>
+            <Text style={{ fontSize: 16 }}>📧</Text>
+            <Text style={{ color: gold, fontSize: 13, fontWeight: "600" }}>suporte@royalvoyage.online</Text>
           </Pressable>
         </View>
-        <Text style={{ color: "rgba(255,255,255,0.4)", fontSize: 12 }}>
+
+        {/* Legal links */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 20 }}>
+          {[
+            { label: isAr ? "سياسة الخصوصية" : "Privacy Policy", route: "/privacy" },
+            { label: isAr ? "الشروط والأحكام" : "Terms & Conditions", route: "/terms" },
+            { label: isAr ? "سياسة الاسترداد" : "Refund Policy", route: "/refund" },
+            { label: isAr ? "تواصل معنا" : "Contact Us", route: "/contact" },
+          ].map((link) => (
+            <Pressable key={link.route} onPress={() => router.push(link.route as any)}>
+              <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 13, textDecorationLine: "underline" }}>{link.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>
           © 2026 Royal Voyage. {isAr ? "جميع الحقوق محفوظة." : "All rights reserved."}
         </Text>
       </View>
     </ScrollView>
+
+    {/* ── زر واتساب ثابت ── */}
+    <Pressable
+      style={({ pressed }) => ({
+        position: "absolute",
+        bottom: 24,
+        right: 20,
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: "#25D366",
+        justifyContent: "center",
+        alignItems: "center",
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 8,
+        opacity: pressed ? 0.85 : 1,
+      })}
+      onPress={() => Linking.openURL("https://wa.me/22233700000")}
+    >
+      <Text style={{ fontSize: 28 }}>💬</Text>
+    </Pressable>
+    </View>
   );
 }
 

@@ -1308,3 +1308,15 @@
 - [x] إضافة شعار PayPal الرسمي في قسم الدفع
 - [x] إضافة Bankily وSedad وMasrvi وطرق الدفع المحلية
 - [x] تقسيم قسم الدفع إلى تبويبين (دولي / محلي)
+
+## تقوية المنصة - الأولويات
+- [x] إنشاء صفحة Privacy Policy (/privacy)
+- [x] إنشاء صفحة Terms & Conditions (/terms)
+- [x] إنشاء صفحة Refund Policy (/refund)
+- [x] إنشاء صفحة Contact Us (/contact)
+- [x] إضافة زر واتساب ثابت في Landing Page
+- [x] إضافة بريد رسمي وعنوان الشركة ورقم الهاتف في Footer
+- [x] إضافة sitemap.xml وrobots.txt
+- [ ] تحسين meta tags وSEO في Landing Page
+- [ ] فحص رحلة المستخدم الكاملة (بحث → نتائج → دفع → تأكيد)
+- [ ] التحقق من ظهور الحجوزات في قسم Bookings بعد الدفع

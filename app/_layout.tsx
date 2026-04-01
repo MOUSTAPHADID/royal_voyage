@@ -133,6 +133,10 @@ export default function RootLayout() {
             <Stack.Screen name="employee-dashboard" />
             <Stack.Screen name="oauth/callback" />
             <Stack.Screen name="landing" />
+            <Stack.Screen name="privacy" />
+            <Stack.Screen name="terms" />
+            <Stack.Screen name="refund" />
+            <Stack.Screen name="contact" />
           </Stack>
           <StatusBar style="auto" />
           </AppProvider>
