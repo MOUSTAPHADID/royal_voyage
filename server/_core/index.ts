@@ -92,11 +92,12 @@ async function startServer() {
   // Must use raw body for signature verification
   app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
     const sig = req.headers["stripe-signature"] as string;
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Use env var first, fall back to hardcoded value if not set
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "whsec_7g59fzyKXA7lfayC0FsLLQAR7jJIZUs2";
 
-    if (!webhookSecret) {
-      console.warn("[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured");
-      res.json({ received: true, warning: "webhook secret not configured" });
+    if (!sig) {
+      console.warn("[Stripe Webhook] Missing stripe-signature header");
+      res.status(400).json({ error: "Missing stripe-signature header" });
       return;
     }
 
