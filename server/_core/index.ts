@@ -324,6 +324,20 @@ async function startServer() {
   // Serve static web build
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const webDistPath = path.join(__dirname, "../../web-dist");
+  const distPath = path.join(__dirname, "../../dist");
+
+  // Landing Page route
+  app.get("/landing", (_req, res) => {
+    res.sendFile(path.join(distPath, "landing.html"));
+  });
+  // Serve icon and favicon for landing page
+  app.get("/icon.png", (_req, res) => {
+    res.sendFile(path.join(distPath, "icon.png"));
+  });
+  app.get("/favicon.png", (_req, res) => {
+    res.sendFile(path.join(distPath, "favicon.png"));
+  });
+
   app.use(express.static(webDistPath));
 
   // SPA fallback — serve index.html for all non-API routes
