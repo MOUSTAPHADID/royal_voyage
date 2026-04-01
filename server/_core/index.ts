@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerWebhookRoutes } from "../duffel-webhooks";
+import { constructWebhookEvent, isStripeWebhookConfigured } from "../stripe";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { buildCheckoutPage, buildSuccessPage } from "./paypal-pages";
@@ -85,6 +86,58 @@ async function startServer() {
     const scheme = String(req.query.scheme || "manus20260323015034");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(buildSuccessPage({ tx, amount, currency, name, scheme }));
+  });
+
+  // ── Stripe Webhook ──────────────────────────────────────────────────
+  // Must use raw body for signature verification
+  app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
+    const sig = req.headers["stripe-signature"] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.warn("[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured");
+      res.json({ received: true, warning: "webhook secret not configured" });
+      return;
+    }
+
+    let event;
+    try {
+      event = constructWebhookEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      console.error("[Stripe Webhook] Signature verification failed:", err.message);
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    console.log(`[Stripe Webhook] Event: ${event.type}`);
+
+    if (event.type === "payment_intent.succeeded") {
+      const pi = event.data.object as any;
+      const bookingRef = pi.metadata?.bookingRef || pi.metadata?.booking || "";
+      const notification = {
+        id: pi.id,
+        type: "stripe_payment_succeeded",
+        paymentIntentId: pi.id,
+        amount: pi.amount,
+        currency: pi.currency,
+        bookingRef,
+        metadata: pi.metadata,
+        timestamp: new Date().toISOString(),
+      };
+      if (!(global as any)._stripeNotifications) (global as any)._stripeNotifications = [];
+      (global as any)._stripeNotifications.unshift(notification);
+      if ((global as any)._stripeNotifications.length > 100) {
+        (global as any)._stripeNotifications.length = 100;
+      }
+      console.log(`[Stripe Webhook] Payment succeeded for booking: ${bookingRef}, amount: ${pi.amount} ${pi.currency}`);
+    }
+
+    res.json({ received: true });
+  });
+
+  // Admin endpoint to get Stripe notifications
+  app.get("/api/stripe-notifications", (_req, res) => {
+    res.json({ notifications: (global as any)._stripeNotifications || [] });
   });
 
   // PayPal payment notification endpoint with validation

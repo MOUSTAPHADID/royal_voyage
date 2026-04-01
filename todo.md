@@ -1242,3 +1242,8 @@
 - [x] تحسين QueryClient بـ staleTime وgcTime للتخزين المؤقت
 - [x] تحسين مكون LocationAutocomplete بـ React.memo
 - [x] تحسين Tab Bar - تقليل الارتفاع وتحسين الحشو
+
+## تحسينات Stripe
+- [ ] تحديث STRIPE_SECRET_KEY بالمفتاح الصحيح
+- [x] إضافة Stripe Webhook endpoint لتأكيد الدفع تلقائياً
+- [x] تحديث حالة الحجز عند تأكيد الدفع من Stripe

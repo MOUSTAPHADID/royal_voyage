@@ -129,3 +129,22 @@ export function isStripeConfigured(): boolean {
 export function getPublishableKey(): string {
   return process.env.STRIPE_PUBLISHABLE_KEY || "";
 }
+
+/**
+ * Construct and verify a Stripe webhook event
+ */
+export function constructWebhookEvent(
+  payload: Buffer | string,
+  signature: string,
+  secret: string
+): Stripe.Event {
+  const stripe = getStripe();
+  return stripe.webhooks.constructEvent(payload, signature, secret);
+}
+
+/**
+ * Check if Stripe webhook is configured
+ */
+export function isStripeWebhookConfigured(): boolean {
+  return !!(process.env.STRIPE_WEBHOOK_SECRET);
+}
