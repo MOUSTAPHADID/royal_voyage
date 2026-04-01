@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -185,7 +185,7 @@ export default function FlightResultsScreen() {
     return `https://images.kiwi.com/airlines/64/${airlineCode}.png`;
   };
 
-  const renderFlight = ({ item }: ListRenderItemInfo<AnyFlight>) => {
+  const renderFlight = useCallback(({ item }: ListRenderItemInfo<AnyFlight>) => {
     const flightTotal = getFlightTotalMRU(item);
     const perPerson = Math.round(flightTotal / totalPassengers);
     const isCheapest = flightTotal <= cheapestPrice && filteredFlights.length > 1;
@@ -364,7 +364,7 @@ export default function FlightResultsScreen() {
       </View>
     </Pressable>
   );
-  };
+  }, [colors, router, params, totalPassengers, cheapestPrice, filteredFlights, fmt, t]);
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -601,6 +601,10 @@ export default function FlightResultsScreen() {
             contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 32 }}
             showsVerticalScrollIndicator={false}
             style={{ backgroundColor: colors.background }}
+            maxToRenderPerBatch={6}
+            initialNumToRender={5}
+            windowSize={5}
+            removeClippedSubviews={true}
             ListEmptyComponent={
               <View style={styles.emptyState}>
                 <Text style={{ fontSize: 40 }}>✈</Text>

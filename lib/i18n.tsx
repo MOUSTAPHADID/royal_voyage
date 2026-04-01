@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { I18nManager } from "react-native";
 import { ar } from "@/locales/ar";
@@ -62,8 +62,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   const isRTL = language === "ar";
   const t = translations[language];
 
+  const contextValue = useMemo(() => ({ language, t, isRTL, setLanguage }), [language, t, isRTL, setLanguage]);
+
   return (
-    <I18nContext.Provider value={{ language, t, isRTL, setLanguage }}>
+    <I18nContext.Provider value={contextValue}>
       {children}
     </I18nContext.Provider>
   );

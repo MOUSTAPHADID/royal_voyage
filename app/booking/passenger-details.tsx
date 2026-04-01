@@ -563,12 +563,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     justifyContent: "space-between",
   },
-  backBtn: { padding: 4 },
-  headerTitle: { color: "#FFFFFF", fontSize: 18, fontWeight: "700" },
+  backBtn: { padding: 8, minWidth: 44, minHeight: 44, justifyContent: "center" },
+  headerTitle: { color: "#FFFFFF", fontSize: 17, fontWeight: "700" },
   summaryCard: {
     margin: 16,
     marginBottom: 0,

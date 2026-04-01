@@ -8,8 +8,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 8);
-  const tabBarHeight = 60 + bottomPadding;
+  const bottomPadding = Platform.OS === "web" ? 12 : Math.max(insets.bottom, 6);
+  const tabBarHeight = 56 + bottomPadding;
 
   return (
     <Tabs
@@ -27,8 +27,9 @@ export default function TabLayout() {
           borderTopWidth: 0.5,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: "600",
+          marginTop: -2,
         },
       }}
     >

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Booking, MOCK_BOOKINGS } from "./mock-data";
 
@@ -356,45 +356,55 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.ADMIN_PUSH_TOKEN, token);
   }, []);
 
+  const contextValue = useMemo(() => ({
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    login,
+    loginWithPhone,
+    loginAsGuest,
+    register,
+    sendVerificationCode,
+    verifyCode,
+    logout,
+    updateUser,
+    bookings,
+    addBooking,
+    cancelBooking,
+    updateBookingPnr,
+    updateBookingStatus,
+    updateBookingTicketNumber,
+    updateBookingTicketSent,
+    confirmBookingPayment,
+    rejectBookingPayment,
+    updateBookingReceipt,
+    updateBookingCheckin,
+    updateBookingFlightReminder,
+    updateBookingSeatChange,
+    updateBookingMeal,
+    updateBookingChecklist,
+    saveExpoPushToken,
+    expoPushToken,
+    saveAdminPushToken,
+    adminPushToken,
+    lastFlightSearch,
+    lastHotelSearch,
+    setLastFlightSearch,
+    setLastHotelSearch,
+  }), [
+    user, isLoading, bookings, expoPushToken, adminPushToken,
+    lastFlightSearch, lastHotelSearch,
+    login, loginWithPhone, loginAsGuest, register, sendVerificationCode,
+    verifyCode, logout, updateUser, addBooking, cancelBooking,
+    updateBookingPnr, updateBookingStatus, updateBookingTicketNumber,
+    updateBookingTicketSent, confirmBookingPayment, rejectBookingPayment,
+    updateBookingReceipt, updateBookingCheckin, updateBookingFlightReminder,
+    updateBookingSeatChange, updateBookingMeal, updateBookingChecklist,
+    saveExpoPushToken, saveAdminPushToken, setLastFlightSearch, setLastHotelSearch,
+  ]);
+
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        login,
-        loginWithPhone,
-        loginAsGuest,
-        register,
-        sendVerificationCode,
-        verifyCode,
-        logout,
-        updateUser,
-        bookings,
-        addBooking,
-        cancelBooking,
-        updateBookingPnr,
-        updateBookingStatus,
-        updateBookingTicketNumber,
-        updateBookingTicketSent,
-        confirmBookingPayment,
-        rejectBookingPayment,
-        updateBookingReceipt,
-        updateBookingCheckin,
-        updateBookingFlightReminder,
-        updateBookingSeatChange,
-        updateBookingMeal,
-        updateBookingChecklist,
-        saveExpoPushToken,
-        expoPushToken,
-        saveAdminPushToken,
-        adminPushToken,
-        lastFlightSearch,
-        lastHotelSearch,
-        setLastFlightSearch,
-        setLastHotelSearch,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

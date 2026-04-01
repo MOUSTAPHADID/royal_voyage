@@ -32,7 +32,7 @@ type Props = {
   onVoicePress?: () => void;
 };
 
-export function LocationAutocomplete({
+export const LocationAutocomplete = React.memo(function LocationAutocomplete({
   label,
   placeholder,
   value,
@@ -208,7 +208,7 @@ export function LocationAutocomplete({
       </Modal>
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   // ── Row wrapper ──────────────────────────────────────────────────────────────

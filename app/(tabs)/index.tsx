@@ -989,9 +989,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 24,
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 20,
   },
   headerTop: {
     flexDirection: "row",
@@ -1005,7 +1005,7 @@ const styles = StyleSheet.create({
   },
   userName: {
     color: "#FFFFFF",
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     marginTop: 2,
   },
@@ -1021,14 +1021,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   searchWidget: {
-    marginHorizontal: 16,
-    marginTop: -16,
-    borderRadius: 20,
+    marginHorizontal: 12,
+    marginTop: -14,
+    borderRadius: 18,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
+    elevation: 5,
   },
   tabRow: {
     flexDirection: "row",
@@ -1049,8 +1049,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   searchForm: {
-    padding: 16,
-    gap: 10,
+    padding: 12,
+    gap: 8,
   },
   // ── Trip Type Toggle ──
   tripTypeRow: {
@@ -1153,17 +1153,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 14,
     gap: 8,
-    marginTop: 4,
+    marginTop: 2,
   },
   searchButtonText: {
     fontSize: 16,
     fontWeight: "700",
   },
   section: {
-    marginTop: 28,
+    marginTop: 20,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -1173,7 +1173,7 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
   },
   seeAll: {
@@ -1181,9 +1181,9 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   destCard: {
-    width: 160,
-    height: 200,
-    borderRadius: 16,
+    width: 150,
+    height: 185,
+    borderRadius: 14,
     overflow: "hidden",
   },
   destImage: {
