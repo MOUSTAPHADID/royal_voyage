@@ -62,6 +62,8 @@ export default function FlightResultsScreen() {
     passengers: string;
     children: string;
     infants: string;
+    childAges: string;
+    childDobs: string;
     useMock: string;
   }>();
 
@@ -90,6 +92,7 @@ export default function FlightResultsScreen() {
       adults: parseInt(params.passengers || "1", 10),
       children: parseInt(params.children || "0", 10),
       infants: parseInt(params.infants || "0", 10),
+      childAges: params.childAges ? JSON.parse(params.childAges) : undefined,
       max: 15,
     },
     {
@@ -107,6 +110,7 @@ export default function FlightResultsScreen() {
       adults: parseInt(params.passengers || "1", 10),
       children: parseInt(params.children || "0", 10),
       infants: parseInt(params.infants || "0", 10),
+      childAges: params.childAges ? JSON.parse(params.childAges) : undefined,
       max: 10,
     },
     {
@@ -215,6 +219,7 @@ export default function FlightResultsScreen() {
              passengers: params.passengers || "1",
               children: params.children || "0",
               infants: params.infants || "0",
+              childDobs: params.childDobs || "[]",
               tripType: params.tripType || "oneway",
               returnDate: params.returnDate || "",
               passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",

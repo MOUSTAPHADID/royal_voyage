@@ -45,6 +45,7 @@ export default function BookingSummaryScreen() {
     passengers?: string;
     children?: string;
     infants?: string;
+    childDetailsJson?: string;
     infantDetailsJson?: string;
     tripType?: string;
     returnDate?: string;
@@ -109,6 +110,7 @@ export default function BookingSummaryScreen() {
         passengers: params.passengers,
         children: params.children,
         infants: params.infants,
+        childDetailsJson: params.childDetailsJson,
         infantDetailsJson: params.infantDetailsJson,
         tripType: params.tripType,
         returnDate: params.returnDate,

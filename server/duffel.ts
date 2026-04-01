@@ -394,6 +394,7 @@ export async function searchFlights(params: {
   adults: number;
   children?: number;
   infants?: number;
+  childAges?: number[]; // actual ages of children (2-11)
   travelClass?: string;
   max?: number;
 }): Promise<FlightOffer[]> {
@@ -421,8 +422,10 @@ export async function searchFlights(params: {
     passengers.push({ type: "adult" as const });
   }
   if (params.children) {
+    const ages = params.childAges || [];
     for (let i = 0; i < params.children; i++) {
-      passengers.push({ age: 10 }); // Default child age
+      const age = ages[i] ?? 5; // Use actual age or default to 5
+      passengers.push({ age });
     }
   }
   if (params.infants) {

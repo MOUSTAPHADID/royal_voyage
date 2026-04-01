@@ -148,6 +148,7 @@ export default function PaymentScreen() {
     passengers?: string;
     children?: string;
     infants?: string;
+    childDetailsJson?: string;
     infantDetailsJson?: string;
     tripType?: string;
     returnDate?: string;
@@ -385,6 +386,17 @@ export default function PaymentScreen() {
     
     if (isFlight && params.id) {
       try {
+        // Parse child details from JSON if available
+        const childDetails: Array<{ firstName: string; lastName: string; dateOfBirth: string }> = [];
+        if (params.childDetailsJson) {
+          try {
+            const parsed = JSON.parse(params.childDetailsJson);
+            if (Array.isArray(parsed)) childDetails.push(...parsed);
+          } catch (e) {
+            console.warn("[Payment] Failed to parse childDetailsJson:", e);
+          }
+        }
+
         // Parse infant details from JSON if available
         const infantDetails: Array<{ firstName: string; lastName: string; dateOfBirth: string }> = [];
         if (params.infantDetailsJson) {
@@ -407,6 +419,7 @@ export default function PaymentScreen() {
           countryCallingCode: "222",
           passengers: adultCount,
           children: childCount,
+          childDetails: childDetails.length > 0 ? childDetails : undefined,
           infantDetails: infantDetails.length > 0 ? infantDetails : undefined,
         };
 

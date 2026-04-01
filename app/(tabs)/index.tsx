@@ -273,9 +273,42 @@ export default function HomeScreen() {
 
   // Children count
   const [children, setChildren] = useState(0);
+  // Child dates of birth (one per child)
+  const [childDobs, setChildDobs] = useState<string[]>([]);
   // Infant count (under 2 years)
   const [infants, setInfants] = useState(0);
   const [hotelChildren, setHotelChildren] = useState(0);
+
+  // Sync childDobs array length with children count
+  React.useEffect(() => {
+    setChildDobs((prev) => {
+      if (children > prev.length) {
+        return [...prev, ...Array(children - prev.length).fill("")];
+      }
+      return prev.slice(0, children);
+    });
+  }, [children]);
+
+  const updateChildDob = (index: number, value: string) => {
+    setChildDobs((prev) => {
+      const next = [...prev];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  // Calculate child ages from DOBs for Duffel API
+  const getChildAges = (): number[] => {
+    return childDobs.map((dob) => {
+      if (!dob) return 5; // default age if not set
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+      return Math.max(2, Math.min(age, 11)); // clamp between 2-11
+    });
+  };
 
   // Hotel search state
   const [hotelDest, setHotelDest] = useState("");
@@ -322,6 +355,8 @@ export default function HomeScreen() {
         passengers: passengers.toString(),
         children: children.toString(),
         infants: infants.toString(),
+        childAges: JSON.stringify(getChildAges()),
+        childDobs: JSON.stringify(childDobs),
         cabinClass,
         useMock: "false",
       },
@@ -579,6 +614,34 @@ export default function HomeScreen() {
                   </View>
                 </View>
               </View>
+
+              {/* Child DOB fields */}
+              {children > 0 && (
+                <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background, flexDirection: "column", alignItems: "stretch" }]}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <IconSymbol name="figure.and.child.holdinghands" size={18} color={colors.primary} />
+                    <Text style={[styles.fieldLabel, { color: colors.muted, marginBottom: 0 }]}>
+                      {isRTL ? "تاريخ ميلاد الأطفال (2-11 سنة)" : "Children Date of Birth (2-11 years)"}
+                    </Text>
+                  </View>
+                  {childDobs.map((dob, idx) => (
+                    <View key={`child-dob-${idx}`} style={{ marginBottom: idx < children - 1 ? 8 : 0 }}>
+                      <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 4 }}>
+                        {isRTL ? `طفل ${idx + 1}` : `Child ${idx + 1}`}
+                      </Text>
+                      <DatePickerField
+                        value={dob}
+                        onChange={(d) => updateChildDob(idx, d)}
+                        placeholder={isRTL ? "اختر تاريخ الميلاد" : "Select date of birth"}
+                        maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 2))}
+                        minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 12))}
+                        backgroundColor={colors.background}
+                        compact
+                      />
+                    </View>
+                  ))}
+                </View>
+              )}
 
               {/* Infants */}
               <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>

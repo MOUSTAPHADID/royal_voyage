@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -45,6 +45,7 @@ export default function PassengerDetailsScreen() {
     passengers?: string;
     children?: string;
     infants?: string;
+    childDobs?: string;
     tripType?: string;
     returnDate?: string;
     hotelName?: string;
@@ -73,6 +74,30 @@ export default function PassengerDetailsScreen() {
 
   const childrenCount = parseInt(params.children ?? "0", 10);
   const infantCount = parseInt(params.infants ?? "0", 10);
+
+  // Parse child DOBs from search screen
+  const parsedChildDobs: string[] = React.useMemo(() => {
+    try {
+      return params.childDobs ? JSON.parse(params.childDobs) : [];
+    } catch { return []; }
+  }, [params.childDobs]);
+
+  // Child details: name and date of birth for each child
+  const [childDetails, setChildDetails] = useState<Array<{ firstName: string; lastName: string; dateOfBirth: string }>>(
+    Array.from({ length: childrenCount }, (_, i) => ({
+      firstName: "",
+      lastName: "",
+      dateOfBirth: parsedChildDobs[i] || "",
+    }))
+  );
+
+  const updateChildDetail = (index: number, field: "firstName" | "lastName" | "dateOfBirth", value: string) => {
+    setChildDetails((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
+  };
 
   // Infant details: name and date of birth for each infant
   const [infantDetails, setInfantDetails] = useState<Array<{ firstName: string; lastName: string; dateOfBirth: string }>>(
@@ -104,6 +129,20 @@ export default function PassengerDetailsScreen() {
   const handleContinue = () => {
     if (!firstName.trim() || !lastName.trim() || !email.trim()) return;
     if (dobError) return;
+    // Validate child details if any
+    if (childrenCount > 0) {
+      for (let i = 0; i < childrenCount; i++) {
+        const child = childDetails[i];
+        if (!child?.firstName?.trim() || !child?.lastName?.trim() || !child?.dateOfBirth) {
+          Alert.alert(
+            "بيانات الطفل ناقصة",
+            `يرجى إكمال بيانات الطفل ${i + 1} (الاسم وتاريخ الميلاد).`,
+            [{ text: "حسناً" }]
+          );
+          return;
+        }
+      }
+    }
     // Validate infant details if any
     if (infantCount > 0) {
       for (let i = 0; i < infantCount; i++) {
@@ -153,6 +192,7 @@ export default function PassengerDetailsScreen() {
         passengers: params.passengers,
         children: params.children,
         infants: params.infants,
+        childDetailsJson: childrenCount > 0 ? JSON.stringify(childDetails) : undefined,
         infantDetailsJson: infantCount > 0 ? JSON.stringify(infantDetails) : undefined,
         tripType: params.tripType,
         returnDate: params.returnDate,
@@ -365,6 +405,68 @@ export default function PassengerDetailsScreen() {
               </>
             )}
           </View>
+
+          {/* Child Details Forms */}
+          {childrenCount > 0 && (
+            <View style={[styles.formCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.formTitle, { color: colors.foreground }]}>
+                بيانات الأطفال (Child Details)
+              </Text>
+              <Text style={[{ color: colors.muted, fontSize: 13, marginBottom: 12 }]}>
+                عمر الطفل يجب أن يكون بين 2 و 11 سنة عند السفر.
+              </Text>
+              {childDetails.map((child, idx) => (
+                <View key={`child-${idx}`} style={{ marginBottom: 16 }}>
+                  {childrenCount > 1 && (
+                    <Text style={[{ color: colors.primary, fontSize: 14, fontWeight: "700", marginBottom: 8 }]}>
+                      الطفل {idx + 1}
+                    </Text>
+                  )}
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: colors.foreground }]}>
+                      First Name <Text style={{ color: colors.error }}>*</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                      placeholder="Child"
+                      placeholderTextColor={colors.muted}
+                      value={child.firstName}
+                      onChangeText={(v) => updateChildDetail(idx, "firstName", v)}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: colors.foreground }]}>
+                      Last Name <Text style={{ color: colors.error }}>*</Text>
+                    </Text>
+                    <TextInput
+                      style={[styles.input, { backgroundColor: colors.background, color: colors.foreground, borderColor: colors.border }]}
+                      placeholder="Doe"
+                      placeholderTextColor={colors.muted}
+                      value={child.lastName}
+                      onChangeText={(v) => updateChildDetail(idx, "lastName", v)}
+                      autoCapitalize="words"
+                      returnKeyType="next"
+                    />
+                  </View>
+                  <View style={styles.inputGroup}>
+                    <Text style={[styles.label, { color: colors.foreground }]}>
+                      تاريخ الميلاد <Text style={{ color: colors.error }}>*</Text>
+                    </Text>
+                    <DatePickerField
+                      value={child.dateOfBirth}
+                      onChange={(d) => updateChildDetail(idx, "dateOfBirth", d)}
+                      placeholder="اختر تاريخ الميلاد"
+                      maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 2))}
+                      minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 12))}
+                      backgroundColor={colors.background}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Infant Details Forms */}
           {infantCount > 0 && (

@@ -42,6 +42,7 @@ export default function FlightDetailScreen() {
     passengers: string;
     children: string;
     infants: string;
+    childDobs: string;
     passengerPricingJson: string;
     airlineCode: string;
   }>();
@@ -372,6 +373,7 @@ export default function FlightDetailScreen() {
                 passengers: String(adultCount),
                 children: String(childCount),
                 infants: String(infantCount),
+                childDobs: params.childDobs || "[]",
               },
             })
           }

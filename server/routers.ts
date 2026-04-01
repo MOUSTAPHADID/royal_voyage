@@ -98,6 +98,7 @@ export const appRouter = router({
           adults: z.number().min(1).max(9).default(1),
           children: z.number().min(0).max(8).default(0),
           infants: z.number().min(0).max(4).default(0),
+          childAges: z.array(z.number().min(2).max(11)).optional(),
           travelClass: z
             .enum(["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"])
             .optional(),
@@ -114,6 +115,7 @@ export const appRouter = router({
             adults: input.adults,
             children: input.children,
             infants: input.infants,
+            childAges: input.childAges,
             travelClass: input.travelClass,
             max: input.max,
           });
@@ -151,6 +153,13 @@ export const appRouter = router({
           countryCallingCode: z.string().default("222"),
           passengers: z.number().min(1).max(9).default(1),
           children: z.number().min(0).max(8).default(0),
+          childDetails: z.array(
+            z.object({
+              firstName: z.string(),
+              lastName: z.string(),
+              dateOfBirth: z.string(),
+            })
+          ).optional(),
           infantDetails: z.array(
             z.object({
               firstName: z.string(),
@@ -212,15 +221,16 @@ export const appRouter = router({
             });
           }
 
-          // Children (use primary adult info with adjusted age)
+          // Children (use actual child details if provided, otherwise fallback)
+          const childDetails = input.childDetails || [];
           for (let i = 0; i < input.children; i++) {
-            const childDob = new Date();
-            childDob.setFullYear(childDob.getFullYear() - 10);
+            const child = childDetails[i];
+            const childDob = child?.dateOfBirth || (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 5); return d.toISOString().split("T")[0]; })();
             travelers.push({
               id: String(travelers.length + 1),
-              dateOfBirth: childDob.toISOString().split("T")[0],
-              firstName: input.firstName,
-              lastName: input.lastName,
+              dateOfBirth: childDob,
+              firstName: child?.firstName || input.firstName,
+              lastName: child?.lastName || input.lastName,
               gender: input.gender,
               email: input.email,
               phone: input.phone,
@@ -322,6 +332,13 @@ export const appRouter = router({
           countryCallingCode: z.string().default("222"),
           passengers: z.number().min(1).max(9).default(1),
           children: z.number().min(0).max(8).default(0),
+          childDetails: z.array(
+            z.object({
+              firstName: z.string(),
+              lastName: z.string(),
+              dateOfBirth: z.string(),
+            })
+          ).optional(),
           infantDetails: z.array(
             z.object({
               firstName: z.string(),
@@ -377,15 +394,16 @@ export const appRouter = router({
             });
           }
 
-          // Children
+          // Children (use actual child details if provided, otherwise fallback)
+          const childDetails = input.childDetails || [];
           for (let i = 0; i < input.children; i++) {
-            const childDob = new Date();
-            childDob.setFullYear(childDob.getFullYear() - 10);
+            const child = childDetails[i];
+            const childDob = child?.dateOfBirth || (() => { const d = new Date(); d.setFullYear(d.getFullYear() - 5); return d.toISOString().split("T")[0]; })();
             travelers.push({
               id: String(travelers.length + 1),
-              dateOfBirth: childDob.toISOString().split("T")[0],
-              firstName: input.firstName,
-              lastName: input.lastName,
+              dateOfBirth: childDob,
+              firstName: child?.firstName || input.firstName,
+              lastName: child?.lastName || input.lastName,
               gender: input.gender,
               email: input.email,
               phone: input.phone,
