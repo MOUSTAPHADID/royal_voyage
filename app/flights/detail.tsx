@@ -274,6 +274,64 @@ export default function FlightDetailScreen() {
           </View>
           </View>
 
+          {/* Class Price Comparison */}
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>مقارنة أسعار الدرجات</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12 }}>نفس الرحلة بدرجات مختلفة (تقديري)</Text>
+            {(["ECONOMY", "BUSINESS", "FIRST"] as const).map((cls) => {
+              const isCurrentClass = flight.class?.toUpperCase() === cls;
+              const classLabels = { ECONOMY: "اقتصادي", BUSINESS: "أعمال", FIRST: "أولى" };
+              const classIcons = { ECONOMY: "✈️", BUSINESS: "💼", FIRST: "👑" };
+              // Estimate price for other classes based on multiplier from economy
+              const classMultiplier = cls === "FIRST" ? 3.5 : cls === "BUSINESS" ? 2.0 : 1.0;
+              const currentMultiplier = flight.class?.toUpperCase() === "FIRST" ? 3.5 : flight.class?.toUpperCase() === "BUSINESS" ? 2.0 : 1.0;
+              const estimatedBasePrice = flight.price / currentMultiplier * classMultiplier;
+              const estimatedMRU = applyMarkup(
+                toMRUWithSettings(estimatedBasePrice, currency) + getAgencyFee(flight.originCode, flight.destinationCode),
+                flight.originCode, flight.destinationCode, cls
+              );
+              return (
+                <Pressable
+                  key={cls}
+                  style={({ pressed }) => [{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingVertical: 12,
+                    paddingHorizontal: 14,
+                    borderRadius: 12,
+                    marginBottom: 8,
+                    borderWidth: isCurrentClass ? 1.5 : 1,
+                    borderColor: isCurrentClass ? colors.primary : colors.border,
+                    backgroundColor: isCurrentClass ? colors.primary + "08" : colors.background,
+                    opacity: pressed ? 0.8 : 1,
+                  }]}
+                  onPress={() => {}}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <Text style={{ fontSize: 20 }}>{classIcons[cls]}</Text>
+                    <View>
+                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{classLabels[cls]}</Text>
+                      {isCurrentClass && (
+                        <Text style={{ fontSize: 10, color: colors.primary, fontWeight: "600", marginTop: 1 }}>الدرجة الحالية</Text>
+                      )}
+                    </View>
+                  </View>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ fontSize: 16, fontWeight: "700", color: isCurrentClass ? colors.primary : colors.foreground }}>
+                      {fmt(isCurrentClass ? totalMRU : estimatedMRU)}
+                    </Text>
+                    {totalPersons > 1 && (
+                      <Text style={{ fontSize: 10, color: colors.muted }}>
+                        {fmt(Math.round((isCurrentClass ? totalMRU : estimatedMRU) / totalPersons))} / شخص
+                      </Text>
+                    )}
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+
           {/* Book Button */}
           <View style={{ height: 120 }} />
       </ScrollView>

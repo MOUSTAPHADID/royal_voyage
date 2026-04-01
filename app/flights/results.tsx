@@ -134,7 +134,7 @@ export default function FlightResultsScreen() {
   // Calculate min/max prices for slider
   const { minPrice, maxPrice } = useMemo(() => {
     if (activeFlights.length === 0) return { minPrice: 0, maxPrice: 999999 };
-    const prices = activeFlights.map((f) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class));
+    const prices = activeFlights.map(getFlightTotalMRU);
     return { minPrice: Math.floor(Math.min(...prices)), maxPrice: Math.ceil(Math.max(...prices)) };
   }, [activeFlights]);
 
@@ -151,19 +151,29 @@ export default function FlightResultsScreen() {
     setPriceRangeInitialized(false);
   }, [activeSection]);
 
+  const getFlightTotalMRU = (f: AnyFlight) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
+
   const filteredFlights = useMemo(() => {
     return activeFlights
       .filter((f) => filterClass === "All" || f.class === filterClass)
       .filter((f) => {
-        const priceMRU = applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
+        const priceMRU = getFlightTotalMRU(f);
         return priceMRU >= priceRange[0] && priceMRU <= priceRange[1];
       })
       .sort((a, b) => {
-        if (sortBy === "price") return a.price - b.price;
+        if (sortBy === "price") return getFlightTotalMRU(a) - getFlightTotalMRU(b);
         if (sortBy === "duration") return a.duration.localeCompare(b.duration);
         return a.departureTime.localeCompare(b.departureTime);
       });
   }, [activeFlights, filterClass, sortBy, priceRange]);
+
+  // Cheapest price for "Best Price" badge
+  const cheapestPrice = useMemo(() => {
+    if (filteredFlights.length === 0) return 0;
+    return Math.min(...filteredFlights.map(getFlightTotalMRU));
+  }, [filteredFlights]);
+
+  const totalPassengers = Math.max(1, parseInt(params.passengers || "1", 10) + parseInt(params.children || "0", 10) + parseInt(params.infants || "0", 10));
 
   // Airline logo helper - uses IATA code to get logo from public CDN
   const getAirlineLogo = (airlineCode: string) => {
@@ -171,11 +181,16 @@ export default function FlightResultsScreen() {
     return `https://images.kiwi.com/airlines/64/${airlineCode}.png`;
   };
 
-  const renderFlight = ({ item }: ListRenderItemInfo<AnyFlight>) => (
+  const renderFlight = ({ item }: ListRenderItemInfo<AnyFlight>) => {
+    const flightTotal = getFlightTotalMRU(item);
+    const perPerson = Math.round(flightTotal / totalPassengers);
+    const isCheapest = flightTotal <= cheapestPrice && filteredFlights.length > 1;
+
+    return (
     <Pressable
       style={({ pressed }) => [
         styles.flightCard,
-        { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
+        { backgroundColor: colors.surface, borderColor: isCheapest ? colors.success : colors.border, borderWidth: isCheapest ? 1.5 : 1, opacity: pressed ? 0.9 : 1 },
       ]}
       onPress={() =>
         router.push({
@@ -207,6 +222,12 @@ export default function FlightResultsScreen() {
          })
        }
      >
+       {/* Best Price Badge */}
+       {isCheapest && (
+         <View style={[styles.bestPriceBadge, { backgroundColor: colors.success }]}>
+           <Text style={styles.bestPriceText}>أفضل سعر</Text>
+         </View>
+       )}
        {/* Airline header */}
       <View style={styles.cardHeader}>
         <View style={styles.airlineRow}>
@@ -229,9 +250,14 @@ export default function FlightResultsScreen() {
         </View>
         <View style={styles.priceBox}>
           <Text style={[styles.price, { color: colors.primary }]}>
-            {fmt(applyMarkup(toMRU(item.price, item.currency || "EUR") + getAgencyFee(item.originCode, item.destinationCode), item.originCode, item.destinationCode, item.class))}
+            {fmt(flightTotal)}
           </Text>
           <Text style={[styles.perPerson, { color: colors.muted }]}>الإجمالي</Text>
+          {totalPassengers > 1 && (
+            <Text style={[styles.perPersonDetail, { color: colors.muted }]}>
+              {fmt(perPerson)} / شخص
+            </Text>
+          )}
         </View>
       </View>
 
@@ -333,6 +359,7 @@ export default function FlightResultsScreen() {
       </View>
     </Pressable>
   );
+  };
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -654,6 +681,15 @@ const styles = StyleSheet.create({
   priceBox: { alignItems: "flex-end" },
   price: { fontSize: 22, fontWeight: "700" },
   perPerson: { fontSize: 11 },
+  perPersonDetail: { fontSize: 10, marginTop: 1 },
+  bestPriceBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderTopLeftRadius: 16,
+    borderBottomRightRadius: 10,
+  },
+  bestPriceText: { color: "#FFFFFF", fontSize: 11, fontWeight: "700" },
   routeRow: {
     flexDirection: "row",
     alignItems: "center",
