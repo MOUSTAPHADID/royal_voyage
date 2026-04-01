@@ -131,6 +131,8 @@ export default function FlightResultsScreen() {
 
   const activeFlights = activeSection === "outbound" ? rawFlights : rawReturnFlights;
 
+  const getFlightTotalMRU = (f: AnyFlight) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
+
   // Calculate min/max prices for slider
   const { minPrice, maxPrice } = useMemo(() => {
     if (activeFlights.length === 0) return { minPrice: 0, maxPrice: 999999 };
@@ -150,8 +152,6 @@ export default function FlightResultsScreen() {
   useEffect(() => {
     setPriceRangeInitialized(false);
   }, [activeSection]);
-
-  const getFlightTotalMRU = (f: AnyFlight) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
 
   const filteredFlights = useMemo(() => {
     return activeFlights
