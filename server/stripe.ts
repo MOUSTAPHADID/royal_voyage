@@ -85,7 +85,7 @@ export async function createPaymentIntent(params: {
     payment_method_types: ["card"],
   });
 
-  const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY || "";
+  const publishableKey = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || process.env.STRIPE_PUBLISHABLE_KEY || "";
 
   return {
     clientSecret: paymentIntent.client_secret!,

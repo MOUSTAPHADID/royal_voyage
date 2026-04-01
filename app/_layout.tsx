@@ -95,7 +95,7 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <I18nProvider>
           <CurrencyProvider>
-          <StripeProviderWrapper publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || "pk_live_51TG1IFQ4zlJxm88KMEholagndf82wxjXikIc0xq36C1dLh7809qE9IufzHtk9yTtShAvzuuLwifyTbSIxePUdkv600fBA7qEaA"}>
+          <StripeProviderWrapper publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || ""}>
           <AppProvider>
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
