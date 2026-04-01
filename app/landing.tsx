@@ -527,8 +527,20 @@ export default function LandingPage() {
             ? "جميع معاملاتك محمية بتشفير SSL 256-bit عبر Stripe، المعيار العالمي للدفع الآمن."
             : "All your transactions are protected by 256-bit SSL encryption via Stripe, the global standard for secure payments."}
         </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
-          {["💳 Visa", "💳 Mastercard", "💳 Amex", "🔐 SSL 256-bit", "✅ PCI DSS"].map((p, i) => (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 8 }}>
+          {[
+            { name: "Visa", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" },
+            { name: "Mastercard", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" },
+            { name: "Amex", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" },
+            { name: "Stripe", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png" },
+          ].map((card, i) => (
+            <View key={i} style={{ backgroundColor: "#fff", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center", minWidth: 90, minHeight: 52 }}>
+              <Image source={{ uri: card.uri }} style={{ width: 70, height: 30, resizeMode: "contain" }} />
+            </View>
+          ))}
+        </View>
+        <View style={{ flexDirection: "row", gap: 12, justifyContent: "center", marginTop: 8 }}>
+          {["🔐 SSL 256-bit", "✅ PCI DSS"].map((p, i) => (
             <View key={i} style={[styles.payBadge, { borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(255,255,255,0.08)" }]}>
               <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>{p}</Text>
             </View>
