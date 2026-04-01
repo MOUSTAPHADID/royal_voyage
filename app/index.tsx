@@ -1,11 +1,16 @@
 import { Redirect } from "expo-router";
 import { useApp } from "@/lib/app-context";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { useColors } from "@/hooks/use-colors";
 
 export default function Index() {
   const { isAuthenticated, isLoading, user } = useApp();
   const colors = useColors();
+
+  // On web: show landing page for unauthenticated visitors
+  if (Platform.OS === "web" && !isLoading && !isAuthenticated) {
+    return <Redirect href={"/landing" as any} />;
+  }
 
   if (isLoading) {
     return (

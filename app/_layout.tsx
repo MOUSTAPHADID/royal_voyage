@@ -132,6 +132,7 @@ export default function RootLayout() {
             <Stack.Screen name="employee-login" />
             <Stack.Screen name="employee-dashboard" />
             <Stack.Screen name="oauth/callback" />
+            <Stack.Screen name="landing" />
           </Stack>
           <StatusBar style="auto" />
           </AppProvider>

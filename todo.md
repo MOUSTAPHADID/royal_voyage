@@ -1278,3 +1278,8 @@
 - [x] ربط royalvoyage.online مباشرة بالـ Landing Page
 - [x] إضافة صور حقيقية للوجهات السياحية
 - [x] إضافة نموذج تواصل يرسل لـ suporte@royalvoyage.online
+
+## Landing Page في Expo (ويب)
+- [x] إنشاء صفحة app/landing.tsx في Expo Router
+- [x] كشف المنصة وتوجيه الويب للـ Landing Page
+- [x] نقل محتوى HTML Landing Page إلى مكونات React Native Web
