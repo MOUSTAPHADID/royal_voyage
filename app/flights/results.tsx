@@ -46,6 +46,10 @@ type AnyFlight = {
     totalAmount: number;
     perPersonAmount: number;
   }>;
+  baggageAllowance?: {
+    cabin: { quantity: number; maxWeightKg?: number } | null;
+    checked: { quantity: number; maxWeightKg?: number } | null;
+  };
 };
 
 export default function FlightResultsScreen() {
@@ -74,6 +78,7 @@ export default function FlightResultsScreen() {
   // Sort & Filter
   const [sortBy, setSortBy] = useState<SortOption>("price");
   const [filterClass, setFilterClass] = useState<string>("All");
+  const [filterBags, setFilterBags] = useState<number | null>(null); // null = All
   const [activeSection, setActiveSection] = useState<"outbound" | "return">("outbound");
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 999999]);
@@ -164,6 +169,12 @@ export default function FlightResultsScreen() {
         const priceMRU = getFlightTotalMRU(f);
         return priceMRU >= priceRange[0] && priceMRU <= priceRange[1];
       })
+      .filter((f) => {
+        if (filterBags === null) return true;
+        // Filter by checked baggage quantity
+        const checkedQty = f.baggageAllowance?.checked?.quantity ?? 1;
+        return checkedQty >= filterBags;
+      })
       .sort((a, b) => {
         if (sortBy === "price") return getFlightTotalMRU(a) - getFlightTotalMRU(b);
         if (sortBy === "duration") return a.duration.localeCompare(b.duration);
@@ -223,6 +234,7 @@ export default function FlightResultsScreen() {
               tripType: params.tripType || "oneway",
               returnDate: params.returnDate || "",
               passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",
+              baggageAllowanceJson: item.baggageAllowance ? JSON.stringify(item.baggageAllowance) : "",
             },
          })
        }
@@ -355,6 +367,7 @@ export default function FlightResultsScreen() {
                   tripType: params.tripType || "oneway",
                   returnDate: params.returnDate || "",
                   passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",
+                 baggageAllowanceJson: item.baggageAllowance ? JSON.stringify(item.baggageAllowance) : "",
                 },
              })
            }
@@ -566,6 +579,24 @@ export default function FlightResultsScreen() {
                 ]}
               >
                 {cls === "ECONOMY" ? t.flights.economy : cls === "BUSINESS" ? t.flights.business : cls === "FIRST" ? t.flights.first : t.flights.all}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {/* Bags filter row */}
+        <View style={[styles.classRow, { marginTop: 4 }]}>
+          <Text style={[styles.sortLabel, { color: colors.muted }]}>🧳</Text>
+          {([null, 1, 2, 3] as (number | null)[]).map((n) => (
+            <Pressable
+              key={String(n)}
+              style={[
+                styles.classChip,
+                filterBags === n && { backgroundColor: colors.primary + "30" },
+              ]}
+              onPress={() => setFilterBags(n)}
+            >
+              <Text style={[styles.classChipText, { color: filterBags === n ? colors.primary : colors.muted }]}>
+                {n === null ? "All" : `${n}+`}
               </Text>
             </Pressable>
           ))}

@@ -45,6 +45,7 @@ export default function FlightDetailScreen() {
     childDobs: string;
     passengerPricingJson: string;
     airlineCode: string;
+    baggageAllowanceJson: string;
   }>();
 
   // If params have flight data (from Amadeus), use them; otherwise fall back to mock
@@ -223,7 +224,18 @@ export default function FlightDetailScreen() {
         {/* Baggage Policy */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Baggage Policy</Text>
-          {[
+          {(() => {
+            // Parse real baggage allowance from Duffel API if available
+            let realBaggage: { cabin: { quantity: number; maxWeightKg?: number } | null; checked: { quantity: number; maxWeightKg?: number } | null } | null = null;
+            if (params.baggageAllowanceJson) {
+              try { realBaggage = JSON.parse(params.baggageAllowanceJson); } catch { /* ignore */ }
+            }
+            const cabinQty = realBaggage?.cabin?.quantity ?? (selectedClass === "ECONOMY" ? 1 : 2);
+            const cabinKg = realBaggage?.cabin?.maxWeightKg ?? (selectedClass === "ECONOMY" ? 10 : 12);
+            const checkedQty = realBaggage?.checked?.quantity ?? (selectedClass === "FIRST" ? 3 : selectedClass === "BUSINESS" ? 2 : 1);
+            const checkedKg = realBaggage?.checked?.maxWeightKg ?? (selectedClass === "FIRST" ? 32 : selectedClass === "BUSINESS" ? 32 : 23);
+            const isRealData = !!realBaggage;
+            return [
             {
               icon: "🎒",
               title: "Personal Item",
@@ -233,19 +245,13 @@ export default function FlightDetailScreen() {
             {
               icon: "🧳",
               title: "Cabin Baggage",
-              desc: selectedClass === "ECONOMY"
-                ? "1 carry-on bag (max 10 kg) included."
-                : "2 carry-on bags (max 12 kg each) included.",
+              desc: `${cabinQty} carry-on bag${cabinQty > 1 ? "s" : ""} (max ${cabinKg} kg each) included.${isRealData ? " ✓ Airline confirmed" : ""}`,
               included: true,
             },
             {
               icon: "📦",
               title: "Checked Baggage",
-              desc: selectedClass === "FIRST"
-                ? "3 checked bags (max 32 kg each) included."
-                : selectedClass === "BUSINESS"
-                ? "2 checked bags (max 32 kg each) included."
-                : "1 checked bag (max 23 kg) included.",
+              desc: `${checkedQty} checked bag${checkedQty > 1 ? "s" : ""} (max ${checkedKg} kg each) included.${isRealData ? " ✓ Airline confirmed" : ""}`,
               included: true,
             },
             {
@@ -288,7 +294,9 @@ export default function FlightDetailScreen() {
                 <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>{item.desc}</Text>
               </View>
             </View>
-          ))}
+          ));
+          })()
+          }
           <View style={{ marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: colors.primary + "10" }}>
             <Text style={{ fontSize: 12, color: colors.primary, lineHeight: 18 }}>
               ℹ️ Baggage allowances may vary by airline and route. Please verify with the airline before travel.

@@ -310,6 +310,9 @@ export default function HomeScreen() {
     });
   };
 
+  // Bags count
+  const [bags, setBags] = useState(1);
+
   // Hotel search state
   const [hotelDest, setHotelDest] = useState("");
   const [hotelDestCode, setHotelDestCode] = useState("");
@@ -358,6 +361,7 @@ export default function HomeScreen() {
         childAges: JSON.stringify(getChildAges()),
         childDobs: JSON.stringify(childDobs),
         cabinClass,
+        bags: bags.toString(),
         useMock: "false",
       },
     });
@@ -654,6 +658,23 @@ export default function HomeScreen() {
                     </Pressable>
                     <Text style={[styles.fieldValue, { color: colors.foreground }]}>{infants}</Text>
                     <Pressable onPress={() => setInfants(Math.min(infants + 1, passengers))}>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </View>
+
+              {/* Bags */}
+              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <Text style={{ fontSize: 18 }}>🧳</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "الحقائب" : "Bags"}</Text>
+                  <View style={styles.counterRow}>
+                    <Pressable onPress={() => setBags(Math.max(0, bags - 1))}>
+                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                    </Pressable>
+                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{bags}</Text>
+                    <Pressable onPress={() => setBags(Math.min(bags + 1, 3))}>
                       <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
                     </Pressable>
                   </View>

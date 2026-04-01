@@ -69,6 +69,11 @@ export type FlightOffer = {
   class: string;
   seatsLeft: number;
   rawOffer: unknown;
+  // Baggage allowance extracted from Duffel offer
+  baggageAllowance?: {
+    cabin: { quantity: number; maxWeightKg?: number } | null;
+    checked: { quantity: number; maxWeightKg?: number } | null;
+  };
   // Per-passenger-type pricing from Duffel
   passengerPricing?: Array<{
     type: string; // "adult" | "child" | "infant_without_seat"
@@ -615,6 +620,19 @@ export async function searchFlights(params: {
       class: cabinClassDisplay.toUpperCase(),
       seatsLeft: offer.available_services?.length ?? 9,
       rawOffer: offer,
+      baggageAllowance: (() => {
+        // Extract baggage allowance from Duffel offer
+        // Duffel stores baggage info in slices[0].segments[0].passengers[0].baggages
+        const firstPax = firstSeg?.passengers?.[0];
+        const baggages: any[] = firstPax?.baggages || [];
+        const cabinBag = baggages.find((b: any) => b.type === "carry_on") || null;
+        const checkedBag = baggages.find((b: any) => b.type === "checked") || null;
+        if (!cabinBag && !checkedBag) return undefined;
+        return {
+          cabin: cabinBag ? { quantity: cabinBag.quantity ?? 1, maxWeightKg: cabinBag.max_weight_kg } : null,
+          checked: checkedBag ? { quantity: checkedBag.quantity ?? 1, maxWeightKg: checkedBag.max_weight_kg } : null,
+        };
+      })(),
       passengerPricing: passengerPricing.length > 0 ? passengerPricing : undefined,
     };
   });
