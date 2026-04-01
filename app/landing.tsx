@@ -1,4 +1,5 @@
 import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput, ActivityIndicator } from "react-native";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
@@ -13,15 +14,15 @@ const NAV_LINKS_AR = ["رحلات", "فنادق", "تأجير سيارات"];
 const NAV_LINKS_EN = ["Flights", "Stays", "Rental cars"];
 
 const FEATURES_AR = [
-  { icon: "✈️", title: "سافر بأقل تكلفة", desc: "احجز مباشرة من موقعنا وتطبيقنا. نقدم أفضل أسعار التذاكر لجميع الوجهات لكلٍّ من الرحلات المباشرة والمتعددة المحطات. مع Royal Voyage، مغامرتك القادمة على بُعد خطوة." },
-  { icon: "📋", title: "ابقَ على اطلاع", desc: "هل تحتاج معلومات عن رحلتك؟ سجّل دخولك لمتابعة تفاصيل رحلتك وخيارات الإضافات وكل ما يتعلق بحجزك في الوقت الفعلي وبدون ضغط." },
-  { icon: "💰", title: "وفّر وخطّط بسهولة", desc: "مع تطبيق Royal Voyage، ستحصل على عروض لا تُصدَّق وخصومات حصرية. احجز رحلاتك وأدِر تفاصيل سفرك — كل شيء في مكان واحد. لماذا الانتظار؟" },
+  { icon: "flight", title: "سافر بأقل تكلفة", desc: "احجز مباشرة من موقعنا وتطبيقنا. نقدم أفضل أسعار التذاكر لجميع الوجهات لكلٍّ من الرحلات المباشرة والمتعددة المحطات. مع Royal Voyage، مغامرتك القادمة على بُعد خطوة." },
+  { icon: "assignment", title: "ابقَ على اطلاع", desc: "هل تحتاج معلومات عن رحلتك؟ سجّل دخولك لمتابعة تفاصيل رحلتك وخيارات الإضافات وكل ما يتعلق بحجزك في الوقت الفعلي وبدون ضغط." },
+  { icon: "savings", title: "وفّر وخطّط بسهولة", desc: "مع تطبيق Royal Voyage، ستحصل على عروض لا تُصدَّق وخصومات حصرية. احجز رحلاتك وأدِر تفاصيل سفرك — كل شيء في مكان واحد. لماذا الانتظار؟" },
 ];
 
 const FEATURES_EN = [
-  { icon: "✈️", title: "Fly for less", desc: "Fly more for less with Royal Voyage. When you book directly through our site or app, we offer cheap flight deals to all destinations for both direct and multi-city trips. With Royal Voyage, your next adventure is just around the corner." },
-  { icon: "📋", title: "Stay informed", desc: "Need more info about your flight? Log in to My Bookings for trip details, check-in options and everything related to your add-ons. Plus, track your refund status in real time with no stress." },
-  { icon: "💰", title: "Save big and plan easy", desc: "Ready to explore more while spending less? With the Royal Voyage app, you'll unlock unbeatable deals and exclusive savings. Easily book flights and manage your travel details — all in one place. Why wait?" },
+  { icon: "flight", title: "Fly for less", desc: "Fly more for less with Royal Voyage. When you book directly through our site or app, we offer cheap flight deals to all destinations for both direct and multi-city trips. With Royal Voyage, your next adventure is just around the corner." },
+  { icon: "assignment", title: "Stay informed", desc: "Need more info about your flight? Log in to My Bookings for trip details, check-in options and everything related to your add-ons. Plus, track your refund status in real time with no stress." },
+  { icon: "savings", title: "Save big and plan easy", desc: "Ready to explore more while spending less? With the Royal Voyage app, you'll unlock unbeatable deals and exclusive savings. Easily book flights and manage your travel details — all in one place. Why wait?" },
 ];
 
 const TIPS_AR = [
@@ -218,7 +219,7 @@ export default function LandingPage() {
               </Pressable>
             </View>
             <Pressable onPress={() => setShowBanner(false)} style={styles.bannerClose}>
-              <Text style={{ color: "#555", fontSize: 16 }}>✕</Text>
+              <MaterialIcons name="close" size={16} color="#555" />
             </Pressable>
           </View>
         )}
@@ -227,7 +228,7 @@ export default function LandingPage() {
         <View style={[styles.navbar, { flexDirection: isAr ? "row-reverse" : "row" }]}>
           {/* Logo */}
           <Pressable onPress={() => {}} style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
-            <Text style={{ fontSize: 22 }}>👑</Text>
+            <MaterialIcons name="star" size={22} color="#D4AF37" />
             <Text style={styles.logoText}>Royal <Text style={{ color: "#1B6CA8" }}>Voyage</Text></Text>
           </Pressable>
 
@@ -246,15 +247,15 @@ export default function LandingPage() {
           {/* Right actions */}
           <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
             <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={styles.langBtn}>
-              <Text style={{ fontSize: 14 }}>🌐</Text>
+              <MaterialIcons name="language" size={14} color="#1B6CA8" />
               <Text style={styles.langBtnText}>{isAr ? "English" : "عربي"}</Text>
             </Pressable>
             <Pressable onPress={() => Linking.openURL("https://wa.me/22233700000")} style={styles.supportBtn}>
-              <Text style={{ fontSize: 14 }}>💬</Text>
+              <MaterialIcons name="chat" size={14} color="#1B6CA8" />
               <Text style={styles.supportBtnText}>{isAr ? "الدعم" : "Support"}</Text>
             </Pressable>
             <Pressable onPress={() => router.push("/auth/login" as any)} style={styles.bookingsBtn}>
-              <Text style={{ fontSize: 14 }}>👤</Text>
+              <MaterialIcons name="person" size={14} color="#1B6CA8" />
               <Text style={styles.bookingsBtnText}>{isAr ? "حجوزاتي" : "My Bookings"}</Text>
             </Pressable>
           </View>
@@ -277,7 +278,7 @@ export default function LandingPage() {
                   <Pressable key={tab} onPress={() => { setSearchTab(tab); setSearchError(""); }}
                     style={[styles.searchTab, searchTab === tab && styles.searchTabActive]}>
                     <Text style={[styles.searchTabText, searchTab === tab && styles.searchTabTextActive]}>
-                      {tab === "flights" ? (isAr ? "✈️ رحلات" : "✈️ Flights") : (isAr ? "🏨 فنادق" : "🏨 Stays")}
+                      <MaterialIcons name={tab === "flights" ? "flight" : "hotel"} size={14} color={searchTab === tab ? "#1B6CA8" : "#666"} style={{ marginRight: 4 }} />{tab === "flights" ? (isAr ? "رحلات" : "Flights") : (isAr ? "فنادق" : "Stays")}
                     </Text>
                   </Pressable>
                 ))}
@@ -303,14 +304,14 @@ export default function LandingPage() {
                   <View style={[styles.fromToRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "من" : "From"}</Text>
-                      <AutoInput value={from} onChange={(v, c) => { setFrom(v); setFromCode(c); }} placeholder={isAr ? "✈ من" : "✈ From"} rtl={isAr} />
+                      <AutoInput value={from} onChange={(v, c) => { setFrom(v); setFromCode(c); }} placeholder={isAr ? "من" : "From"} rtl={isAr} />
                     </View>
                     <Pressable onPress={swapLocations} style={styles.swapBtn}>
                       <Text style={{ fontSize: 18, color: "#1B6CA8" }}>⇄</Text>
                     </Pressable>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "إلى" : "To"}</Text>
-                      <AutoInput value={to} onChange={(v, c) => { setTo(v); setToCode(c); }} placeholder={isAr ? "🗺 إلى" : "🗺 To"} rtl={isAr} />
+                      <AutoInput value={to} onChange={(v, c) => { setTo(v); setToCode(c); }} placeholder={isAr ? "إلى" : "To"} rtl={isAr} />
                     </View>
                   </View>
 
@@ -351,7 +352,7 @@ export default function LandingPage() {
                 <View style={{ gap: 12 }}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "الوجهة" : "Destination"}</Text>
-                    <AutoInput value={hotelDest} onChange={(v, c) => { setHotelDest(v); setHotelDestCode(c); }} placeholder={isAr ? "🏙 المدينة أو الفندق" : "🏙 City or hotel"} rtl={isAr} />
+                    <AutoInput value={hotelDest} onChange={(v, c) => { setHotelDest(v); setHotelDestCode(c); }} placeholder={isAr ? "المدينة أو الفندق" : "City or hotel"} rtl={isAr} />
                   </View>
                   <View style={[styles.datesRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
                     <View style={{ flex: 1 }}>
@@ -387,7 +388,7 @@ export default function LandingPage() {
           {features.map((f, i) => (
             <View key={i} style={[styles.featureCol, { flex: isWeb ? 1 : undefined }]}>
               <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <Text style={{ fontSize: 32 }}>{f.icon}</Text>
+                <MaterialIcons name={f.icon as any} size={32} color="#1B6CA8" />
                 <Text style={[styles.featureTitle, { textAlign: isAr ? "right" : "left" }]}>{f.title}</Text>
               </View>
               <Text style={[styles.featureDesc, { textAlign: isAr ? "right" : "left" }]}>{f.desc}</Text>
@@ -432,7 +433,7 @@ export default function LandingPage() {
           </Text>
           {tips.map((tip, i) => (
             <View key={i} style={[styles.tipRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
-              <Text style={styles.tipCheck}>✔</Text>
+              <MaterialIcons name="check-circle" size={18} color="#22C55E" style={{ marginTop: 2 }} />
               <Text style={[styles.tipText, { textAlign: isAr ? "right" : "left" }]}>
                 <Text style={{ fontWeight: "700" }}>{tip.bold}</Text>{tip.text}
               </Text>
@@ -474,24 +475,24 @@ export default function LandingPage() {
             <View style={styles.footerCol}>
               <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تسجيل الدخول" : "Log in"}</Text>
               <Pressable onPress={() => router.push("/auth/login" as any)} style={styles.footerLoginBtn}>
-                <Text style={{ fontSize: 14 }}>👤</Text>
+                <MaterialIcons name="person" size={14} color="#1B6CA8" />
                 <Text style={styles.footerLoginBtnText}>{isAr ? "حجوزاتي" : "My Bookings"}</Text>
               </Pressable>
               <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={[styles.footerLoginBtn, { marginTop: 8 }]}>
-                <Text style={{ fontSize: 14 }}>🌐</Text>
+                <MaterialIcons name="language" size={14} color="#1B6CA8" />
                 <Text style={styles.footerLoginBtnText}>{isAr ? "English" : "عربي"}</Text>
               </Pressable>
               {/* App store badges */}
               <View style={{ gap: 8, marginTop: 16 }}>
                 <Pressable onPress={() => Linking.openURL("https://apps.apple.com")} style={styles.storeBadge}>
-                  <Text style={{ fontSize: 18 }}>🍎</Text>
+                  <MaterialIcons name="apple" size={20} color="#fff" />
                   <View>
                     <Text style={{ color: "#fff", fontSize: 9 }}>{isAr ? "متوفر على" : "Download on the"}</Text>
                     <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>App Store</Text>
                   </View>
                 </Pressable>
                 <Pressable onPress={() => Linking.openURL("https://play.google.com")} style={[styles.storeBadge, { backgroundColor: "#1a1a2e" }]}>
-                  <Text style={{ fontSize: 18 }}>▶</Text>
+                  <MaterialIcons name="play-arrow" size={20} color="#fff" />
                   <View>
                     <Text style={{ color: "#fff", fontSize: 9 }}>{isAr ? "احصل عليه من" : "Get it on"}</Text>
                     <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>Google Play</Text>
@@ -541,7 +542,7 @@ export default function LandingPage() {
         style={({ pressed }) => [styles.whatsappFab, { opacity: pressed ? 0.85 : 1 }]}
         onPress={() => Linking.openURL("https://wa.me/22233700000")}
       >
-        <Text style={{ fontSize: 26 }}>💬</Text>
+        <MaterialIcons name="chat" size={26} color="#fff" />
       </Pressable>
     </View>
   );
