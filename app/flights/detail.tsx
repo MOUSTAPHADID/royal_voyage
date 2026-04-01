@@ -92,12 +92,18 @@ export default function FlightDetailScreen() {
     } catch (e) { /* ignore */ }
   }
 
-  // Duffel API: total_amount = السعر الإجمالي لكل الركاب + كل الرحلات (ذهاب وإياب)
-  const totalPrice = flight.price;
+  // سعر الرحلة الأساسي (Economy)
+  const basePrice = flight.price;
+  // معامل الدرجة الأصلية للتحويل إلى Economy
+  const origClassMultiplier = flight.class?.toUpperCase() === "FIRST" ? 3.5 : flight.class?.toUpperCase() === "BUSINESS" ? 2.0 : 1.0;
+  // معامل الدرجة المختارة حالياً
+  const selectedClassMultiplier = selectedClass.toUpperCase() === "FIRST" ? 3.5 : selectedClass.toUpperCase() === "BUSINESS" ? 2.0 : 1.0;
+  // سعر الرحلة بالدرجة المختارة
+  const totalPrice = basePrice / origClassMultiplier * selectedClassMultiplier;
   // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
   const baseMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
-  const totalMRU = applyMarkup(baseMRU, flight.originCode, flight.destinationCode, flight.class);
+  const totalMRU = applyMarkup(baseMRU, flight.originCode, flight.destinationCode, selectedClass);
   // سعر الشخص الواحد (للعرض في البادج)
   const totalPersons = adultCount + childCount + infantCount;
   const perPersonMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
@@ -108,14 +114,15 @@ export default function FlightDetailScreen() {
   const infantPricing = passengerPricing.find(p => p.type === "infant_without_seat");
   // Distribute agency fee proportionally across passenger types
   const feePerPerson = totalPersons > 0 ? agencyFee / totalPersons : 0;
-  const adultPerPersonMRU = adultPricing
-    ? applyMarkup(Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
-    : perPersonMRU;
-  const childPerPersonMRU = childPricing
-    ? applyMarkup(Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
+  // عند تغيير الدرجة نحسب السعر بالتناسب مع selectedClassMultiplier
+  const adultPerPersonMRU = adultPricing && selectedClass.toUpperCase() === (flight.class?.toUpperCase() || "ECONOMY")
+    ? applyMarkup(Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, selectedClass)
+    : Math.round(totalMRU / Math.max(totalPersons, 1));
+  const childPerPersonMRU = childPricing && selectedClass.toUpperCase() === (flight.class?.toUpperCase() || "ECONOMY")
+    ? applyMarkup(Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, selectedClass)
     : Math.round(adultPerPersonMRU * 0.75);
-  const infantPerPersonMRU = infantPricing
-    ? applyMarkup(Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
+  const infantPerPersonMRU = infantPricing && selectedClass.toUpperCase() === (flight.class?.toUpperCase() || "ECONOMY")
+    ? applyMarkup(Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, selectedClass)
     : Math.round(adultPerPersonMRU * 0.10);
 
 
@@ -440,7 +447,7 @@ export default function FlightDetailScreen() {
                 price: String(totalMRU),
                 priceCurrency: "MRU",
                 currency: flight.currency,
-                class: flight.class,
+                class: selectedClass,
                 tripType: isRoundTrip ? "roundtrip" : "oneway",
                 returnDate: params.returnDate || "",
                 passengers: String(adultCount),

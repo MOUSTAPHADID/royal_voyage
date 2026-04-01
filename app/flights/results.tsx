@@ -14,6 +14,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS, Flight } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
 import { formatAmadeusPriceMRU, toMRU } from "@/lib/currency";
@@ -257,7 +258,7 @@ export default function FlightResultsScreen() {
                 defaultSource={undefined}
               />
             ) : (
-              <Text style={{ fontSize: 22 }}>✈</Text>
+              <MaterialIcons name="flight" size={22} color={colors.muted} />
             )}
           </View>
           <View>
@@ -585,7 +586,7 @@ export default function FlightResultsScreen() {
         </View>
         {/* Bags filter row */}
         <View style={[styles.classRow, { marginTop: 4 }]}>
-          <Text style={[styles.sortLabel, { color: colors.muted }]}>🧳</Text>
+          <MaterialIcons name="luggage" size={18} color={colors.muted} style={{ marginRight: 4 }} />
           {([null, 1, 2, 3] as (number | null)[]).map((n) => (
             <Pressable
               key={String(n)}
@@ -616,7 +617,7 @@ export default function FlightResultsScreen() {
           <View style={[styles.resultsCount, { backgroundColor: colors.background }]}>
             <Text style={[styles.resultsText, { color: colors.muted }]}>
               {filteredFlights.length} {t.flights.flightsFound}
-              {!useMock && amadeusResult?.success ? " · ✅" : " · 📊"}
+              {!useMock && amadeusResult?.success ? " · Live" : " · Mock"}
             </Text>
             {isError && (
               <Text style={[styles.errorNote, { color: colors.warning }]}>
@@ -638,7 +639,7 @@ export default function FlightResultsScreen() {
             removeClippedSubviews={true}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={{ fontSize: 40 }}>✈</Text>
+                <MaterialIcons name="flight" size={40} color={colors.muted} />
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.flights.noFlights}</Text>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
                   {t.flights.noFlightsHint}

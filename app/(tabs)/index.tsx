@@ -31,6 +31,7 @@ import {
 } from "expo-audio";
 import * as FileSystem from "expo-file-system/legacy";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Linking } from "react-native";
 
 type SearchTab = "flights" | "hotels";
@@ -423,7 +424,7 @@ export default function HomeScreen() {
             <View>
               <Text style={styles.greeting}>{greeting()},</Text>
               <Text style={[styles.userName, { textAlign: isRTL ? "right" : "left" }]}>
-                {user?.name?.split(" ")[0] ?? (isRTL ? "مسافر" : "Traveller")} 👋
+                {user?.name?.split(" ")[0] ?? (isRTL ? "مسافر" : "Traveller")}
               </Text>
             </View>
             <Pressable
@@ -666,7 +667,7 @@ export default function HomeScreen() {
 
               {/* Bags */}
               <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <Text style={{ fontSize: 18 }}>🧳</Text>
+                <MaterialIcons name="luggage" size={20} color={colors.muted} />
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "الحقائب" : "Bags"}</Text>
                   <View style={styles.counterRow}>
