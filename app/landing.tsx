@@ -50,7 +50,29 @@ const FOOTER_LINKS = {
   },
 };
 
-const PAYMENT_ICONS = ["VISA", "MC", "AMEX", "PayPal", "Apple Pay", "Google Pay"];
+// شعارات الدفع - SVG URLs من CDN رسمية
+const PAYMENT_LOGOS = [
+  { name: "Visa", url: "https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" },
+  { name: "Mastercard", url: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" },
+  { name: "PayPal", url: "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" },
+  { name: "Apple Pay", url: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" },
+  { name: "Google Pay", url: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" },
+  { name: "Stripe", url: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" },
+  { name: "Amex", url: "https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo_%282018%29.svg" },
+  { name: "UnionPay", url: "https://upload.wikimedia.org/wikipedia/commons/1/1b/UnionPay_logo.svg" },
+];
+
+// شعارات شركات الطيران
+const AIRLINE_LOGOS = [
+  { name: "Emirates", url: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Emirates_logo.svg" },
+  { name: "Air France", url: "https://upload.wikimedia.org/wikipedia/commons/4/44/Air_France_Logo.svg" },
+  { name: "Turkish Airlines", url: "https://upload.wikimedia.org/wikipedia/commons/0/00/Turkish_Airlines_logo_2019_compact.svg" },
+  { name: "Qatar Airways", url: "https://upload.wikimedia.org/wikipedia/en/9/9b/Qatar_Airways_Logo.svg" },
+  { name: "Lufthansa", url: "https://upload.wikimedia.org/wikipedia/commons/8/8c/Lufthansa_Logo_2018.svg" },
+  { name: "British Airways", url: "https://upload.wikimedia.org/wikipedia/commons/4/42/British_Airways_Logo.svg" },
+  { name: "Royal Air Maroc", url: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Royal_Air_Maroc_logo.svg" },
+  { name: "Air Arabia", url: "https://upload.wikimedia.org/wikipedia/commons/9/9b/Air_Arabia_logo.svg" },
+];
 
 // ── Autocomplete helper (simple city list) ─────────────────────────────────
 const CITY_SUGGESTIONS = [
@@ -444,20 +466,28 @@ export default function LandingPage() {
             </View>
           </View>
 
-          {/* Payment icons */}
-          <View style={styles.paymentRow}>
-            {PAYMENT_ICONS.map((p) => (
-              <View key={p} style={styles.paymentBadge}>
-                <Text style={{ fontSize: 11, fontWeight: "700", color: "#444" }}>{p}</Text>
-              </View>
-            ))}
+          {/* Airline logos */}
+          <View style={[styles.logosSection, { borderTopWidth: 1, borderTopColor: "#d0d8e4", paddingTop: 20 }]}>
+            <Text style={styles.logosSectionTitle}>{isAr ? "شركاؤنا من شركات الطيران" : "Our Airline Partners"}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.logosRow}>
+              {AIRLINE_LOGOS.map((a) => (
+                <View key={a.name} style={styles.logoCard}>
+                  <Image source={{ uri: a.url }} style={styles.logoImg} resizeMode="contain" />
+                </View>
+              ))}
+            </ScrollView>
           </View>
 
-          {/* Partners */}
-          <View style={styles.partnersRow}>
-            <Text style={{ color: "#888", fontSize: 13, marginRight: 12 }}>Powered by</Text>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#003580", marginRight: 16 }}>AMADEUS</Text>
-            <Text style={{ fontSize: 16, fontWeight: "700", color: "#e31837" }}>Sabre</Text>
+          {/* Payment logos */}
+          <View style={[styles.logosSection, { borderTopWidth: 1, borderTopColor: "#d0d8e4", paddingTop: 20 }]}>
+            <Text style={styles.logosSectionTitle}>{isAr ? "طرق الدفع المقبولة" : "Accepted Payment Methods"}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.logosRow}>
+              {PAYMENT_LOGOS.map((p) => (
+                <View key={p.name} style={styles.logoCard}>
+                  <Image source={{ uri: p.url }} style={styles.logoImg} resizeMode="contain" />
+                </View>
+              ))}
+            </ScrollView>
           </View>
 
           {/* Copyright */}
@@ -558,9 +588,11 @@ const styles = StyleSheet.create({
   footerLoginBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: "#1B6CA8", backgroundColor: "#fff", alignSelf: "flex-start" },
   footerLoginBtnText: { fontSize: 13, color: "#1B6CA8", fontWeight: "600" },
   storeBadge: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#1a1a2e", borderRadius: 8, paddingHorizontal: 14, paddingVertical: 10, alignSelf: "flex-start" },
-  paymentRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 32, paddingBottom: 20, justifyContent: "center" },
-  paymentBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: "#c0ccd8", backgroundColor: "#fff" },
-  partnersRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingBottom: 16 },
+  logosSection: { paddingHorizontal: 24, paddingBottom: 16 },
+  logosSectionTitle: { fontSize: 12, color: "#888", fontWeight: "600", textAlign: "center", marginBottom: 12, letterSpacing: 0.5, textTransform: "uppercase" },
+  logosRow: { flexDirection: "row", gap: 12, paddingHorizontal: 4, alignItems: "center" },
+  logoCard: { width: 90, height: 44, backgroundColor: "#fff", borderRadius: 8, borderWidth: 1, borderColor: "#e0e8f0", justifyContent: "center", alignItems: "center", padding: 8 },
+  logoImg: { width: 74, height: 28 },
   footerBottom: { borderTopWidth: 1, borderTopColor: "#d0d8e4", padding: 20, alignItems: "center" },
   footerCopyright: { fontSize: 12, color: "#888", textAlign: "center", lineHeight: 20 },
   // WhatsApp FAB
