@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
-import { DESTINATIONS, FLIGHTS } from "@/lib/mock-data";
+import { DESTINATIONS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { LocationAutocomplete } from "@/components/location-autocomplete";
 import { DatePickerField } from "@/components/ui/date-picker-field";
@@ -896,50 +896,45 @@ export default function HomeScreen() {
           <IconSymbol name="chevron.right" size={18} color="#6366F1" />
         </Pressable>
 
-        {/* Hot Deals */}
+        {/* Why Book With Us */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.home.trendingNow}</Text>
-            <Pressable onPress={() => router.push("/deals" as any)}>
-              <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
-            </Pressable>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {isRTL ? "لماذا Royal Voyage؟" : "Why Royal Voyage?"}
+            </Text>
           </View>
-          {FLIGHTS.slice(0, 3).map((flight) => (
-            <Pressable
-              key={flight.id}
-              style={({ pressed }) => [
-                styles.dealCard,
-                { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.9 : 1 },
-              ]}
-              onPress={() =>
-                router.push({
-                  pathname: "/flights/detail" as any,
-                  params: { id: flight.id },
-                })
-              }
+          {[
+            {
+              icon: "checkmark.seal.fill" as const,
+              color: "#10B981",
+              title: isRTL ? "تذاكر حقيقية" : "Real Tickets",
+              desc: isRTL ? "نحجز مباشرة من شركات الطيران" : "We book directly from airlines",
+            },
+            {
+              icon: "lock.shield.fill" as const,
+              color: "#6366F1",
+              title: isRTL ? "دفع آمن" : "Secure Payment",
+              desc: isRTL ? "دفع ببطاقة أو Bankily أو Sedad" : "Pay by card, Bankily or Sedad",
+            },
+            {
+              icon: "headphones" as const,
+              color: "#F59E0B",
+              title: isRTL ? "دعم 24/7" : "24/7 Support",
+              desc: isRTL ? "فريقنا جاهز لمساعدتك دائما" : "Our team is always here for you",
+            },
+          ].map((item) => (
+            <View
+              key={item.title}
+              style={[styles.dealCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 14 }]}
             >
-              <View style={styles.dealLeft}>
-                <View style={[styles.airlineIcon, { backgroundColor: colors.primary + "15" }]}>
-                  <Text style={{ fontSize: 22 }}>✈</Text>
-                </View>
-                <View>
-                  <Text style={[styles.dealAirline, { color: colors.foreground }]}>{flight.airline}</Text>
-                  <Text style={[styles.dealRoute, { color: colors.muted }]}>
-                    {flight.originCode} → {flight.destinationCode}
-                  </Text>
-                  <Text style={[styles.dealDuration, { color: colors.muted }]}>{flight.duration}</Text>
-                </View>
+              <View style={[styles.airlineIcon, { backgroundColor: item.color + "18" }]}>
+                <IconSymbol name={item.icon} size={24} color={item.color} />
               </View>
-              <View style={styles.dealRight}>
-                <Text style={[styles.dealPrice, { color: colors.primary }]}>${flight.price}</Text>
-                <Text style={[styles.dealClass, { color: colors.muted }]}>{flight.class}</Text>
-                <View style={[styles.dealSeats, { backgroundColor: colors.error + "15" }]}>
-                  <Text style={[styles.dealSeatsText, { color: colors.error }]}>
-                    {flight.seatsLeft} {t.flights.seatsLeft}
-                  </Text>
-                </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.dealAirline, { color: colors.foreground }]}>{item.title}</Text>
+                <Text style={[styles.dealRoute, { color: colors.muted }]}>{item.desc}</Text>
               </View>
-            </Pressable>
+            </View>
           ))}
         </View>
 

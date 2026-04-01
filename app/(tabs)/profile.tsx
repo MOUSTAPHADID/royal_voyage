@@ -80,6 +80,14 @@ export default function ProfileScreen() {
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
 
+  // مستوى المسافر بناءً على عدد الحجوزات المؤكدة
+  const getTravelerLevel = () => {
+    if (confirmedBookings >= 20) return language === "ar" ? "بلاتيني" : language === "fr" ? "Platine" : "Platinum";
+    if (confirmedBookings >= 10) return language === "ar" ? "ذهبي" : language === "fr" ? "Or" : "Gold";
+    if (confirmedBookings >= 5) return language === "ar" ? "فضي" : language === "fr" ? "Argent" : "Silver";
+    return language === "ar" ? "مبتدئ" : language === "fr" ? "Débutant" : "Starter";
+  };
+
   const currentLangLabel = LANGUAGES.find((l) => l.code === language)?.nativeName ?? language;
 
   const handleLogout = () => {
@@ -170,7 +178,7 @@ export default function ProfileScreen() {
             </View>
             <View style={[styles.statDivider, { backgroundColor: "rgba(255,255,255,0.2)" }]} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>Gold</Text>
+              <Text style={styles.statValue}>{getTravelerLevel()}</Text>
               <Text style={styles.statLabel}>{t.profile.status}</Text>
             </View>
           </View>
@@ -270,7 +278,7 @@ export default function ProfileScreen() {
           delayLongPress={1500}
           style={{ alignSelf: "center" }}
         >
-          <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage v1.0.0  ·  Since 2023</Text>
+          <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage v2.0  ·  Since 2023</Text>
         </Pressable>
 
         {/* Logout */}
