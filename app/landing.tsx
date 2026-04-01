@@ -514,6 +514,27 @@ export default function LandingPage() {
             </ScrollView>
           </View>
 
+          {/* Duffel Technology Partner */}
+          <View style={[styles.logosSection, { borderTopWidth: 1, borderTopColor: "#d0d8e4", paddingTop: 20 }]}>
+            <Text style={styles.logosSectionTitle}>{isAr ? "شريكنا التقني" : "Technology Partner"}</Text>
+            <View style={{ alignItems: "center" }}>
+              <View style={[styles.duffelCard]}>
+                <Image
+                  source={{ uri: "https://assets.duffel.com/img/duffel-logo.svg" }}
+                  style={{ width: 100, height: 32 }}
+                  resizeMode="contain"
+                  onError={() => {}}
+                />
+                <View style={{ marginTop: 6, alignItems: "center" }}>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: "#1a1a2e" }}>Duffel</Text>
+                  <Text style={{ fontSize: 10, color: "#666", textAlign: "center", marginTop: 2 }}>
+                    {isAr ? "شريك تقني معتمد" : "Certified API Partner"}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
           {/* Payment logos */}
           <View style={[styles.logosSection, { borderTopWidth: 1, borderTopColor: "#d0d8e4", paddingTop: 20 }]}>
             <Text style={styles.logosSectionTitle}>{isAr ? "طرق الدفع المقبولة" : "Accepted Payment Methods"}</Text>
@@ -633,4 +654,5 @@ const styles = StyleSheet.create({
   footerCopyright: { fontSize: 12, color: "#888", textAlign: "center", lineHeight: 20 },
   // WhatsApp FAB
   whatsappFab: { position: "absolute", bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: "#25D366", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
+  duffelCard: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1.5, borderColor: "#1a1a2e", paddingHorizontal: 24, paddingVertical: 16, alignItems: "center", minWidth: 160, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
 });
