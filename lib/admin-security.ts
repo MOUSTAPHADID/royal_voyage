@@ -17,7 +17,7 @@ const STORAGE_KEYS = {
 
 // Default credentials
 const DEFAULT_EMAIL = "suporte@royalvoyage.online";
-const DEFAULT_PASSWORD = "RoyalVoyage2024!";
+const DEFAULT_PASSWORD = "RV@Admin#2026$Secure!";
 const MAX_ATTEMPTS = 3;
 const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
 

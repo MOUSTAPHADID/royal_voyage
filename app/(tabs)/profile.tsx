@@ -49,8 +49,8 @@ export default function ProfileScreen() {
 
 
   const handleAdminAccess = () => {
-    // Direct access — no authentication
-    router.push("/admin" as any);
+    // Open admin login screen
+    router.push("/admin/login" as any);
   };
 
 

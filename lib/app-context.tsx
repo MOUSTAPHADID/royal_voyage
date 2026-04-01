@@ -18,7 +18,7 @@ export type User = {
 // Admin credentials — stored only in app logic, never shown to customers
 // Fallback defaults — actual credentials come from admin-security (AsyncStorage)
 const DEFAULT_ADMIN_EMAIL = "suporte@royalvoyage.online";
-const DEFAULT_ADMIN_PASSWORD = "RoyalVoyage2024!";
+const DEFAULT_ADMIN_PASSWORD = "RV@Admin#2026$Secure!";
 
 type AppContextType = {
   // Auth
