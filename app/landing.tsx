@@ -75,6 +75,9 @@ const AIRLINE_LOGOS = [
   { name: "Royal Air Maroc", url: "https://cdn.simpleicons.org/royalairmaroc/CC0000" },
   { name: "Air Arabia", url: "https://cdn.simpleicons.org/airarabia/E31E24" },
   { name: "Royal Air Mauritanie", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Royal_Air_Mauritanie_Logo.svg/320px-Royal_Air_Mauritanie_Logo.svg.png" },
+  { name: "Tunisair", url: "https://cdn.simpleicons.org/tunisair/E31E24" },
+  { name: "EgyptAir", url: "https://cdn.simpleicons.org/egyptair/002B7F" },
+  { name: "Mauritania Airlines", url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Mauritania_Airlines_logo.svg/320px-Mauritania_Airlines_logo.svg.png" },
 ];
 
 // ── Duffel-powered Airport Autocomplete ─────────────────────────────────────

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
   Animated,
+  Linking,
 } from "react-native";
 import { useEffect, useRef } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -473,6 +474,19 @@ export default function FlightDetailScreen() {
           }
         >
           <Text style={styles.bookBtnText}>احجز الآن</Text>
+        </Pressable>
+
+        {/* Powered by Duffel */}
+        <Pressable
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10 }}
+          onPress={() => Linking.openURL("https://duffel.com")}
+        >
+          <Text style={{ fontSize: 9, color: colors.muted, letterSpacing: 0.5, textTransform: "uppercase" }}>Powered by</Text>
+          <Image
+            source={{ uri: "https://assets.duffel.com/img/duffel-logo.svg" }}
+            style={{ width: 52, height: 16 }}
+            resizeMode="contain"
+          />
         </Pressable>
       </View>
     </ScreenContainer>

@@ -6,6 +6,7 @@ import {
   Pressable,
   StyleSheet,
   Linking,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
@@ -270,6 +271,48 @@ export default function AboutScreen() {
             </View>
           </View>
 
+          {/* Technology Partners */}
+          <Text style={[styles.servicesTitle, { color: NAVY, marginTop: 8 }]}>
+            {lang === "ar" ? "شركاؤنا التقنيون" : lang === "fr" ? "Partenaires Technologiques" : "Technology Partners"}
+          </Text>
+          <Pressable
+            style={[styles.partnerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            onPress={() => Linking.openURL("https://duffel.com")}
+          >
+            <Image
+              source={{ uri: "https://assets.duffel.com/img/duffel-logo.svg" }}
+              style={{ width: 90, height: 28 }}
+              resizeMode="contain"
+            />
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: NAVY }}>Duffel</Text>
+              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                {lang === "ar" ? "شريك API معتمد — منصة حجز الطيران" : lang === "fr" ? "Partenaire API Certifié — Plateforme de Réservation" : "Certified API Partner — Flight Booking Platform"}
+              </Text>
+            </View>
+            <FontAwesome5 name="external-link-alt" size={12} color={colors.muted} />
+          </Pressable>
+
+          {/* Airline Partners */}
+          <Text style={[styles.servicesTitle, { color: NAVY, marginTop: 8 }]}>
+            {lang === "ar" ? "شركاء الطيران" : lang === "fr" ? "Compagnies Aériennes Partenaires" : "Airline Partners"}
+          </Text>
+          <View style={[styles.airlinesGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            {[
+              { name: "Royal Air Maroc", url: "https://cdn.simpleicons.org/royalairmaroc/CC0000" },
+              { name: "Qatar Airways", url: "https://cdn.simpleicons.org/qatarairways/5C0632" },
+              { name: "Turkish Airlines", url: "https://cdn.simpleicons.org/turkishairlines/C70A0A" },
+              { name: "Air Arabia", url: "https://cdn.simpleicons.org/airarabia/E31E24" },
+              { name: "EgyptAir", url: "https://cdn.simpleicons.org/egyptair/002B7F" },
+              { name: "Tunisair", url: "https://cdn.simpleicons.org/tunisair/E31E24" },
+            ].map((a) => (
+              <View key={a.name} style={styles.airlineItem}>
+                <Image source={{ uri: a.url }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+                <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center", marginTop: 4 }}>{a.name}</Text>
+              </View>
+            ))}
+          </View>
+
           {/* Footer */}
           <Text style={[styles.footer, { color: colors.muted }]}>
             © 2023–2026 Royal Voyage. {lang === "ar" ? "جميع الحقوق محفوظة." : lang === "fr" ? "Tous droits réservés." : "All rights reserved."}
@@ -443,5 +486,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 8,
     marginBottom: 20,
+  },
+  partnerCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  airlinesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    gap: 8,
+    marginBottom: 8,
+  },
+  airlineItem: {
+    width: "30%",
+    flexGrow: 1,
+    alignItems: "center",
+    padding: 8,
   },
 });
