@@ -18,7 +18,7 @@ import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
 import { formatAmadeusPriceMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
-import { applyMarkup } from "@/lib/pricing-settings";
+import { applyMarkup, getAgencyFee } from "@/lib/pricing-settings";
 
 type SortOption = "price" | "duration" | "departure";
 
@@ -134,7 +134,7 @@ export default function FlightResultsScreen() {
   // Calculate min/max prices for slider
   const { minPrice, maxPrice } = useMemo(() => {
     if (activeFlights.length === 0) return { minPrice: 0, maxPrice: 999999 };
-    const prices = activeFlights.map((f) => applyMarkup(toMRU(f.price, f.currency || "EUR"), f.originCode, f.destinationCode, f.class));
+    const prices = activeFlights.map((f) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class));
     return { minPrice: Math.floor(Math.min(...prices)), maxPrice: Math.ceil(Math.max(...prices)) };
   }, [activeFlights]);
 
@@ -155,7 +155,7 @@ export default function FlightResultsScreen() {
     return activeFlights
       .filter((f) => filterClass === "All" || f.class === filterClass)
       .filter((f) => {
-        const priceMRU = applyMarkup(toMRU(f.price, f.currency || "EUR"), f.originCode, f.destinationCode, f.class);
+        const priceMRU = applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
         return priceMRU >= priceRange[0] && priceMRU <= priceRange[1];
       })
       .sort((a, b) => {
@@ -229,7 +229,7 @@ export default function FlightResultsScreen() {
         </View>
         <View style={styles.priceBox}>
           <Text style={[styles.price, { color: colors.primary }]}>
-            {fmt(applyMarkup(toMRU(item.price, item.currency || "EUR"), item.originCode, item.destinationCode, item.class))}
+            {fmt(applyMarkup(toMRU(item.price, item.currency || "EUR") + getAgencyFee(item.originCode, item.destinationCode), item.originCode, item.destinationCode, item.class))}
           </Text>
           <Text style={[styles.perPerson, { color: colors.muted }]}>الإجمالي</Text>
         </View>
