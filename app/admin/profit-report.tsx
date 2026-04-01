@@ -175,7 +175,7 @@ export default function ProfitReportScreen() {
 </head>
 <body>
   <div class="header">
-    <div class="logo">ROYAL SERVICE</div>
+    <div class="logo">ROYAL VOYAGE</div>
     <div class="subtitle">وكالة السفر الملكية</div>
     <div class="report-title">تقرير الأرباح المالي</div>
     <div class="period">الفترة: ${monthLabel} | تاريخ الإصدار: ${dateStr}</div>
@@ -286,7 +286,7 @@ export default function ProfitReportScreen() {
   </div>
 
   <div class="footer">
-    Royal Service — تم الإنشاء تلقائياً بتاريخ ${dateStr}
+    Royal Voyage — تم الإنشاء تلقائياً بتاريخ ${dateStr}
   </div>
 </body>
 </html>`;

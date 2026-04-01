@@ -12,15 +12,15 @@ const NAV_LINKS_AR = ["رحلات", "فنادق", "تأجير سيارات"];
 const NAV_LINKS_EN = ["Flights", "Stays", "Rental cars"];
 
 const FEATURES_AR = [
-  { icon: "✈️", title: "سافر بأقل تكلفة", desc: "احجز مباشرة من موقعنا وتطبيقنا. نقدم أفضل أسعار التذاكر لجميع الوجهات لكلٍّ من الرحلات المباشرة والمتعددة المحطات. مع Royal Service، مغامرتك القادمة على بُعد خطوة." },
+  { icon: "✈️", title: "سافر بأقل تكلفة", desc: "احجز مباشرة من موقعنا وتطبيقنا. نقدم أفضل أسعار التذاكر لجميع الوجهات لكلٍّ من الرحلات المباشرة والمتعددة المحطات. مع Royal Voyage، مغامرتك القادمة على بُعد خطوة." },
   { icon: "📋", title: "ابقَ على اطلاع", desc: "هل تحتاج معلومات عن رحلتك؟ سجّل دخولك لمتابعة تفاصيل رحلتك وخيارات الإضافات وكل ما يتعلق بحجزك في الوقت الفعلي وبدون ضغط." },
-  { icon: "💰", title: "وفّر وخطّط بسهولة", desc: "مع تطبيق Royal Service، ستحصل على عروض لا تُصدَّق وخصومات حصرية. احجز رحلاتك وأدِر تفاصيل سفرك — كل شيء في مكان واحد. لماذا الانتظار؟" },
+  { icon: "💰", title: "وفّر وخطّط بسهولة", desc: "مع تطبيق Royal Voyage، ستحصل على عروض لا تُصدَّق وخصومات حصرية. احجز رحلاتك وأدِر تفاصيل سفرك — كل شيء في مكان واحد. لماذا الانتظار؟" },
 ];
 
 const FEATURES_EN = [
-  { icon: "✈️", title: "Fly for less", desc: "Fly more for less with Royal Service. When you book directly through our site or app, we offer cheap flight deals to all destinations for both direct and multi-city trips. With Royal Service, your next adventure is just around the corner." },
+  { icon: "✈️", title: "Fly for less", desc: "Fly more for less with Royal Voyage. When you book directly through our site or app, we offer cheap flight deals to all destinations for both direct and multi-city trips. With Royal Voyage, your next adventure is just around the corner." },
   { icon: "📋", title: "Stay informed", desc: "Need more info about your flight? Log in to My Bookings for trip details, check-in options and everything related to your add-ons. Plus, track your refund status in real time with no stress." },
-  { icon: "💰", title: "Save big and plan easy", desc: "Ready to explore more while spending less? With the Royal Service app, you'll unlock unbeatable deals and exclusive savings. Easily book flights and manage your travel details — all in one place. Why wait?" },
+  { icon: "💰", title: "Save big and plan easy", desc: "Ready to explore more while spending less? With the Royal Voyage app, you'll unlock unbeatable deals and exclusive savings. Easily book flights and manage your travel details — all in one place. Why wait?" },
 ];
 
 const TIPS_AR = [
@@ -185,7 +185,7 @@ export default function LandingPage() {
           <View style={styles.topBanner}>
             <View style={{ flex: 1 }}>
               <Text style={styles.bannerTitle}>{isAr ? "ضمان أفضل سعر" : "Best Price Guarantee"}</Text>
-              <Text style={styles.bannerSub}>{isAr ? "أدنى أسعار الرحلات مضمونة على تطبيق Royal Service" : "Lowest fares guaranteed on the Royal Service app"}</Text>
+              <Text style={styles.bannerSub}>{isAr ? "أدنى أسعار الرحلات مضمونة على تطبيق Royal Voyage" : "Lowest fares guaranteed on the Royal Voyage app"}</Text>
               <Pressable onPress={() => router.push("/auth/login" as any)}>
                 <Text style={styles.bannerLink}>{isAr ? "تحميل ومعرفة المزيد" : "Download and learn more"}</Text>
               </Pressable>
@@ -371,12 +371,12 @@ export default function LandingPage() {
         {/* ── FIND BEST DEALS ARTICLE ── */}
         <View style={styles.articleSection}>
           <Text style={[styles.articleH1, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr ? "ابحث عن أفضل عروض الرحلات مع Royal Service" : "Find the Best Deals on Flights with Royal Service"}
+            {isAr ? "ابحث عن أفضل عروض الرحلات مع Royal Voyage" : "Find the Best Deals on Flights with Royal Voyage"}
           </Text>
           <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
             {isAr
-              ? "ابحث واحجز رحلاتك الجوية بأسعار رخيصة في ثوانٍ مع Royal Service، مقارنةً بأسعار أكثر من 500 شركة طيران لضمان أفضل الأسعار. استمتع بخصومات حصرية وتذاكر مرنة ودعم عملاء على مدار الساعة. وفّر أكثر بالحجز المبكر والمرونة في تواريخ السفر ومراعاة المطارات القريبة."
-              : "Find and book cheap flights in seconds with Royal Service, comparing prices from 500+ airlines to secure the best fares. Enjoy exclusive discounts, flexible ticket options, and 24/7 customer support. Save more by booking early, staying flexible with travel dates, and considering nearby airports."}
+              ? "ابحث واحجز رحلاتك الجوية بأسعار رخيصة في ثوانٍ مع Royal Voyage، مقارنةً بأسعار أكثر من 500 شركة طيران لضمان أفضل الأسعار. استمتع بخصومات حصرية وتذاكر مرنة ودعم عملاء على مدار الساعة. وفّر أكثر بالحجز المبكر والمرونة في تواريخ السفر ومراعاة المطارات القريبة."
+              : "Find and book cheap flights in seconds with Royal Voyage, comparing prices from 500+ airlines to secure the best fares. Enjoy exclusive discounts, flexible ticket options, and 24/7 customer support. Save more by booking early, staying flexible with travel dates, and considering nearby airports."}
           </Text>
           <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
             {isAr
@@ -384,7 +384,7 @@ export default function LandingPage() {
               : "With our platform, you can effortlessly compare thousands of flights to find the best airline tickets and airfares for your dream destination. Don't miss out on limited-time deals that make travel more affordable than ever."}
           </Text>
           <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr ? "ابدأ رحلتك اليوم وسافر أكثر بتكلفة أقل مع Royal Service!" : "Start your journey today and travel more for less with Royal Service!"}
+            {isAr ? "ابدأ رحلتك اليوم وسافر أكثر بتكلفة أقل مع Royal Voyage!" : "Start your journey today and travel more for less with Royal Voyage!"}
           </Text>
 
           <Text style={[styles.articleH2, { textAlign: isAr ? "right" : "left" }]}>
@@ -392,8 +392,8 @@ export default function LandingPage() {
           </Text>
           <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
             {isAr
-              ? "إيجاد أفضل سعر للرحلة ليس أمراً معقداً. القليل من المرونة والتخطيط الذكي يمكن أن يوفر عليك الكثير في أسعار التذاكر. سواء كنت تحجز رحلة عفوية أو تخطط مسبقاً، هذه النصائح ستساعدك في إيجاد أدنى الأسعار مع Royal Service."
-              : "Finding the best flight price doesn't have to be complicated. A little flexibility and smart planning can help you save big on airfare. Whether you're booking a spontaneous getaway or planning months in advance, these tips will help you find the lowest prices on flights with Royal Service."}
+              ? "إيجاد أفضل سعر للرحلة ليس أمراً معقداً. القليل من المرونة والتخطيط الذكي يمكن أن يوفر عليك الكثير في أسعار التذاكر. سواء كنت تحجز رحلة عفوية أو تخطط مسبقاً، هذه النصائح ستساعدك في إيجاد أدنى الأسعار مع Royal Voyage."
+              : "Finding the best flight price doesn't have to be complicated. A little flexibility and smart planning can help you save big on airfare. Whether you're booking a spontaneous getaway or planning months in advance, these tips will help you find the lowest prices on flights with Royal Voyage."}
           </Text>
           {tips.map((tip, i) => (
             <View key={i} style={[styles.tipRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
@@ -493,8 +493,8 @@ export default function LandingPage() {
           {/* Copyright */}
           <View style={styles.footerBottom}>
             <Text style={styles.footerCopyright}>
-              Royal Service / Nouakchott, Mauritania{"\n"}
-              © 2026 Royal Service. {isAr ? "جميع الحقوق محفوظة." : "All Rights Reserved."}
+              Royal Voyage / Nouakchott, Mauritania{"\n"}
+              © 2026 Royal Voyage. {isAr ? "جميع الحقوق محفوظة." : "All Rights Reserved."}
             </Text>
           </View>
         </View>

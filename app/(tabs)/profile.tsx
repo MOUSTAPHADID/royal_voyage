@@ -278,7 +278,7 @@ export default function ProfileScreen() {
           delayLongPress={1500}
           style={{ alignSelf: "center" }}
         >
-          <Text style={[styles.version, { color: colors.muted }]}>Royal Service  ·  {language === "ar" ? "منذ 2023" : language === "fr" ? "Depuis 2023" : "Since 2023"}</Text>
+          <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage  ·  {language === "ar" ? "منذ 2023" : language === "fr" ? "Depuis 2023" : "Since 2023"}</Text>
         </Pressable>
 
         {/* Logout */}

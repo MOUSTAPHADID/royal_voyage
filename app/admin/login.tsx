@@ -80,7 +80,7 @@ export default function AdminLoginScreen() {
             style={s.logo}
             resizeMode="contain"
           />
-          <Text style={s.appName}>Royal Service</Text>
+          <Text style={s.appName}>Royal Voyage</Text>
           <Text style={s.tagline}>لوحة الإدارة</Text>
           <View style={s.badge}>
             <Text style={s.badgeText}>🔐 وصول مقيد</Text>

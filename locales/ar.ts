@@ -319,7 +319,7 @@ export const ar = {
     slide2Title: "احجز بسهولة",
     slide2Desc: "احجز رحلتك في خطوات بسيطة مع تأكيد فوري",
     slide3Title: "سافر بثقة",
-    slide3Desc: "استمتع بتجربة سفر ملكية مع Royal Service",
+    slide3Desc: "استمتع بتجربة سفر ملكية مع Royal Voyage",
   },
 };
 

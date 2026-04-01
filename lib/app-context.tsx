@@ -136,7 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (emailOrPhone.toLowerCase() === adminEmail.toLowerCase() && password === adminPassword) {
       const adminUser: User = {
         id: "admin",
-        name: "مدير Royal Service",
+        name: "مدير Royal Voyage",
         email: adminEmail,
         isAdmin: true,
       };
@@ -188,7 +188,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       const { scheduleLocalNotification } = await import("@/lib/push-notifications");
       await scheduleLocalNotification(
-        "رمز التحقق - Royal Service",
+        "رمز التحقق - Royal Voyage",
         `رمز التحقق الخاص بك: ${code}`,
         { type: "verification", code }
       );

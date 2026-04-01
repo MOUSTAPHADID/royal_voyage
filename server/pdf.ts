@@ -1,5 +1,5 @@
 /**
- * Royal Service — Premium PDF Ticket Generator
+ * Royal Voyage — Premium PDF Ticket Generator
  * Generates airline-style boarding pass tickets and hotel confirmations.
  * Design inspired by real boarding passes: tear-off stub, QR code, airline logo.
  */
@@ -137,7 +137,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
 
       // Logo text
       doc.fontSize(20).fillColor(GOLD).font("Helvetica-Bold")
-        .text("ROYAL SERVICE", M, 22, { width: 260 });
+        .text("ROYAL VOYAGE", M, 22, { width: 260 });
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
         .text("Your Premium Travel Partner", M, 46, { width: 260 });
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")
@@ -381,7 +381,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
       // ══════════════════════════════════════════════════════════════════════
       doc.rect(0, H - 56, W, 56).fill(NAVY);
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)").font("Helvetica")
-        .text("Royal Service Travel Agency (Since 2023)  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  Tel/WhatsApp: +222 33 70 00 00  ·  suporte@royalvoyage.online", M, H - 38, { width: cW, align: "center" })
+        .text("Royal Voyage Travel Agency (Since 2023)  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  Tel/WhatsApp: +222 33 70 00 00  ·  suporte@royalvoyage.online", M, H - 38, { width: cW, align: "center" })
         .text("This is an automated ticket. Please do not reply to this email.", M, H - 22, { width: cW, align: "center" });
 
       doc.end();
@@ -448,7 +448,7 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       doc.restore();
 
       doc.fontSize(20).fillColor(GOLD).font("Helvetica-Bold")
-        .text("ROYAL SERVICE", M, 22, { width: 260 });
+        .text("ROYAL VOYAGE", M, 22, { width: 260 });
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
         .text("Hotel Booking Confirmation", M, 46, { width: 260 });
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")
@@ -616,7 +616,7 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       // ── Footer ─────────────────────────────────────────────────────────────
       doc.rect(0, H - 56, W, 56).fill(NAVY);
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)").font("Helvetica")
-        .text("Royal Service Travel Agency (Since 2023)  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  Tel/WhatsApp: +222 33 70 00 00  ·  suporte@royalvoyage.online", M, H - 38, { width: cW, align: "center" })
+        .text("Royal Voyage Travel Agency (Since 2023)  ·  Tavragh Zeina, Nouakchott, Mauritania  ·  Tel/WhatsApp: +222 33 70 00 00  ·  suporte@royalvoyage.online", M, H - 38, { width: cW, align: "center" })
         .text("This is an automated confirmation. Please do not reply to this email.", M, H - 22, { width: cW, align: "center" });
 
       doc.end();

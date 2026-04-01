@@ -1,5 +1,5 @@
 /**
- * Royal Service — Email Service
+ * Royal Voyage — Email Service
  * Sends flight tickets and hotel booking confirmations to customers.
  * Uses nodemailer with Gmail SMTP (configurable via env vars).
  */
@@ -8,7 +8,7 @@ import { generateFlightTicketPDF, generateHotelConfirmationPDF } from "./pdf";
 
 // Company info
 const COMPANY = {
-  name: "Royal Service",
+  name: "Royal Voyage",
   phone: "+222 33 70 00 00",
   email: "suporte@royalvoyage.online",
   address: "Tavragh Zeina, Nouakchott, Mauritania",
@@ -76,7 +76,7 @@ function baseLayout(content: string, title: string): string {
 <body>
   <div class="wrapper">
     <div class="header">
-      <div class="header-logo">✈ ROYAL SERVICE</div>
+      <div class="header-logo">✈ ROYAL VOYAGE</div>
       <div class="header-sub">Your Premium Travel Partner</div>
     </div>
     <div class="body">
@@ -84,7 +84,7 @@ function baseLayout(content: string, title: string): string {
     </div>
     <div class="footer">
       <p>
-        <strong style="color:#C9A84C">Royal Service Travel Agency</strong><br/>
+        <strong style="color:#C9A84C">Royal Voyage Travel Agency</strong><br/>
         ${COMPANY.address}<br/>
         📞 ${COMPANY.phone} &nbsp;|&nbsp; ✉ <a href="mailto:${COMPANY.email}">${COMPANY.email}</a>
       </p>
@@ -354,9 +354,9 @@ export async function sendPnrUpdateEmail(data: PnrUpdateData): Promise<boolean> 
 
   try {
     await transporter.sendMail({
-      from: `"Royal Service ✈" <${process.env.EMAIL_USER}>`,
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.passengerEmail,
-      subject: `✈ ${data.ticketNumber ? 'PNR & Ticket' : 'PNR'} Updated — ${data.bookingRef} | Royal Service`,
+      subject: `✈ ${data.ticketNumber ? 'PNR & Ticket' : 'PNR'} Updated — ${data.bookingRef} | Royal Voyage`,
       html,
     });
     console.log(`[Email] ✅ PNR update email sent to ${data.passengerEmail}`);
@@ -383,15 +383,15 @@ export async function sendFlightTicket(data: FlightTicketData): Promise<boolean>
 
   if (!transporter) {
     console.log(`[Email] Would send flight ticket to: ${data.passengerEmail}`);
-    console.log(`[Email] Subject: ✈ Your Flight Ticket — ${data.bookingRef} | Royal Service`);
+    console.log(`[Email] Subject: ✈ Your Flight Ticket — ${data.bookingRef} | Royal Voyage`);
     return true;
   }
 
   try {
     await transporter.sendMail({
-      from: `"Royal Service ✈" <${process.env.EMAIL_USER}>`,
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.passengerEmail,
-      subject: `✈ Your Flight Ticket — ${data.bookingRef} | Royal Service`,
+      subject: `✈ Your Flight Ticket — ${data.bookingRef} | Royal Voyage`,
       html,
       attachments: pdfBuffer ? [{
         filename: `RoyalVoyage_Ticket_${data.bookingRef}.pdf`,
@@ -421,15 +421,15 @@ export async function sendHotelConfirmation(data: HotelConfirmationData): Promis
 
   if (!transporter) {
     console.log(`[Email] Would send hotel confirmation to: ${data.guestEmail}`);
-    console.log(`[Email] Subject: 🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Service`);
+    console.log(`[Email] Subject: 🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Voyage`);
     return true;
   }
 
   try {
     await transporter.sendMail({
-      from: `"Royal Service ✈" <${process.env.EMAIL_USER}>`,
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.guestEmail,
-      subject: `🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Service`,
+      subject: `🏨 Hotel Booking Confirmed — ${data.bookingRef} | Royal Voyage`,
       html,
       attachments: pdfBuffer ? [{
         filename: `RoyalVoyage_Hotel_${data.bookingRef}.pdf`,
@@ -475,7 +475,7 @@ function paymentConfirmationHtml(data: PaymentConfirmationData): string {
   const content = `
     <p style="font-size:16px; margin-bottom:24px;">
       Dear <strong>${data.passengerName}</strong>,<br/>
-      Great news! Your payment has been <span class="badge" style="background:#22C55E;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">CONFIRMED ✅</span> by Royal Service.
+      Great news! Your payment has been <span class="badge" style="background:#22C55E;color:#fff;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;">CONFIRMED ✅</span> by Royal Voyage.
     </p>
 
     <div class="ref-box">
@@ -525,7 +525,7 @@ function paymentConfirmationHtml(data: PaymentConfirmationData): string {
     </div>` : ""}
 
     <div class="notice">
-      ✅ Your booking is now fully confirmed. Thank you for choosing Royal Service!<br/>
+      ✅ Your booking is now fully confirmed. Thank you for choosing Royal Voyage!<br/>
       For assistance: ${COMPANY.phone} | ${COMPANY.email} | ${COMPANY.address}
     </div>
   `;
@@ -544,9 +544,9 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
 
   try {
     await transporter.sendMail({
-      from: `"Royal Service ✈" <${process.env.EMAIL_USER}>`,
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.passengerEmail,
-      subject: `✅ Payment Confirmed — ${data.bookingRef} | Royal Service`,
+      subject: `✅ Payment Confirmed — ${data.bookingRef} | Royal Voyage`,
       html,
     });
     console.log(`[Email] ✅ Payment confirmation sent to ${data.passengerEmail}`);
@@ -629,9 +629,9 @@ export async function sendCancellationEmail(data: CancellationEmailData): Promis
 
   try {
     await transporter.sendMail({
-      from: `"Royal Service ✈" <${process.env.EMAIL_USER}>`,
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.passengerEmail,
-      subject: `❌ Booking Cancelled — ${data.bookingRef} | Royal Service`,
+      subject: `❌ Booking Cancelled — ${data.bookingRef} | Royal Voyage`,
       html,
     });
     console.log(`[Email] ✅ Cancellation email sent to ${data.passengerEmail}`);
@@ -720,9 +720,9 @@ export async function sendHoldConfirmationEmail(data: HoldConfirmationEmailData)
 
   try {
     await transporter.sendMail({
-      from: `"Royal Service ✈" <${process.env.EMAIL_USER}>`,
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
       to: data.passengerEmail,
-      subject: `✅ Booking Confirmed — PNR: ${data.pnr} | Royal Service`,
+      subject: `✅ Booking Confirmed — PNR: ${data.pnr} | Royal Voyage`,
       html,
     });
     console.log(`[Email] ✅ Hold confirmation email sent to ${data.passengerEmail}`);

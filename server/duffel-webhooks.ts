@@ -1,5 +1,5 @@
 /**
- * Royal Service — Duffel Webhooks Handler
+ * Royal Voyage — Duffel Webhooks Handler
  * Receives and processes webhook events from Duffel API.
  * Handles: order creation, cancellation, airline changes, payment events.
  */

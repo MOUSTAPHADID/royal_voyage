@@ -33,14 +33,14 @@ const CONTENT: Record<Lang, {
 }> = {
   ar: {
     dir: "rtl",
-    title: "عن وكالة Royal Service",
+    title: "عن وكالة Royal Voyage",
     subtitle: "شريكك المميز في السفر",
     since: "منذ 2023",
     sections: [
       {
         icon: "star",
         heading: "من نحن",
-        body: "وكالة Royal Service هي وكالة سفر موريتانية متخصصة في تقديم خدمات الحجز الجوي والفندقي بأعلى معايير الجودة. تأسست عام 2023 في نواكشوط، وتسعى إلى تقديم تجربة سفر استثنائية لعملائها.",
+        body: "وكالة Royal Voyage هي وكالة سفر موريتانية متخصصة في تقديم خدمات الحجز الجوي والفندقي بأعلى معايير الجودة. تأسست عام 2023 في نواكشوط، وتسعى إلى تقديم تجربة سفر استثنائية لعملائها.",
       },
       {
         icon: "bullseye",
@@ -69,14 +69,14 @@ const CONTENT: Record<Lang, {
   },
   en: {
     dir: "ltr",
-    title: "About Royal Service",
+    title: "About Royal Voyage",
     subtitle: "Your Premium Travel Partner",
     since: "Since 2023",
     sections: [
       {
         icon: "star",
         heading: "Who We Are",
-        body: "Royal Service is a Mauritanian travel agency specializing in flight and hotel bookings with the highest quality standards. Founded in 2023 in Nouakchott, we strive to deliver an exceptional travel experience for our clients.",
+        body: "Royal Voyage is a Mauritanian travel agency specializing in flight and hotel bookings with the highest quality standards. Founded in 2023 in Nouakchott, we strive to deliver an exceptional travel experience for our clients.",
       },
       {
         icon: "bullseye",
@@ -105,14 +105,14 @@ const CONTENT: Record<Lang, {
   },
   fr: {
     dir: "ltr",
-    title: "À propos de Royal Service",
+    title: "À propos de Royal Voyage",
     subtitle: "Votre Partenaire de Voyage Premium",
     since: "Depuis 2023",
     sections: [
       {
         icon: "star",
         heading: "Qui Sommes-Nous",
-        body: "Royal Service est une agence de voyage mauritanienne spécialisée dans les réservations de vols et d'hôtels selon les plus hauts standards de qualité. Fondée en 2023 à Nouakchott, nous nous efforçons d'offrir une expérience de voyage exceptionnelle à nos clients.",
+        body: "Royal Voyage est une agence de voyage mauritanienne spécialisée dans les réservations de vols et d'hôtels selon les plus hauts standards de qualité. Fondée en 2023 à Nouakchott, nous nous efforçons d'offrir une expérience de voyage exceptionnelle à nos clients.",
       },
       {
         icon: "bullseye",
@@ -272,7 +272,7 @@ export default function AboutScreen() {
 
           {/* Footer */}
           <Text style={[styles.footer, { color: colors.muted }]}>
-            © 2023–2026 Royal Service. {lang === "ar" ? "جميع الحقوق محفوظة." : lang === "fr" ? "Tous droits réservés." : "All rights reserved."}
+            © 2023–2026 Royal Voyage. {lang === "ar" ? "جميع الحقوق محفوظة." : lang === "fr" ? "Tous droits réservés." : "All rights reserved."}
           </Text>
         </View>
       </ScrollView>

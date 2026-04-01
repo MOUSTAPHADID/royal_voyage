@@ -37,7 +37,7 @@ export function buildCheckoutPage(p: CheckoutParams): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Royal Service - \u0627\u0644\u062f\u0641\u0639 \u0639\u0628\u0631 PayPal</title>
+<title>Royal Voyage - \u0627\u0644\u062f\u0641\u0639 \u0639\u0628\u0631 PayPal</title>
 <script src="https://www.paypal.com/sdk/js?client-id=${clientId}&currency=${escapeHtml(p.currency)}&disable-funding=venmo"><\/script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -65,7 +65,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 <body>
 <div class="card">
   <div class="logo">
-    <h1>\u2708\uFE0F Royal Service</h1>
+    <h1>\u2708\uFE0F Royal Voyage</h1>
     <p>\u0627\u0644\u062f\u0641\u0639 \u0627\u0644\u0622\u0645\u0646 \u0639\u0628\u0631 PayPal</p>
   </div>
   <div class="divider"></div>
@@ -100,7 +100,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
       createOrder: function(data, actions) {
         return actions.order.create({
           purchase_units: [{
-            description: 'Royal Service - ' + BOOKING_REF,
+            description: 'Royal Voyage - ' + BOOKING_REF,
             amount: {
               currency_code: CURRENCY,
               value: AMOUNT
@@ -165,7 +165,7 @@ export function buildSuccessPage(p: SuccessParams): string {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Royal Service - \u062a\u0645 \u0627\u0644\u062f\u0641\u0639 \u0628\u0646\u062c\u0627\u062d</title>
+<title>Royal Voyage - \u062a\u0645 \u0627\u0644\u062f\u0641\u0639 \u0628\u0646\u062c\u0627\u062d</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#064e3b 0%,#065f46 50%,#047857 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -228,7 +228,7 @@ h1{font-size:24px;color:#065f46;margin-bottom:8px}
     }
   <\/script>
   <a class="back-btn" href="${p.scheme}://paypal-success?tx=${escapeHtml(p.tx)}" onclick="tryDeepLink(event)">
-    \u2708\uFE0F \u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 Royal Service
+    \u2708\uFE0F \u0627\u0644\u0639\u0648\u062f\u0629 \u0625\u0644\u0649 Royal Voyage
   </a>
   <a class="back-btn-secondary" href="javascript:void(0)" onclick="window.close(); return false;">
     \u0625\u063a\u0644\u0627\u0642 \u0647\u0630\u0647 \u0627\u0644\u0635\u0641\u062d\u0629
@@ -244,7 +244,7 @@ h1{font-size:24px;color:#065f46;margin-bottom:8px}
     }
   <\/script>
   <div class="note">
-    <strong>\u0645\u0647\u0645:</strong> \u0627\u0646\u0633\u062e \u0631\u0642\u0645 \u0627\u0644\u0639\u0645\u0644\u064a\u0629 \u0648\u0623\u062f\u062e\u0644\u0647 \u0641\u064a \u062a\u0637\u0628\u064a\u0642 Royal Service \u0644\u0625\u062a\u0645\u0627\u0645 \u0627\u0644\u062d\u062c\u0632.<br>
+    <strong>\u0645\u0647\u0645:</strong> \u0627\u0646\u0633\u062e \u0631\u0642\u0645 \u0627\u0644\u0639\u0645\u0644\u064a\u0629 \u0648\u0623\u062f\u062e\u0644\u0647 \u0641\u064a \u062a\u0637\u0628\u064a\u0642 Royal Voyage \u0644\u0625\u062a\u0645\u0627\u0645 \u0627\u0644\u062d\u062c\u0632.<br>
     \u0633\u064a\u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u062d\u062c\u0632\u0643 \u062e\u0644\u0627\u0644 24 \u0633\u0627\u0639\u0629 \u0643\u062d\u062f \u0623\u0642\u0635\u0649.
   </div>
 </div>

@@ -1,5 +1,5 @@
 /**
- * Royal Service — Ticket Generator
+ * Royal Voyage — Ticket Generator
  * Generates a formatted boarding pass / hotel voucher as a shareable text
  * that can be displayed in-app or shared via the native share sheet.
  *
@@ -10,7 +10,7 @@
  */
 
 export const COMPANY_INFO = {
-  name: "Royal Service",
+  name: "Royal Voyage",
   phone: "+222 33 70 00 00",
   email: "suporte@royalvoyage.online",
   address: "Tavragh Zeina, Nouakchott, Mauritania",
@@ -85,7 +85,7 @@ export function generateFlightTicket(data: FlightTicketData): string {
 
   const ticket = [
     line("═"),
-    center("✈  ROYAL SERVICE  ✈"),
+    center("✈  ROYAL VOYAGE  ✈"),
     center("BOARDING PASS"),
     line("═"),
     "",
@@ -141,7 +141,7 @@ export function generateFlightTicket(data: FlightTicketData): string {
     center(COMPANY_INFO.email),
     line("═"),
     "",
-    center("Thank you for choosing Royal Service!"),
+    center("Thank you for choosing Royal Voyage!"),
     center("Have a safe and pleasant journey."),
     "",
   ]
@@ -162,7 +162,7 @@ export function generateHotelVoucher(data: HotelVoucherData): string {
 
   const voucher = [
     line("═"),
-    center("🏨  ROYAL SERVICE  🏨"),
+    center("🏨  ROYAL VOYAGE  🏨"),
     center("HOTEL VOUCHER"),
     line("═"),
     "",
@@ -201,7 +201,7 @@ export function generateHotelVoucher(data: HotelVoucherData): string {
     center(COMPANY_INFO.email),
     line("═"),
     "",
-    center("Thank you for choosing Royal Service!"),
+    center("Thank you for choosing Royal Voyage!"),
     center("We wish you a wonderful stay."),
     "",
   ]

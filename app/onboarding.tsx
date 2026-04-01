@@ -93,7 +93,7 @@ export default function OnboardingScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.logoText}>Royal Service</Text>
+        <Text style={styles.logoText}>Royal Voyage</Text>
       </View>
 
       {/* Skip button */}

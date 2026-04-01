@@ -1,5 +1,5 @@
 /**
- * Royal Service — Client-side PDF Ticket Generator
+ * Royal Voyage — Client-side PDF Ticket Generator
  * Uses expo-print to generate a professional PDF ticket locally on the device.
  * Uses expo-sharing to share the PDF via WhatsApp or other apps.
  */
@@ -105,7 +105,7 @@ function generateFlightTicketHTML(data: FlightPDFData): string {
 <div class="ticket">
   <div class="header">
     <div class="plane">✈</div>
-    <h1>ROYAL SERVICE</h1>
+    <h1>ROYAL VOYAGE</h1>
     <div class="subtitle">ELECTRONIC TICKET / BOARDING PASS</div>
   </div>
 
@@ -189,7 +189,7 @@ function generateFlightTicketHTML(data: FlightPDFData): string {
     <div class="company">${COMPANY_INFO.name}</div>
     <div>${COMPANY_INFO.address}</div>
     <div>${COMPANY_INFO.phone} | ${COMPANY_INFO.email}</div>
-    <div style="margin-top:8px; color:#C5A028; font-weight:600;">Thank you for choosing Royal Service!</div>
+    <div style="margin-top:8px; color:#C5A028; font-weight:600;">Thank you for choosing Royal Voyage!</div>
   </div>
 </div>
 </body>
@@ -241,7 +241,7 @@ function generateHotelVoucherHTML(data: HotelPDFData): string {
 <div class="ticket">
   <div class="header">
     <div class="icon">🏨</div>
-    <h1>ROYAL SERVICE</h1>
+    <h1>ROYAL VOYAGE</h1>
     <div class="subtitle">HOTEL RESERVATION VOUCHER</div>
   </div>
 
@@ -287,7 +287,7 @@ function generateHotelVoucherHTML(data: HotelPDFData): string {
     <div class="company">${COMPANY_INFO.name}</div>
     <div>${COMPANY_INFO.address}</div>
     <div>${COMPANY_INFO.phone} | ${COMPANY_INFO.email}</div>
-    <div style="margin-top:8px; color:#C5A028; font-weight:600;">Thank you for choosing Royal Service!</div>
+    <div style="margin-top:8px; color:#C5A028; font-weight:600;">Thank you for choosing Royal Voyage!</div>
   </div>
 </div>
 </body>

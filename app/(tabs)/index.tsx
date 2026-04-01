@@ -900,7 +900,7 @@ export default function HomeScreen() {
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
-              {isRTL ? "لماذا Royal Service؟" : "Why Royal Service?"}
+              {isRTL ? "لماذا Royal Voyage؟" : "Why Royal Voyage?"}
             </Text>
           </View>
           {[

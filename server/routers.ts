@@ -794,7 +794,7 @@ export const appRouter = router({
                 to: expoPushToken,
                 sound: "default",
                 title: "\u2705 \u062a\u0645 \u062a\u0623\u0643\u064a\u062f \u062f\u0641\u0639\u0643",
-                body: `\u062d\u062c\u0632\u0643 ${input.bookingRef} \u062a\u0645 \u062a\u0623\u0643\u064a\u062f\u0647 \u0628\u0646\u062c\u0627\u062d. \u0634\u0643\u0631\u0627\u064b \u0644\u0627\u062e\u062a\u064a\u0627\u0631\u0643 Royal Service!`,
+                body: `\u062d\u062c\u0632\u0643 ${input.bookingRef} \u062a\u0645 \u062a\u0623\u0643\u064a\u062f\u0647 \u0628\u0646\u062c\u0627\u062d. \u0634\u0643\u0631\u0627\u064b \u0644\u0627\u062e\u062a\u064a\u0627\u0631\u0643 Royal Voyage!`,
                 data: { bookingRef: input.bookingRef, type: "payment_confirmed" },
               }),
             });
@@ -1290,7 +1290,7 @@ export const appRouter = router({
           const result = await createPaymentIntent({
             amount: input.amount,
             currency: input.currency,
-            description: input.description || `Royal Service Booking${input.bookingRef ? ` - ${input.bookingRef}` : ""}`,
+            description: input.description || `Royal Voyage Booking${input.bookingRef ? ` - ${input.bookingRef}` : ""}`,
             metadata: {
               ...(input.bookingRef ? { bookingRef: input.bookingRef } : {}),
               ...(input.passengerName ? { passengerName: input.passengerName } : {}),

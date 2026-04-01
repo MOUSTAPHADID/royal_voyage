@@ -221,7 +221,7 @@ export default function LoginScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>Royal Service</Text>
+          <Text style={styles.appName}>Royal Voyage</Text>
           <Text style={styles.tagline}>{t.auth.welcomeBack}</Text>
         </View>
 

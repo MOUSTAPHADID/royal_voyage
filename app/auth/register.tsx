@@ -169,7 +169,7 @@ export default function RegisterScreen() {
             <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "700" }}>← {t.back}</Text>
           </Pressable>
           <Text style={styles.headerTitle}>{t.auth.createAccount}</Text>
-          <Text style={styles.headerSubtitle}>Royal Service</Text>
+          <Text style={styles.headerSubtitle}>Royal Voyage</Text>
         </View>
 
         {/* Form */}
