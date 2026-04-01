@@ -14,6 +14,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { Booking } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useTranslation } from "@/lib/i18n";
 import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
@@ -82,7 +83,7 @@ export default function BookingsScreen() {
         {/* Card Header */}
         <View style={styles.cardHeader}>
           <View style={[styles.typeIcon, { backgroundColor: item.type === "flight" ? colors.primary + "15" : colors.secondary + "20" }]}>
-            <Text style={{ fontSize: 22 }}>{item.type === "flight" ? "✈" : "🏨"}</Text>
+            <MaterialIcons name={item.type === "flight" ? "flight" : "hotel"} size={22} color={item.type === "flight" ? colors.primary : colors.secondary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.bookingTitle, { color: colors.foreground }]}>
@@ -95,7 +96,7 @@ export default function BookingsScreen() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             {item.ticketSent && (
               <View style={[styles.ticketSentBadge, { backgroundColor: "#10B98115" }]}>
-                <Text style={{ fontSize: 12 }}>✉️</Text>
+                <MaterialIcons name="mail" size={14} color="#10B981" />
                 <Text style={{ fontSize: 10, color: "#10B981", fontWeight: "700" }}>تذكرة</Text>
               </View>
             )}
@@ -103,8 +104,8 @@ export default function BookingsScreen() {
               <Text style={[styles.statusText, { color: statusStyle.text }]}>
                 {item.status === "confirmed" ? t.myBookings.confirmed :
                  item.status === "cancelled" ? t.myBookings.cancelled :
-                 item.status === "airline_confirmed" ? "مؤكد ✈️" :
-                 item.status === "processing" ? "معالجة 🔄" :
+                 item.status === "airline_confirmed" ? "مؤكد" :
+                 item.status === "processing" ? "معالجة" :
                  t.myBookings.pending}
               </Text>
             </View>
@@ -244,7 +245,7 @@ export default function BookingsScreen() {
                 { color: filter === tab ? colors.secondary : colors.muted },
               ]}
             >
-              {tab === "all" ? t.myBookings.all : tab === "flights" ? `✈ ${t.home.flights}` : `🏨 ${t.home.hotels}`}
+              {tab === "all" ? t.myBookings.all : tab === "flights" ? t.home.flights : t.home.hotels}
             </Text>
           </Pressable>
         ))}
@@ -252,7 +253,7 @@ export default function BookingsScreen() {
 
       {displayList.length === 0 ? (
         <View style={[styles.emptyState, { backgroundColor: colors.background }]}>
-          <Text style={{ fontSize: 48, marginBottom: 16 }}>{searchResult !== null ? "🔍" : "🗺️"}</Text>
+          <MaterialIcons name={searchResult !== null ? "search" : "map"} size={48} color={colors.muted} style={{ marginBottom: 16 }} />
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>
             {searchResult !== null
               ? (isRTL ? "لا توجد نتائج" : "No results found")

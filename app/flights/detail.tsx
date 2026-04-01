@@ -6,7 +6,9 @@ import {
   Pressable,
   StyleSheet,
   Image,
+  Animated,
 } from "react-native";
+import { useEffect, useRef } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -77,6 +79,18 @@ export default function FlightDetailScreen() {
     : mockFlight;
   const pricing = _usePricingSettings();
   const [selectedClass, setSelectedClass] = useState<string>(params.class || "ECONOMY");
+  const priceAnim = useRef(new Animated.Value(1)).current;
+
+  const animatePrice = () => {
+    Animated.sequence([
+      Animated.timing(priceAnim, { toValue: 0.4, duration: 100, useNativeDriver: true }),
+      Animated.timing(priceAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+    ]).start();
+  };
+
+  useEffect(() => {
+    animatePrice();
+  }, [selectedClass]);
   const isRoundTrip = params.tripType === "roundtrip";
   const adultCount = parseInt(params.passengers || "1", 10);
   const childCount = parseInt(params.children || "0", 10);
@@ -420,9 +434,9 @@ export default function FlightDetailScreen() {
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
         <View>
-          <Text style={[styles.bottomPrice, { color: colors.primary }]}>
+          <Animated.Text style={[styles.bottomPrice, { color: colors.primary, opacity: priceAnim }]}>
             {fmt(totalMRU)}
-          </Text>
+          </Animated.Text>
           <Text style={[styles.bottomLabel, { color: colors.muted }]}>
             {adultCount} بالغ{childCount > 0 ? ` · ${childCount} طفل` : ""}{infantCount > 0 ? ` · ${infantCount} رضيع` : ""}{isRoundTrip ? " · ذهاب وإياب" : ""}
           </Text>

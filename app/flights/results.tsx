@@ -252,10 +252,10 @@ export default function FlightResultsScreen() {
           <View style={[styles.airlineIconBox, { backgroundColor: colors.primary + "15" }]}>
             {item.airlineCode ? (
               <Image
-                source={{ uri: getAirlineLogo(item.airlineCode) || '' }}
+                source={{ uri: `https://images.kiwi.com/airlines/64/${item.airlineCode}.png` }}
                 style={styles.airlineLogo}
                 resizeMode="contain"
-                defaultSource={undefined}
+                onError={() => {}}
               />
             ) : (
               <MaterialIcons name="flight" size={22} color={colors.muted} />
