@@ -93,7 +93,7 @@ export default function FlightDetailScreen() {
   // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
   const baseMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
-  const totalMRU = applyMarkup(baseMRU, flight.originCode, flight.destinationCode);
+  const totalMRU = applyMarkup(baseMRU, flight.originCode, flight.destinationCode, flight.class);
   // سعر الشخص الواحد (للعرض في البادج)
   const totalPersons = adultCount + childCount + infantCount;
   const perPersonMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
@@ -105,13 +105,13 @@ export default function FlightDetailScreen() {
   // Distribute agency fee proportionally across passenger types
   const feePerPerson = totalPersons > 0 ? agencyFee / totalPersons : 0;
   const adultPerPersonMRU = adultPricing
-    ? applyMarkup(Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode)
+    ? applyMarkup(Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
     : perPersonMRU;
   const childPerPersonMRU = childPricing
-    ? applyMarkup(Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode)
+    ? applyMarkup(Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
     : Math.round(adultPerPersonMRU * 0.75);
   const infantPerPersonMRU = infantPricing
-    ? applyMarkup(Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode)
+    ? applyMarkup(Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
     : Math.round(adultPerPersonMRU * 0.10);
 
   const amenities = [

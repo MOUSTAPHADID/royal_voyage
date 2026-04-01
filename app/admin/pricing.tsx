@@ -128,30 +128,71 @@ const FIELDS: FieldConfig[] = [
     step: 0.05,
     section: "أسعار الأطفال",
   },
-  // --- نسبة الهامش ---
+  // --- هامش الرحلات الدولية ---
   {
-    key: "markupPercent",
-    label: "هامش الرحلات الدولية",
+    key: "markupEconomy",
+    label: "اقتصادي — دولي",
     unit: "%",
-    description: "نسبة مضافة على سعر Duffel (مثلاً 5 = +5%) — مخفية عن الزبون",
+    description: "نسبة الهامش على الدرجة الاقتصادية للرحلات الدولية",
     min: 0,
     max: 50,
     step: 0.5,
-    section: "نسبة الهامش",
+    section: "هامش دولي",
   },
   {
-    key: "markupPercentDomestic",
-    label: "هامش الرحلات الداخلية",
+    key: "markupBusiness",
+    label: "أعمال — دولي",
     unit: "%",
-    description: "نسبة مضافة على سعر الرحلات الداخلية (مثلاً 3 = +3%) — مخفية عن الزبون",
+    description: "نسبة الهامش على درجة الأعمال للرحلات الدولية",
     min: 0,
     max: 50,
     step: 0.5,
-    section: "نسبة الهامش",
+    section: "هامش دولي",
+  },
+  {
+    key: "markupFirst",
+    label: "أولى — دولي",
+    unit: "%",
+    description: "نسبة الهامش على الدرجة الأولى للرحلات الدولية",
+    min: 0,
+    max: 50,
+    step: 0.5,
+    section: "هامش دولي",
+  },
+  // --- هامش الرحلات الداخلية ---
+  {
+    key: "markupEconomyDomestic",
+    label: "اقتصادي — داخلي",
+    unit: "%",
+    description: "نسبة الهامش على الدرجة الاقتصادية للرحلات الداخلية",
+    min: 0,
+    max: 50,
+    step: 0.5,
+    section: "هامش داخلي",
+  },
+  {
+    key: "markupBusinessDomestic",
+    label: "أعمال — داخلي",
+    unit: "%",
+    description: "نسبة الهامش على درجة الأعمال للرحلات الداخلية",
+    min: 0,
+    max: 50,
+    step: 0.5,
+    section: "هامش داخلي",
+  },
+  {
+    key: "markupFirstDomestic",
+    label: "أولى — داخلي",
+    unit: "%",
+    description: "نسبة الهامش على الدرجة الأولى للرحلات الداخلية",
+    min: 0,
+    max: 50,
+    step: 0.5,
+    section: "هامش داخلي",
   },
 ];
 
-const SECTIONS = ["رسوم الوكالة", "نسبة الهامش", "أسعار الصرف", "أسعار الأطفال"];
+const SECTIONS = ["رسوم الوكالة", "هامش دولي", "هامش داخلي", "أسعار الصرف", "أسعار الأطفال"];
 
 export default function PricingAdminScreen() {
   const router = useRouter();

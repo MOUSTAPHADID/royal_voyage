@@ -33,10 +33,18 @@ export interface PricingSettings {
   extraLegroomFeeMRU: number;
   /** رسوم تغيير المقعد بعد تسجيل الوصول بالأوقية */
   seatChangeFeeMRU: number;
-  /** نسبة الهامش المضافة على سعر Duffel (مثلاً 5 = 5%) — مخفية عن الزبون */
-  markupPercent: number;
-  /** نسبة هامش الرحلات الداخلية (مثلاً 3 = 3%) — مخفية عن الزبون */
-  markupPercentDomestic: number;
+  /** نسبة هامش الدرجة الاقتصادية — دولي (%) */
+  markupEconomy: number;
+  /** نسبة هامش درجة الأعمال — دولي (%) */
+  markupBusiness: number;
+  /** نسبة هامش الدرجة الأولى — دولي (%) */
+  markupFirst: number;
+  /** نسبة هامش الدرجة الاقتصادية — داخلي (%) */
+  markupEconomyDomestic: number;
+  /** نسبة هامش درجة الأعمال — داخلي (%) */
+  markupBusinessDomestic: number;
+  /** نسبة هامش الدرجة الأولى — داخلي (%) */
+  markupFirstDomestic: number;
   /** تاريخ آخر تحديث لأسعار الصرف */
   ratesLastUpdated?: string;
 }
@@ -53,8 +61,12 @@ export const DEFAULT_PRICING: PricingSettings = {
   childDiscountRate: 0.75,
   extraLegroomFeeMRU: 500,
   seatChangeFeeMRU: 300,
-  markupPercent: 5,
-  markupPercentDomestic: 3,
+  markupEconomy: 5,
+  markupBusiness: 10,
+  markupFirst: 15,
+  markupEconomyDomestic: 3,
+  markupBusinessDomestic: 7,
+  markupFirstDomestic: 10,
   ratesLastUpdated: undefined,
 };
 
@@ -111,18 +123,33 @@ export function getAgencyFee(originCode?: string, destinationCode?: string): num
   return s.agencyFeeMRU;
 }
 
-/** الحصول على نسبة الهامش المناسبة حسب نوع الرحلة */
-export function getMarkupPercent(originCode?: string, destinationCode?: string): number {
+/** تطبيع اسم الدرجة من Duffel/Amadeus إلى مفتاح موحد */
+function normalizeClass(flightClass?: string): "economy" | "business" | "first" {
+  if (!flightClass) return "economy";
+  const c = flightClass.toUpperCase();
+  if (c.includes("FIRST") || c.includes("PREMIUM_FIRST")) return "first";
+  if (c.includes("BUSINESS")) return "business";
+  return "economy";
+}
+
+/** الحصول على نسبة الهامش المناسبة حسب نوع الرحلة والدرجة */
+export function getMarkupPercent(originCode?: string, destinationCode?: string, flightClass?: string): number {
   const s = getPricingSettings();
-  if (originCode && destinationCode && isDomesticFlight(originCode, destinationCode)) {
-    return s.markupPercentDomestic;
+  const cls = normalizeClass(flightClass);
+  const domestic = originCode && destinationCode && isDomesticFlight(originCode, destinationCode);
+  if (domestic) {
+    if (cls === "first") return s.markupFirstDomestic;
+    if (cls === "business") return s.markupBusinessDomestic;
+    return s.markupEconomyDomestic;
   }
-  return s.markupPercent;
+  if (cls === "first") return s.markupFirst;
+  if (cls === "business") return s.markupBusiness;
+  return s.markupEconomy;
 }
 
 /** تطبيق نسبة الهامش على السعر (مخفية عن الزبون) */
-export function applyMarkup(priceMRU: number, originCode?: string, destinationCode?: string): number {
-  const percent = getMarkupPercent(originCode, destinationCode);
+export function applyMarkup(priceMRU: number, originCode?: string, destinationCode?: string, flightClass?: string): number {
+  const percent = getMarkupPercent(originCode, destinationCode, flightClass);
   return Math.round(priceMRU * (1 + percent / 100));
 }
 

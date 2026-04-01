@@ -1022,6 +1022,23 @@ export default function AdminScreen() {
               <IconSymbol name="chevron.right" size={18} color={colors.muted} />
             </Pressable>
 
+            {/* بطاقة تقرير مقارنة الأسعار */}
+            <Pressable
+              style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
+              onPress={() => router.push("/admin/price-comparison" as any)}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#22C55E", alignItems: "center", justifyContent: "center" }}>
+                  <IconSymbol name="chart.bar.fill" size={22} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text style={[s.sectionTitle, { marginBottom: 2 }]}>تقرير مقارنة الأسعار</Text>
+                  <Text style={{ fontSize: 12, color: colors.muted }}>سعر Duffel مقابل السعر المعروض + الربح</Text>
+                </View>
+              </View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
+
             {/* بطاقة إدارة PNR */}
             <Pressable
               style={[s.barChart, { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }]}
