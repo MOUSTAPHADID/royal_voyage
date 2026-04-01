@@ -1,6 +1,7 @@
-import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput } from "react-native";
+import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { trpc } from "@/lib/trpc";
 
 const { width } = Dimensions.get("window");
 const isWeb = Platform.OS === "web";
@@ -50,61 +51,86 @@ const FOOTER_LINKS = {
   },
 };
 
-// شعارات الدفع - SVG URLs من CDN رسمية
+// شعارات الدفع - Simple Icons CDN (موثوق، لا يحجب الطلبات)
 const PAYMENT_LOGOS = [
-  { name: "Visa", url: "https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png" },
-  { name: "Mastercard", url: "https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" },
-  { name: "PayPal", url: "https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" },
-  { name: "Apple Pay", url: "https://upload.wikimedia.org/wikipedia/commons/b/b0/Apple_Pay_logo.svg" },
-  { name: "Google Pay", url: "https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" },
-  { name: "Stripe", url: "https://upload.wikimedia.org/wikipedia/commons/b/ba/Stripe_Logo%2C_revised_2016.svg" },
-  { name: "Amex", url: "https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo_%282018%29.svg" },
-  { name: "UnionPay", url: "https://upload.wikimedia.org/wikipedia/commons/1/1b/UnionPay_logo.svg" },
+  { name: "Visa", url: "https://cdn.simpleicons.org/visa/1A1F71" },
+  { name: "Mastercard", url: "https://cdn.simpleicons.org/mastercard" },
+  { name: "PayPal", url: "https://cdn.simpleicons.org/paypal/003087" },
+  { name: "Apple Pay", url: "https://cdn.simpleicons.org/applepay" },
+  { name: "Google Pay", url: "https://cdn.simpleicons.org/googlepay" },
+  { name: "Stripe", url: "https://cdn.simpleicons.org/stripe/635BFF" },
+  { name: "Amex", url: "https://cdn.simpleicons.org/americanexpress/007BC1" },
+  { name: "UnionPay", url: "https://cdn.simpleicons.org/unionpay/E21836" },
 ];
 
-// شعارات شركات الطيران
+// شعارات شركات الطيران - Simple Icons CDN
 const AIRLINE_LOGOS = [
-  { name: "Emirates", url: "https://upload.wikimedia.org/wikipedia/commons/d/d0/Emirates_logo.svg" },
-  { name: "Air France", url: "https://upload.wikimedia.org/wikipedia/commons/4/44/Air_France_Logo.svg" },
-  { name: "Turkish Airlines", url: "https://upload.wikimedia.org/wikipedia/commons/0/00/Turkish_Airlines_logo_2019_compact.svg" },
-  { name: "Qatar Airways", url: "https://upload.wikimedia.org/wikipedia/en/9/9b/Qatar_Airways_Logo.svg" },
-  { name: "Lufthansa", url: "https://upload.wikimedia.org/wikipedia/commons/8/8c/Lufthansa_Logo_2018.svg" },
-  { name: "British Airways", url: "https://upload.wikimedia.org/wikipedia/commons/4/42/British_Airways_Logo.svg" },
-  { name: "Royal Air Maroc", url: "https://upload.wikimedia.org/wikipedia/commons/1/1c/Royal_Air_Maroc_logo.svg" },
-  { name: "Air Arabia", url: "https://upload.wikimedia.org/wikipedia/commons/9/9b/Air_Arabia_logo.svg" },
+  { name: "Emirates", url: "https://cdn.simpleicons.org/emirates" },
+  { name: "Air France", url: "https://cdn.simpleicons.org/airfrance/002157" },
+  { name: "Turkish Airlines", url: "https://cdn.simpleicons.org/turkishairlines/C70A0A" },
+  { name: "Qatar Airways", url: "https://cdn.simpleicons.org/qatarairways/5C0632" },
+  { name: "Lufthansa", url: "https://cdn.simpleicons.org/lufthansa/05164D" },
+  { name: "British Airways", url: "https://cdn.simpleicons.org/britishairways/075AAA" },
+  { name: "Royal Air Maroc", url: "https://cdn.simpleicons.org/royalairmaroc/CC0000" },
+  { name: "Air Arabia", url: "https://cdn.simpleicons.org/airarabia/E31E24" },
 ];
 
-// ── Autocomplete helper (simple city list) ─────────────────────────────────
-const CITY_SUGGESTIONS = [
-  "Nouakchott (NKC)", "Paris (CDG)", "Dubai (DXB)", "Istanbul (IST)",
-  "Casablanca (CMN)", "Riyadh (RUH)", "Cairo (CAI)", "London (LHR)",
-  "Madrid (MAD)", "Dakar (DSS)", "Abidjan (ABJ)", "Tunis (TUN)",
-];
-
+// ── Duffel-powered Airport Autocomplete ─────────────────────────────────────
 function AutoInput({ value, onChange, placeholder, rtl }: { value: string; onChange: (v: string, code: string) => void; placeholder: string; rtl: boolean }) {
   const [show, setShow] = useState(false);
-  const filtered = CITY_SUGGESTIONS.filter(c => c.toLowerCase().includes(value.toLowerCase()) && value.length > 0);
+  const [query, setQuery] = useState(value);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  const { data: locations, isLoading } = trpc.amadeus.searchLocations.useQuery(
+    { keyword: debouncedQuery },
+    { enabled: debouncedQuery.length >= 2 }
+  );
+
+  const handleChange = (t: string) => {
+    setQuery(t);
+    onChange(t, "");
+    setShow(true);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedQuery(t), 350);
+  };
+
+  const results = Array.isArray(locations) ? locations : [];
+
   return (
     <View style={{ flex: 1, position: "relative" }}>
       <TextInput
-        value={value}
-        onChangeText={(t) => { onChange(t, ""); setShow(true); }}
+        value={query}
+        onChangeText={handleChange}
         placeholder={placeholder}
         placeholderTextColor="#aaa"
         style={[styles.searchInput, { textAlign: rtl ? "right" : "left" }]}
-        onBlur={() => setTimeout(() => setShow(false), 200)}
+        onBlur={() => setTimeout(() => setShow(false), 250)}
         onFocus={() => setShow(true)}
       />
-      {show && filtered.length > 0 && (
+      {show && (isLoading || results.length > 0) && (
         <View style={styles.dropdown}>
-          {filtered.slice(0, 5).map((c) => {
-            const code = c.match(/\(([A-Z]+)\)/)?.[1] ?? "";
-            return (
-              <Pressable key={c} onPress={() => { onChange(c.replace(/ \([A-Z]+\)/, ""), code); setShow(false); }} style={styles.dropdownItem}>
-                <Text style={{ fontSize: 14, color: "#1a1a2e" }}>✈ {c}</Text>
+          {isLoading ? (
+            <View style={{ padding: 10, alignItems: "center" }}>
+              <ActivityIndicator size="small" color="#1B6CA8" />
+            </View>
+          ) : (
+            results.slice(0, 6).map((loc: any) => (
+              <Pressable
+                key={loc.iataCode}
+                onPress={() => {
+                  const label = loc.name || loc.iataCode;
+                  setQuery(label);
+                  onChange(label, loc.iataCode);
+                  setShow(false);
+                }}
+                style={[styles.dropdownItem, { flexDirection: "row", alignItems: "center", gap: 8 }]}
+              >
+                <Text style={{ fontSize: 13, fontWeight: "700", color: "#1B6CA8", minWidth: 36 }}>{loc.iataCode}</Text>
+                <Text style={{ fontSize: 13, color: "#333", flex: 1 }}>{loc.name}</Text>
               </Pressable>
-            );
-          })}
+            ))
+          )}
         </View>
       )}
     </View>
