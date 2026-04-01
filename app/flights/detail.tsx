@@ -220,6 +220,82 @@ export default function FlightDetailScreen() {
           </View>
         </View>
 
+        {/* Baggage Policy */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Baggage Policy</Text>
+          {[
+            {
+              icon: "🎒",
+              title: "Personal Item",
+              desc: "1 personal item (bag under seat) included for all passengers.",
+              included: true,
+            },
+            {
+              icon: "🧳",
+              title: "Cabin Baggage",
+              desc: selectedClass === "ECONOMY"
+                ? "1 carry-on bag (max 10 kg) included."
+                : "2 carry-on bags (max 12 kg each) included.",
+              included: true,
+            },
+            {
+              icon: "📦",
+              title: "Checked Baggage",
+              desc: selectedClass === "FIRST"
+                ? "3 checked bags (max 32 kg each) included."
+                : selectedClass === "BUSINESS"
+                ? "2 checked bags (max 32 kg each) included."
+                : "1 checked bag (max 23 kg) included.",
+              included: true,
+            },
+            {
+              icon: "💰",
+              title: "Extra Baggage",
+              desc: "Additional bags can be purchased during booking or at the airport (fees vary by airline).",
+              included: false,
+            },
+          ].map((item) => (
+            <View
+              key={item.title}
+              style={[
+                styles.infoRow,
+                {
+                  borderBottomColor: colors.border,
+                  flexDirection: "row",
+                  alignItems: "flex-start",
+                  gap: 12,
+                  paddingVertical: 12,
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 22, marginTop: 2 }}>{item.icon}</Text>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{item.title}</Text>
+                  <View
+                    style={{
+                      paddingHorizontal: 8,
+                      paddingVertical: 2,
+                      borderRadius: 6,
+                      backgroundColor: item.included ? colors.success + "20" : colors.warning + "20",
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: "600", color: item.included ? colors.success : colors.warning }}>
+                      {item.included ? "Included" : "Extra Fee"}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 18 }}>{item.desc}</Text>
+              </View>
+            </View>
+          ))}
+          <View style={{ marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: colors.primary + "10" }}>
+            <Text style={{ fontSize: 12, color: colors.primary, lineHeight: 18 }}>
+              ℹ️ Baggage allowances may vary by airline and route. Please verify with the airline before travel.
+            </Text>
+          </View>
+        </View>
+
         {/* Price breakdown */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>تفصيل الأسعار</Text>

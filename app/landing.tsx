@@ -151,6 +151,7 @@ export default function LandingPage() {
   const [returnDate, setReturnDate] = useState("");
   const [adults, setAdults] = useState(1);
   const [children2, setChildren2] = useState(0);
+  const [bags, setBags] = useState(1);
   const [hotelDest, setHotelDest] = useState("");
   const [hotelDestCode, setHotelDestCode] = useState("");
   const [checkIn, setCheckIn] = useState("");
@@ -181,7 +182,7 @@ export default function LandingPage() {
     setSearchError("");
     router.push({
       pathname: "/flights/results" as any,
-      params: { origin: from, originCode: fromCode || from, destination: to, destinationCode: toCode || to, date: departDate, returnDate: tripType === "roundtrip" ? returnDate : "", tripType, passengers: adults.toString(), children: children2.toString(), infants: "0", childAges: "[]", childDobs: "[]", cabinClass: "ECONOMY", useMock: "false" },
+      params: { origin: from, originCode: fromCode || from, destination: to, destinationCode: toCode || to, date: departDate, returnDate: tripType === "roundtrip" ? returnDate : "", tripType, passengers: adults.toString(), children: children2.toString(), infants: "0", childAges: "[]", childDobs: "[]", cabinClass: "ECONOMY", bags: bags.toString(), useMock: "false" },
     });
   };
 
@@ -227,7 +228,7 @@ export default function LandingPage() {
           {/* Logo */}
           <Pressable onPress={() => {}} style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
             <Text style={{ fontSize: 22 }}>👑</Text>
-            <Text style={styles.logoText}>Royal <Text style={{ color: "#1B6CA8" }}>Service</Text></Text>
+            <Text style={styles.logoText}>Royal <Text style={{ color: "#1B6CA8" }}>Voyage</Text></Text>
           </Pressable>
 
           {/* Nav links - web only */}
@@ -313,7 +314,7 @@ export default function LandingPage() {
                     </View>
                   </View>
 
-                  {/* Dates + Passengers + Search */}
+                  {/* Dates + Passengers + Bags + Search */}
                   <View style={[styles.datesRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تاريخ الذهاب" : "Departure"}</Text>
@@ -331,6 +332,14 @@ export default function LandingPage() {
                         <Pressable onPress={() => setAdults(Math.max(1, adults - 1))} style={styles.counterBtn}><Text style={styles.counterBtnText}>−</Text></Pressable>
                         <Text style={styles.counterVal}>{adults + children2}</Text>
                         <Pressable onPress={() => setAdults(adults + 1)} style={styles.counterBtn}><Text style={styles.counterBtnText}>+</Text></Pressable>
+                      </View>
+                    </View>
+                    <View style={{ minWidth: 100 }}>
+                      <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "الحقائب" : "Bags"}</Text>
+                      <View style={[styles.passengerBox, { flexDirection: isAr ? "row-reverse" : "row" }]}>
+                        <Pressable onPress={() => setBags(Math.max(0, bags - 1))} style={styles.counterBtn}><Text style={styles.counterBtnText}>−</Text></Pressable>
+                        <Text style={styles.counterVal}>{bags}</Text>
+                        <Pressable onPress={() => setBags(Math.min(3, bags + 1))} style={styles.counterBtn}><Text style={styles.counterBtnText}>+</Text></Pressable>
                       </View>
                     </View>
                     <Pressable onPress={handleFlightSearch} style={styles.searchBtn}>
@@ -376,8 +385,8 @@ export default function LandingPage() {
         {/* ── 3 FEATURE COLUMNS ── */}
         <View style={[styles.featuresSection, { flexDirection: isWeb ? (isAr ? "row-reverse" : "row") : "column" }]}>
           {features.map((f, i) => (
-            <View key={i} style={[styles.featureCol, isWeb && { flex: 1 }]}>
-              <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <View key={i} style={[styles.featureCol, { flex: isWeb ? 1 : undefined }]}>
+              <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
                 <Text style={{ fontSize: 32 }}>{f.icon}</Text>
                 <Text style={[styles.featureTitle, { textAlign: isAr ? "right" : "left" }]}>{f.title}</Text>
               </View>
