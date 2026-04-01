@@ -14,7 +14,7 @@ import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
-import { toMRUWithSettings, getAgencyFee } from "@/lib/pricing-settings";
+import { toMRUWithSettings, getAgencyFee, applyMarkup } from "@/lib/pricing-settings";
 import { usePricingSettings as _usePricingSettings } from "@/hooks/use-pricing-settings";
 
 export default function FlightDetailScreen() {
@@ -92,7 +92,8 @@ export default function FlightDetailScreen() {
   const totalPrice = flight.price;
   // رسوم الوكالة: داخلي = 500 أوقية، دولي = 1000 أوقية (مخفية)
   const agencyFee = getAgencyFee(flight.originCode, flight.destinationCode);
-  const totalMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
+  const baseMRU = toMRUWithSettings(totalPrice, currency) + agencyFee;
+  const totalMRU = applyMarkup(baseMRU, flight.originCode, flight.destinationCode);
   // سعر الشخص الواحد (للعرض في البادج)
   const totalPersons = adultCount + childCount + infantCount;
   const perPersonMRU = totalPersons > 0 ? Math.round(totalMRU / totalPersons) : totalMRU;
@@ -104,13 +105,13 @@ export default function FlightDetailScreen() {
   // Distribute agency fee proportionally across passenger types
   const feePerPerson = totalPersons > 0 ? agencyFee / totalPersons : 0;
   const adultPerPersonMRU = adultPricing
-    ? Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson)
+    ? applyMarkup(Math.round(toMRUWithSettings(adultPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode)
     : perPersonMRU;
   const childPerPersonMRU = childPricing
-    ? Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson)
+    ? applyMarkup(Math.round(toMRUWithSettings(childPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode)
     : Math.round(adultPerPersonMRU * 0.75);
   const infantPerPersonMRU = infantPricing
-    ? Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson)
+    ? applyMarkup(Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode)
     : Math.round(adultPerPersonMRU * 0.10);
 
   const amenities = [

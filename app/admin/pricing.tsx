@@ -128,9 +128,30 @@ const FIELDS: FieldConfig[] = [
     step: 0.05,
     section: "أسعار الأطفال",
   },
+  // --- نسبة الهامش ---
+  {
+    key: "markupPercent",
+    label: "هامش الرحلات الدولية",
+    unit: "%",
+    description: "نسبة مضافة على سعر Duffel (مثلاً 5 = +5%) — مخفية عن الزبون",
+    min: 0,
+    max: 50,
+    step: 0.5,
+    section: "نسبة الهامش",
+  },
+  {
+    key: "markupPercentDomestic",
+    label: "هامش الرحلات الداخلية",
+    unit: "%",
+    description: "نسبة مضافة على سعر الرحلات الداخلية (مثلاً 3 = +3%) — مخفية عن الزبون",
+    min: 0,
+    max: 50,
+    step: 0.5,
+    section: "نسبة الهامش",
+  },
 ];
 
-const SECTIONS = ["رسوم الوكالة", "أسعار الصرف", "أسعار الأطفال"];
+const SECTIONS = ["رسوم الوكالة", "نسبة الهامش", "أسعار الصرف", "أسعار الأطفال"];
 
 export default function PricingAdminScreen() {
   const router = useRouter();

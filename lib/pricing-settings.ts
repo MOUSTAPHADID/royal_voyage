@@ -33,6 +33,10 @@ export interface PricingSettings {
   extraLegroomFeeMRU: number;
   /** رسوم تغيير المقعد بعد تسجيل الوصول بالأوقية */
   seatChangeFeeMRU: number;
+  /** نسبة الهامش المضافة على سعر Duffel (مثلاً 5 = 5%) — مخفية عن الزبون */
+  markupPercent: number;
+  /** نسبة هامش الرحلات الداخلية (مثلاً 3 = 3%) — مخفية عن الزبون */
+  markupPercentDomestic: number;
   /** تاريخ آخر تحديث لأسعار الصرف */
   ratesLastUpdated?: string;
 }
@@ -49,6 +53,8 @@ export const DEFAULT_PRICING: PricingSettings = {
   childDiscountRate: 0.75,
   extraLegroomFeeMRU: 500,
   seatChangeFeeMRU: 300,
+  markupPercent: 5,
+  markupPercentDomestic: 3,
   ratesLastUpdated: undefined,
 };
 
@@ -103,6 +109,21 @@ export function getAgencyFee(originCode?: string, destinationCode?: string): num
     return s.agencyFeeDomesticMRU;
   }
   return s.agencyFeeMRU;
+}
+
+/** الحصول على نسبة الهامش المناسبة حسب نوع الرحلة */
+export function getMarkupPercent(originCode?: string, destinationCode?: string): number {
+  const s = getPricingSettings();
+  if (originCode && destinationCode && isDomesticFlight(originCode, destinationCode)) {
+    return s.markupPercentDomestic;
+  }
+  return s.markupPercent;
+}
+
+/** تطبيق نسبة الهامش على السعر (مخفية عن الزبون) */
+export function applyMarkup(priceMRU: number, originCode?: string, destinationCode?: string): number {
+  const percent = getMarkupPercent(originCode, destinationCode);
+  return Math.round(priceMRU * (1 + percent / 100));
 }
 
 /** تحويل مبلغ من عملة معينة إلى الأوقية باستخدام الإعدادات الحالية */
