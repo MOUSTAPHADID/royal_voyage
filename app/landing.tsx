@@ -1,7 +1,7 @@
 import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const { width } = Dimensions.get("window");
 const isWeb = Platform.OS === "web";
@@ -18,12 +18,23 @@ const FEATURES = [
 ];
 
 const DESTINATIONS = [
-  { flag: "🇫🇷", name: "Paris", priceAr: "من €420", priceEn: "From €420", img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80" },
-  { flag: "🇸🇦", name: "Riyadh", priceAr: "من €380", priceEn: "From €380", img: "https://images.unsplash.com/photo-1586724237569-f3d0c1dee8c6?w=400&q=80" },
-  { flag: "🇦🇪", name: "Dubai", priceAr: "من €450", priceEn: "From €450", img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80" },
-  { flag: "🇹🇷", name: "Istanbul", priceAr: "من €320", priceEn: "From €320", img: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=400&q=80" },
-  { flag: "🇪🇸", name: "Madrid", priceAr: "من €390", priceEn: "From €390", img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&q=80" },
-  { flag: "🇲🇦", name: "Casablanca", priceAr: "من €180", priceEn: "From €180", img: "https://images.unsplash.com/photo-1553603227-2358aabe821e?w=400&q=80" },
+  { flag: "🇫🇷", name: "Paris", priceAr: "من €420", priceEn: "From €420", img: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/nPwXbGphjCJvGXhf.jpg" },
+  { flag: "🇸🇦", name: "Riyadh", priceAr: "من €380", priceEn: "From €380", img: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/GEdrKlMTlWWgikRU.jpg" },
+  { flag: "🇦🇪", name: "Dubai", priceAr: "من €450", priceEn: "From €450", img: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/THJnvXjyFANINBdi.jpg" },
+  { flag: "🇹🇷", name: "Istanbul", priceAr: "من €320", priceEn: "From €320", img: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/vAbGLVQHNWAyDPJp.jpg" },
+  { flag: "🇪🇸", name: "Madrid", priceAr: "من €390", priceEn: "From €390", img: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/IhwbRwvGfduhfuPY.jpg" },
+  { flag: "🇲🇦", name: "Casablanca", priceAr: "من €180", priceEn: "From €180", img: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/WgrnSLcrXtqEeZyF.jpg" },
+];
+
+const AIRLINES = [
+  { name: "Air Arabia", logo: "✈️", color: "#E31837" },
+  { name: "Emirates", logo: "🏅", color: "#D4A017" },
+  { name: "Turkish Airlines", logo: "🦅", color: "#C8102E" },
+  { name: "Air France", logo: "🇫🇷", color: "#002395" },
+  { name: "Saudia", logo: "🌿", color: "#006400" },
+  { name: "Royal Air Maroc", logo: "👑", color: "#CC0000" },
+  { name: "Flydubai", logo: "🌟", color: "#E87722" },
+  { name: "Iberia", logo: "🇪🇸", color: "#C60B1E" },
 ];
 
 const TESTIMONIALS = [
@@ -51,6 +62,23 @@ export default function LandingPage() {
 
   const isAr = lang === "ar";
   const dir = isAr ? "rtl" : "ltr";
+
+  // Google Analytics - inject script on web
+  useEffect(() => {
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const GA_ID = "G-XXXXXXXXXX"; // Replace with your GA4 Measurement ID
+      if (!document.getElementById("ga-script")) {
+        const script1 = document.createElement("script");
+        script1.id = "ga-script";
+        script1.async = true;
+        script1.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+        document.head.appendChild(script1);
+        const script2 = document.createElement("script");
+        script2.innerHTML = `window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${GA_ID}');`;
+        document.head.appendChild(script2);
+      }
+    }
+  }, []);
 
   const handleOpenApp = () => {
     router.push("/auth/login" as any);
@@ -216,6 +244,27 @@ export default function LandingPage() {
           {["💳 Visa", "💳 Mastercard", "💳 Amex", "🔐 SSL 256-bit", "✅ PCI DSS"].map((p, i) => (
             <View key={i} style={[styles.payBadge, { borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(255,255,255,0.08)" }]}>
               <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600" }}>{p}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {/* ── AIRLINES PARTNERS ── */}
+      <View style={[styles.section, { backgroundColor: "#fff" }]}>
+        <Text style={[styles.sectionBadge, { color: gold }]}>{isAr ? "🤝 شركاؤنا" : "🤝 Our Partners"}</Text>
+        <Text style={[styles.sectionTitle, { color: primary }]}>
+          {isAr ? "شركات الطيران المعتمدة" : "Trusted Airline Partners"}
+        </Text>
+        <Text style={{ color: "#666", textAlign: "center", fontSize: 14, marginBottom: 20, lineHeight: 20 }}>
+          {isAr
+            ? "نتعامل مع أكبر شركات الطيران لضمان أفضل الأسعار والخدمات"
+            : "We work with the world's top airlines to guarantee the best prices and service"}
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
+          {AIRLINES.map((a, i) => (
+            <View key={i} style={[styles.airlineCard, { borderColor: "#e8ecf8" }]}>
+              <Text style={{ fontSize: 28, marginBottom: 6 }}>{a.logo}</Text>
+              <Text style={{ color: primary, fontWeight: "700", fontSize: 12, textAlign: "center" }}>{a.name}</Text>
             </View>
           ))}
         </View>
@@ -408,4 +457,5 @@ const styles = StyleSheet.create({
   sendBtn: { padding: 16, borderRadius: 12, alignItems: "center" },
   payBadge: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 10, borderWidth: 1 },
   footer: { padding: 28, alignItems: "center" },
+  airlineCard: { width: 100, padding: 14, borderRadius: 14, borderWidth: 1, alignItems: "center", backgroundColor: "#fafbff" },
 });

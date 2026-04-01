@@ -1283,3 +1283,8 @@
 - [x] إنشاء صفحة app/landing.tsx في Expo Router
 - [x] كشف المنصة وتوجيه الويب للـ Landing Page
 - [x] نقل محتوى HTML Landing Page إلى مكونات React Native Web
+
+## تحسينات Landing Page - الجولة الثانية
+- [x] استبدال صور Unsplash بصور عالية الجودة من مصادر مختلفة
+- [x] إضافة قسم "شركاؤنا" بشعارات شركات الطيران
+- [ ] إضافة Google Analytics (مؤجل - يحتاج Measurement ID)
