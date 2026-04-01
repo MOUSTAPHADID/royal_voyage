@@ -27,14 +27,14 @@ const DESTINATIONS = [
 ];
 
 const AIRLINES = [
-  { name: "Air Arabia", logo: "✈️", color: "#E31837" },
-  { name: "Emirates", logo: "🏅", color: "#D4A017" },
-  { name: "Turkish Airlines", logo: "🦅", color: "#C8102E" },
-  { name: "Air France", logo: "🇫🇷", color: "#002395" },
-  { name: "Saudia", logo: "🌿", color: "#006400" },
-  { name: "Royal Air Maroc", logo: "👑", color: "#CC0000" },
-  { name: "Flydubai", logo: "🌟", color: "#E87722" },
-  { name: "Iberia", logo: "🇪🇸", color: "#C60B1E" },
+  { name: "Emirates", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/PfaxZjdSGOoOdPCf.png" },
+  { name: "Air Arabia", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/drZzPttNkADvPoBU.png" },
+  { name: "Turkish Airlines", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/RzteqYKjpkBYZTek.png" },
+  { name: "Air France", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/vGKlDOSsukXcycnt.jpeg" },
+  { name: "Saudia", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/LVUIQqNzCwXzLRSm.png" },
+  { name: "Royal Air Maroc", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/UtQoscDRvnJacmhD.png" },
+  { name: "flydubai", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/hZQnXXoDGzJhOfRx.png" },
+  { name: "Iberia", logoUrl: "https://files.manuscdn.com/user_upload_by_module/session_file/310519663457917822/XhLYYUXvLNVLcRVO.png" },
 ];
 
 const TESTIMONIALS = [
@@ -263,8 +263,8 @@ export default function LandingPage() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center" }}>
           {AIRLINES.map((a, i) => (
             <View key={i} style={[styles.airlineCard, { borderColor: "#e8ecf8" }]}>
-              <Text style={{ fontSize: 28, marginBottom: 6 }}>{a.logo}</Text>
-              <Text style={{ color: primary, fontWeight: "700", fontSize: 12, textAlign: "center" }}>{a.name}</Text>
+              <Image source={{ uri: a.logoUrl }} style={{ width: 80, height: 40, resizeMode: "contain", marginBottom: 6 }} />
+              <Text style={{ color: primary, fontWeight: "700", fontSize: 11, textAlign: "center" }}>{a.name}</Text>
             </View>
           ))}
         </View>
