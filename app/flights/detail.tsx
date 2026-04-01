@@ -12,6 +12,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { FLIGHTS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { toMRUWithSettings, getAgencyFee, applyMarkup } from "@/lib/pricing-settings";
@@ -117,12 +118,7 @@ export default function FlightDetailScreen() {
     ? applyMarkup(Math.round(toMRUWithSettings(infantPricing.perPersonAmount, currency) + feePerPerson), flight.originCode, flight.destinationCode, flight.class)
     : Math.round(adultPerPersonMRU * 0.10);
 
-  const amenities = [
-    { icon: "wifi", label: "Wi-Fi" },
-    { icon: "fork.knife", label: "Meals" },
-    { icon: "tv", label: "Entertainment" },
-    { icon: "person.2.fill", label: "Extra Legroom" },
-  ];
+
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -208,18 +204,6 @@ export default function FlightDetailScreen() {
           ))}
         </View>
 
-        {/* Amenities */}
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Included Amenities</Text>
-          <View style={styles.amenitiesGrid}>
-            {amenities.map((a) => (
-              <View key={a.label} style={[styles.amenityItem, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <IconSymbol name={a.icon as any} size={22} color={colors.primary} />
-                <Text style={[styles.amenityLabel, { color: colors.foreground }]}>{a.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
 
         {/* Baggage Policy */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -237,25 +221,25 @@ export default function FlightDetailScreen() {
             const isRealData = !!realBaggage;
             return [
             {
-              icon: "🎒",
+              iconEl: <MaterialIcons name="backpack" size={22} color={colors.primary} />,
               title: "Personal Item",
               desc: "1 personal item (bag under seat) included for all passengers.",
               included: true,
             },
             {
-              icon: "🧳",
+              iconEl: <MaterialIcons name="luggage" size={22} color={colors.primary} />,
               title: "Cabin Baggage",
               desc: `${cabinQty} carry-on bag${cabinQty > 1 ? "s" : ""} (max ${cabinKg} kg each) included.${isRealData ? " ✓ Airline confirmed" : ""}`,
               included: true,
             },
             {
-              icon: "📦",
+              iconEl: <MaterialIcons name="inventory-2" size={22} color={colors.primary} />,
               title: "Checked Baggage",
               desc: `${checkedQty} checked bag${checkedQty > 1 ? "s" : ""} (max ${checkedKg} kg each) included.${isRealData ? " ✓ Airline confirmed" : ""}`,
               included: true,
             },
             {
-              icon: "💰",
+              iconEl: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
               title: "Extra Baggage",
               desc: "Additional bags can be purchased during booking or at the airport (fees vary by airline).",
               included: false,
@@ -274,7 +258,7 @@ export default function FlightDetailScreen() {
                 },
               ]}
             >
-              <Text style={{ fontSize: 22, marginTop: 2 }}>{item.icon}</Text>
+              <View style={{ marginTop: 2 }}>{item.iconEl}</View>
               <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
                   <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{item.title}</Text>
@@ -299,7 +283,7 @@ export default function FlightDetailScreen() {
           }
           <View style={{ marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: colors.primary + "10" }}>
             <Text style={{ fontSize: 12, color: colors.primary, lineHeight: 18 }}>
-              ℹ️ Baggage allowances may vary by airline and route. Please verify with the airline before travel.
+              ℹ Baggage allowances may vary by airline and route. Please verify with the airline before travel.
             </Text>
           </View>
         </View>
@@ -367,7 +351,11 @@ export default function FlightDetailScreen() {
             {(["ECONOMY", "BUSINESS", "FIRST"] as const).map((cls) => {
               const isCurrentClass = selectedClass.toUpperCase() === cls;
               const classLabels = { ECONOMY: "اقتصادي", BUSINESS: "أعمال", FIRST: "أولى" };
-              const classIcons = { ECONOMY: "✈️", BUSINESS: "💼", FIRST: "👑" };
+              const classIconEls = {
+                ECONOMY: <MaterialIcons name="flight" size={20} color={isCurrentClass ? colors.primary : colors.muted} />,
+                BUSINESS: <MaterialIcons name="work" size={20} color={isCurrentClass ? colors.primary : colors.muted} />,
+                FIRST: <MaterialIcons name="star" size={20} color={isCurrentClass ? colors.primary : colors.muted} />,
+              };
               // Estimate price for other classes based on multiplier from economy
               const classMultiplier = cls === "FIRST" ? 3.5 : cls === "BUSINESS" ? 2.0 : 1.0;
               const currentMultiplier = flight.class?.toUpperCase() === "FIRST" ? 3.5 : flight.class?.toUpperCase() === "BUSINESS" ? 2.0 : 1.0;
@@ -395,7 +383,7 @@ export default function FlightDetailScreen() {
                   onPress={() => setSelectedClass(cls)}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-                    <Text style={{ fontSize: 20 }}>{classIcons[cls]}</Text>
+                    <View>{classIconEls[cls]}</View>
                     <View>
                       <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{classLabels[cls]}</Text>
                       {isCurrentClass && (
