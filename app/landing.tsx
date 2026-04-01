@@ -1,4 +1,4 @@
-import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput } from "react-native";
+import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 import { useState, useEffect } from "react";
@@ -81,6 +81,7 @@ export default function LandingPage() {
   const [checkOut, setCheckOut] = useState("");
   const [hotelGuests, setHotelGuests] = useState(2);
   const [searchError, setSearchError] = useState("");
+  const [payTab, setPayTab] = useState<"international" | "local">("international");
 
   // Set default dates on mount
   useEffect(() => {
@@ -524,21 +525,59 @@ export default function LandingPage() {
         </Text>
         <Text style={{ color: "rgba(255,255,255,0.8)", textAlign: "center", fontSize: 14, lineHeight: 22, marginBottom: 20 }}>
           {isAr
-            ? "جميع معاملاتك محمية بتشفير SSL 256-bit عبر Stripe، المعيار العالمي للدفع الآمن."
-            : "All your transactions are protected by 256-bit SSL encryption via Stripe, the global standard for secure payments."}
+            ? "نوفر طرق دفع دولية ومحلية آمنة لخدمتك في أي مكان."
+            : "We offer secure international and local payment methods to serve you anywhere."}
         </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "center", marginBottom: 8 }}>
-          {[
-            { name: "Visa", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" },
-            { name: "Mastercard", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" },
-            { name: "Amex", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" },
-            { name: "Stripe", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png" },
-          ].map((card, i) => (
-            <View key={i} style={{ backgroundColor: "#fff", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center", minWidth: 90, minHeight: 52 }}>
-              <Image source={{ uri: card.uri }} style={{ width: 70, height: 30, resizeMode: "contain" }} />
-            </View>
+
+        {/* Payment Tabs */}
+        <View style={{ flexDirection: "row", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 12, padding: 4, marginBottom: 20, alignSelf: "center" }}>
+          {(["international", "local"] as const).map((tab) => (
+            <TouchableOpacity
+              key={tab}
+              onPress={() => setPayTab(tab)}
+              style={[
+                { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10 },
+                payTab === tab && { backgroundColor: gold }
+              ]}
+            >
+              <Text style={{ color: payTab === tab ? primary : "#fff", fontWeight: "700", fontSize: 14 }}>
+                {tab === "international" ? (isAr ? "🌍 دولي" : "🌍 International") : (isAr ? "🇲🇷 محلي" : "🇲🇷 Local")}
+              </Text>
+            </TouchableOpacity>
           ))}
         </View>
+
+        {payTab === "international" ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginBottom: 12 }}>
+            {[
+              { name: "Visa", bg: "#1a1f71", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" },
+              { name: "Mastercard", bg: "#fff", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" },
+              { name: "Amex", bg: "#016fd0", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/American_Express_logo.svg/1200px-American_Express_logo.svg.png" },
+              { name: "PayPal", bg: "#003087", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/2560px-PayPal.svg.png" },
+              { name: "Stripe", bg: "#fff", uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Stripe_Logo%2C_revised_2016.svg/2560px-Stripe_Logo%2C_revised_2016.svg.png" },
+            ].map((card, i) => (
+              <View key={i} style={{ backgroundColor: card.bg, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center", minWidth: 90, minHeight: 52, borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" }}>
+                <Image source={{ uri: card.uri }} style={{ width: 70, height: 28, resizeMode: "contain" }} />
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "center", marginBottom: 12 }}>
+            {[
+              { name: "Bankily", color: "#00a651", emoji: "📱" },
+              { name: "Sedad", color: "#e63946", emoji: "💰" },
+              { name: "Masrvi", color: "#f4a261", emoji: "🏦" },
+              { name: isAr ? "نقداً بالمكتب" : "Cash at Office", color: "#2d6a4f", emoji: "🏢" },
+              { name: isAr ? "تحويل بنكي" : "Bank Transfer", color: "#1d3557", emoji: "🏛️" },
+            ].map((m, i) => (
+              <View key={i} style={{ backgroundColor: m.color, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 12, alignItems: "center", justifyContent: "center", minWidth: 100, minHeight: 52 }}>
+                <Text style={{ fontSize: 20, marginBottom: 2 }}>{m.emoji}</Text>
+                <Text style={{ color: "#fff", fontWeight: "700", fontSize: 12, textAlign: "center" }}>{m.name}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         <View style={{ flexDirection: "row", gap: 12, justifyContent: "center", marginTop: 8 }}>
           {["🔐 SSL 256-bit", "✅ PCI DSS"].map((p, i) => (
             <View key={i} style={[styles.payBadge, { borderColor: "rgba(201,168,76,0.4)", backgroundColor: "rgba(255,255,255,0.08)" }]}>
