@@ -105,7 +105,7 @@ function generateFlightTicketHTML(data: FlightPDFData): string {
 <div class="ticket">
   <div class="header">
     <div class="plane">✈</div>
-    <h1>ROYAL VOYAGE</h1>
+    <h1>ROYAL SERVICE</h1>
     <div class="subtitle">ELECTRONIC TICKET / BOARDING PASS</div>
   </div>
 
@@ -241,7 +241,7 @@ function generateHotelVoucherHTML(data: HotelPDFData): string {
 <div class="ticket">
   <div class="header">
     <div class="icon">🏨</div>
-    <h1>ROYAL VOYAGE</h1>
+    <h1>ROYAL SERVICE</h1>
     <div class="subtitle">HOTEL RESERVATION VOUCHER</div>
   </div>
 

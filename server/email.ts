@@ -76,7 +76,7 @@ function baseLayout(content: string, title: string): string {
 <body>
   <div class="wrapper">
     <div class="header">
-      <div class="header-logo">✈ ROYAL VOYAGE</div>
+      <div class="header-logo">✈ ROYAL SERVICE</div>
       <div class="header-sub">Your Premium Travel Partner</div>
     </div>
     <div class="body">

@@ -137,7 +137,7 @@ export function generateFlightTicketPDF(data: FlightTicketData): Promise<Buffer>
 
       // Logo text
       doc.fontSize(20).fillColor(GOLD).font("Helvetica-Bold")
-        .text("ROYAL VOYAGE", M, 22, { width: 260 });
+        .text("ROYAL SERVICE", M, 22, { width: 260 });
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
         .text("Your Premium Travel Partner", M, 46, { width: 260 });
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")
@@ -448,7 +448,7 @@ export function generateHotelConfirmationPDF(data: HotelConfirmationData): Promi
       doc.restore();
 
       doc.fontSize(20).fillColor(GOLD).font("Helvetica-Bold")
-        .text("ROYAL VOYAGE", M, 22, { width: 260 });
+        .text("ROYAL SERVICE", M, 22, { width: 260 });
       doc.fontSize(9).fillColor("rgba(255,255,255,0.65)").font("Helvetica")
         .text("Hotel Booking Confirmation", M, 46, { width: 260 });
       doc.fontSize(8).fillColor("rgba(255,255,255,0.45)")

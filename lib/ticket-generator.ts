@@ -85,7 +85,7 @@ export function generateFlightTicket(data: FlightTicketData): string {
 
   const ticket = [
     line("═"),
-    center("✈  ROYAL VOYAGE  ✈"),
+    center("✈  ROYAL SERVICE  ✈"),
     center("BOARDING PASS"),
     line("═"),
     "",
@@ -162,7 +162,7 @@ export function generateHotelVoucher(data: HotelVoucherData): string {
 
   const voucher = [
     line("═"),
-    center("🏨  ROYAL VOYAGE  🏨"),
+    center("🏨  ROYAL SERVICE  🏨"),
     center("HOTEL VOUCHER"),
     line("═"),
     "",
