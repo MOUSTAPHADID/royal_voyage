@@ -12,129 +12,165 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
   ar: {
     dir: "rtl",
     title: "سياسة الخصوصية",
-    updated: "آخر تحديث: مارس 2026",
+    updated: "آخر تحديث: أبريل 2026",
     sections: [
       {
-        heading: "مقدمة",
-        body: "تلتزم وكالة Royal Voyage بحماية خصوصية مستخدمي تطبيقها. تصف هذه السياسة كيفية جمع المعلومات الشخصية واستخدامها وحمايتها عند استخدام تطبيق Royal Voyage.",
+        heading: "1. مقدمة",
+        body: "تلتزم شركة ROYAL SERVICE L. (المشغّلة لتطبيق ومنصة Royal Voyage) بحماية خصوصية مستخدميها. تصف هذه السياسة بالتفصيل كيفية جمع المعلومات الشخصية واستخدامها ومشاركتها وحمايتها عند استخدام تطبيق Royal Voyage أو الموقع الإلكتروني royalvoyage.online.",
       },
       {
-        heading: "المعلومات التي نجمعها",
-        body: "نجمع المعلومات التي تقدمها مباشرة عند إنشاء حساب أو إجراء حجز، وتشمل: الاسم الكامل، عنوان البريد الإلكتروني، رقم الهاتف، بيانات جواز السفر، ومعلومات الدفع. كما نجمع بيانات الاستخدام تلقائياً مثل نوع الجهاز ونظام التشغيل.",
+        heading: "2. هوية المتحكم في البيانات",
+        body: "الاسم القانوني: ROYAL SERVICE L.\nالعلامة التجارية: Royal Voyage\nالعنوان: تفرغ زين، نواكشوط، موريتانيا\nالبريد الإلكتروني: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00",
       },
       {
-        heading: "كيف نستخدم معلوماتك",
-        body: "نستخدم معلوماتك لمعالجة حجوزات الطيران والفنادق، وإرسال تأكيدات الحجز وتذاكر السفر، وتحسين خدماتنا، والتواصل معك بشأن طلباتك. لن نبيع معلوماتك الشخصية لأي طرف ثالث.",
+        heading: "3. المعلومات التي نجمعها",
+        body: "نجمع المعلومات التي تقدمها مباشرة عند إنشاء حساب أو إجراء حجز، وتشمل:\n• الاسم الكامل وتاريخ الميلاد\n• عنوان البريد الإلكتروني ورقم الهاتف\n• بيانات جواز السفر أو الوثيقة الرسمية\n• معلومات الدفع (معالجة بشكل آمن عبر Stripe)\n• بيانات الاستخدام التلقائية: نوع الجهاز، نظام التشغيل، عنوان IP",
       },
       {
-        heading: "مشاركة المعلومات",
-        body: "قد نشارك معلوماتك مع شركات الطيران والفنادق لإتمام حجوزاتك، ومع مزودي خدمات الدفع لمعالجة المعاملات المالية. جميع هذه الأطراف ملزمة بالحفاظ على سرية بياناتك.",
+        heading: "4. كيف نستخدم معلوماتك",
+        body: "نستخدم معلوماتك للأغراض التالية:\n• معالجة حجوزات الطيران والفنادق والأنشطة\n• إرسال تأكيدات الحجز والتذاكر الإلكترونية\n• إرسال تذكيرات السفر قبل 24 ساعة من موعد الرحلة\n• تحسين خدماتنا وتجربة المستخدم\n• التواصل معك بشأن طلباتك واستفساراتك\n• الامتثال للمتطلبات القانونية والتنظيمية\nلن نبيع معلوماتك الشخصية لأي طرف ثالث تحت أي ظرف.",
       },
       {
-        heading: "أذونات التطبيق",
-        body: "يطلب التطبيق إذن الوصول إلى الميكروفون لميزة البحث الصوتي فقط، ولا يتم تخزين أي تسجيلات صوتية على خوادمنا. يمكنك رفض هذا الإذن دون التأثير على بقية وظائف التطبيق.",
+        heading: "5. مشاركة المعلومات مع الأطراف الثالثة",
+        body: "قد نشارك معلوماتك مع الأطراف التالية لإتمام خدماتنا:\n• شركات الطيران وشركاء الحجز (Duffel API): لإصدار تذاكر الطيران\n• مزودو الفنادق والأنشطة (Hotelbeds/HBX): لتأكيد الحجوزات\n• معالج الدفع Stripe: لمعالجة المعاملات المالية بأمان\n• خدمة البريد الإلكتروني Resend: لإرسال تأكيدات الحجز\nجميع هذه الأطراف ملزمة بسياسات خصوصية صارمة وبالحفاظ على سرية بياناتك.",
       },
       {
-        heading: "حماية البيانات",
-        body: "نستخدم تقنيات تشفير SSL/TLS لحماية بياناتك أثناء النقل. يتم تخزين بيانات الدفع بشكل مشفر ولا يتم الاحتفاظ بأرقام البطاقات الكاملة على خوادمنا.",
+        heading: "6. طرق الدفع وأمان المعاملات",
+        body: "نقبل الدفع عبر الوسائل التالية:\n• Stripe: بطاقات Visa وMastercard الدولية\n• Bankily: محفظة إلكترونية موريتانية\n• Masrvi: خدمة دفع إلكترونية موريتانية\n• Sedad: منصة دفع رقمية موريتانية\nجميع معاملات الدفع مشفرة بتقنية SSL/TLS. لا نحتفظ بأرقام البطاقات الكاملة على خوادمنا. بيانات بطاقات الائتمان تُعالج مباشرة عبر Stripe المعتمد من PCI DSS.",
       },
       {
-        heading: "حقوقك",
-        body: "يحق لك طلب الاطلاع على بياناتك الشخصية أو تعديلها أو حذفها في أي وقت. للتواصل معنا بشأن أي استفسار يتعلق بخصوصيتك، يرجى الاتصال على: +222 33 70 00 00",
+        heading: "7. أذونات التطبيق",
+        body: "يطلب التطبيق الأذونات التالية:\n• الميكروفون: لميزة البحث الصوتي فقط — لا يتم تخزين أي تسجيلات صوتية\n• الإشعارات: لإرسال تذكيرات السفر وتأكيدات الحجز\nيمكنك رفض أي من هذه الأذونات دون التأثير على الوظائف الأساسية للتطبيق.",
       },
       {
-        heading: "تحديثات السياسة",
+        heading: "8. حماية البيانات والأمان",
+        body: "نطبق إجراءات أمنية متعددة لحماية بياناتك:\n• تشفير SSL/TLS لجميع الاتصالات\n• تخزين كلمات المرور بتقنية التجزئة المشفرة\n• الوصول المحدود للبيانات الحساسة\n• مراجعات أمنية دورية\n• عدم الاحتفاظ بأرقام البطاقات الكاملة",
+      },
+      {
+        heading: "9. حقوقك",
+        body: "وفقاً للقوانين المعمول بها، يحق لك:\n• الاطلاع على بياناتك الشخصية المخزنة\n• تصحيح أي بيانات غير دقيقة\n• طلب حذف بياناتك (الحق في النسيان)\n• الاعتراض على معالجة بياناتك\n• طلب نسخة من بياناتك بصيغة قابلة للنقل\nللممارسة هذه الحقوق، تواصل معنا على: suporte@royalvoyage.online",
+      },
+      {
+        heading: "10. مدة الاحتفاظ بالبيانات",
+        body: "نحتفظ ببياناتك الشخصية طالما حسابك نشط أو طالما كانت ضرورية لتقديم الخدمات. بعد إغلاق الحساب، نحتفظ ببعض البيانات لمدة 5 سنوات للامتثال للمتطلبات القانونية والمحاسبية.",
+      },
+      {
+        heading: "11. تحديثات السياسة",
         body: "قد نحدّث هذه السياسة من وقت لآخر. سنخطرك بأي تغييرات جوهرية عبر التطبيق أو البريد الإلكتروني. استمرارك في استخدام التطبيق بعد التحديث يعني موافقتك على السياسة الجديدة.",
       },
       {
-        heading: "التواصل",
-        body: "Royal Voyage — تفرغ زينة، نواكشوط، موريتانيا\nهاتف: +222 33 70 00 00",
+        heading: "12. التواصل",
+        body: "ROYAL SERVICE L. — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
       },
     ],
   },
   en: {
     dir: "ltr",
     title: "Privacy Policy",
-    updated: "Last updated: March 2026",
+    updated: "Last updated: April 2026",
     sections: [
       {
-        heading: "Introduction",
-        body: "Royal Voyage is committed to protecting the privacy of its app users. This policy describes how we collect, use, and protect personal information when you use the Royal Voyage app.",
+        heading: "1. Introduction",
+        body: "ROYAL SERVICE L. (operating the Royal Voyage app and platform) is committed to protecting the privacy of its users. This policy describes in detail how personal information is collected, used, shared, and protected when using the Royal Voyage app or the website royalvoyage.online.",
       },
       {
-        heading: "Information We Collect",
-        body: "We collect information you provide directly when creating an account or making a booking, including: full name, email address, phone number, passport details, and payment information. We also automatically collect usage data such as device type and operating system.",
+        heading: "2. Data Controller Identity",
+        body: "Legal Name: ROYAL SERVICE L.\nBrand: Royal Voyage\nAddress: Tevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00",
       },
       {
-        heading: "How We Use Your Information",
-        body: "We use your information to process flight and hotel bookings, send booking confirmations and travel tickets, improve our services, and communicate with you about your requests. We will never sell your personal information to any third party.",
+        heading: "3. Information We Collect",
+        body: "We collect information you provide directly when creating an account or making a booking, including:\n• Full name and date of birth\n• Email address and phone number\n• Passport or official document details\n• Payment information (processed securely via Stripe)\n• Automatic usage data: device type, operating system, IP address",
       },
       {
-        heading: "Information Sharing",
-        body: "We may share your information with airlines and hotels to complete your bookings, and with payment service providers to process financial transactions. All these parties are bound to maintain the confidentiality of your data.",
+        heading: "4. How We Use Your Information",
+        body: "We use your information for the following purposes:\n• Processing flight, hotel, and activity bookings\n• Sending booking confirmations and e-tickets\n• Sending travel reminders 24 hours before departure\n• Improving our services and user experience\n• Communicating with you about your requests and inquiries\n• Complying with legal and regulatory requirements\nWe will never sell your personal information to any third party under any circumstances.",
       },
       {
-        heading: "App Permissions",
-        body: "The app requests microphone access only for the voice search feature. No audio recordings are stored on our servers. You may deny this permission without affecting other app functions.",
+        heading: "5. Sharing Information with Third Parties",
+        body: "We may share your information with the following parties to complete our services:\n• Airlines and booking partners (Duffel API): to issue flight tickets\n• Hotel and activity providers (Hotelbeds/HBX): to confirm bookings\n• Payment processor Stripe: to securely process financial transactions\n• Email service Resend: to send booking confirmations\nAll these parties are bound by strict privacy policies and are obligated to maintain the confidentiality of your data.",
       },
       {
-        heading: "Data Protection",
-        body: "We use SSL/TLS encryption to protect your data in transit. Payment data is stored in encrypted form and full card numbers are never retained on our servers.",
+        heading: "6. Payment Methods and Transaction Security",
+        body: "We accept payment via the following methods:\n• Stripe: Visa and Mastercard international cards\n• Bankily: Mauritanian electronic wallet\n• Masrvi: Mauritanian electronic payment service\n• Sedad: Mauritanian digital payment platform\nAll payment transactions are encrypted with SSL/TLS technology. We do not retain full card numbers on our servers. Credit card data is processed directly through PCI DSS-certified Stripe.",
       },
       {
-        heading: "Your Rights",
-        body: "You have the right to request access to, modification of, or deletion of your personal data at any time. To contact us regarding any privacy inquiry, please call: +222 33 70 00 00",
+        heading: "7. App Permissions",
+        body: "The app requests the following permissions:\n• Microphone: for voice search feature only — no audio recordings are stored\n• Notifications: to send travel reminders and booking confirmations\nYou may deny any of these permissions without affecting the core functions of the app.",
       },
       {
-        heading: "Policy Updates",
+        heading: "8. Data Protection and Security",
+        body: "We implement multiple security measures to protect your data:\n• SSL/TLS encryption for all communications\n• Encrypted hashing for password storage\n• Limited access to sensitive data\n• Regular security audits\n• No retention of full card numbers",
+      },
+      {
+        heading: "9. Your Rights",
+        body: "Under applicable laws, you have the right to:\n• Access your stored personal data\n• Correct any inaccurate data\n• Request deletion of your data (right to be forgotten)\n• Object to the processing of your data\n• Request a portable copy of your data\nTo exercise these rights, contact us at: suporte@royalvoyage.online",
+      },
+      {
+        heading: "10. Data Retention Period",
+        body: "We retain your personal data as long as your account is active or as long as necessary to provide services. After account closure, we retain some data for 5 years to comply with legal and accounting requirements.",
+      },
+      {
+        heading: "11. Policy Updates",
         body: "We may update this policy from time to time. We will notify you of any material changes via the app or email. Your continued use of the app after an update constitutes your acceptance of the new policy.",
       },
       {
-        heading: "Contact",
-        body: "Royal Voyage — Tevragh Zeina, Nouakchott, Mauritania\nPhone: +222 33 70 00 00",
+        heading: "12. Contact",
+        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
       },
     ],
   },
   fr: {
     dir: "ltr",
     title: "Politique de Confidentialité",
-    updated: "Dernière mise à jour : mars 2026",
+    updated: "Dernière mise à jour : avril 2026",
     sections: [
       {
-        heading: "Introduction",
-        body: "Royal Voyage s'engage à protéger la vie privée des utilisateurs de son application. Cette politique décrit comment nous collectons, utilisons et protégeons les informations personnelles lors de l'utilisation de l'application Royal Voyage.",
+        heading: "1. Introduction",
+        body: "ROYAL SERVICE L. (exploitant l'application et la plateforme Royal Voyage) s'engage à protéger la vie privée de ses utilisateurs. Cette politique décrit en détail comment les informations personnelles sont collectées, utilisées, partagées et protégées lors de l'utilisation de l'application Royal Voyage ou du site royalvoyage.online.",
       },
       {
-        heading: "Informations que nous collectons",
-        body: "Nous collectons les informations que vous fournissez directement lors de la création d'un compte ou d'une réservation, notamment : nom complet, adresse e-mail, numéro de téléphone, données du passeport et informations de paiement. Nous collectons également automatiquement des données d'utilisation telles que le type d'appareil et le système d'exploitation.",
+        heading: "2. Identité du responsable du traitement",
+        body: "Raison sociale : ROYAL SERVICE L.\nMarque : Royal Voyage\nAdresse : Tevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00",
       },
       {
-        heading: "Utilisation de vos informations",
-        body: "Nous utilisons vos informations pour traiter les réservations de vols et d'hôtels, envoyer des confirmations de réservation et des billets de voyage, améliorer nos services et communiquer avec vous concernant vos demandes. Nous ne vendrons jamais vos informations personnelles à des tiers.",
+        heading: "3. Informations que nous collectons",
+        body: "Nous collectons les informations que vous fournissez directement lors de la création d'un compte ou d'une réservation, notamment :\n• Nom complet et date de naissance\n• Adresse e-mail et numéro de téléphone\n• Données du passeport ou document officiel\n• Informations de paiement (traitées en toute sécurité via Stripe)\n• Données d'utilisation automatiques : type d'appareil, système d'exploitation, adresse IP",
       },
       {
-        heading: "Partage des informations",
-        body: "Nous pouvons partager vos informations avec les compagnies aériennes et les hôtels pour finaliser vos réservations, et avec les prestataires de services de paiement pour traiter les transactions financières. Toutes ces parties sont tenues de maintenir la confidentialité de vos données.",
+        heading: "4. Utilisation de vos informations",
+        body: "Nous utilisons vos informations aux fins suivantes :\n• Traitement des réservations de vols, hôtels et activités\n• Envoi de confirmations de réservation et billets électroniques\n• Envoi de rappels de voyage 24 heures avant le départ\n• Amélioration de nos services et de l'expérience utilisateur\n• Communication avec vous concernant vos demandes\n• Conformité aux exigences légales et réglementaires\nNous ne vendrons jamais vos informations personnelles à des tiers.",
       },
       {
-        heading: "Autorisations de l'application",
-        body: "L'application demande l'accès au microphone uniquement pour la fonctionnalité de recherche vocale. Aucun enregistrement audio n'est stocké sur nos serveurs. Vous pouvez refuser cette autorisation sans affecter les autres fonctions de l'application.",
+        heading: "5. Partage des informations avec des tiers",
+        body: "Nous pouvons partager vos informations avec les parties suivantes :\n• Compagnies aériennes et partenaires de réservation (Duffel API) : pour émettre les billets\n• Prestataires d'hôtels et d'activités (Hotelbeds/HBX) : pour confirmer les réservations\n• Processeur de paiement Stripe : pour traiter les transactions financières\n• Service e-mail Resend : pour envoyer les confirmations de réservation\nToutes ces parties sont soumises à des politiques de confidentialité strictes.",
       },
       {
-        heading: "Protection des données",
-        body: "Nous utilisons le chiffrement SSL/TLS pour protéger vos données en transit. Les données de paiement sont stockées sous forme chiffrée et les numéros de carte complets ne sont jamais conservés sur nos serveurs.",
+        heading: "6. Modes de paiement et sécurité des transactions",
+        body: "Nous acceptons le paiement via les méthodes suivantes :\n• Stripe : cartes Visa et Mastercard internationales\n• Bankily : portefeuille électronique mauritanien\n• Masrvi : service de paiement électronique mauritanien\n• Sedad : plateforme de paiement numérique mauritanienne\nToutes les transactions sont chiffrées SSL/TLS. Nous ne conservons pas les numéros de carte complets. Les données de carte sont traitées directement via Stripe certifié PCI DSS.",
       },
       {
-        heading: "Vos droits",
-        body: "Vous avez le droit de demander l'accès, la modification ou la suppression de vos données personnelles à tout moment. Pour nous contacter concernant toute question de confidentialité, veuillez appeler : +222 33 70 00 00",
+        heading: "7. Autorisations de l'application",
+        body: "L'application demande les autorisations suivantes :\n• Microphone : uniquement pour la recherche vocale — aucun enregistrement n'est stocké\n• Notifications : pour envoyer des rappels de voyage et confirmations\nVous pouvez refuser ces autorisations sans affecter les fonctions principales.",
       },
       {
-        heading: "Mises à jour de la politique",
-        body: "Nous pouvons mettre à jour cette politique de temps à autre. Nous vous informerons de tout changement important via l'application ou par e-mail. Votre utilisation continue de l'application après une mise à jour constitue votre acceptation de la nouvelle politique.",
+        heading: "8. Protection des données et sécurité",
+        body: "Nous mettons en œuvre plusieurs mesures de sécurité :\n• Chiffrement SSL/TLS pour toutes les communications\n• Hachage chiffré pour le stockage des mots de passe\n• Accès limité aux données sensibles\n• Audits de sécurité réguliers\n• Aucune conservation des numéros de carte complets",
       },
       {
-        heading: "Contact",
-        body: "Royal Voyage — Tevragh Zeina, Nouakchott, Mauritanie\nTél : +222 33 70 00 00",
+        heading: "9. Vos droits",
+        body: "Conformément aux lois applicables, vous avez le droit de :\n• Accéder à vos données personnelles stockées\n• Corriger toute donnée inexacte\n• Demander la suppression de vos données\n• Vous opposer au traitement de vos données\n• Demander une copie portable de vos données\nPour exercer ces droits : suporte@royalvoyage.online",
+      },
+      {
+        heading: "10. Durée de conservation des données",
+        body: "Nous conservons vos données personnelles aussi longtemps que votre compte est actif. Après fermeture du compte, nous conservons certaines données pendant 5 ans pour respecter les exigences légales et comptables.",
+      },
+      {
+        heading: "11. Mises à jour de la politique",
+        body: "Nous pouvons mettre à jour cette politique. Nous vous informerons de tout changement important via l'application ou par e-mail.",
+      },
+      {
+        heading: "12. Contact",
+        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
       },
     ],
   },
@@ -148,29 +184,17 @@ export default function PrivacyScreen() {
 
   return (
     <ScreenContainer containerClassName="bg-background">
-      {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.background }]}>
-        <Pressable
-          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
-          onPress={() => router.back()}
-        >
+        <Pressable style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]} onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color={colors.foreground} />
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.foreground }]}>{content.title}</Text>
         <View style={{ width: 40 }} />
       </View>
 
-      {/* Language switcher */}
       <View style={[styles.langRow, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         {(["ar", "en", "fr"] as Lang[]).map((l) => (
-          <Pressable
-            key={l}
-            style={[
-              styles.langBtn,
-              lang === l && { backgroundColor: colors.primary },
-            ]}
-            onPress={() => setLang(l)}
-          >
+          <Pressable key={l} style={[styles.langBtn, lang === l && { backgroundColor: colors.primary }]} onPress={() => setLang(l)}>
             <Text style={[styles.langText, { color: lang === l ? "#fff" : colors.muted }]}>
               {l === "ar" ? "العربية" : l === "en" ? "English" : "Français"}
             </Text>
@@ -178,34 +202,28 @@ export default function PrivacyScreen() {
         ))}
       </View>
 
-      <ScrollView
-        contentContainerStyle={[styles.scrollContent, { direction: content.dir === "rtl" ? "rtl" : "ltr" } as any]}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={[styles.updated, { color: colors.muted, textAlign: content.dir === "rtl" ? "right" : "left" }]}>
-          {content.updated}
-        </Text>
-
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={[styles.updated, { color: colors.muted, textAlign: content.dir === "rtl" ? "right" : "left" }]}>{content.updated}</Text>
         {content.sections.map((section, i) => (
           <View key={i} style={styles.section}>
-            <Text style={[styles.sectionHeading, { color: colors.primary, textAlign: content.dir === "rtl" ? "right" : "left" }]}>
-              {section.heading}
-            </Text>
-            <Text style={[styles.sectionBody, { color: colors.foreground, textAlign: content.dir === "rtl" ? "right" : "left" }]}>
-              {section.body}
-            </Text>
+            <Text style={[styles.sectionHeading, { color: colors.primary, textAlign: content.dir === "rtl" ? "right" : "left" }]}>{section.heading}</Text>
+            <Text style={[styles.sectionBody, { color: colors.foreground, textAlign: content.dir === "rtl" ? "right" : "left" }]}>{section.body}</Text>
           </View>
         ))}
-
-        {/* Contact button */}
-        <Pressable
-          style={[styles.contactBtn, { backgroundColor: colors.primary }]}
-          onPress={() => Linking.openURL("tel:+22233700000")}
-        >
-          <IconSymbol name="phone.fill" size={18} color="#fff" />
-          <Text style={styles.contactBtnText}>+222 33 70 00 00</Text>
+        <View style={styles.ctaRow}>
+          <Pressable style={[styles.contactBtn, { backgroundColor: colors.primary, flex: 1 }]} onPress={() => Linking.openURL("tel:+22233700000")}>
+            <IconSymbol name="phone.fill" size={18} color="#fff" />
+            <Text style={styles.contactBtnText}>+222 33 70 00 00</Text>
+          </Pressable>
+          <Pressable style={[styles.contactBtn, { backgroundColor: "#25D366", flex: 1 }]} onPress={() => Linking.openURL("https://wa.me/22233700000")}>
+            <IconSymbol name="paperplane.fill" size={18} color="#fff" />
+            <Text style={styles.contactBtnText}>WhatsApp</Text>
+          </Pressable>
+        </View>
+        <Pressable style={[styles.emailBtn, { borderColor: colors.border }]} onPress={() => Linking.openURL("mailto:suporte@royalvoyage.online")}>
+          <IconSymbol name="envelope.fill" size={16} color={colors.primary} />
+          <Text style={[styles.emailBtnText, { color: colors.primary }]}>suporte@royalvoyage.online</Text>
         </Pressable>
-
         <View style={{ height: 40 }} />
       </ScrollView>
     </ScreenContainer>
@@ -213,72 +231,20 @@ export default function PrivacyScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 0.5,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-  },
-  langRow: {
-    flexDirection: "row",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-    borderBottomWidth: 0.5,
-  },
-  langBtn: {
-    flex: 1,
-    paddingVertical: 7,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  langText: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  scrollContent: {
-    padding: 20,
-  },
-  updated: {
-    fontSize: 12,
-    marginBottom: 20,
-  },
-  section: {
-    marginBottom: 20,
-  },
-  sectionHeading: {
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 6,
-  },
-  sectionBody: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
-  contactBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  contactBtnText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 0.5 },
+  backBtn: { width: 40, height: 40, justifyContent: "center", alignItems: "center" },
+  headerTitle: { fontSize: 17, fontWeight: "600" },
+  langRow: { flexDirection: "row", paddingHorizontal: 16, paddingVertical: 10, gap: 8, borderBottomWidth: 0.5 },
+  langBtn: { flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: "center" },
+  langText: { fontSize: 13, fontWeight: "600" },
+  scrollContent: { padding: 20 },
+  updated: { fontSize: 12, marginBottom: 20 },
+  section: { marginBottom: 20 },
+  sectionHeading: { fontSize: 15, fontWeight: "700", marginBottom: 6 },
+  sectionBody: { fontSize: 14, lineHeight: 22 },
+  ctaRow: { flexDirection: "row", gap: 10, marginTop: 16 },
+  contactBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 12 },
+  contactBtnText: { color: "#fff", fontSize: 14, fontWeight: "600" },
+  emailBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1, marginTop: 10 },
+  emailBtnText: { fontSize: 14, fontWeight: "500" },
 });

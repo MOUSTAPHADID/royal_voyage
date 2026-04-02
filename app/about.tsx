@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -24,121 +24,191 @@ const CONTENT: Record<Lang, {
   title: string;
   subtitle: string;
   since: string;
+  legalName: string;
+  legalLabel: string;
   sections: { icon: string; heading: string; body: string }[];
+  howWeWork: { heading: string; steps: string[] };
+  paymentTitle: string;
+  paymentMethods: string;
   services: { icon: string; label: string }[];
   contactTitle: string;
   phone: string;
   email: string;
   whatsapp: string;
   address: string;
+  country: string;
+  disclaimer: string;
 }> = {
   ar: {
     dir: "rtl",
     title: "عن وكالة Royal Voyage",
-    subtitle: "شريكك المميز في السفر",
+    subtitle: "شريكك المميز في السفر منذ 2023",
     since: "منذ 2023",
+    legalName: "ROYAL SERVICE L.",
+    legalLabel: "الاسم القانوني للشركة",
     sections: [
       {
         icon: "star",
         heading: "من نحن",
-        body: "وكالة Royal Voyage هي وكالة سفر موريتانية متخصصة في تقديم خدمات الحجز الجوي والفندقي بأعلى معايير الجودة. تأسست عام 2023 في نواكشوط، وتسعى إلى تقديم تجربة سفر استثنائية لعملائها.",
+        body: "Royal Voyage هي وكالة سفر موريتانية متخصصة في تقديم خدمات الحجز الجوي والفندقي وحجز الأنشطة السياحية بأعلى معايير الجودة. تأسست عام 2023 في نواكشوط تحت الاسم القانوني ROYAL SERVICE L.، وتسعى إلى تقديم تجربة سفر استثنائية لعملائها في موريتانيا وخارجها.",
       },
       {
         icon: "bullseye",
         heading: "رسالتنا",
-        body: "نؤمن بأن السفر يجب أن يكون تجربة ممتعة وخالية من التعقيدات. لذلك نوفر منصة متكاملة تجمع بين أفضل الأسعار والخدمة الشخصية المتميزة.",
+        body: "نؤمن بأن السفر يجب أن يكون تجربة ممتعة وخالية من التعقيدات. لذلك نوفر منصة متكاملة تجمع بين أفضل الأسعار والخدمة الشخصية المتميزة، مع دعم متعدد اللغات يشمل العربية والفرنسية والإنجليزية والبرتغالية.",
       },
       {
         icon: "trophy",
         heading: "لماذا تختارنا",
-        body: "نقدم أسعاراً تنافسية مع خدمة عملاء متاحة على مدار الساعة، وتذاكر إلكترونية فورية، ودعم متعدد اللغات (العربية، الفرنسية، الإنجليزية).",
+        body: "نقدم أسعاراً تنافسية مع خدمة عملاء متاحة 6 أيام في الأسبوع، وتذاكر إلكترونية فورية تُرسل مباشرة إلى بريدك الإلكتروني، ودعم متعدد اللغات، وإمكانية الدفع بوسائل محلية ودولية متعددة.",
+      },
+      {
+        icon: "handshake",
+        heading: "دورنا كوسيط",
+        body: "تعمل Royal Voyage بوصفها وسيطاً بين المسافرين وشركات الطيران والفنادق ومزودي الأنشطة. نحن لسنا الناقل الجوي ولا مزود الإقامة مباشرةً، بل نتولى إجراء الحجوزات نيابةً عنك عبر شركائنا المعتمدين كـ Duffel وHotelbeds، مع ضمان أفضل الأسعار وأعلى مستوى من الخدمة.",
       },
     ],
+    howWeWork: {
+      heading: "كيف يعمل الحجز؟",
+      steps: [
+        "ابحث عن رحلتك أو فندقك أو نشاطك من خلال التطبيق",
+        "اختر العرض المناسب وأدخل بيانات المسافرين",
+        "أتمم الدفع بإحدى الطرق المتاحة (Stripe / Bankily / Masrvi / Sedad)",
+        "تصلك تذكرتك أو تأكيد حجزك فوراً على بريدك الإلكتروني",
+        "فريقنا متاح لمساعدتك قبل السفر وأثناءه وبعده",
+      ],
+    },
+    paymentTitle: "طرق الدفع المقبولة",
+    paymentMethods: "نقبل الدفع عبر: Stripe (بطاقات Visa/Mastercard)، Bankily، Masrvi، وSedad. جميع المعاملات مشفرة وآمنة.",
     services: [
       { icon: "plane", label: "حجز الطيران" },
       { icon: "hotel", label: "حجز الفنادق" },
-      { icon: "file-alt", label: "تأشيرات السفر" },
+      { icon: "map-marked-alt", label: "الأنشطة السياحية" },
+      { icon: "file-alt", label: "استشارات التأشيرة" },
       { icon: "shield-alt", label: "تأمين السفر" },
-      { icon: "map-marked-alt", label: "باقات سياحية" },
-      { icon: "headset", label: "دعم 24/7" },
+      { icon: "headset", label: "دعم متعدد اللغات" },
     ],
     contactTitle: "تواصل معنا",
     phone: "+222 33 70 00 00",
     email: "suporte@royalvoyage.online",
     whatsapp: "+222 33 70 00 00",
-    address: "تفرغ زين، نواكشوط، موريتانيا",
+    address: "تفرغ زين، نواكشوط",
+    country: "موريتانيا",
+    disclaimer: "© 2023–2026 ROYAL SERVICE L. جميع الحقوق محفوظة. Royal Voyage وكالة سفر مرخصة في موريتانيا.",
   },
   en: {
     dir: "ltr",
     title: "About Royal Voyage",
-    subtitle: "Your Premium Travel Partner",
+    subtitle: "Your Premium Travel Partner Since 2023",
     since: "Since 2023",
+    legalName: "ROYAL SERVICE L.",
+    legalLabel: "Legal Company Name",
     sections: [
       {
         icon: "star",
         heading: "Who We Are",
-        body: "Royal Voyage is a Mauritanian travel agency specializing in flight and hotel bookings with the highest quality standards. Founded in 2023 in Nouakchott, we strive to deliver an exceptional travel experience for our clients.",
+        body: "Royal Voyage is a Mauritanian travel agency specializing in flight, hotel, and activity bookings with the highest quality standards. Founded in 2023 in Nouakchott under the legal name ROYAL SERVICE L., we strive to deliver an exceptional travel experience for clients in Mauritania and beyond.",
       },
       {
         icon: "bullseye",
         heading: "Our Mission",
-        body: "We believe travel should be an enjoyable, hassle-free experience. That's why we offer an integrated platform combining the best prices with outstanding personalized service.",
+        body: "We believe travel should be an enjoyable, hassle-free experience. That's why we offer an integrated platform combining the best prices with outstanding personalized service, with multilingual support in Arabic, French, English, and Portuguese.",
       },
       {
         icon: "trophy",
         heading: "Why Choose Us",
-        body: "We offer competitive prices with 24/7 customer support, instant e-tickets, and multilingual support (Arabic, French, English).",
+        body: "We offer competitive prices with customer support available 6 days a week, instant e-tickets sent directly to your email, multilingual support, and the ability to pay with multiple local and international payment methods.",
+      },
+      {
+        icon: "handshake",
+        heading: "Our Role as Intermediary",
+        body: "Royal Voyage acts as an intermediary between travelers and airlines, hotels, and activity providers. We are not the direct air carrier or accommodation provider, but we handle bookings on your behalf through our certified partners such as Duffel and Hotelbeds, ensuring the best prices and highest level of service.",
       },
     ],
+    howWeWork: {
+      heading: "How Does Booking Work?",
+      steps: [
+        "Search for your flight, hotel, or activity through the app",
+        "Select the right offer and enter traveler details",
+        "Complete payment using one of the available methods (Stripe / Bankily / Masrvi / Sedad)",
+        "Receive your ticket or booking confirmation instantly by email",
+        "Our team is available to assist you before, during, and after your trip",
+      ],
+    },
+    paymentTitle: "Accepted Payment Methods",
+    paymentMethods: "We accept payment via: Stripe (Visa/Mastercard cards), Bankily, Masrvi, and Sedad. All transactions are encrypted and secure.",
     services: [
       { icon: "plane", label: "Flight Booking" },
       { icon: "hotel", label: "Hotel Booking" },
-      { icon: "file-alt", label: "Visa Services" },
+      { icon: "map-marked-alt", label: "Tourist Activities" },
+      { icon: "file-alt", label: "Visa Consultation" },
       { icon: "shield-alt", label: "Travel Insurance" },
-      { icon: "map-marked-alt", label: "Tour Packages" },
-      { icon: "headset", label: "24/7 Support" },
+      { icon: "headset", label: "Multilingual Support" },
     ],
     contactTitle: "Contact Us",
     phone: "+222 33 70 00 00",
     email: "suporte@royalvoyage.online",
     whatsapp: "+222 33 70 00 00",
-    address: "Tavragh Zeina, Nouakchott, Mauritania",
+    address: "Tevragh Zeina, Nouakchott",
+    country: "Mauritania",
+    disclaimer: "© 2023–2026 ROYAL SERVICE L. All rights reserved. Royal Voyage is a licensed travel agency in Mauritania.",
   },
   fr: {
     dir: "ltr",
     title: "À propos de Royal Voyage",
-    subtitle: "Votre Partenaire de Voyage Premium",
+    subtitle: "Votre Partenaire de Voyage Premium depuis 2023",
     since: "Depuis 2023",
+    legalName: "ROYAL SERVICE L.",
+    legalLabel: "Raison sociale",
     sections: [
       {
         icon: "star",
         heading: "Qui Sommes-Nous",
-        body: "Royal Voyage est une agence de voyage mauritanienne spécialisée dans les réservations de vols et d'hôtels selon les plus hauts standards de qualité. Fondée en 2023 à Nouakchott, nous nous efforçons d'offrir une expérience de voyage exceptionnelle à nos clients.",
+        body: "Royal Voyage est une agence de voyage mauritanienne spécialisée dans les réservations de vols, d'hôtels et d'activités touristiques selon les plus hauts standards de qualité. Fondée en 2023 à Nouakchott sous la raison sociale ROYAL SERVICE L., nous nous efforçons d'offrir une expérience de voyage exceptionnelle à nos clients en Mauritanie et au-delà.",
       },
       {
         icon: "bullseye",
         heading: "Notre Mission",
-        body: "Nous croyons que le voyage doit être une expérience agréable et sans complications. C'est pourquoi nous proposons une plateforme intégrée combinant les meilleurs prix avec un service personnalisé exceptionnel.",
+        body: "Nous croyons que le voyage doit être une expérience agréable et sans complications. C'est pourquoi nous proposons une plateforme intégrée combinant les meilleurs prix avec un service personnalisé exceptionnel, avec un support multilingue en arabe, français, anglais et portugais.",
       },
       {
         icon: "trophy",
         heading: "Pourquoi Nous Choisir",
-        body: "Nous offrons des prix compétitifs avec un service client disponible 24h/24, des billets électroniques instantanés et un support multilingue (Arabe, Français, Anglais).",
+        body: "Nous offrons des prix compétitifs avec un service client disponible 6 jours par semaine, des billets électroniques instantanés envoyés directement à votre e-mail, un support multilingue et la possibilité de payer avec plusieurs méthodes de paiement locales et internationales.",
+      },
+      {
+        icon: "handshake",
+        heading: "Notre Rôle d'Intermédiaire",
+        body: "Royal Voyage agit en tant qu'intermédiaire entre les voyageurs et les compagnies aériennes, hôtels et prestataires d'activités. Nous ne sommes pas le transporteur aérien ni le prestataire d'hébergement direct, mais nous gérons les réservations en votre nom via nos partenaires certifiés tels que Duffel et Hotelbeds.",
       },
     ],
+    howWeWork: {
+      heading: "Comment Fonctionne la Réservation ?",
+      steps: [
+        "Recherchez votre vol, hôtel ou activité via l'application",
+        "Sélectionnez l'offre appropriée et saisissez les informations des voyageurs",
+        "Finalisez le paiement avec l'une des méthodes disponibles (Stripe / Bankily / Masrvi / Sedad)",
+        "Recevez votre billet ou confirmation de réservation instantanément par e-mail",
+        "Notre équipe est disponible pour vous aider avant, pendant et après votre voyage",
+      ],
+    },
+    paymentTitle: "Modes de Paiement Acceptés",
+    paymentMethods: "Nous acceptons le paiement via : Stripe (cartes Visa/Mastercard), Bankily, Masrvi et Sedad. Toutes les transactions sont chiffrées et sécurisées.",
     services: [
       { icon: "plane", label: "Réservation de Vols" },
       { icon: "hotel", label: "Réservation d'Hôtels" },
-      { icon: "file-alt", label: "Services Visa" },
+      { icon: "map-marked-alt", label: "Activités Touristiques" },
+      { icon: "file-alt", label: "Conseil Visa" },
       { icon: "shield-alt", label: "Assurance Voyage" },
-      { icon: "map-marked-alt", label: "Forfaits Touristiques" },
-      { icon: "headset", label: "Support 24/7" },
+      { icon: "headset", label: "Support Multilingue" },
     ],
     contactTitle: "Contactez-Nous",
     phone: "+222 33 70 00 00",
     email: "suporte@royalvoyage.online",
     whatsapp: "+222 33 70 00 00",
-    address: "Tavragh Zeina, Nouakchott, Mauritanie",
+    address: "Tevragh Zeina, Nouakchott",
+    country: "Mauritanie",
+    disclaimer: "© 2023–2026 ROYAL SERVICE L. Tous droits réservés. Royal Voyage est une agence de voyage agréée en Mauritanie.",
   },
 };
 
@@ -148,6 +218,7 @@ export default function AboutScreen() {
   const { language } = useI18n();
   const lang = (language as Lang) in CONTENT ? (language as Lang) : "en";
   const c = CONTENT[lang];
+  const isRTL = lang === "ar";
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -167,7 +238,6 @@ export default function AboutScreen() {
               <Text style={styles.sinceText}>{c.since}</Text>
             </View>
           </View>
-          {/* Gold diagonal accent */}
           <View style={styles.goldAccent} />
         </View>
 
@@ -178,18 +248,59 @@ export default function AboutScreen() {
             <Text style={[styles.subtitleText, { color: NAVY }]}>{c.subtitle}</Text>
           </View>
 
+          {/* Legal name badge */}
+          <View style={[styles.legalBadge, { backgroundColor: NAVY + "10", borderColor: NAVY + "30" }]}>
+            <FontAwesome5 name="building" size={14} color={NAVY} />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={[styles.legalLabel, { color: colors.muted }]}>{c.legalLabel}</Text>
+              <Text style={[styles.legalName, { color: NAVY }]}>{c.legalName}</Text>
+            </View>
+            <View style={[styles.countryBadge, { backgroundColor: GOLD + "20" }]}>
+              <Text style={[styles.countryText, { color: GOLD }]}>{c.country}</Text>
+            </View>
+          </View>
+
           {/* Info Sections */}
           {c.sections.map((section, i) => (
             <View key={i} style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[styles.sectionIcon, { backgroundColor: NAVY + "15" }]}>
                 <FontAwesome5 name={section.icon as any} size={18} color={NAVY} />
               </View>
-              <View style={styles.sectionBody}>
-                <Text style={[styles.sectionHeading, { color: NAVY }]}>{section.heading}</Text>
-                <Text style={[styles.sectionText, { color: colors.foreground }]}>{section.body}</Text>
+              <View style={[styles.sectionBody, { alignItems: isRTL ? "flex-end" : "flex-start" }]}>
+                <Text style={[styles.sectionHeading, { color: NAVY, textAlign: isRTL ? "right" : "left" }]}>{section.heading}</Text>
+                <Text style={[styles.sectionText, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>{section.body}</Text>
               </View>
             </View>
           ))}
+
+          {/* How We Work */}
+          <View style={[styles.howCard, { backgroundColor: NAVY, borderColor: NAVY }]}>
+            <Text style={styles.howTitle}>{c.howWeWork.heading}</Text>
+            {c.howWeWork.steps.map((step, i) => (
+              <View key={i} style={[styles.howStep, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <View style={styles.stepNum}>
+                  <Text style={styles.stepNumText}>{i + 1}</Text>
+                </View>
+                <Text style={[styles.stepText, { textAlign: isRTL ? "right" : "left" }]}>{step}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Payment Methods */}
+          <View style={[styles.paymentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.paymentHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
+              <FontAwesome5 name="credit-card" size={16} color={GOLD} />
+              <Text style={[styles.paymentTitle, { color: NAVY, marginLeft: isRTL ? 0 : 8, marginRight: isRTL ? 8 : 0 }]}>{c.paymentTitle}</Text>
+            </View>
+            <Text style={[styles.paymentText, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>{c.paymentMethods}</Text>
+            <View style={styles.paymentLogos}>
+              {["Stripe", "Bankily", "Masrvi", "Sedad"].map((m) => (
+                <View key={m} style={[styles.paymentBadge, { backgroundColor: NAVY + "10" }]}>
+                  <Text style={[styles.paymentBadgeText, { color: NAVY }]}>{m}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
 
           {/* Services */}
           <Text style={[styles.servicesTitle, { color: NAVY }]}>
@@ -210,13 +321,13 @@ export default function AboutScreen() {
           <Text style={[styles.servicesTitle, { color: NAVY }]}>{c.contactTitle}</Text>
           <View style={[styles.contactCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable
-              style={({ pressed }) => [styles.contactRow, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.contactRow, { opacity: pressed ? 0.7 : 1, flexDirection: isRTL ? "row-reverse" : "row" }]}
               onPress={() => Linking.openURL("tel:+22233700000")}
             >
               <View style={[styles.contactIcon, { backgroundColor: NAVY + "15" }]}>
                 <FontAwesome5 name="phone" size={16} color={NAVY} />
               </View>
-              <View>
+              <View style={{ flex: 1, alignItems: isRTL ? "flex-end" : "flex-start" }}>
                 <Text style={[styles.contactLabel, { color: colors.muted }]}>
                   {lang === "ar" ? "الهاتف" : lang === "fr" ? "Téléphone" : "Phone"}
                 </Text>
@@ -227,13 +338,13 @@ export default function AboutScreen() {
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             <Pressable
-              style={({ pressed }) => [styles.contactRow, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.contactRow, { opacity: pressed ? 0.7 : 1, flexDirection: isRTL ? "row-reverse" : "row" }]}
               onPress={() => Linking.openURL(`https://wa.me/22233700000`)}
             >
               <View style={[styles.contactIcon, { backgroundColor: "#25D36620" }]}>
                 <FontAwesome5 name="whatsapp" size={16} color="#25D366" />
               </View>
-              <View>
+              <View style={{ flex: 1, alignItems: isRTL ? "flex-end" : "flex-start" }}>
                 <Text style={[styles.contactLabel, { color: colors.muted }]}>WhatsApp</Text>
                 <Text style={[styles.contactValue, { color: "#25D366" }]}>{c.whatsapp}</Text>
               </View>
@@ -242,13 +353,13 @@ export default function AboutScreen() {
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             <Pressable
-              style={({ pressed }) => [styles.contactRow, { opacity: pressed ? 0.7 : 1 }]}
+              style={({ pressed }) => [styles.contactRow, { opacity: pressed ? 0.7 : 1, flexDirection: isRTL ? "row-reverse" : "row" }]}
               onPress={() => Linking.openURL("mailto:suporte@royalvoyage.online")}
             >
               <View style={[styles.contactIcon, { backgroundColor: GOLD + "20" }]}>
                 <FontAwesome5 name="envelope" size={16} color={GOLD} />
               </View>
-              <View>
+              <View style={{ flex: 1, alignItems: isRTL ? "flex-end" : "flex-start" }}>
                 <Text style={[styles.contactLabel, { color: colors.muted }]}>
                   {lang === "ar" ? "البريد الإلكتروني" : lang === "fr" ? "E-mail" : "Email"}
                 </Text>
@@ -258,15 +369,16 @@ export default function AboutScreen() {
 
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-            <View style={styles.contactRow}>
+            <View style={[styles.contactRow, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <View style={[styles.contactIcon, { backgroundColor: "#EF444420" }]}>
                 <FontAwesome5 name="map-marker-alt" size={16} color="#EF4444" />
               </View>
-              <View>
+              <View style={{ flex: 1, alignItems: isRTL ? "flex-end" : "flex-start" }}>
                 <Text style={[styles.contactLabel, { color: colors.muted }]}>
                   {lang === "ar" ? "العنوان" : lang === "fr" ? "Adresse" : "Address"}
                 </Text>
                 <Text style={[styles.contactValue, { color: colors.foreground }]}>{c.address}</Text>
+                <Text style={[styles.contactLabel, { color: colors.muted, marginTop: 2 }]}>{c.country}</Text>
               </View>
             </View>
           </View>
@@ -287,7 +399,7 @@ export default function AboutScreen() {
             <View style={{ flex: 1, marginLeft: 14 }}>
               <Text style={{ fontSize: 14, fontWeight: "700", color: NAVY }}>Duffel</Text>
               <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
-                {lang === "ar" ? "شريك API معتمد — منصة حجز الطيران" : lang === "fr" ? "Partenaire API Certifié — Plateforme de Réservation" : "Certified API Partner — Flight Booking Platform"}
+                {lang === "ar" ? "شريك API معتمد — منصة حجز الطيران" : lang === "fr" ? "Partenaire API Certifié — Réservation de Vols" : "Certified API Partner — Flight Booking Platform"}
               </Text>
             </View>
             <FontAwesome5 name="external-link-alt" size={12} color={colors.muted} />
@@ -311,7 +423,6 @@ export default function AboutScreen() {
                   source={{ uri: `https://images.kiwi.com/airlines/64/${a.code}.png` }}
                   style={{ width: 40, height: 40, borderRadius: 8 }}
                   resizeMode="contain"
-                  defaultSource={{ uri: `https://images.kiwi.com/airlines/64/${a.code}.png` }}
                 />
                 <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center", marginTop: 4 }}>{a.name}</Text>
               </View>
@@ -319,9 +430,7 @@ export default function AboutScreen() {
           </View>
 
           {/* Footer */}
-          <Text style={[styles.footer, { color: colors.muted }]}>
-            © 2023–2026 Royal Voyage. {lang === "ar" ? "جميع الحقوق محفوظة." : lang === "fr" ? "Tous droits réservés." : "All rights reserved."}
-          </Text>
+          <Text style={[styles.footer, { color: colors.muted }]}>{c.disclaimer}</Text>
         </View>
       </ScrollView>
     </ScreenContainer>
@@ -354,14 +463,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginBottom: 12,
   },
-  headerContent: {
-    gap: 6,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#fff",
-  },
+  headerContent: { gap: 6 },
+  headerTitle: { fontSize: 22, fontWeight: "700", color: "#fff" },
   sinceBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -372,15 +475,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignSelf: "flex-start",
   },
-  sinceText: {
-    color: GOLD,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  content: {
-    padding: 16,
-    gap: 12,
-  },
+  sinceText: { color: GOLD, fontSize: 12, fontWeight: "600" },
+  content: { padding: 16, gap: 12 },
   subtitleCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -392,11 +488,23 @@ const styles = StyleSheet.create({
     borderLeftColor: GOLD,
     marginBottom: 4,
   },
-  subtitleText: {
-    fontSize: 15,
-    fontWeight: "600",
-    flex: 1,
+  subtitleText: { fontSize: 15, fontWeight: "600", flex: 1 },
+  legalBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 4,
   },
+  legalLabel: { fontSize: 11, marginBottom: 2 },
+  legalName: { fontSize: 15, fontWeight: "700" },
+  countryBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  countryText: { fontSize: 12, fontWeight: "600" },
   sectionCard: {
     flexDirection: "row",
     gap: 12,
@@ -412,29 +520,45 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flexShrink: 0,
   },
-  sectionBody: {
-    flex: 1,
-    gap: 4,
+  sectionBody: { flex: 1, gap: 4 },
+  sectionHeading: { fontSize: 14, fontWeight: "700" },
+  sectionText: { fontSize: 13, lineHeight: 20 },
+  howCard: {
+    padding: 18,
+    borderRadius: 14,
+    gap: 12,
   },
-  sectionHeading: {
-    fontSize: 14,
-    fontWeight: "700",
+  howTitle: { fontSize: 15, fontWeight: "700", color: "#fff", marginBottom: 4 },
+  howStep: { alignItems: "flex-start", gap: 10 },
+  stepNum: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: GOLD,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
   },
-  sectionText: {
-    fontSize: 13,
-    lineHeight: 20,
-  },
-  servicesTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  servicesGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  stepNumText: { fontSize: 13, fontWeight: "700", color: NAVY },
+  stepText: { fontSize: 13, color: "rgba(255,255,255,0.9)", flex: 1, lineHeight: 20 },
+  paymentCard: {
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
     gap: 10,
   },
+  paymentHeader: { alignItems: "center", gap: 8 },
+  paymentTitle: { fontSize: 15, fontWeight: "700" },
+  paymentText: { fontSize: 13, lineHeight: 20 },
+  paymentLogos: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+  paymentBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  paymentBadgeText: { fontSize: 12, fontWeight: "700" },
+  servicesTitle: { fontSize: 16, fontWeight: "700", marginTop: 8, marginBottom: 4 },
+  servicesGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   serviceItem: {
     width: "30%",
     flexGrow: 1,
@@ -451,18 +575,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  serviceLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  contactCard: {
-    borderRadius: 12,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
+  serviceLabel: { fontSize: 11, fontWeight: "600", textAlign: "center" },
+  contactCard: { borderRadius: 12, borderWidth: 1, overflow: "hidden" },
   contactRow: {
-    flexDirection: "row",
     alignItems: "center",
     gap: 12,
     padding: 14,
@@ -474,24 +589,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  contactLabel: {
-    fontSize: 11,
-    marginBottom: 2,
-  },
-  contactValue: {
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  divider: {
-    height: 1,
-    marginHorizontal: 14,
-  },
-  footer: {
-    textAlign: "center",
-    fontSize: 12,
-    marginTop: 8,
-    marginBottom: 20,
-  },
+  contactLabel: { fontSize: 11, marginBottom: 2 },
+  contactValue: { fontSize: 14, fontWeight: "600" },
+  divider: { height: 1, marginHorizontal: 14 },
+  footer: { textAlign: "center", fontSize: 11, marginTop: 8, marginBottom: 20, lineHeight: 18 },
   partnerCard: {
     flexDirection: "row",
     alignItems: "center",
@@ -509,10 +610,5 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 8,
   },
-  airlineItem: {
-    width: "30%",
-    flexGrow: 1,
-    alignItems: "center",
-    padding: 8,
-  },
+  airlineItem: { width: "30%", flexGrow: 1, alignItems: "center", padding: 8 },
 });
