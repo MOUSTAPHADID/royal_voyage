@@ -432,7 +432,7 @@ export default function WebhooksScreen() {
                 <Text style={{ fontSize: 12, color: "#1E40AF", lineHeight: 20 }}>
                   1. اضغط على + لتسجيل Webhook جديد{"\n"}
                   2. أدخل عنوان URL الخادم المنشور:{"\n"}
-                  {"   "}https://royalvoyage-dcsedylm.manus.space/api/webhooks/duffel{"\n"}
+                  {"   "}https://royalvoyage.online/api/webhooks/duffel{"\n"}
                   3. أو سجّل مباشرة من لوحة تحكم Duffel{"\n"}
                   4. احفظ الـ Secret في متغير البيئة DUFFEL_WEBHOOK_SECRET
                 </Text>
@@ -477,7 +477,7 @@ export default function WebhooksScreen() {
 
             <TextInput
               style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
-              placeholder="https://royalvoyage-dcsedylm.manus.space/api/webhooks/duffel"
+              placeholder="https://royalvoyage.online/api/webhooks/duffel"
               placeholderTextColor={colors.muted}
               value={webhookUrl}
               onChangeText={setWebhookUrl}
