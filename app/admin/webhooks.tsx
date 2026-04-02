@@ -23,18 +23,18 @@ import { trpc } from "@/lib/trpc";
 
 type TabType = "events" | "webhooks" | "notifications";
 
-const EVENT_TYPE_ICONS: Record<string, { icon: string; color: string; bg: string }> = {
-  "order.created": { icon: "✅", color: "#22C55E", bg: "#DCFCE7" },
-  "order.creation_failed": { icon: "⚠️", color: "#EF4444", bg: "#FEE2E2" },
-  "order.airline_initiated_change_detected": { icon: "✈️", color: "#F59E0B", bg: "#FEF3C7" },
-  "air.order.changed": { icon: "🔄", color: "#3B82F6", bg: "#DBEAFE" },
-  "order_cancellation.created": { icon: "🔄", color: "#F97316", bg: "#FED7AA" },
-  "order_cancellation.confirmed": { icon: "❌", color: "#EF4444", bg: "#FEE2E2" },
-  "air.payment.succeeded": { icon: "💳", color: "#22C55E", bg: "#DCFCE7" },
-  "air.payment.failed": { icon: "💳", color: "#EF4444", bg: "#FEE2E2" },
-  "air.payment.cancelled": { icon: "🚫", color: "#6B7280", bg: "#F3F4F6" },
-  "air.payment.pending": { icon: "⏳", color: "#F59E0B", bg: "#FEF3C7" },
-  "ping.triggered": { icon: "🏓", color: "#8B5CF6", bg: "#EDE9FE" },
+const EVENT_TYPE_ICONS: Record<string, { iconName: string; color: string; bg: string }> = {
+  "order.created": { iconName: "check-circle", color: "#22C55E", bg: "#DCFCE7" },
+  "order.creation_failed": { iconName: "warning", color: "#EF4444", bg: "#FEE2E2" },
+  "order.airline_initiated_change_detected": { iconName: "flight", color: "#F59E0B", bg: "#FEF3C7" },
+  "air.order.changed": { iconName: "sync", color: "#3B82F6", bg: "#DBEAFE" },
+  "order_cancellation.created": { iconName: "sync", color: "#F97316", bg: "#FED7AA" },
+  "order_cancellation.confirmed": { iconName: "cancel", color: "#EF4444", bg: "#FEE2E2" },
+  "air.payment.succeeded": { iconName: "credit-card", color: "#22C55E", bg: "#DCFCE7" },
+  "air.payment.failed": { iconName: "credit-card", color: "#EF4444", bg: "#FEE2E2" },
+  "air.payment.cancelled": { iconName: "close", color: "#6B7280", bg: "#F3F4F6" },
+  "air.payment.pending": { iconName: "access-time", color: "#F59E0B", bg: "#FEF3C7" },
+  "ping.triggered": { iconName: "bolt", color: "#8B5CF6", bg: "#EDE9FE" },
 };
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -164,14 +164,14 @@ export default function WebhooksScreen() {
 
   // ─── Tab: Events Log ──────────────────────────────────────────────────────
   const renderEventItem = ({ item }: { item: any }) => {
-    const meta = EVENT_TYPE_ICONS[item.type] || { icon: "📋", color: "#6B7280", bg: "#F3F4F6" };
+    const meta = EVENT_TYPE_ICONS[item.type] || { iconName: "checklist", color: "#6B7280", bg: "#F3F4F6" };
     const label = EVENT_TYPE_LABELS[item.type] || item.type;
 
     return (
       <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.cardRow}>
           <View style={[styles.eventIcon, { backgroundColor: meta.bg }]}>
-            <Text style={{ fontSize: 18 }}>{meta.icon}</Text>
+            <MaterialIcons name={meta.iconName as any} size={18} color={meta.color} />
           </View>
           <View style={styles.cardContent}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]}>{label}</Text>

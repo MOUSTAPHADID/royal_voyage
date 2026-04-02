@@ -251,13 +251,13 @@ export default function FlightDetailScreen() {
             {
               iconEl: <MaterialIcons name="luggage" size={22} color={colors.primary} />,
               title: "حقيبة الكابين",
-              desc: `${cabinQty} حقيبة يدوية (حد أقصى ${cabinKg} كغ لكل منها) مشمولة.${isRealData ? " ✓ مؤكد من شركة الطيران" : ""}`,
+              desc: `${cabinQty} حقيبة يدوية (حد أقصى ${cabinKg} كغ لكل منها) مشمولة.${isRealData ? " - مؤكد من شركة الطيران" : ""}`,
               included: true,
             },
             {
               iconEl: <MaterialIcons name="inventory-2" size={22} color={colors.primary} />,
               title: "الأمتعة المسجلة",
-              desc: `${checkedQty} حقيبة (حد أقصى ${checkedKg} كغ لكل منها) مشمولة.${isRealData ? " ✓ مؤكد من شركة الطيران" : ""}`,
+              desc: `${checkedQty} حقيبة (حد أقصى ${checkedKg} كغ لكل منها) مشمولة.${isRealData ? " - مؤكد من شركة الطيران" : ""}`,
               included: true,
             },
             {

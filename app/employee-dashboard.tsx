@@ -45,18 +45,18 @@ const ROLE_LABELS: Record<string, string> = {
   support: "دعم عملاء",
 };
 
-const ROLE_ICONS: Record<string, string> = {
-  manager: "👔",
-  accountant: "📊",
-  booking_agent: "✈️",
-  support: "🎧",
+const ROLE_ICON_NAMES: Record<string, string> = {
+  manager: "briefcase.fill",
+  accountant: "chart.bar.fill",
+  booking_agent: "airplane",
+  support: "phone.fill",
 };
 
 type DashboardAction = {
   id: string;
   title: string;
   subtitle: string;
-  icon: string;
+  iconName: string;
   color: string;
   route: string;
   permission?: keyof EmployeePermissions;
@@ -67,7 +67,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "bookings",
     title: "إدارة الحجوزات",
     subtitle: "عرض وإدارة جميع الحجوزات",
-    icon: "📋",
+    iconName: "list.bullet.clipboard",
     color: "#3B82F6",
     route: "/admin/confirm-payment",
     permission: "canManageBookings",
@@ -76,7 +76,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "payments",
     title: "تأكيد المدفوعات",
     subtitle: "مراجعة وتأكيد المدفوعات",
-    icon: "💰",
+    iconName: "banknote.fill",
     color: "#22C55E",
     route: "/admin/confirm-payment",
     permission: "canManagePayments",
@@ -85,7 +85,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "pricing",
     title: "إعدادات التسعير",
     subtitle: "تعديل الأسعار وأسعار الصرف",
-    icon: "💱",
+    iconName: "percent",
     color: "#F59E0B",
     route: "/admin/pricing",
     permission: "canManagePricing",
@@ -94,7 +94,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "pnr",
     title: "إدارة PNR والتذاكر",
     subtitle: "إدخال أرقام PNR والتذاكر",
-    icon: "🎫",
+    iconName: "ticket.fill",
     color: "#8B5CF6",
     route: "/admin/manage-pnr",
     permission: "canManageBookings",
@@ -103,7 +103,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "business",
     title: "الحسابات التجارية",
     subtitle: "إدارة حسابات الشركات",
-    icon: "🏢",
+    iconName: "building.fill",
     color: "#0EA5E9",
     route: "/admin/business-accounts",
     permission: "canManageBusinessAccounts",
@@ -112,7 +112,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "reports",
     title: "التقارير المالية",
     subtitle: "عرض الإيرادات والعمولات",
-    icon: "📈",
+    iconName: "chart.line.uptrend.xyaxis",
     color: "#EC4899",
     route: "/admin/financial-reports",
     permission: "canViewReports",
@@ -121,7 +121,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "employees",
     title: "إدارة الموظفين",
     subtitle: "إضافة وتعديل حسابات الموظفين",
-    icon: "👥",
+    iconName: "person.3.fill",
     color: "#6366F1",
     route: "/admin/employees",
     permission: "canManageEmployees",
@@ -130,7 +130,7 @@ const ALL_ACTIONS: DashboardAction[] = [
     id: "notifications",
     title: "الإشعارات",
     subtitle: "سجل الإشعارات والتنبيهات",
-    icon: "🔔",
+    iconName: "bell.fill",
     color: "#EF4444",
     route: "/admin/notifications",
   },
@@ -216,7 +216,7 @@ export default function EmployeeDashboardScreen() {
         <View style={{ flex: 1 }}>
           <Text style={styles.greeting}>مرحباً، {session.fullName}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Text style={{ fontSize: 16 }}>{ROLE_ICONS[session.role] || "👤"}</Text>
+            <IconSymbol name={(ROLE_ICON_NAMES[session.role] || "person.fill") as any} size={16} color="rgba(255,255,255,0.9)" />
             <Text style={styles.roleLabel}>{ROLE_LABELS[session.role] || session.role}</Text>
             {session.department ? (
               <Text style={styles.deptLabel}>• {session.department}</Text>
@@ -227,7 +227,7 @@ export default function EmployeeDashboardScreen() {
           style={styles.logoutBtn}
           onPress={handleLogout}
         >
-          <Text style={{ fontSize: 18 }}>🚪</Text>
+          <IconSymbol name="door.left.hand.open" size={22} color="rgba(255,255,255,0.9)" />
         </Pressable>
       </View>
 
@@ -267,7 +267,7 @@ export default function EmployeeDashboardScreen() {
                 onPress={() => router.push(action.route as any)}
               >
                 <View style={[styles.actionIconBox, { backgroundColor: action.color + "15" }]}>
-                  <Text style={{ fontSize: 28 }}>{action.icon}</Text>
+                  <IconSymbol name={action.iconName as any} size={28} color={action.color} />
                 </View>
                 <Text style={[styles.actionTitle, { color: colors.foreground }]} numberOfLines={1}>
                   {action.title}

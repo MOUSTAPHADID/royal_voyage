@@ -25,7 +25,7 @@ const STATUS_OPTIONS: {
   label: string;
   labelAr: string;
   color: string;
-  icon: string;
+  iconName: string;
   description: string;
 }[] = [
   {
@@ -33,7 +33,7 @@ const STATUS_OPTIONS: {
     label: "Pending",
     labelAr: "معلق",
     color: "#F59E0B",
-    icon: "⏳",
+    iconName: "clock.fill",
     description: "الحجز في انتظار الدفع أو التأكيد",
   },
   {
@@ -41,7 +41,7 @@ const STATUS_OPTIONS: {
     label: "Processing",
     labelAr: "قيد المعالجة",
     color: "#3B82F6",
-    icon: "🔄",
+    iconName: "arrow.clockwise",
     description: "جاري معالجة الحجز مع شركة الطيران/الفندق",
   },
   {
@@ -49,7 +49,7 @@ const STATUS_OPTIONS: {
     label: "Confirmed",
     labelAr: "مؤكد",
     color: "#22C55E",
-    icon: "✅",
+    iconName: "checkmark.circle.fill",
     description: "تم تأكيد الحجز بنجاح",
   },
   {
@@ -57,7 +57,7 @@ const STATUS_OPTIONS: {
     label: "Airline Confirmed",
     labelAr: "مؤكد من شركة الطيران",
     color: "#10B981",
-    icon: "✈️",
+    iconName: "airplane",
     description: "تم التأكيد الرسمي من شركة الطيران",
   },
   {
@@ -65,30 +65,30 @@ const STATUS_OPTIONS: {
     label: "Cancelled",
     labelAr: "ملغى",
     color: "#EF4444",
-    icon: "❌",
+    iconName: "xmark.circle.fill",
     description: "تم إلغاء الحجز",
   },
 ];
 
 const STATUS_PUSH_MESSAGES: Record<BookingStatus, { title: string; body: string }> = {
   pending: {
-    title: "⏳ حجزك في انتظار التأكيد",
+    title: "حجزك في انتظار التأكيد",
     body: "سيتم تأكيد حجزك قريباً. شكراً لصبرك.",
   },
   processing: {
-    title: "🔄 جاري معالجة حجزك",
+    title: "جاري معالجة حجزك",
     body: "نعمل على تأكيد حجزك مع شركة الطيران. سنُبلغك فور الانتهاء.",
   },
   confirmed: {
-    title: "✅ تم تأكيد حجزك!",
-    body: "تهانينا! تم تأكيد حجزك بنجاح. رحلة موفقة! ✈️",
+    title: "تم تأكيد حجزك",
+    body: "تهانينا! تم تأكيد حجزك بنجاح. رحلة موفقة!",
   },
   airline_confirmed: {
-    title: "✈️ تأكيد رسمي من شركة الطيران",
+    title: "تأكيد رسمي من شركة الطيران",
     body: "تم التأكيد الرسمي من شركة الطيران. يمكنك الآن إتمام تسجيل الوصول.",
   },
   cancelled: {
-    title: "❌ تم إلغاء الحجز",
+    title: "تم إلغاء الحجز",
     body: "للأسف تم إلغاء حجزك. تواصل معنا لمزيد من المعلومات.",
   },
 };
@@ -233,12 +233,12 @@ export default function UpdateStatusScreen() {
               }
 
               const isAirlineConfirmed = newStatus === "airline_confirmed" && booking.passengerEmail;
-              const docLabel = booking.type === "flight" ? "✈️ تذكرة PDF" : "🏨 قسيمة الفندق PDF";
+              const docLabel = booking.type === "flight" ? "تذكرة PDF" : "قسيمة الفندق PDF";
               Alert.alert(
-                "✅ تم التحديث",
+                "تم التحديث",
                 `تم تغيير الحالة إلى "${STATUS_OPTIONS.find(s => s.id === newStatus)?.labelAr}"` +
                 (isAirlineConfirmed ? `\n${docLabel} أُرسل إلى ${booking.passengerEmail}` : "") +
-                (booking.customerPushToken ? "\n🔔 تم إرسال إشعار Push للزبون" : "")
+                (booking.customerPushToken ? "\nتم إرسال إشعار Push للزبون" : "")
               );
             } catch (err) {
               Alert.alert("خطأ", "فشل تحديث الحالة");
@@ -313,7 +313,7 @@ export default function UpdateStatusScreen() {
             ]}
             onPress={() => setStatusFilter(s.id)}
           >
-            <Text style={{ fontSize: 14 }}>{s.icon}</Text>
+            <IconSymbol name={s.iconName as any} size={14} color={statusFilter === s.id ? s.color : colors.muted} />
             <Text style={[styles.filterTabText, { color: statusFilter === s.id ? s.color : colors.foreground }]}>
               {s.labelAr}
             </Text>
@@ -401,7 +401,7 @@ export default function UpdateStatusScreen() {
                         onPress={() => handleStatusChange(booking, s.id)}
                         disabled={isSaving}
                       >
-                        <Text style={{ fontSize: 12 }}>{s.icon}</Text>
+                        <IconSymbol name={s.iconName as any} size={12} color={s.color} />
                         <Text style={[styles.statusBtnText, { color: s.color }]}>{s.labelAr}</Text>
                       </Pressable>
                     ))}

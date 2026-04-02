@@ -1978,7 +1978,7 @@ export default function AdminScreen() {
                       consolidatorConfig.refetch();
                       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       Alert.alert(
-                        "✅ تمت الإضافة",
+                        "تمت الإضافة",
                         `الوسيط: ${consolidatorInput.trim()} (عملة: ${consolidatorCurrencyInput})`
                       );
                       setShowConsolidatorModal(false);

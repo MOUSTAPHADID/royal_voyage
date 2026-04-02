@@ -22,7 +22,8 @@ type PaymentMethod = {
   description: string;
   descriptionAr: string;
   descriptionFr: string;
-  icon: string;
+  logoUri?: ReturnType<typeof require>;
+  iconName?: string;
   color: string;
   available: boolean;
 };
@@ -36,7 +37,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     description: "Pay via Bankily mobile wallet",
     descriptionAr: "الدفع عبر محفظة بنكيلي",
     descriptionFr: "Payer via le portefeuille Bankily",
-    icon: "📱",
+    logoUri: require("@/assets/images/payment/bankily.png"),
     color: "#00A651",
     available: true,
   },
@@ -48,7 +49,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     description: "Pay via Masrivi mobile wallet",
     descriptionAr: "الدفع عبر محفظة مصريفي",
     descriptionFr: "Payer via le portefeuille Masrivi",
-    icon: "💳",
+    logoUri: require("@/assets/images/payment/masrvi.png"),
     color: "#1B4F72",
     available: true,
   },
@@ -60,7 +61,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     description: "Pay via Sedad payment platform",
     descriptionAr: "الدفع عبر منصة سداد",
     descriptionFr: "Payer via la plateforme Sedad",
-    icon: "🏦",
+    logoUri: require("@/assets/images/payment/sedad.png"),
     color: "#2E86C1",
     available: true,
   },
@@ -72,7 +73,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     description: "Pay in cash at our office",
     descriptionAr: "الدفع نقداً في مكتب الوكالة",
     descriptionFr: "Payer en espèces à notre bureau",
-    icon: "💵",
+    iconName: "banknote.fill",
     color: "#27AE60",
     available: true,
   },
@@ -84,7 +85,7 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     description: "Transfer to our bank account",
     descriptionAr: "تحويل إلى حسابنا البنكي",
     descriptionFr: "Virement vers notre compte bancaire",
-    icon: "🏧",
+    iconName: "building.columns.fill",
     color: "#8E44AD",
     available: true,
   },
@@ -93,10 +94,10 @@ const PAYMENT_METHODS: PaymentMethod[] = [
     name: "Card Payment (Visa/Mastercard)",
     nameAr: "بطاقة بنكية (Visa / Mastercard)",
     nameFr: "Paiement par carte (Visa/Mastercard)",
-    description: "Pay securely with your Visa or Mastercard via Stripe",
-    descriptionAr: "ادفع بالبطاقة البنكية بشكل آمن عبر Stripe",
-    descriptionFr: "Payez en toute s\u00e9curit\u00e9 avec votre carte Visa ou Mastercard via Stripe",
-    icon: "💳",
+    description: "Pay securely with your Visa or Mastercard",
+    descriptionAr: "ادفع بالبطاقة البنكية بشكل آمن",
+    descriptionFr: "Payez en toute sécurité avec votre carte Visa ou Mastercard",
+    iconName: "creditcard.fill",
     color: "#635BFF",
     available: true,
   },
@@ -146,7 +147,11 @@ export default function PaymentMethodsScreen() {
             style={[styles.methodCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           >
             <View style={[styles.methodIconBox, { backgroundColor: method.color + "15" }]}>
-              <Text style={styles.methodIcon}>{method.icon}</Text>
+              {method.logoUri ? (
+                <Image source={method.logoUri} style={{ width: 36, height: 36, borderRadius: 8 }} resizeMode="contain" />
+              ) : (
+                <IconSymbol name={(method.iconName ?? "creditcard.fill") as any} size={28} color={method.color} />
+              )}
             </View>
             <View style={styles.methodInfo}>
               <Text style={[styles.methodName, { color: colors.foreground }]}>

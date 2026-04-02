@@ -135,7 +135,7 @@ export default function AdminBookingDetailScreen() {
               }
               await updateBookingTicketSent(booking.id);
               Alert.alert(
-                "✅ تم الإرسال",
+                "تم الإرسال",
                 `تم إرسال التذكرة PDF بنجاح إلى:\n${email}`
               );
             } catch (err) {
@@ -568,12 +568,12 @@ export default function AdminBookingDetailScreen() {
                   const ticketNum = result.data.tickets[0].ticketNumber;
                   updateBookingTicketNumber(booking.id, ticketNum);
                   Alert.alert(
-                    "✅ تم العثور على التذكرة",
+                    "تم العثور على التذكرة",
                     `رقم التذكرة: ${ticketNum}\nتم حفظه تلقائياً في الحجز.`
                   );
                 } else {
                   Alert.alert(
-                    "⏳ لم تُصدر بعد",
+                    "لم تُصدر بعد",
                     result?.data?.message || "التذكرة لم تُصدر بعد من شركة الطيران. حاول لاحقاً."
                   );
                 }

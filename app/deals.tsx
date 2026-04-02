@@ -82,7 +82,7 @@ const TODAY_DEALS: Deal[] = [
     discountedPrice: 595,
     currency: "USD",
     discountPercent: 30,
-    badge: "🔥 عرض ساخن",
+    badge: "عرض ساخن",
     badgeColor: "#EF4444",
     expiresAt: getDealsEndDate(),
     airline: "Mauritania Airlines",
@@ -107,7 +107,7 @@ const TODAY_DEALS: Deal[] = [
     discountedPrice: 294,
     currency: "USD",
     discountPercent: 30,
-    badge: "⭐ الأكثر طلباً",
+    badge: "الأكثر طلباً",
     badgeColor: "#C9A84C",
     expiresAt: getTomorrowEnd(),
     airline: "Royal Air Maroc",
@@ -132,7 +132,7 @@ const TODAY_DEALS: Deal[] = [
     discountedPrice: 546,
     currency: "USD",
     discountPercent: 30,
-    badge: "✈️ سعر خاص",
+    badge: "سعر خاص",
     badgeColor: "#3B82F6",
     expiresAt: getWeekEnd(),
     airline: "Air France",
@@ -157,7 +157,7 @@ const TODAY_DEALS: Deal[] = [
     discountedPrice: 84,
     currency: "USD",
     discountPercent: 30,
-    badge: "🏨 عرض فندقي",
+    badge: "عرض فندقي",
     badgeColor: "#10B981",
     expiresAt: getWeekEnd(),
     hotelName: "Azalai Hotel Nouakchott",
@@ -176,7 +176,7 @@ const TODAY_DEALS: Deal[] = [
     discountedPrice: 665,
     currency: "USD",
     discountPercent: 30,
-    badge: "💎 عرض مميز",
+    badge: "عرض مميز",
     badgeColor: "#8B5CF6",
     expiresAt: getTomorrowEnd(),
     airline: "Emirates",
@@ -201,7 +201,7 @@ const TODAY_DEALS: Deal[] = [
     discountedPrice: 476,
     currency: "USD",
     discountPercent: 30,
-    badge: "🕋 عمرة",
+    badge: "عمرة",
     badgeColor: "#059669",
     expiresAt: getWeekEnd(),
     airline: "Saudia",
@@ -422,7 +422,7 @@ export default function DealsScreen() {
       {/* Banner */}
       <View style={[styles.banner, { backgroundColor: colors.secondary + "15", borderColor: colors.secondary + "30" }]}>
         <View style={styles.bannerLeft}>
-          <Text style={{ fontSize: 28 }}>🔥</Text>
+          <IconSymbol name="flame.fill" size={28} color="#EF4444" />
         </View>
         <View style={styles.bannerCenter}>
           <Text style={[styles.bannerTitle, { color: colors.foreground }]}>عروض حصرية لفترة محدودة!</Text>
@@ -498,7 +498,7 @@ export default function DealsScreen() {
 
         {filteredDeals.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={{ fontSize: 48 }}>📭</Text>
+            <IconSymbol name="tag.fill" size={48} color={colors.muted} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>لا توجد عروض حالياً</Text>
             <Text style={[styles.emptyDesc, { color: colors.muted }]}>تابعنا للحصول على أحدث العروض</Text>
           </View>

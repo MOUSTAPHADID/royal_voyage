@@ -156,7 +156,7 @@ export default function BookingSummaryScreen() {
         {/* نوع الحجز */}
         <View style={[styles.typeTag, { backgroundColor: isFlight ? "#0EA5E9" : "#8B5CF6" }]}>
           <Text style={styles.typeTagText}>
-            {isFlight ? "✈️ حجز رحلة طيران" : "🏨 حجز فندق"}
+            {isFlight ? "حجز رحلة طيران" : "حجز فندق"}
           </Text>
         </View>
 
@@ -240,7 +240,7 @@ export default function BookingSummaryScreen() {
               />
               <SummaryRow
                 label="التصنيف"
-                value={"⭐".repeat(parseInt(params.hotelStars ?? "3", 10))}
+                value={`${params.hotelStars ?? "3"} نجوم`}
                 colors={colors}
               />
               <SummaryRow
@@ -305,7 +305,7 @@ export default function BookingSummaryScreen() {
 
         {/* تنبيه */}
         <View style={[styles.noteCard, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" }]}>
-          <Text style={styles.noteIcon}>⚠️</Text>
+          <IconSymbol name="exclamationmark.triangle.fill" size={18} color="#F59E0B" />
           <Text style={styles.noteText}>
             يرجى مراجعة جميع البيانات بعناية قبل المتابعة. لن يمكن تعديل البيانات بعد إتمام الدفع.
           </Text>

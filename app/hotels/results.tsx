@@ -164,7 +164,7 @@ export default function HotelResultsScreen() {
           <View style={styles.starsRow}>{renderStars(item.stars)}</View>
           <View style={[styles.ratingBadge, { backgroundColor: colors.success + "15" }]}>
             <Text style={[styles.ratingText, { color: colors.success }]}>
-              ⭐ {item.rating.toFixed(1)}
+              {item.rating.toFixed(1)}
             </Text>
           </View>
           {item.reviewCount ? (
@@ -293,7 +293,7 @@ export default function HotelResultsScreen() {
           <View style={[styles.resultsCount, { backgroundColor: colors.background }]}>
             <Text style={[styles.resultsText, { color: colors.muted }]}>
               {sortedHotels.length} {t.hotels.hotelsFound}
-              {!useMock && amadeusResult?.success ? " · ✅" : " · 📊"}
+              {!useMock && amadeusResult?.success ? " · Live" : " · Mock"}
             </Text>
             {isError && (
               <Text style={[styles.errorNote, { color: colors.warning }]}>
@@ -311,7 +311,7 @@ export default function HotelResultsScreen() {
             style={{ backgroundColor: colors.background }}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Text style={{ fontSize: 40 }}>🏨</Text>
+                <IconSymbol name="building.2.fill" size={40} color={colors.muted} />
                 <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t.hotels.noHotels}</Text>
                 <Text style={[styles.emptyText, { color: colors.muted }]}>
                   {t.hotels.noHotelsHint}

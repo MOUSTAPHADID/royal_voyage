@@ -61,6 +61,9 @@ const MAPPING = {
   "tag.fill": "local-offer",
   "figure.and.child.holdinghands": "family-restroom",
   "airplane.arrival": "flight-land",
+  "figure.walk": "directions-walk",
+  "person.badge.key.fill": "badge",
+  "arrow.uturn.right.circle.fill": "undo",
   "airplane.departure": "flight-takeoff",
   "arrow.2.squarepath": "sync",
   "calendar": "calendar-today",
@@ -121,6 +124,7 @@ const MAPPING = {
   "tv": "tv",
   "dollarsign.circle.fill": "attach-money",
   "briefcase.fill": "work",
+  "message.fill": "chat",
 } as IconMapping;
 
 /**

@@ -29,7 +29,7 @@ async function scheduleBookingNotification(type: string, reference: string) {
   // (Remote push notifications require a development build)
   try {
     Alert.alert(
-      type === "flight" ? "✈️ حجز الرحلة مؤكد!" : "🏨 حجز الفندق مؤكد!",
+      type === "flight" ? "حجز الرحلة مؤكد" : "حجز الفندق مؤكد",
       `تم تأكيد حجزك. رقم المرجع: ${reference}`,
       [{ text: "حسناً", style: "default" }]
     );
@@ -296,7 +296,7 @@ export default function ConfirmationScreen() {
   const handleViewTicket = () => {
     const ticket = getTicketText();
     Alert.alert(
-      isFlight ? "✈ Boarding Pass" : "🏨 Hotel Voucher",
+      isFlight ? "بطاقة الصعود" : "وثيقة الفندق",
       ticket,
       [
         { text: "Share", onPress: () => handleShareTicket() },
@@ -336,7 +336,7 @@ export default function ConfirmationScreen() {
         <View style={[styles.emailStatusCard, { backgroundColor: "#dcfce7", borderColor: "#86efac" }]}>
           <IconSymbol name="checkmark.circle.fill" size={18} color="#16a34a" />
           <Text style={[styles.emailStatusText, { color: "#16a34a" }]}>
-            Ticket sent to {params.email ?? "your email"} ✓
+            تم إرسال التذكرة إلى {params.email ?? "بريدك الإلكتروني"}
           </Text>
         </View>
       );
@@ -451,11 +451,11 @@ export default function ConfirmationScreen() {
             <Text style={[styles.refLabel, { color: colors.muted }]}>الحالة</Text>
             {params.pnr === "PENDING" ? (
               <View style={[styles.statusBadge, { backgroundColor: "#F59E0B" + "15" }]}>
-                <Text style={[styles.statusText, { color: "#F59E0B" }]}>⏳ في الانتظار</Text>
+                <Text style={[styles.statusText, { color: "#F59E0B" }]}>في الانتظار</Text>
               </View>
             ) : (
               <View style={[styles.statusBadge, { backgroundColor: colors.success + "15" }]}>
-                <Text style={[styles.statusText, { color: colors.success }]}>✓ مؤكد</Text>
+                <Text style={[styles.statusText, { color: colors.success }]}>مؤكد</Text>
               </View>
             )}
           </View>
@@ -545,12 +545,12 @@ export default function ConfirmationScreen() {
             ]}
           >
             {emailStatus === "sent"
-              ? "Ticket Sent by Email ✓"
+              ? "تم إرسال التذكرة بالبريد"
               : emailStatus === "sending"
-              ? "Sending..."
+              ? "جاري الإرسال..."
               : emailStatus === "failed"
-              ? "Retry Send Email"
-              : "Send Ticket by Email"}
+              ? "إعادة الإرسال"
+              : "إرسال التذكرة بالبريد"}
           </Text>
         </Pressable>
 
@@ -563,11 +563,11 @@ export default function ConfirmationScreen() {
           onPress={() => {
             const ref = params.reference ?? "";
             const pnr = params.pnr ?? "";
-            const type = isFlight ? "✈️ رحلة" : "🏨 فندق";
+            const type = isFlight ? "رحلة جوية" : "فندق";
             const route = isFlight
-              ? `${params.originCode ?? ""} \u2192 ${params.destinationCode ?? ""}`
+              ? `${params.originCode ?? ""} - ${params.destinationCode ?? ""}`
               : `${params.hotelName ?? ""} - ${params.hotelCity ?? ""}`;
-            const msg = `\u2705 *تأكيد حجز Royal Voyage*\n\n` +
+            const msg = `*تأكيد حجز Royal Voyage*\n\n` +
               `النوع: ${type}\n` +
               `المسار: ${route}\n` +
               `رقم المرجع: ${ref}\n` +
@@ -575,7 +575,7 @@ export default function ConfirmationScreen() {
               `المبلغ: ${formattedTotal}\n` +
               `الاسم: ${params.passengerName ?? ""}\n` +
               `التاريخ: ${today}\n\n` +
-              `شكراً لاختياركم Royal Voyage \uD83D\uDC51`;
+              `شكراً لاختياركم Royal Voyage`;
             const encoded = encodeURIComponent(msg);
             const phone = (params.phone ?? "").replace(/[^0-9]/g, "");
             const url = phone
@@ -586,7 +586,7 @@ export default function ConfirmationScreen() {
             });
           }}
         >
-          <Text style={styles.whatsappIcon}>💬</Text>
+          <IconSymbol name="message.fill" size={20} color="#FFFFFF" />
           <Text style={styles.whatsappText}>إرسال التأكيد عبر WhatsApp</Text>
         </Pressable>
 

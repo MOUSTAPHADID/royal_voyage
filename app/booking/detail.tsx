@@ -69,11 +69,11 @@ export default function BookingDetailScreen() {
     airline_confirmed: { bg: "#10B98115", text: "#10B981" },
   };
   const statusLabels: Record<string, string> = {
-    confirmed: "Confirmed ✅",
-    pending: "Pending ⏳",
-    cancelled: "Cancelled ❌",
-    processing: "قيد المعالجة 🔄",
-    airline_confirmed: "مؤكد من شركة الطيران ✈️",
+    confirmed: "مؤكد",
+    pending: "في الانتظار",
+    cancelled: "ملغي",
+    processing: "قيد المعالجة",
+    airline_confirmed: "مؤكد من شركة الطيران",
   };
   const statusStyle = statusColors[booking.status] ?? statusColors.pending;
 
@@ -127,7 +127,7 @@ export default function BookingDetailScreen() {
               totalPrice: `${booking.totalPrice}`,
             });
           }
-          Alert.alert("تم الإرسال ✓", `تم إرسال التذكرة إلى ${email}`);
+          Alert.alert("تم الإرسال", `تم إرسال التذكرة إلى ${email}`);
         } catch {
           Alert.alert("خطأ", "فشل إرسال التذكرة. تحقق من البريد وحاول مجدداً.");
         } finally {
@@ -157,12 +157,12 @@ export default function BookingDetailScreen() {
             cancelBooking(booking.id);
 
             // إرسال إشعار للمدير عند إلغاء حجز
-            const bookingType = booking.type === "flight" ? "✈️ رحلة" : "🏨 فندق";
+            const bookingType = booking.type === "flight" ? "رحلة" : "فندق";
             const customerName = (booking.passengerName ?? booking.guestName ?? "زبون");
             const dest = booking.type === "flight"
               ? `${booking.flight?.originCode ?? ""} → ${booking.flight?.destinationCode ?? ""}`
               : booking.hotel?.name ?? "";
-            const notifTitle = `❌ إلغاء حجز! ${bookingType}`;
+            const notifTitle = `إلغاء حجز - ${bookingType}`;
             const notifBody = `${customerName} • ${dest} • ${fmt(booking.totalPrice)} • ${booking.reference}`;
 
             // حفظ الإشعار محلياً
@@ -221,7 +221,7 @@ export default function BookingDetailScreen() {
           const diff = new Date(booking.paymentDeadline).getTime() - Date.now();
           if (diff <= 0) return (
             <View style={[styles.countdownBanner, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}>
-              <Text style={{ fontSize: 18 }}>⚠️</Text>
+              <IconSymbol name="exclamationmark.triangle.fill" size={18} color="#EF4444" />
               <Text style={{ color: "#EF4444", fontWeight: "700", flex: 1 }}>انتهت مهلة الدفع النقدي</Text>
             </View>
           );
@@ -230,7 +230,7 @@ export default function BookingDetailScreen() {
           const isUrgent = hours < 2;
           return (
             <View style={[styles.countdownBanner, { backgroundColor: isUrgent ? "#EF444415" : "#F59E0B15", borderColor: isUrgent ? "#EF444430" : "#F59E0B30" }]}>
-              <Text style={{ fontSize: 18 }}>{isUrgent ? "⚠️" : "⏰"}</Text>
+              <IconSymbol name={isUrgent ? "exclamationmark.triangle.fill" : "clock.fill"} size={18} color={isUrgent ? "#EF4444" : "#F59E0B"} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: isUrgent ? "#EF4444" : "#F59E0B", fontWeight: "700", fontSize: 13 }}>مهلة الدفع النقدي</Text>
                 <Text style={{ color: isUrgent ? "#EF4444" : "#F59E0B", fontSize: 12, marginTop: 2 }}>
@@ -245,7 +245,7 @@ export default function BookingDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardHeader}>
             <View style={[styles.typeIcon, { backgroundColor: booking.type === "flight" ? colors.primary + "15" : colors.secondary + "20" }]}>
-              <Text style={{ fontSize: 28 }}>{booking.type === "flight" ? "✈" : "🏨"}</Text>
+              <IconSymbol name={booking.type === "flight" ? "airplane" : "building.2.fill"} size={28} color={booking.type === "flight" ? colors.primary : colors.secondary} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.mainTitle, { color: colors.foreground }]}>
@@ -273,7 +273,7 @@ export default function BookingDetailScreen() {
                 <View style={styles.routeLine}>
                   <View style={[styles.dot, { backgroundColor: colors.primary }]} />
                   <View style={[styles.line, { backgroundColor: colors.border }]} />
-                  <Text style={{ fontSize: 16 }}>✈</Text>
+                  <IconSymbol name="airplane" size={16} color={colors.primary} />
                   <View style={[styles.line, { backgroundColor: colors.border }]} />
                   <View style={[styles.dot, { backgroundColor: colors.secondary }]} />
                 </View>
@@ -308,7 +308,7 @@ export default function BookingDetailScreen() {
               </Text>
               {booking.realPnr ? (
                 <View style={{ alignItems: 'center' }}>
-                  <Text style={[styles.pnrHint, { color: colors.success }]}>✓ رمز مؤكد من شركة الطيران — استخدمه في المطار</Text>
+                  <Text style={[styles.pnrHint, { color: colors.success }]}>رمز مؤكد من شركة الطيران — استخدمه في المطار</Text>
                   {booking.realPnrUpdatedAt && (
                     <Text style={[styles.pnrHint, { color: colors.muted, fontSize: 10, marginTop: 2 }]}>
                       تحديث: {new Date(booking.realPnrUpdatedAt).toLocaleString('ar-MR', { dateStyle: 'short', timeStyle: 'short' })}
@@ -331,7 +331,7 @@ export default function BookingDetailScreen() {
               <Text style={[styles.ticketNumberValue, { color: "#1B2B5E" }]}>
                 {booking.ticketNumber}
               </Text>
-              <Text style={[styles.pnrHint, { color: colors.success }]}>✓ رقم التذكرة الإلكترونية</Text>
+              <Text style={[styles.pnrHint, { color: colors.success }]}>رقم التذكرة الإلكترونية</Text>
               {booking.ticketNumberUpdatedAt && (
                 <Text style={[styles.pnrHint, { color: colors.muted, fontSize: 10, marginTop: 2 }]}>
                   تحديث: {new Date(booking.ticketNumberUpdatedAt).toLocaleString('ar-MR', { dateStyle: 'short', timeStyle: 'short' })}
@@ -343,7 +343,7 @@ export default function BookingDetailScreen() {
           {/* Payment Status */}
           {booking.paymentConfirmed && (
             <View style={[styles.pnrBox, { backgroundColor: "#22C55E10", borderColor: "#22C55E" }]}>
-              <Text style={{ fontSize: 28 }}>✅</Text>
+              <IconSymbol name="checkmark.circle.fill" size={28} color="#22C55E" />
               <Text style={{ color: "#22C55E", fontSize: 16, fontWeight: "700", marginTop: 4 }}>تم تأكيد الدفع</Text>
               {booking.paymentConfirmedAt && (
                 <Text style={{ color: colors.muted, fontSize: 11, marginTop: 4 }}>
@@ -354,7 +354,7 @@ export default function BookingDetailScreen() {
           )}
           {booking.paymentRejected && (
             <View style={[styles.pnrBox, { backgroundColor: "#EF444410", borderColor: "#EF4444" }]}>
-              <Text style={{ fontSize: 28 }}>❌</Text>
+              <IconSymbol name="xmark.circle.fill" size={28} color="#EF4444" />
               <Text style={{ color: "#EF4444", fontSize: 16, fontWeight: "700", marginTop: 4 }}>تم رفض الدفع</Text>
               {booking.paymentRejectedReason && (
                 <Text style={{ color: "#EF4444", fontSize: 13, marginTop: 4, textAlign: "center" }}>

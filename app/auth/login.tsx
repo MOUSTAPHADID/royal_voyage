@@ -234,7 +234,7 @@ export default function LoginScreen() {
               onPress={() => { setMode("phone"); setError(""); }}
             >
               <Text style={[styles.modeTabText, { color: mode === "phone" ? "#FFF" : colors.muted }]}>
-                📱 {t.auth.phone}
+                {t.auth.phone}
               </Text>
             </Pressable>
             <Pressable
@@ -242,7 +242,7 @@ export default function LoginScreen() {
               onPress={() => { setMode("email"); setError(""); }}
             >
               <Text style={[styles.modeTabText, { color: mode === "email" ? "#FFF" : colors.muted }]}>
-                ✉️ {t.auth.email}
+                {t.auth.email}
               </Text>
             </Pressable>
           </View>
@@ -339,7 +339,7 @@ export default function LoginScreen() {
             style={({ pressed }) => [styles.guestBtn, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}
             onPress={handleGuestLogin}
           >
-            <Text style={[styles.guestBtnText, { color: colors.foreground }]}>👤 {t.auth.continueAsGuest}</Text>
+            <Text style={[styles.guestBtnText, { color: colors.foreground }]}>{t.auth.continueAsGuest}</Text>
           </Pressable>
           <Text style={[styles.guestNote, { color: colors.muted }]}>{t.auth.guestNote}</Text>
 

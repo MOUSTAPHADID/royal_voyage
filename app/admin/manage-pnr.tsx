@@ -134,7 +134,7 @@ export default function ManagePnrScreen() {
 
           const pushResult = await sendPushNotification.mutateAsync({
             expoPushToken: booking.customerPushToken,
-            title: "✈️ تم تحديث بيانات حجزك",
+            title: "تم تحديث بيانات حجزك",
             body: pushBody,
             data: { bookingRef: booking.reference, pnr, ticketNumber: ticketNum, type: "pnr_update" },
           });
@@ -151,18 +151,18 @@ export default function ManagePnrScreen() {
 
       // Show success message with details
       const details: string[] = [];
-      if (pnr) details.push(`✅ تم تحديث PNR إلى: ${pnr}`);
-      if (ticketNum) details.push(`🎫 تم تحديث رقم التذكرة إلى: ${ticketNum}`);
+      if (pnr) details.push(`تم تحديث PNR إلى: ${pnr}`);
+      if (ticketNum) details.push(`تم تحديث رقم التذكرة إلى: ${ticketNum}`);
       if (booking?.passengerEmail) {
         details.push(emailSent
-          ? `📧 تم إرسال بريد إلكتروني إلى: ${booking.passengerEmail}`
-          : `⚠️ فشل إرسال البريد الإلكتروني`
+          ? `تم إرسال بريد إلكتروني إلى: ${booking.passengerEmail}`
+          : `فشل إرسال البريد الإلكتروني`
         );
       } else {
-        details.push("ℹ️ لا يوجد بريد إلكتروني للزبون");
+        details.push("لا يوجد بريد إلكتروني للزبون");
       }
       if (booking?.customerPushToken) {
-        details.push(pushSent ? "🔔 تم إرسال إشعار Push" : "⚠️ فشل إرسال إشعار Push");
+        details.push(pushSent ? "تم إرسال إشعار Push" : "فشل إرسال إشعار Push");
       }
 
       Alert.alert("تم التحديث", details.join("\n"));
@@ -306,12 +306,12 @@ export default function ManagePnrScreen() {
                     </Text>
                     {booking.passengerName && (
                       <Text style={[styles.cardPassenger, { color: colors.muted }]}>
-                        👤 {booking.passengerName}
+                        {booking.passengerName}
                       </Text>
                     )}
                     {booking.passengerEmail && (
                       <Text style={[styles.cardPassenger, { color: colors.muted }]}>
-                        📧 {booking.passengerEmail}
+                        {booking.passengerEmail}
                       </Text>
                     )}
                   </View>
@@ -334,12 +334,12 @@ export default function ManagePnrScreen() {
                 <View style={[styles.notifRow, { borderTopColor: colors.border }]}>
                   <View style={styles.notifItem}>
                     <Text style={[styles.notifLabel, { color: colors.muted }]}>
-                      {booking.passengerEmail ? `📧 ${booking.passengerEmail}` : "📧 لا يوجد بريد"}
+                      {booking.passengerEmail ? booking.passengerEmail : "لا يوجد بريد"}
                     </Text>
                   </View>
                   <View style={styles.notifItem}>
                     <Text style={[styles.notifLabel, { color: colors.muted }]}>
-                      {booking.customerPushToken ? "🔔 Push مسجّل" : "🔔 Push غير مسجّل"}
+                      {booking.customerPushToken ? "Push مسجّل" : "Push غير مسجّل"}
                     </Text>
                   </View>
                 </View>
@@ -358,7 +358,7 @@ export default function ManagePnrScreen() {
                             </Text>
                             {hasRealPnr && (
                               <View style={[styles.realBadge, { backgroundColor: colors.success + "20" }]}>
-                                <Text style={[styles.realBadgeText, { color: colors.success }]}>حقيقي ✓</Text>
+                                <Text style={[styles.realBadgeText, { color: colors.success }]}>حقيقي</Text>
                               </View>
                             )}
                             {!hasRealPnr && (
@@ -385,7 +385,7 @@ export default function ManagePnrScreen() {
                             </Text>
                             {hasTicketNumber && (
                               <View style={[styles.realBadge, { backgroundColor: colors.success + "20" }]}>
-                                <Text style={[styles.realBadgeText, { color: colors.success }]}>✓</Text>
+                                <Text style={[styles.realBadgeText, { color: colors.success }]}>تم</Text>
                               </View>
                             )}
                           </View>

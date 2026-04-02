@@ -83,7 +83,7 @@ function getBoardingGroup(row: number): string {
 function generateBoardingPassText(booking: any, seatNumber: string, boardingGroup: string, isUpgrade: boolean): string {
   const lines = [
     "═══════════════════════════════",
-    "       ✈ BOARDING PASS ✈       ",
+    "       BOARDING PASS       ",
     "═══════════════════════════════",
     "",
     `PASSENGER: ${(booking.passengerName || "---").toUpperCase()}`,
@@ -101,7 +101,7 @@ function generateBoardingPassText(booking: any, seatNumber: string, boardingGrou
     `SEAT:           ${seatNumber}`,
     `BOARDING GROUP: ${boardingGroup}`,
     `CLASS:          ${booking.flight?.class || "Economy"}`,
-    isUpgrade ? `UPGRADE:        Extra Legroom ✓` : "",
+    isUpgrade ? `UPGRADE:        Extra Legroom` : "",
     "───────────────────────────────",
     "",
     `REF: ${booking.reference}`,

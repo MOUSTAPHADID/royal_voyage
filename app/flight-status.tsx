@@ -39,14 +39,14 @@ interface FlightStatusData {
 }
 
 // ── Timeline Phases ──
-const TIMELINE_PHASES: { key: FlightPhase; label: string; icon: string }[] = [
-  { key: "scheduled", label: "مجدول", icon: "📋" },
-  { key: "check_in", label: "تسجيل الوصول", icon: "🎫" },
-  { key: "boarding", label: "الصعود", icon: "🚶" },
-  { key: "departed", label: "الإقلاع", icon: "🛫" },
-  { key: "in_flight", label: "في الجو", icon: "✈️" },
-  { key: "landed", label: "الهبوط", icon: "🛬" },
-  { key: "arrived", label: "الوصول", icon: "✅" },
+const TIMELINE_PHASES: { key: FlightPhase; label: string; iconName: string }[] = [
+  { key: "scheduled", label: "مجدول", iconName: "calendar" },
+  { key: "check_in", label: "تسجيل الوصول", iconName: "person.badge.key.fill" },
+  { key: "boarding", label: "الصعود", iconName: "figure.walk" },
+  { key: "departed", label: "الإقلاع", iconName: "airplane.departure" },
+  { key: "in_flight", label: "في الجو", iconName: "airplane" },
+  { key: "landed", label: "الهبوط", iconName: "airplane.arrival" },
+  { key: "arrived", label: "الوصول", iconName: "checkmark.circle.fill" },
 ];
 
 function getPhaseIndex(phase: FlightPhase): number {
@@ -156,16 +156,16 @@ function simulateFlightStatus(booking: any): FlightStatusData {
 // ── Status Badge ──
 function StatusBadge({ status, delayMinutes }: { status: FlightStatusType; delayMinutes?: number }) {
   const colors = useColors();
-  const config: Record<FlightStatusType, { bg: string; text: string; label: string; icon: string }> = {
-    on_time: { bg: colors.success + "15", text: colors.success, label: "في الموعد", icon: "✅" },
-    delayed: { bg: colors.warning + "15", text: colors.warning, label: `تأخير ${delayMinutes || 0} دقيقة`, icon: "⚠️" },
-    cancelled: { bg: colors.error + "15", text: colors.error, label: "ملغاة", icon: "❌" },
-    diverted: { bg: "#3B82F615", text: "#3B82F6", label: "محوّلة", icon: "↩️" },
+  const config: Record<FlightStatusType, { bg: string; text: string; label: string; iconName: string }> = {
+    on_time: { bg: colors.success + "15", text: colors.success, label: "في الموعد", iconName: "checkmark.circle.fill" },
+    delayed: { bg: colors.warning + "15", text: colors.warning, label: `تأخير ${delayMinutes || 0} دقيقة`, iconName: "exclamationmark.triangle.fill" },
+    cancelled: { bg: colors.error + "15", text: colors.error, label: "ملغاة", iconName: "xmark.circle.fill" },
+    diverted: { bg: "#3B82F615", text: "#3B82F6", label: "محوّلة", iconName: "arrow.uturn.right.circle.fill" },
   };
   const c = config[status];
   return (
     <View style={[styles.statusBadge, { backgroundColor: c.bg, borderColor: c.text + "30" }]}>
-      <Text style={{ fontSize: 16 }}>{c.icon}</Text>
+      <IconSymbol name={c.iconName as any} size={16} color={c.text} />
       <Text style={[styles.statusBadgeText, { color: c.text }]}>{c.label}</Text>
     </View>
   );
@@ -209,7 +209,7 @@ function FlightTimeline({ currentPhase, status }: { currentPhase: FlightPhase; s
                   },
                 ]}
               >
-                <Text style={{ fontSize: isCurrent ? 14 : 10 }}>{phase.icon}</Text>
+                <IconSymbol name={phase.iconName as any} size={isCurrent ? 14 : 10} color="#FFFFFF" />
               </View>
               {!isLast && (
                 <View style={[styles.timelineLine, { backgroundColor: lineColor }]} />
@@ -278,7 +278,7 @@ export default function FlightStatusScreen() {
           <View style={{ width: 30 }} />
         </View>
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontSize: 48 }}>✈️</Text>
+          <IconSymbol name="airplane" size={48} color={colors.muted} />
           <Text style={{ color: colors.muted, marginTop: 12, fontSize: 15 }}>لا توجد بيانات رحلة</Text>
         </View>
       </ScreenContainer>
@@ -300,7 +300,7 @@ export default function FlightStatusScreen() {
         </Pressable>
         <View style={{ alignItems: "center" }}>
           <Text style={styles.headerTitle}>تتبع الرحلة</Text>
-          <Text style={styles.headerSub}>Flight Status</Text>
+          <Text style={styles.headerSub}>حالة الرحلة</Text>
         </View>
         <View style={{ width: 30 }} />
       </View>
@@ -320,7 +320,7 @@ export default function FlightStatusScreen() {
           {/* Flight Route Card */}
           <View style={[styles.routeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.routeHeader}>
-              <Text style={{ fontSize: 22 }}>✈️</Text>
+              <IconSymbol name="airplane" size={22} color={colors.primary} />
               <Text style={[styles.flightNum, { color: colors.primary }]}>
                 {statusData.airline} · {statusData.flightNumber}
               </Text>
@@ -344,7 +344,7 @@ export default function FlightStatusScreen() {
                 <View style={styles.routeLineContainer}>
                   <View style={[styles.routeDot, { backgroundColor: colors.primary }]} />
                   <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
-                  <Text style={{ fontSize: 16 }}>✈</Text>
+                  <IconSymbol name="airplane" size={16} color={colors.primary} />
                   <View style={[styles.routeLine, { backgroundColor: colors.border }]} />
                   <View style={[styles.routeDot, { backgroundColor: colors.secondary }]} />
                 </View>
@@ -422,7 +422,7 @@ export default function FlightStatusScreen() {
         </ScrollView>
       ) : (
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-          <Text style={{ fontSize: 48 }}>✈️</Text>
+          <IconSymbol name="airplane" size={48} color={colors.muted} />
           <Text style={{ color: colors.muted, marginTop: 12 }}>لا توجد بيانات حالة</Text>
         </View>
       )}

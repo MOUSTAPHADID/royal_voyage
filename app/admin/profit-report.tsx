@@ -27,14 +27,14 @@ function isDomestic(originCode?: string, destCode?: string) {
 
 // ألوان وأيقونات مميزة لكل طريقة دفع
 const PAYMENT_METHOD_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  bankily: { label: "بنكيلي", color: "#F59E0B", icon: "📱" },
-  masrvi: { label: "مصرفي", color: "#8B5CF6", icon: "💳" },
-  sedad: { label: "سداد", color: "#EF4444", icon: "🔐" },
-  cash: { label: "نقداً", color: "#22C55E", icon: "💵" },
-  bank_transfer: { label: "تحويل بنكي", color: "#3B82F6", icon: "🏦" },
-  stripe: { label: "بطاقة بنكية (Stripe)", color: "#635BFF", icon: "💳" },
-  paypal: { label: "PayPal", color: "#003087", icon: "🌐" },
-  multicaixa: { label: "Multicaixa Express", color: "#E31937", icon: "🇦🇴" },
+  bankily: { label: "بنكيلي", color: "#F59E0B", icon: "B" },
+  masrvi: { label: "مصرفي", color: "#8B5CF6", icon: "M" },
+  sedad: { label: "سداد", color: "#EF4444", icon: "S" },
+  cash: { label: "نقداً", color: "#22C55E", icon: "$" },
+  bank_transfer: { label: "تحويل بنكي", color: "#3B82F6", icon: "T" },
+  stripe: { label: "بطاقة بنكية", color: "#635BFF", icon: "C" },
+  paypal: { label: "PayPal", color: "#003087", icon: "P" },
+  multicaixa: { label: "Multicaixa Express", color: "#E31937", icon: "MC" },
 };
 
 export default function ProfitReportScreen() {
@@ -123,7 +123,7 @@ export default function ProfitReportScreen() {
 
       // بناء صفوف طرق الدفع للـ PDF
       const paymentMethodRows = reportData.sortedPaymentMethods.map(([method, stats]) => {
-        const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "💰" };
+        const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "?" };
         return `
         <tr>
           <td>
@@ -390,7 +390,7 @@ export default function ProfitReportScreen() {
             </View>
           ) : (
             reportData.sortedPaymentMethods.map(([method, stats], i) => {
-              const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "💰" };
+              const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "?" };
               const percentage = reportData.totalRevenue > 0 ? Math.round((stats.total / reportData.totalRevenue) * 100) : 0;
               return (
                 <View key={i} style={[styles.breakdownRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>

@@ -153,7 +153,7 @@ th{background:#f8fafc;font-weight:700;text-align:right}
 .stat .val{font-size:20px;font-weight:800;color:#1B2B5E}.stat .lbl{font-size:11px;color:#64748b;margin-top:4px}
 .footer{text-align:center;margin-top:24px;font-size:11px;color:#94a3b8}
 </style></head><body>
-<div class="header"><h1>✈ Royal Voyage</h1><p>التقرير المالي — ${periodLabel} | ${dateStr}</p></div>
+<div class="header"><h1>Royal Voyage</h1><p>التقرير المالي — ${periodLabel} | ${dateStr}</p></div>
 <div class="grid">
 <div class="stat"><div class="val">${formatMRU(stats.totalRevenue)}</div><div class="lbl">إجمالي الإيرادات</div></div>
 <div class="stat"><div class="val">${formatMRU(stats.pendingRevenue)}</div><div class="lbl">الإيرادات المعلقة</div></div>
@@ -273,22 +273,22 @@ th{background:#f8fafc;font-weight:700;text-align:right}
         {/* Summary Cards */}
         <View style={styles.summaryGrid}>
           <View style={[styles.summaryCard, { backgroundColor: "#DCFCE7", borderColor: "#22C55E30" }]}>
-            <Text style={{ fontSize: 22 }}>💰</Text>
+            <IconSymbol name="banknote.fill" size={22} color="#16A34A" />
             <Text style={[styles.summaryValue, { color: "#16A34A" }]}>{formatMRU(stats.totalRevenue)}</Text>
             <Text style={[styles.summaryLabel, { color: "#166534" }]}>إجمالي الإيرادات</Text>
           </View>
           <View style={[styles.summaryCard, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B30" }]}>
-            <Text style={{ fontSize: 22 }}>⏳</Text>
+            <IconSymbol name="clock.fill" size={22} color="#D97706" />
             <Text style={[styles.summaryValue, { color: "#D97706" }]}>{formatMRU(stats.pendingRevenue)}</Text>
             <Text style={[styles.summaryLabel, { color: "#92400E" }]}>في الانتظار</Text>
           </View>
           <View style={[styles.summaryCard, { backgroundColor: "#E0F2FE", borderColor: "#0EA5E930" }]}>
-            <Text style={{ fontSize: 22 }}>🏢</Text>
+            <IconSymbol name="building.2.fill" size={22} color="#0284C7" />
             <Text style={[styles.summaryValue, { color: "#0284C7" }]}>{formatMRU(stats.businessRevenue)}</Text>
             <Text style={[styles.summaryLabel, { color: "#075985" }]}>إيرادات تجارية</Text>
           </View>
           <View style={[styles.summaryCard, { backgroundColor: "#FCE7F3", borderColor: "#EC489930" }]}>
-            <Text style={{ fontSize: 22 }}>📊</Text>
+            <IconSymbol name="chart.bar.fill" size={22} color="#BE185D" />
             <Text style={[styles.summaryValue, { color: "#BE185D" }]}>{formatMRU(stats.totalCommission)}</Text>
             <Text style={[styles.summaryLabel, { color: "#9D174D" }]}>العمولات</Text>
           </View>

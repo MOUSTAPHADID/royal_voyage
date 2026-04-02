@@ -250,7 +250,7 @@ export default function PricingAdminScreen() {
     setTimeout(() => setSaved(false), 3000);
 
     const dateStr = new Date().toLocaleDateString("ar-SA", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
-    Alert.alert("✅ تم التحديث", `تم تحديث أسعار الصرف بنجاح\n${dateStr}`);
+    Alert.alert("تم التحديث", `تم تحديث أسعار الصرف بنجاح\n${dateStr}`);
   };
 
   const handleSave = async () => {
@@ -439,7 +439,7 @@ export default function PricingAdminScreen() {
             color="#FFFFFF"
           />
           <Text style={styles.saveBtnText}>
-            {saved ? "تم الحفظ ✓" : "حفظ الإعدادات"}
+            {saved ? "تم الحفظ" : "حفظ الإعدادات"}
           </Text>
         </Pressable>
       </View>

@@ -39,63 +39,64 @@ const PAYMENT_METHODS: {
   id: PaymentMethod;
   label: string;
   sublabel: string;
-  icon: string;
+  logo?: any;
+  iconName?: string;
   color: string;
 }[] = [
   {
     id: "cash",
     label: "دفع نقدي في المكتب",
     sublabel: "ادفع عند زيارة مكتبنا في نواكشوط",
-    icon: "💵",
+    iconName: "banknote.fill",
     color: "#22C55E",
   },
   {
     id: "bank_transfer",
     label: "تحويل بنكي",
     sublabel: "تحويل مباشر إلى حساب Royal Voyage",
-    icon: "🏦",
+    iconName: "building.columns.fill",
     color: "#3B82F6",
   },
   {
     id: "bankily",
     label: "بنكيلي",
     sublabel: "الدفع عبر تطبيق Bankily",
-    icon: "📱",
+    logo: require("@/assets/images/payment/bankily.png"),
     color: "#F59E0B",
   },
   {
     id: "masrvi",
     label: "مصرفي",
     sublabel: "الدفع عبر تطبيق مصرفي",
-    icon: "💳",
-    color: "#8B5CF6",
+    logo: require("@/assets/images/payment/masrvi.png"),
+    color: "#00C9A7",
   },
   {
     id: "sedad",
     label: "سداد",
     sublabel: "الدفع عبر منصة Sedad",
-    icon: "🔐",
-    color: "#EF4444",
+    logo: require("@/assets/images/payment/sedad.png"),
+    color: "#B8860B",
   },
   {
     id: "stripe",
     label: "بطاقة بنكية (Visa / Mastercard)",
     sublabel: "ادفع بالبطاقة البنكية بشكل آمن عبر Stripe",
-    icon: "💳",
+    logo: require("@/assets/images/payment/stripe.png"),
     color: "#635BFF",
   },
   {
     id: "multicaixa",
     label: "Multicaixa Express",
     sublabel: "الدفع عبر Multicaixa Express (بالكوانزا AOA)",
-    icon: "🇦🇴",
+    iconName: "creditcard.fill",
     color: "#E31937",
   },
   {
     id: "hold_24h",
     label: "حجز مؤكد 24 ساعة",
     sublabel: "احجز الآن وادفع خلال 24 ساعة — حجز مؤكد من شركة الطيران",
-    icon: "⏰",
+    iconName: "timer",
     color: "#0EA5E9",
   },
 ];
@@ -533,7 +534,7 @@ export default function PaymentScreen() {
       currency: params.currency ?? flight?.currency ?? "MRU",
       class: (params.cabinClass ?? flight?.class ?? "Economy") as "Economy" | "Business" | "First",
       stops: flight?.stops ?? 0,
-      airlineLogo: flight?.airlineLogo ?? "✈️",
+      airlineLogo: flight?.airlineLogo ?? "",
       seatsLeft: flight?.seatsLeft ?? 9,
     } : null;
 
@@ -625,11 +626,11 @@ export default function PaymentScreen() {
     // إرسال إشعار Push للمدير عند إنشاء حجز جديد
     {
       const customerName = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "زبون";
-      const bookingType = isFlight ? "✈️ رحلة" : "🏨 فندق";
+      const bookingType = isFlight ? "رحلة" : "فندق";
       const dest = isFlight
         ? `${params.originCode ?? ""} → ${params.destinationCode ?? ""}`
         : params.hotelName ?? "";
-      const notifTitle = `🔔 حجز جديد! ${bookingType}`;
+      const notifTitle = `حجز جديد - ${bookingType}`;
       const notifBody = `${customerName} • ${dest} • ${fmt(total)} • ${ref}`;
 
       // حفظ الإشعار محلياً في سجل الإشعارات
@@ -656,7 +657,7 @@ export default function PaymentScreen() {
     // إشعار خاص بدفعة Multicaixa Express
     if (paymentMethod === "multicaixa") {
       const mcxFormatted = formatCurrency(total, "AOA");
-      const mcxTitle = "🇦🇴 دفعة Multicaixa Express جديدة!";
+      const mcxTitle = "دفعة Multicaixa Express جديدة";
       const mcxCustomer = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "زبون";
       const mcxBody = `${mcxCustomer} • ${mcxFormatted} • Ref: ${transferRef.trim()} • ${ref}`;
       addAdminNotification({
@@ -920,7 +921,11 @@ export default function PaymentScreen() {
                   onPress={() => setPaymentMethod(method.id)}
                 >
                   <View style={[styles.methodIconBox, { backgroundColor: method.color + "18" }]}>
-                    <Text style={{ fontSize: 22 }}>{method.icon}</Text>
+                    {method.logo ? (
+                      <Image source={method.logo} style={{ width: 32, height: 32, resizeMode: "contain" }} />
+                    ) : (
+                      <IconSymbol name={method.iconName as any} size={22} color={method.color} />
+                    )}
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.methodLabel, { color: colors.foreground }]}>
@@ -932,7 +937,7 @@ export default function PaymentScreen() {
                   </View>
                   {isSelected && (
                     <View style={[styles.checkCircle, { backgroundColor: method.color }]}>
-                      <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "700" }}>✓</Text>
+                      <IconSymbol name="checkmark" size={14} color="#FFFFFF" />
                     </View>
                   )}
                 </Pressable>
@@ -944,7 +949,7 @@ export default function PaymentScreen() {
         {/* تعليمات الدفع النقدي */}
         {paymentMethod === "cash" && (
           <View style={[styles.card, { backgroundColor: "#22C55E10", borderColor: "#22C55E30" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>📍 عنوان المكتب</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>عنوان المكتب</Text>
             <Text style={[styles.infoText, { color: colors.foreground }]}>
               Royal Voyage — نواكشوط، موريتانيا
             </Text>
@@ -953,15 +958,15 @@ export default function PaymentScreen() {
             </Text>
             <View style={[styles.infoBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.infoBoxText, { color: colors.muted }]}>
-                🕐 أوقات العمل: السبت – الخميس، 8:00 ص – 6:00 م
+                أوقات العمل: السبت – الخميس، 8:00 ص – 6:00 م
               </Text>
               <Text style={[styles.infoBoxText, { color: colors.muted, marginTop: 4 }]}>
-                📞 للاستفسار: +222 XX XX XX XX
+                للاستفسار: +222 XX XX XX XX
               </Text>
             </View>
             <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
               <Text style={[styles.warningText, { color: colors.warning }]}>
-                ⚠️ يُحجز المقعد لمدة 24 ساعة فقط. يرجى الدفع في أقرب وقت لتأكيد الحجز.
+                يُحجز المقعد لمدة 24 ساعة فقط. يرجى الدفع في أقرب وقت لتأكيد الحجز.
               </Text>
             </View>
           </View>
@@ -970,7 +975,7 @@ export default function PaymentScreen() {
         {/* تعليمات حجز مؤكد 24 ساعة */}
         {paymentMethod === "hold_24h" && (
           <View style={[styles.card, { backgroundColor: "#0EA5E910", borderColor: "#0EA5E930" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>⏰ حجز مؤكد من شركة الطيران</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>حجز مؤكد من شركة الطيران</Text>
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "سيتم حجز مقعدك مباشرةً لدى شركة الطيران",
@@ -986,7 +991,7 @@ export default function PaymentScreen() {
             </View>
             <View style={[styles.warningBox, { backgroundColor: "#0EA5E915", borderColor: "#0EA5E940" }]}>
               <Text style={[styles.warningText, { color: "#0EA5E9" }]}>
-                ℹ️ هذا حجز مؤكد لدى شركة الطيران. إذا لم يتم الدفع خلال 24 ساعة، سيتم إلغاء الحجز تلقائياً.
+                هذا حجز مؤكد لدى شركة الطيران. إذا لم يتم الدفع خلال 24 ساعة، سيتم إلغاء الحجز تلقائياً.
               </Text>
             </View>
           </View>
@@ -995,7 +1000,7 @@ export default function PaymentScreen() {
         {/* تعليمات التحويل البنكي */}
         {paymentMethod === "bank_transfer" && (
           <View style={[styles.card, { backgroundColor: "#3B82F610", borderColor: "#3B82F630" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>🏦 بيانات التحويل البنكي</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>بيانات التحويل البنكي</Text>
             {[
               { label: "اسم البنك", value: BANK_INFO.bankName },
               { label: "اسم الحساب", value: BANK_INFO.accountName },
@@ -1026,7 +1031,7 @@ export default function PaymentScreen() {
         {/* تعليمات بنكيلي */}
         {paymentMethod === "bankily" && (
           <View style={[styles.card, { backgroundColor: "#F59E0B10", borderColor: "#F59E0B30" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>📱 الدفع عبر بنكيلي</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>الدفع عبر بنكيلي</Text>
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "افتح تطبيق Bankily على هاتفك",
@@ -1060,7 +1065,7 @@ export default function PaymentScreen() {
         {/* تعليمات مصرفي */}
         {paymentMethod === "masrvi" && (
           <View style={[styles.card, { backgroundColor: "#8B5CF610", borderColor: "#8B5CF630" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>💳 الدفع عبر مصرفي</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>الدفع عبر مصرفي</Text>
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "افتح تطبيق مصرفي على هاتفك",
@@ -1097,7 +1102,7 @@ export default function PaymentScreen() {
           const stripeFormatted = formatCurrency(total, stripeCurrency);
           return (
             <View style={[styles.card, { backgroundColor: "#635BFF" + "10", borderColor: "#635BFF" + "30" }]}>
-              <Text style={[styles.cardTitle, { color: colors.foreground }]}>💳 الدفع بالبطاقة البنكية</Text>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>الدفع بالبطاقة البنكية</Text>
 
               {/* بطاقة السعر بالعملة الأجنبية */}
               <View style={[styles.infoBox, { backgroundColor: "#635BFF" + "15", borderColor: "#635BFF" + "40", marginBottom: 14 }]}>
@@ -1143,14 +1148,14 @@ export default function PaymentScreen() {
               {/* ملاحظة الأمان */}
               <View style={[styles.infoBox, { backgroundColor: colors.success + "10", borderColor: colors.success + "30" }]}>
                 <Text style={{ color: colors.success, fontSize: 12, textAlign: "center", lineHeight: 18 }}>
-                  🔒 جميع المعاملات مشفرة ومحمية بواسطة Stripe. لا يتم تخزين بيانات بطاقتك على خوادمنا.
+                  جميع المعاملات مشفرة ومحمية بواسطة Stripe. لا يتم تخزين بيانات بطاقتك على خوادمنا.
                 </Text>
               </View>
 
               {/* تحذير سعر الصرف */}
               <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40", marginTop: 8 }]}>
                 <Text style={[styles.warningText, { color: colors.warning }]}>
-                  ⚠️ سيتم خصم المبلغ بالعملة الأجنبية ({stripeCurrency}). قد يختلف السعر الفعلي بحسب سعر صرف بنكك.
+                  سيتم خصم المبلغ بالعملة الأجنبية ({stripeCurrency}). قد يختلف السعر الفعلي بحسب سعر صرف بنكك.
                 </Text>
               </View>
             </View>
@@ -1160,7 +1165,7 @@ export default function PaymentScreen() {
         {/* تعليمات سداد */}
         {paymentMethod === "sedad" && (
           <View style={[styles.card, { backgroundColor: "#EF444410", borderColor: "#EF444430" }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>🔐 الدفع عبر سداد</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>الدفع عبر سداد</Text>
             <View style={[styles.stepsBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {[
                 "توجه إلى منصة Sedad الإلكترونية أو التطبيق",
@@ -1197,7 +1202,7 @@ export default function PaymentScreen() {
           const mcxFormatted = formatCurrency(total, "AOA");
           return (
             <View style={[styles.card, { backgroundColor: "#E3193710", borderColor: "#E3193730" }]}>
-              <Text style={[styles.cardTitle, { color: colors.foreground }]}>🇦🇴 الدفع عبر Multicaixa Express</Text>
+              <Text style={[styles.cardTitle, { color: colors.foreground }]}>الدفع عبر Multicaixa Express</Text>
 
               {/* بطاقة السعر بالكوانزا */}
               <View style={[styles.infoBox, { backgroundColor: "#E3193715", borderColor: "#E3193740", marginBottom: 14 }]}>
@@ -1243,7 +1248,7 @@ export default function PaymentScreen() {
                       }}
                     >
                       <Text style={{ color: "#FFF", fontSize: 12, fontWeight: "600" }}>
-                        {ibanCopied ? "✅ تم النسخ" : "📋 نسخ"}
+                        {ibanCopied ? "تم النسخ" : "نسخ"}
                       </Text>
                     </Pressable>
                   </View>
@@ -1323,7 +1328,7 @@ export default function PaymentScreen() {
                   }
                 }}
               >
-                <Text style={{ color: "#FFF", fontSize: 18 }}>🇦🇴</Text>
+
                 <Text style={{ color: "#FFF", fontSize: 16, fontWeight: "700" }}>فتح Multicaixa Express</Text>
               </Pressable>
               <Text style={{ color: colors.muted, fontSize: 11, textAlign: "center", marginBottom: 10 }}>
@@ -1369,7 +1374,7 @@ export default function PaymentScreen() {
               {/* تحذير سعر الصرف */}
               <View style={[styles.warningBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
                 <Text style={[styles.warningText, { color: colors.warning }]}>
-                  ⚠️ قد يختلف السعر الفعلي بحسب يوم التحويل. يتم تحديث سعر الصرف دورياً من إعدادات المدير.
+                  قد يختلف السعر الفعلي بحسب يوم التحويل. يتم تحديث سعر الصرف دورياً من إعدادات المدير.
                 </Text>
               </View>
             </View>
@@ -1379,7 +1384,7 @@ export default function PaymentScreen() {
         {/* رفع إيصال الدفع */}
         {paymentMethod !== "cash" && (
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text style={[styles.cardTitle, { color: colors.foreground }]}>📸 إيصال الدفع (اختياري)</Text>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>إيصال الدفع (اختياري)</Text>
             <Text style={{ color: colors.muted, fontSize: 12, marginBottom: 12, lineHeight: 18 }}>
               يمكنك رفع صورة إيصال الدفع لتسريع عملية التأكيد من طرف الإدارة
             </Text>
@@ -1500,7 +1505,11 @@ export default function PaymentScreen() {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <>
-              <Text style={{ fontSize: 18 }}>{selectedMethod.icon}</Text>
+              {selectedMethod.logo ? (
+                <Image source={selectedMethod.logo} style={{ width: 22, height: 22, resizeMode: "contain" }} />
+              ) : (
+                <IconSymbol name={selectedMethod.iconName as any} size={20} color="#FFFFFF" />
+              )}
               <Text style={styles.payBtnText}>
                 {paymentMethod === "cash" ? "تأكيد الحجز والدفع لاحقاً" : paymentMethod === "stripe" ? "الدفع بالبطاقة البنكية" : "تأكيد الدفع وإتمام الحجز"}
               </Text>

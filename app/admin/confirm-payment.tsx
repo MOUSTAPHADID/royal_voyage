@@ -30,7 +30,7 @@ const PAYMENT_LABELS: PaymentMethodLabel = {
   bankily: "بنكيلي",
   masrvi: "مصرفي",
   sedad: "سداد",
-  stripe: "💳 بطاقة بنكية (Visa/Mastercard)",
+  stripe: "بطاقة بنكية (Visa/Mastercard)",
   paypal: "PayPal (عملة أجنبية)",
   multicaixa: "Multicaixa Express (AOA)",
   hold_24h: "حجز مؤكد 24 ساعة",
@@ -202,15 +202,15 @@ export default function ConfirmPaymentScreen() {
                   try {
                     await sendPushMutation.mutateAsync({
                       expoPushToken: booking.customerPushToken,
-                      title: "✅ تم تأكيد الدفع",
-                      body: `تم تأكيد دفع حجزك ${booking.reference}. شكراً لثقتك!`,
-                      data: { type: "payment_confirmed", bookingId: booking.id },
-                    });
-                  } catch {}
-                }
+                    title: "تم تأكيد الدفع",
+                    body: `تم تأكيد دفع حجزك ${booking.reference}. شكراً لثقتك!`,
+                    data: { type: "payment_confirmed", bookingId: booking.id },
+                  });
+                } catch {}
+              }
 
                 Alert.alert(
-                  "✅ تم التأكيد",
+                  "تم التأكيد",
                   `تم تأكيد دفع الحجز ${booking.reference} بنجاح.\nتم إرسال بريد تأكيد للزبون.`,
                   [{ text: "حسناً" }]
                 );
@@ -220,7 +220,7 @@ export default function ConfirmPaymentScreen() {
                   try {
                     await sendPushMutation.mutateAsync({
                       expoPushToken: booking.customerPushToken,
-                      title: "✅ تم تأكيد الدفع",
+                      title: "تم تأكيد الدفع",
                       body: `تم تأكيد دفع حجزك ${booking.reference}. شكراً لثقتك!`,
                       data: { type: "payment_confirmed", bookingId: booking.id },
                     });
@@ -228,7 +228,7 @@ export default function ConfirmPaymentScreen() {
                 }
 
                 Alert.alert(
-                  "✅ تم التأكيد",
+                  "تم التأكيد",
                   `تم تأكيد دفع الحجز ${booking.reference}.\n(لا يوجد بريد إلكتروني للزبون)`,
                   [{ text: "حسناً" }]
                 );
@@ -268,7 +268,7 @@ export default function ConfirmPaymentScreen() {
         try {
           await sendPushMutation.mutateAsync({
             expoPushToken: booking.customerPushToken,
-            title: "❌ رفض الدفع",
+            title: "رفض الدفع",
             body: `تم رفض دفع حجزك ${booking.reference}. السبب: ${rejectReason.trim()}`,
             data: { type: "payment_rejected", bookingId: booking.id },
           });
@@ -283,7 +283,7 @@ export default function ConfirmPaymentScreen() {
         bookingId: booking.id,
       });
 
-      Alert.alert("❌ تم الرفض", `تم رفض دفع الحجز ${booking.reference}.\nتم إرسال إشعار للزبون.`);
+      Alert.alert("تم الرفض", `تم رفض دفع الحجز ${booking.reference}.\nتم إرسال إشعار للزبون.`);
       setShowRejectModal(null);
       setRejectReason("");
     } catch (err: any) {
@@ -305,10 +305,10 @@ export default function ConfirmPaymentScreen() {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "confirmed": return "مؤكد ✅";
-      case "pending": return "معلق ⏳";
-      case "processing": return "قيد المعالجة 🔄";
-      case "airline_confirmed": return "مؤكد من الطيران ✈️";
+      case "confirmed": return "مؤكد";
+      case "pending": return "معلق";
+      case "processing": return "قيد المعالجة";
+      case "airline_confirmed": return "مؤكد من الطيران";
       default: return status;
     }
   };
@@ -328,7 +328,7 @@ export default function ConfirmPaymentScreen() {
           style={({ pressed }) => [styles.stripeLogBtn, pressed && { opacity: 0.7 }]}
           onPress={() => setShowStripeLog(!showStripeLog)}
         >
-          <Text style={{ fontSize: 18 }}>💳</Text>
+          <IconSymbol name="creditcard.fill" size={18} color="#FFFFFF" />
           {stripeNotifications.length > 0 && (
             <View style={styles.stripeBadge}>
               <Text style={{ color: "#fff", fontSize: 10, fontWeight: "bold" }}>{stripeNotifications.length}</Text>
@@ -339,7 +339,7 @@ export default function ConfirmPaymentScreen() {
       {/* Stripe Payment Log */}
       {showStripeLog && (
         <View style={[styles.stripeLogContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-          <Text style={[styles.stripeLogTitle, { color: colors.foreground }]}>💳 سجل مدفوعات Stripe ({stripeNotifications.length})</Text>
+          <Text style={[styles.stripeLogTitle, { color: colors.foreground }]}>سجل مدفوعات البطاقة ({stripeNotifications.length})</Text>
           {stripeNotifications.length === 0 ? (
             <Text style={{ color: colors.muted, textAlign: "center", padding: 12 }}>لا توجد مدفوعات Stripe بعد</Text>
           ) : (
@@ -360,7 +360,7 @@ export default function ConfirmPaymentScreen() {
                 ) : (
                   <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                     <View style={[styles.stripeSuccessBadge]}>
-                      <Text style={{ color: "#fff", fontSize: 10 }}>✅ ناجح</Text>
+                      <Text style={{ color: "#fff", fontSize: 10 }}>ناجح</Text>
                     </View>
                     <Pressable
                       style={({ pressed }) => [{
@@ -392,7 +392,7 @@ export default function ConfirmPaymentScreen() {
                                     setStripeNotifications(prev => prev.map(item =>
                                       item.paymentIntentId === n.paymentIntentId ? { ...item, refunded: true } : item
                                     ));
-                                    Alert.alert("✅ تم الاسترداد", `تم استرداد المبلغ بنجاح. رقم الاسترداد: ${data.refundId}`);
+                                    Alert.alert("تم الاسترداد", `تم استرداد المبلغ بنجاح. رقم الاسترداد: ${data.refundId}`);
                                   } else {
                                     Alert.alert("خطأ", data.error || "فشل الاسترداد");
                                   }
@@ -458,7 +458,7 @@ export default function ConfirmPaymentScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
         {pendingBookings.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={{ fontSize: 48 }}>✅</Text>
+            <IconSymbol name="checkmark.circle.fill" size={48} color={colors.success} />
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>لا توجد حجوزات معلقة</Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>جميع الحجوزات تم تأكيدها</Text>
           </View>
@@ -477,7 +477,7 @@ export default function ConfirmPaymentScreen() {
                   {/* Card Header */}
                   <View style={styles.cardHeader}>
                     <View style={[styles.typeIcon, { backgroundColor: booking.type === "flight" ? colors.primary + "20" : "#F59E0B20" }]}>
-                      <Text style={{ fontSize: 22 }}>{booking.type === "flight" ? "✈" : "🏨"}</Text>
+                      <IconSymbol name={booking.type === "flight" ? "airplane" : "building.2.fill"} size={22} color={booking.type === "flight" ? colors.primary : "#F59E0B"} />
                     </View>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.refText, { color: colors.foreground }]}>{booking.reference}</Text>
@@ -535,7 +535,7 @@ export default function ConfirmPaymentScreen() {
                   {/* إيصال الدفع */}
                   {booking.receiptImage && (
                     <View style={{ marginHorizontal: 14, marginBottom: 10 }}>
-                      <Text style={[styles.detailLabel, { color: colors.muted, marginBottom: 6 }]}>📸 إيصال الدفع</Text>
+                      <Text style={[styles.detailLabel, { color: colors.muted, marginBottom: 6 }]}>إيصال الدفع</Text>
                       <Pressable
                         style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
                         onPress={() => setPreviewReceipt(booking.receiptImage!)}
@@ -563,7 +563,7 @@ export default function ConfirmPaymentScreen() {
                     const diff = new Date(booking.paymentDeadline).getTime() - Date.now();
                     if (diff <= 0) return (
                       <View style={[styles.deadlineBanner, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}>
-                        <Text style={{ color: "#EF4444", fontSize: 12, fontWeight: "600" }}>⚠️ انتهت مهلة الدفع النقدي</Text>
+                        <Text style={{ color: "#EF4444", fontSize: 12, fontWeight: "600" }}>انتهت مهلة الدفع النقدي</Text>
                       </View>
                     );
                     const hours = Math.floor(diff / 3600000);
@@ -572,7 +572,7 @@ export default function ConfirmPaymentScreen() {
                     return (
                       <View style={[styles.deadlineBanner, { backgroundColor: isUrgent ? "#EF444415" : "#F59E0B15", borderColor: isUrgent ? "#EF444430" : "#F59E0B30" }]}>
                         <Text style={{ color: isUrgent ? "#EF4444" : "#F59E0B", fontSize: 12, fontWeight: "600" }}>
-                          {isUrgent ? "⚠️" : "⏰"} مهلة الدفع: {hours > 0 ? `${hours}س ${minutes}د` : `${minutes} دقيقة`} متبقية
+                          مهلة الدفع: {hours > 0 ? `${hours}س ${minutes}د` : `${minutes} دقيقة`} متبقية
                         </Text>
                       </View>
                     );
@@ -581,12 +581,12 @@ export default function ConfirmPaymentScreen() {
                   {/* Payment status badge */}
                   {booking.paymentConfirmed && (
                     <View style={[styles.deadlineBanner, { backgroundColor: "#22C55E15", borderColor: "#22C55E30" }]}>
-                      <Text style={{ color: "#22C55E", fontSize: 12, fontWeight: "700" }}>✅ تم تأكيد الدفع — {booking.paymentConfirmedAt ? new Date(booking.paymentConfirmedAt).toLocaleDateString("ar-SA") : ""}</Text>
+                      <Text style={{ color: "#22C55E", fontSize: 12, fontWeight: "700" }}>تم تأكيد الدفع — {booking.paymentConfirmedAt ? new Date(booking.paymentConfirmedAt).toLocaleDateString("ar-SA") : ""}</Text>
                     </View>
                   )}
                   {booking.paymentRejected && (
                     <View style={[styles.deadlineBanner, { backgroundColor: "#EF444415", borderColor: "#EF444430" }]}>
-                      <Text style={{ color: "#EF4444", fontSize: 12, fontWeight: "700" }}>❌ تم رفض الدفع: {booking.paymentRejectedReason}</Text>
+                      <Text style={{ color: "#EF4444", fontSize: 12, fontWeight: "700" }}>تم رفض الدفع: {booking.paymentRejectedReason}</Text>
                     </View>
                   )}
 
@@ -606,7 +606,7 @@ export default function ConfirmPaymentScreen() {
                         {isConfirming ? (
                           <ActivityIndicator color="#fff" size="small" />
                         ) : (
-                          <Text style={styles.confirmBtnText}>✅ تأكيد الدفع</Text>
+                          <Text style={styles.confirmBtnText}>تأكيد الدفع</Text>
                         )}
                       </Pressable>
                     )}
@@ -619,7 +619,7 @@ export default function ConfirmPaymentScreen() {
                         ]}
                         onPress={() => { setShowRejectModal(booking.id); setRejectReason(""); }}
                       >
-                        <Text style={styles.confirmBtnText}>❌ رفض الدفع</Text>
+                        <Text style={styles.confirmBtnText}>رفض الدفع</Text>
                       </Pressable>
                     )}
                     {booking.paymentConfirmed && (

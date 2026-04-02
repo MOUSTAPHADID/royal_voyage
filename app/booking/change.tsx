@@ -42,11 +42,12 @@ export default function ChangeBookingScreen() {
     );
   }
 
-  const changeOptions: { key: ChangeType; label: string; icon: string }[] = [
-    { key: "date", label: "تغيير التاريخ", icon: "📅" },
-    { key: "passengers", label: "تغيير المقاعد", icon: "👥" },
-    { key: "class", label: "ترقية الدرجة", icon: "⭐" },
-    { key: "other", label: "طلب آخر", icon: "📝" },
+  type IconName = "calendar" | "person.2.fill" | "star.fill" | "pencil";
+  const changeOptions: { key: ChangeType; label: string; iconName: IconName }[] = [
+    { key: "date", label: "تغيير التاريخ", iconName: "calendar" },
+    { key: "passengers", label: "تغيير المقاعد", iconName: "person.2.fill" },
+    { key: "class", label: "ترقية الدرجة", iconName: "star.fill" },
+    { key: "other", label: "طلب آخر", iconName: "pencil" },
   ];
 
   const handleSubmit = () => {
@@ -83,7 +84,7 @@ export default function ChangeBookingScreen() {
         </View>
         <View style={[styles.successContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.successIcon, { backgroundColor: colors.success + "20" }]}>
-            <Text style={{ fontSize: 48 }}>✅</Text>
+            <IconSymbol name="checkmark.circle.fill" size={48} color="#22C55E" />
           </View>
           <Text style={[styles.successTitle, { color: colors.foreground }]}>
             تم إرسال طلب التعديل
@@ -127,9 +128,7 @@ export default function ChangeBookingScreen() {
       <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }}>
         {/* Booking Summary */}
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={{ fontSize: 22, marginBottom: 8 }}>
-            {booking.type === "flight" ? "✈" : "🏨"}
-          </Text>
+          <IconSymbol name={booking.type === "flight" ? "airplane" : "building.2.fill"} size={22} color={colors.primary} style={{ marginBottom: 8 }} />
           <View>
             <Text style={[styles.summaryTitle, { color: colors.foreground }]}>
               {booking.type === "flight"
@@ -156,7 +155,7 @@ export default function ChangeBookingScreen() {
                 ]}
                 onPress={() => setChangeType(opt.key)}
               >
-                <Text style={{ fontSize: 24 }}>{opt.icon}</Text>
+                <IconSymbol name={opt.iconName} size={24} color={changeType === opt.key ? colors.primary : colors.muted} />
                 <Text
                   style={[
                     styles.optionLabel,
@@ -251,7 +250,7 @@ export default function ChangeBookingScreen() {
 
         {/* Notice */}
         <View style={[styles.noticeCard, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
-          <Text style={{ fontSize: 16 }}>⚠️</Text>
+          <IconSymbol name="exclamationmark.triangle.fill" size={16} color={colors.warning} />
           <Text style={[styles.noticeText, { color: colors.foreground }]}>
             قد تترتب على التعديل رسوم إضافية حسب سياسة شركة الطيران أو الفندق. سيتم إبلاغك بالتكاليف قبل التأكيد.
           </Text>

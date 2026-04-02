@@ -30,13 +30,13 @@ const MONTH_NAMES = ["يناير","فبراير","مارس","أبريل","ماي
 const DAY_NAMES = ["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 
 const PAYMENT_METHOD_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  bankily: { label: "بنكيلي", color: "#F59E0B", icon: "📱" },
-  masrvi: { label: "مصرفي", color: "#8B5CF6", icon: "💳" },
-  sedad: { label: "سداد", color: "#EF4444", icon: "🔐" },
-  cash: { label: "نقداً", color: "#22C55E", icon: "💵" },
-  bank_transfer: { label: "تحويل بنكي", color: "#3B82F6", icon: "🏦" },
-  paypal: { label: "PayPal", color: "#003087", icon: "🌐" },
-  multicaixa: { label: "Multicaixa Express", color: "#E31937", icon: "🇦🇴" },
+  bankily: { label: "بنكيلي", color: "#F59E0B", icon: "B" },
+  masrvi: { label: "مصرفي", color: "#8B5CF6", icon: "M" },
+  sedad: { label: "سداد", color: "#EF4444", icon: "S" },
+  cash: { label: "نقداً", color: "#22C55E", icon: "$" },
+  bank_transfer: { label: "تحويل بنكي", color: "#3B82F6", icon: "T" },
+  paypal: { label: "PayPal", color: "#003087", icon: "P" },
+  multicaixa: { label: "Multicaixa Express", color: "#E31937", icon: "MC" },
 };
 
 type ViewMode = "daily" | "monthly";
@@ -445,7 +445,7 @@ export default function SalesReportsScreen() {
                     {sortedPM.length > 0 && (
                       <View style={[styles.pmSection, { borderTopColor: colors.border }]}>
                         {sortedPM.map(([method, data]) => {
-                          const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "💰" };
+                          const config = PAYMENT_METHOD_CONFIG[method] || { label: method, color: "#666", icon: "payments" };
                           return (
                             <View key={method} style={styles.pmRow}>
                               <Text style={{ fontSize: 12 }}>{config.icon}</Text>
