@@ -45,6 +45,8 @@ import {
   getHotelBooking as hbxGetBooking,
   cancelHotelBooking as hbxCancelBooking,
   getHBXStatus,
+  searchActivities,
+  getActivityDetail,
 } from "./hbx";
 import {
   getBusinessAccounts,
@@ -1487,6 +1489,38 @@ export const appRouter = router({
           return { success: ok };
         } catch (err: any) {
           return { success: false, error: err?.message };
+        }
+      }),
+  }),
+
+  // ─── HBX Activities ────────────────────────────────────────────────────────
+  hbxActivities: router({
+    search: publicProcedure
+      .input(z.object({
+        destinationCode: z.string(),
+        fromDate: z.string(),
+        toDate: z.string(),
+        language: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          return await searchActivities(input);
+        } catch (err: any) {
+          console.error("[HBX Activities] search error:", err?.message);
+          return [];
+        }
+      }),
+    detail: publicProcedure
+      .input(z.object({
+        code: z.string(),
+        language: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        try {
+          return await getActivityDetail(input.code, input.language);
+        } catch (err: any) {
+          console.error("[HBX Activities] detail error:", err?.message);
+          return null;
         }
       }),
   }),

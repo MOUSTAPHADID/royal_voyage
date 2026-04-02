@@ -918,6 +918,31 @@ export default function HomeScreen() {
           <IconSymbol name="chevron.right" size={18} color="#6366F1" />
         </Pressable>
 
+        {/* Activities Button */}
+        <Pressable
+          style={({ pressed }) => [{
+            flexDirection: "row",
+            alignItems: "center",
+            marginHorizontal: 20,
+            marginBottom: 16,
+            padding: 14,
+            borderRadius: 14,
+            backgroundColor: "#10B981" + "12",
+            borderWidth: 1,
+            borderColor: "#10B981" + "25",
+            gap: 12,
+            opacity: pressed ? 0.85 : 1,
+          }]}
+          onPress={() => router.push("/activities" as any)}
+        >
+          <IconSymbol name="binoculars.fill" size={24} color="#10B981" />
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{isRTL ? "الأنشطة السياحية" : "Tourist Activities"}</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "اكتشف أفضل الأنشطة والجولات في وجهتك" : "Discover the best activities and tours"}</Text>
+          </View>
+          <IconSymbol name="chevron.right" size={18} color="#10B981" />
+        </Pressable>
+
         {/* Why Book With Us */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>

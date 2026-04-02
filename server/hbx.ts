@@ -395,3 +395,84 @@ export function getHBXStatus(): { configured: boolean; mode: string } {
     mode: isProduction ? "production" : "test",
   };
 }
+
+// ─── HBX Activities API ──────────────────────────────────────────────────────
+
+const ACTIVITIES_BASE_URL = isProduction
+  ? "https://api.hotelbeds.com/activity-api/1.0"
+  : "https://api.test.hotelbeds.com/activity-api/1.0";
+
+export interface HBXActivity {
+  code: string;
+  name: string;
+  description: string;
+  city: string;
+  country: string;
+  category: string;
+  minPrice: number;
+  currency: string;
+  duration: string;
+  image: string;
+}
+
+export async function searchActivities(params: {
+  destinationCode: string;
+  fromDate: string;
+  toDate: string;
+  language?: string;
+}): Promise<HBXActivity[]> {
+  const { destinationCode, fromDate, toDate, language = "ENG" } = params;
+  if (!HBX_API_KEY || !HBX_API_SECRET) return [];
+  try {
+    const url = `${ACTIVITIES_BASE_URL}/activities?from=1&to=20&language=${language}&destination=${destinationCode}&fromDate=${fromDate}&toDate=${toDate}`;
+    const response = await fetch(url, { method: "GET", headers: getHeaders() });
+    if (!response.ok) {
+      console.error(`[HBX Activities] Search error ${response.status}: ${await response.text()}`);
+      return [];
+    }
+    const data = await response.json();
+    const activities = data.activities || [];
+    return activities.map((a: any): HBXActivity => ({
+      code: a.code || "",
+      name: a.name || "",
+      description: a.description || "",
+      city: a.city?.name || destinationCode,
+      country: a.country?.name || "",
+      category: a.type?.description || a.categories?.[0]?.description || "",
+      minPrice: a.amountsFrom?.[0]?.amount || 0,
+      currency: a.amountsFrom?.[0]?.currency || "EUR",
+      duration: a.operationDays || "",
+      image: a.media?.[0]?.url || "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400&q=70",
+    }));
+  } catch (err) {
+    console.error("[HBX Activities] Error:", err);
+    return [];
+  }
+}
+
+export async function getActivityDetail(code: string, language = "ENG"): Promise<HBXActivity | null> {
+  if (!HBX_API_KEY || !HBX_API_SECRET) return null;
+  try {
+    const url = `${ACTIVITIES_BASE_URL}/activities/${code}?language=${language}`;
+    const response = await fetch(url, { method: "GET", headers: getHeaders() });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const a = data.activity;
+    if (!a) return null;
+    return {
+      code: a.code || code,
+      name: a.name || "",
+      description: a.description || "",
+      city: a.city?.name || "",
+      country: a.country?.name || "",
+      category: a.type?.description || "",
+      minPrice: a.amountsFrom?.[0]?.amount || 0,
+      currency: a.amountsFrom?.[0]?.currency || "EUR",
+      duration: a.operationDays || "",
+      image: a.media?.[0]?.url || "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80",
+    };
+  } catch (err) {
+    console.error("[HBX Activities] Detail error:", err);
+    return null;
+  }
+}

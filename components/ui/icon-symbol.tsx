@@ -125,6 +125,7 @@ const MAPPING = {
   "dollarsign.circle.fill": "attach-money",
   "briefcase.fill": "work",
   "message.fill": "chat",
+  "binoculars.fill": "explore",
 } as IconMapping;
 
 /**
