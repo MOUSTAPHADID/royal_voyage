@@ -326,6 +326,8 @@ export default function HomeScreen() {
   const [activityDestCode, setActivityDestCode] = useState("");
   const [activityFrom, setActivityFrom] = useState(futureDate(0));
   const [activityTo, setActivityTo] = useState(futureDate(7));
+  const [activityChildren, setActivityChildren] = useState(0);
+  const [activityLanguage, setActivityLanguage] = useState("en"); // en, ar, fr, pt
 
   // Swap origin ↔ destination
   const handleSwap = () => {
@@ -385,7 +387,14 @@ export default function HomeScreen() {
     }
     router.push({
       pathname: "/activities" as any,
-      params: { destinationCode: code, destName: activityDest, fromDate: activityFrom, toDate: activityTo },
+      params: {
+        destinationCode: code,
+        destName: activityDest,
+        fromDate: activityFrom,
+        toDate: activityTo,
+        children: activityChildren.toString(),
+        language: activityLanguage,
+      },
     });
   };
 
@@ -813,6 +822,47 @@ export default function HomeScreen() {
                     backgroundColor={colors.background}
                     icon={<IconSymbol name="clock.fill" size={18} color="#10B981" />}
                   />
+                </View>
+              </View>
+
+              {/* Children & Language row */}
+              <View style={styles.rowFields}>
+                {/* Children counter */}
+                <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: colors.border }}>
+                  <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4 }}>{isRTL ? "أطفال (0-12)" : "Children (0-12)"}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <Pressable
+                      style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#10B981" + "20", alignItems: "center", justifyContent: "center" }}
+                      onPress={() => setActivityChildren(Math.max(0, activityChildren - 1))}
+                    >
+                      <Text style={{ color: "#10B981", fontSize: 18, fontWeight: "700", lineHeight: 22 }}>−</Text>
+                    </Pressable>
+                    <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground }}>{activityChildren}</Text>
+                    <Pressable
+                      style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: "#10B981" + "20", alignItems: "center", justifyContent: "center" }}
+                      onPress={() => setActivityChildren(Math.min(10, activityChildren + 1))}
+                    >
+                      <Text style={{ color: "#10B981", fontSize: 18, fontWeight: "700", lineHeight: 22 }}>+</Text>
+                    </Pressable>
+                  </View>
+                </View>
+
+                {/* Language selector */}
+                <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 12, padding: 10, borderWidth: 1, borderColor: colors.border }}>
+                  <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4 }}>{isRTL ? "لغة الأوصاف" : "Description Language"}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                    {(["ar", "en", "fr", "pt"] as const).map((lang) => (
+                      <Pressable
+                        key={lang}
+                        style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: activityLanguage === lang ? "#10B981" : colors.surface, borderWidth: 1, borderColor: activityLanguage === lang ? "#10B981" : colors.border }}
+                        onPress={() => setActivityLanguage(lang)}
+                      >
+                        <Text style={{ fontSize: 11, fontWeight: "600", color: activityLanguage === lang ? "#fff" : colors.muted }}>
+                          {lang === "ar" ? "عر" : lang === "en" ? "EN" : lang === "fr" ? "FR" : "PT"}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 </View>
               </View>
 

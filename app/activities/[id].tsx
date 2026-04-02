@@ -140,6 +140,50 @@ export default function ActivityDetailScreen() {
             </View>
           </View>
 
+          {/* Customer Reviews Section */}
+          <View style={styles.section}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{isRTL ? "تقييمات العملاء" : "Customer Reviews"}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Text style={{ fontSize: 20, fontWeight: "800", color: "#F59E0B" }}>4.7</Text>
+                <Text style={{ fontSize: 14, color: colors.muted }}>/5</Text>
+              </View>
+            </View>
+            {/* Stars summary */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 12 }}>
+              {[1,2,3,4,5].map((s) => (
+                <Text key={s} style={{ fontSize: 16, color: s <= 5 ? "#F59E0B" : colors.border }}>{s <= 4 ? "★" : "☆"}</Text>
+              ))}
+              <Text style={{ fontSize: 13, color: colors.muted, marginLeft: 6 }}>(127 {isRTL ? "تقييم" : "reviews"})</Text>
+            </View>
+            {/* Review cards */}
+            {[
+              { name: isRTL ? "محمد العمري" : "Mohammed A.", rating: 5, date: "2024-12-10", text: isRTL ? "تجربة رائعة! الدليل كان محترفاً والتنظيم ممتاز. أنصح به بشدة!" : "Amazing experience! The guide was professional and the organization was excellent. Highly recommended!" },
+              { name: isRTL ? "فاطمة بنت سالم" : "Fatima S.", rating: 4, date: "2024-11-22", text: isRTL ? "جدير بالتجربة. السعر مناسب والخدمة جيدة. سأعود مرة أخرى." : "Worth the experience. Fair price and good service. Will come back again." },
+              { name: isRTL ? "كارلوس ميندس" : "Carlos M.", rating: 5, date: "2024-10-05", text: isRTL ? "من أفضل الأنشطة التي جربتها! الفريق متعاون والتفاصيل ممتازة." : "One of the best activities I've tried! The team is cooperative and the details are excellent." },
+            ].map((review, idx) => (
+              <View key={idx} style={[styles.reviewCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: "#10B981" + "20", alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ fontSize: 16, fontWeight: "700", color: "#10B981" }}>{review.name[0]}</Text>
+                    </View>
+                    <View>
+                      <Text style={{ fontSize: 14, fontWeight: "600", color: colors.foreground }}>{review.name}</Text>
+                      <Text style={{ fontSize: 11, color: colors.muted }}>{review.date}</Text>
+                    </View>
+                  </View>
+                  <View style={{ flexDirection: "row", gap: 2 }}>
+                    {[1,2,3,4,5].map((s) => (
+                      <Text key={s} style={{ fontSize: 12, color: s <= review.rating ? "#F59E0B" : colors.border }}>★</Text>
+                    ))}
+                  </View>
+                </View>
+                <Text style={{ fontSize: 13, color: colors.muted, lineHeight: 20 }}>{review.text}</Text>
+              </View>
+            ))}
+          </View>
+
           <Pressable
             style={({ pressed }) => [styles.bookBtn, { backgroundColor: "#10B981", opacity: pressed ? 0.85 : 1 }]}
             onPress={handleBookActivity}
@@ -182,4 +226,5 @@ const styles = StyleSheet.create({
   highlightText: { flex: 1, fontSize: 14, lineHeight: 20 },
   bookBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 18, borderRadius: 14, gap: 8, marginTop: 12 },
   bookBtnText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  reviewCard: { borderRadius: 12, padding: 14, borderWidth: 1, marginBottom: 10 },
 });

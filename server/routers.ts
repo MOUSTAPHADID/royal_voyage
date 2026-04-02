@@ -47,6 +47,7 @@ import {
   getHBXStatus,
   searchActivities,
   getActivityDetail,
+  bookActivity,
 } from "./hbx";
 import {
   getBusinessAccounts,
@@ -1521,6 +1522,36 @@ export const appRouter = router({
         } catch (err: any) {
           console.error("[HBX Activities] detail error:", err?.message);
           return null;
+        }
+      }),
+    book: publicProcedure
+      .input(z.object({
+        activityCode: z.string(),
+        fromDate: z.string(),
+        toDate: z.string(),
+        rateKey: z.string().optional(),
+        adults: z.number(),
+        children: z.number(),
+        language: z.string(),
+        holder: z.object({
+          name: z.string(),
+          surname: z.string(),
+          email: z.string(),
+          phone: z.string().optional(),
+        }),
+        paxes: z.array(z.object({
+          type: z.enum(["ADULT", "CHILD"]),
+          name: z.string(),
+          surname: z.string(),
+          age: z.number().optional(),
+        })).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          return await bookActivity(input);
+        } catch (err: any) {
+          console.error("[HBX Activities] book error:", err?.message);
+          throw new Error("Failed to book activity");
         }
       }),
   }),

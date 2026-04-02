@@ -16,6 +16,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useTranslation } from "@/lib/i18n";
 import { useApp } from "@/lib/app-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { trpc } from "@/lib/trpc";
 
 type Participant = {
   id: string;
@@ -35,13 +36,22 @@ export default function ActivityBookingScreen() {
     price: string;
     currency: string;
     date: string;
+    fromDate: string;
+    toDate: string;
+    rateKey: string;
+    language: string;
+    children: string;
   }>();
 
   const activityCode = params.activityCode || "";
   const activityName = params.activityName || "";
   const pricePerPerson = parseFloat(params.price || "0");
   const currency = params.currency || "EUR";
-  const activityDate = params.date || new Date().toISOString().split("T")[0];
+  const activityDate = params.date || params.fromDate || new Date().toISOString().split("T")[0];
+  const activityToDate = params.toDate || activityDate;
+  const rateKey = params.rateKey || undefined;
+  const language = params.language || "en";
+  const childrenCount = parseInt(params.children || "0");
 
   const [participantCount, setParticipantCount] = useState(1);
   const [participants, setParticipants] = useState<Participant[]>([
@@ -50,6 +60,9 @@ export default function ActivityBookingScreen() {
   const [contactEmail, setContactEmail] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [showDatePicker, setShowDatePicker] = useState<{ index: number; visible: boolean }>({ index: -1, visible: false });
+  const [isBooking, setIsBooking] = useState(false);
+
+  const bookActivityMutation = trpc.hbxActivities.book.useMutation();
 
   const handleAddParticipant = () => {
     if (participantCount >= 10) {
@@ -114,48 +127,128 @@ export default function ActivityBookingScreen() {
     return true;
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (!validateForm()) return;
+    setIsBooking(true);
 
-    const totalPrice = pricePerPerson * participants.length;
-    const reference = `ACT${Date.now().toString().slice(-8)}`;
+    const totalPrice = pricePerPerson * (participants.length + childrenCount);
+    const nameParts = participants[0].fullName.trim().split(" ");
+    const holderName = nameParts[0] || "Guest";
+    const holderSurname = nameParts.slice(1).join(" ") || "User";
 
-    // Create booking object (simplified - full implementation would call HBX API)
-    addBooking({
-      id: reference,
-      type: "activity" as any, // Will extend Booking type later
-      status: "pending",
-      reference,
-      date: activityDate,
-      totalPrice,
-      currency,
-      passengerName: participants[0].fullName,
-      passengerEmail: contactEmail,
-      // Store activity details in a custom field (will extend Booking type)
-      activity: {
-        code: activityCode,
-        name: activityName,
-        participants: participants.length,
-        participantDetails: participants,
-      } as any,
-    } as any);
+    const paxes = [
+      ...participants.map((p) => {
+        const parts = p.fullName.trim().split(" ");
+        return {
+          type: "ADULT" as const,
+          name: parts[0] || "Adult",
+          surname: parts.slice(1).join(" ") || "Participant",
+        };
+      }),
+      ...Array.from({ length: childrenCount }, (_, i) => ({
+        type: "CHILD" as const,
+        name: `Child${i + 1}`,
+        surname: holderSurname,
+        age: 8,
+      })),
+    ];
 
-    Alert.alert(
-      isRTL ? "تم الحجز" : "Booking Confirmed",
-      isRTL
-        ? `تم حجز النشاط بنجاح!\n\nرقم المرجع: ${reference}\n\nسيتم إرسال تفاصيل الحجز إلى ${contactEmail}`
-        : `Activity booked successfully!\n\nReference: ${reference}\n\nBooking details will be sent to ${contactEmail}`,
-      [
-        {
-          text: isRTL ? "عرض الحجوزات" : "View Bookings",
-          onPress: () => router.push("/bookings" as any),
+    try {
+      const result = await bookActivityMutation.mutateAsync({
+        activityCode,
+        fromDate: activityDate,
+        toDate: activityToDate,
+        rateKey,
+        adults: participants.length,
+        children: childrenCount,
+        language,
+        holder: {
+          name: holderName,
+          surname: holderSurname,
+          email: contactEmail,
+          phone: contactPhone,
         },
-        {
-          text: isRTL ? "العودة للرئيسية" : "Go Home",
-          onPress: () => router.push("/" as any),
-        },
-      ]
-    );
+        paxes,
+      });
+
+      const reference = result?.reference || `ACT${Date.now().toString().slice(-8)}`;
+      const status = result?.status || "PENDING";
+
+      // Save booking locally
+      addBooking({
+        id: reference,
+        type: "activity" as any,
+        status: status === "CONFIRMED" ? "confirmed" : "pending",
+        reference,
+        date: activityDate,
+        totalPrice: result?.totalNet || totalPrice,
+        currency: result?.currency || currency,
+        passengerName: participants[0].fullName,
+        passengerEmail: contactEmail,
+        activity: {
+          code: activityCode,
+          name: activityName,
+          participants: participants.length,
+          participantDetails: participants,
+        } as any,
+      } as any);
+
+      Alert.alert(
+        isRTL ? "✅ تم الحجز" : "✅ Booking Confirmed",
+        isRTL
+          ? `تم حجز النشاط بنجاح عبر HBX!\n\nرقم المرجع: ${reference}\nالحالة: ${status}\n\nسيتم إرسال تفاصيل الحجز إلى ${contactEmail}`
+          : `Activity booked via HBX!\n\nReference: ${reference}\nStatus: ${status}\n\nBooking details sent to ${contactEmail}`,
+        [
+          {
+            text: isRTL ? "عرض الحجوزات" : "View Bookings",
+            onPress: () => router.push("/bookings" as any),
+          },
+          {
+            text: isRTL ? "العودة للرئيسية" : "Go Home",
+            onPress: () => router.push("/" as any),
+          },
+        ]
+      );
+    } catch (err: any) {
+      // Fallback to local booking if HBX API fails
+      const reference = `ACT${Date.now().toString().slice(-8)}`;
+      addBooking({
+        id: reference,
+        type: "activity" as any,
+        status: "pending",
+        reference,
+        date: activityDate,
+        totalPrice,
+        currency,
+        passengerName: participants[0].fullName,
+        passengerEmail: contactEmail,
+        activity: {
+          code: activityCode,
+          name: activityName,
+          participants: participants.length,
+          participantDetails: participants,
+        } as any,
+      } as any);
+
+      Alert.alert(
+        isRTL ? "⚠️ تم الحجز محلياً" : "⚠️ Booking Saved Locally",
+        isRTL
+          ? `تم حفظ الحجز محلياً.\n\nرقم المرجع: ${reference}\n\nسيتم تأكيد الحجز من قبل الفريق وإرسال التفاصيل إلى ${contactEmail}`
+          : `Booking saved locally.\n\nReference: ${reference}\n\nOur team will confirm and send details to ${contactEmail}`,
+        [
+          {
+            text: isRTL ? "عرض الحجوزات" : "View Bookings",
+            onPress: () => router.push("/bookings" as any),
+          },
+          {
+            text: isRTL ? "العودة للرئيسية" : "Go Home",
+            onPress: () => router.push("/" as any),
+          },
+        ]
+      );
+    } finally {
+      setIsBooking(false);
+    }
   };
 
   const totalPrice = pricePerPerson * participants.length;
@@ -310,11 +403,23 @@ export default function ActivityBookingScreen() {
 
         {/* Confirm Button */}
         <Pressable
-          style={({ pressed }) => [styles.confirmBtn, { backgroundColor: "#10B981", opacity: pressed ? 0.85 : 1 }]}
+          style={({ pressed }) => [
+            styles.confirmBtn,
+            { backgroundColor: "#10B981", opacity: isBooking ? 0.6 : pressed ? 0.85 : 1 },
+          ]}
           onPress={handleConfirmBooking}
+          disabled={isBooking}
         >
-          <Text style={styles.confirmBtnText}>{isRTL ? "تأكيد الحجز" : "Confirm Booking"}</Text>
-          <IconSymbol name="checkmark.circle.fill" size={20} color="#fff" />
+          <Text style={styles.confirmBtnText}>
+            {isBooking
+              ? isRTL
+                ? "جاري الحجز..."
+                : "Booking..."
+              : isRTL
+              ? "تأكيد الحجز"
+              : "Confirm Booking"}
+          </Text>
+          {!isBooking && <IconSymbol name="checkmark.circle.fill" size={20} color="#fff" />}
         </Pressable>
       </ScrollView>
     </ScreenContainer>

@@ -535,3 +535,104 @@ export async function getActivityDetail(code: string, language = "en"): Promise<
     return null;
   }
 }
+
+// ─── HBX Activity Booking ────────────────────────────────────────────────────
+
+export type HBXActivityBookingParams = {
+  activityCode: string;
+  fromDate: string;
+  toDate: string;
+  rateKey?: string;
+  adults: number;
+  children: number;
+  language: string;
+  holder: {
+    name: string;
+    surname: string;
+    email: string;
+    phone?: string;
+  };
+  paxes?: Array<{
+    type: "ADULT" | "CHILD";
+    name: string;
+    surname: string;
+    age?: number;
+  }>;
+};
+
+export type HBXActivityBookingResult = {
+  reference: string;
+  status: string;
+  totalNet: number;
+  currency: string;
+  activityName: string;
+  fromDate: string;
+  toDate: string;
+};
+
+export async function bookActivity(params: HBXActivityBookingParams): Promise<HBXActivityBookingResult | null> {
+  if (!HBX_ACTIVITIES_API_KEY || !HBX_ACTIVITIES_API_SECRET) {
+    console.error("[HBX Activities] Missing API credentials for booking");
+    return null;
+  }
+
+  try {
+    const url = `${ACTIVITIES_BASE_URL}/bookings`;
+
+    const paxes = params.paxes ?? [
+      { type: "ADULT" as const, name: params.holder.name, surname: params.holder.surname },
+      ...Array.from({ length: params.children }, (_, i) => ({
+        type: "CHILD" as const,
+        name: `Child${i + 1}`,
+        surname: params.holder.surname,
+        age: 8,
+      })),
+    ];
+
+    const body = JSON.stringify({
+      holder: {
+        name: params.holder.name,
+        surname: params.holder.surname,
+        email: params.holder.email,
+        phone: params.holder.phone ?? "",
+      },
+      activities: [
+        {
+          rateKey: params.rateKey ?? `${params.activityCode}|${params.fromDate}|${params.toDate}|${params.language}`,
+          paxes,
+        },
+      ],
+      clientReference: `RV-ACT-${Date.now()}`,
+      language: params.language,
+    });
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: getActivitiesHeaders(),
+      body,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[HBX Activities] Booking error ${response.status}: ${errorText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const booking = data.booking;
+    if (!booking) return null;
+
+    return {
+      reference: booking.reference ?? "",
+      status: booking.status ?? "CONFIRMED",
+      totalNet: booking.totalNet ?? 0,
+      currency: booking.currency ?? "EUR",
+      activityName: booking.activities?.[0]?.name ?? params.activityCode,
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+    };
+  } catch (err) {
+    console.error("[HBX Activities] Booking error:", err);
+    return null;
+  }
+}
