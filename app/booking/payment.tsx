@@ -197,6 +197,10 @@ export default function PaymentScreen() {
   // تطبيق العمولة التجارية إذا كان الحجز لحساب تجاري
   const businessCommissionRate = parseFloat(params.businessCommission ?? "0");
   const commissionAmount = businessCommissionRate > 0 ? Math.round(baseTotal * (businessCommissionRate / 100)) : 0;
+
+  // رسوم الاحتفاظ بالسعر 24 ساعة (من إعدادات التسعير)
+  const hold24hFee = getPricingSettings().hold24hFeeMRU ?? 500;
+
   const total = baseTotal + commissionAmount;
 
   // وحدة سعر الشخص الواحد بالأوقية (للعرض فقط)
@@ -889,10 +893,22 @@ export default function PaymentScreen() {
             </View>
           )}
 
+          {paymentMethod === "hold_24h" && hold24hFee > 0 && (
+            <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.summaryLabel, { color: colors.muted }]}>رسوم الاحتفاظ بالسعر 24 ساعة</Text>
+                <Text style={{ fontSize: 11, color: colors.muted, marginTop: 1 }}>تُخصم من المبلغ عند إتمام الدفع</Text>
+              </View>
+              <Text style={[styles.summaryValue, { color: colors.warning }]}>
+                +{fmt(hold24hFee)}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي</Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
-              {fmt(total)}
+              {fmt(paymentMethod === "hold_24h" && hold24hFee > 0 ? total + hold24hFee : total)}
             </Text>
           </View>
         </View>

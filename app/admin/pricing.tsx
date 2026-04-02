@@ -117,6 +117,37 @@ const FIELDS: FieldConfig[] = [
     step: 0.001,
     section: "أسعار الصرف",
   },
+  // --- رسوم الخدمات الإضافية ---
+  {
+    key: "extraLegroomFeeMRU",
+    label: "رسوم مساحة الأرجل الإضافية",
+    unit: "MRU",
+    description: "رسوم ترقية المقعد للحصول على مساحة أكبر للأرجل",
+    min: 0,
+    max: 10000,
+    step: 50,
+    section: "رسوم الخدمات",
+  },
+  {
+    key: "seatChangeFeeMRU",
+    label: "رسوم تغيير المقعد",
+    unit: "MRU",
+    description: "رسوم تغيير المقعد بعد تسجيل الوصول",
+    min: 0,
+    max: 10000,
+    step: 50,
+    section: "رسوم الخدمات",
+  },
+  {
+    key: "hold24hFeeMRU",
+    label: "رسوم الاحتفاظ بالسعر 24 ساعة",
+    unit: "MRU",
+    description: "رسوم خيار حجز مؤكد 24 ساعة (احجز الآن وادفع خلال 24 ساعة)",
+    min: 0,
+    max: 20000,
+    step: 100,
+    section: "رسوم الخدمات",
+  },
   // --- أسعار الأطفال ---
   {
     key: "childDiscountRate",
@@ -192,7 +223,7 @@ const FIELDS: FieldConfig[] = [
   },
 ];
 
-const SECTIONS = ["رسوم الوكالة", "هامش دولي", "هامش داخلي", "أسعار الصرف", "أسعار الأطفال"];
+const SECTIONS = ["رسوم الوكالة", "رسوم الخدمات", "هامش دولي", "هامش داخلي", "أسعار الصرف", "أسعار الأطفال"];
 
 export default function PricingAdminScreen() {
   const router = useRouter();
@@ -208,7 +239,8 @@ export default function PricingAdminScreen() {
       setSettings(s);
       const init: Record<string, string> = {};
       FIELDS.forEach((f) => {
-        init[f.key] = String(s[f.key as keyof PricingSettings] ?? DEFAULT_PRICING[f.key as keyof PricingSettings]);
+        const val = s[f.key as keyof PricingSettings];
+        init[f.key] = val !== undefined ? String(val) : String(DEFAULT_PRICING[f.key as keyof PricingSettings]);
       });
       setValues(init);
       setLoading(false);
@@ -289,7 +321,8 @@ export default function PricingAdminScreen() {
             setSettings({ ...DEFAULT_PRICING });
             const init: Record<string, string> = {};
             FIELDS.forEach((f) => {
-              init[f.key] = String(DEFAULT_PRICING[f.key as keyof PricingSettings]);
+              const val = DEFAULT_PRICING[f.key as keyof PricingSettings];
+              init[f.key] = val !== undefined ? String(val) : "0";
             });
             setValues(init);
             setSaved(true);

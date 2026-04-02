@@ -33,6 +33,8 @@ export interface PricingSettings {
   extraLegroomFeeMRU: number;
   /** رسوم تغيير المقعد بعد تسجيل الوصول بالأوقية */
   seatChangeFeeMRU: number;
+  /** رسوم الاحتفاظ بالسعر 24 ساعة بالأوقية */
+  hold24hFeeMRU: number;
   /** نسبة هامش الدرجة الاقتصادية — دولي (%) */
   markupEconomy: number;
   /** نسبة هامش درجة الأعمال — دولي (%) */
@@ -62,6 +64,7 @@ export const DEFAULT_PRICING: PricingSettings = {
   childDiscountRate: 0.75,
   extraLegroomFeeMRU: 500,
   seatChangeFeeMRU: 300,
+  hold24hFeeMRU: 500,
   markupEconomy: 5,
   markupBusiness: 10,
   markupFirst: 15,
