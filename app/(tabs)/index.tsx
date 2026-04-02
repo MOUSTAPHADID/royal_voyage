@@ -34,7 +34,7 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Linking } from "react-native";
 
-type SearchTab = "flights" | "hotels";
+type SearchTab = "flights" | "hotels" | "activities";
 type TripType = "oneway" | "roundtrip";
 type CabinClass = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
 
@@ -254,8 +254,8 @@ export default function HomeScreen() {
 
   // Voice search modal
   const [voiceModalVisible, setVoiceModalVisible] = useState(false);
-  // Which field is voice targeting: "flightTo" | "flightFrom" | "hotelDest"
-  const [voiceTarget, setVoiceTarget] = useState<"flightTo" | "flightFrom" | "hotelDest">("flightTo");
+  // Which field is voice targeting: "flightTo" | "flightFrom" | "hotelDest" | "activityDest"
+  const [voiceTarget, setVoiceTarget] = useState<"flightTo" | "flightFrom" | "hotelDest" | "activityDest">("flightTo");
 
   // Trip type
   const [tripType, setTripType] = useState<TripType>("oneway");
@@ -321,6 +321,11 @@ export default function HomeScreen() {
   const [checkOut, setCheckOut] = useState(futureDate(33));
   const [guests, setGuests] = useState(2);
 
+  // Activities search state
+  const [activityDest, setActivityDest] = useState("BCN");
+  const [activityFrom, setActivityFrom] = useState(futureDate(0));
+  const [activityTo, setActivityTo] = useState(futureDate(7));
+
   // Swap origin ↔ destination
   const handleSwap = () => {
     const tmpName = flightFrom;
@@ -368,6 +373,21 @@ export default function HomeScreen() {
     });
   };
 
+  const handleActivitySearch = () => {
+    const code = activityDest.trim().toUpperCase();
+    if (!code) {
+      Alert.alert(
+        isRTL ? "خطأ" : "Missing Destination",
+        isRTL ? "يرجى إدخال رمز الوجهة" : "Please enter a destination code."
+      );
+      return;
+    }
+    router.push({
+      pathname: "/activities" as any,
+      params: { destinationCode: code, fromDate: activityFrom, toDate: activityTo },
+    });
+  };
+
   const handleHotelSearch = () => {
     if (!hotelDestCode || !hotelDest) {
       Alert.alert(
@@ -403,10 +423,12 @@ export default function HomeScreen() {
     } else if (voiceTarget === "hotelDest") {
       setHotelDest(text);
       setHotelDestCode("");
+    } else if (voiceTarget === "activityDest") {
+      setActivityDest(text.toUpperCase().slice(0, 3));
     }
   };
 
-  const openVoiceSearch = (target: "flightTo" | "flightFrom" | "hotelDest") => {
+  const openVoiceSearch = (target: "flightTo" | "flightFrom" | "hotelDest" | "activityDest") => {
     setVoiceTarget(target);
     setVoiceModalVisible(true);
   };
@@ -439,32 +461,38 @@ export default function HomeScreen() {
 
         {/* Search Widget */}
         <View style={[styles.searchWidget, { backgroundColor: colors.surface }]}>
-          {/* Tabs: Flights / Hotels */}
+          {/* Tabs: Flights / Hotels / Activities */}
           <View style={[styles.tabRow, { backgroundColor: colors.background }]}>
-            {(["flights", "hotels"] as SearchTab[]).map((tab) => (
-              <Pressable
-                key={tab}
-                style={[
-                  styles.tabButton,
-                  activeTab === tab && { backgroundColor: colors.primary },
-                ]}
-                onPress={() => setActiveTab(tab)}
-              >
-                <IconSymbol
-                  name={tab === "flights" ? "airplane" : "building.2.fill"}
-                  size={16}
-                  color={activeTab === tab ? "#FFFFFF" : colors.muted}
-                />
-                <Text
+            {(["flights", "hotels", "activities"] as SearchTab[]).map((tab) => {
+              const tabIcon = tab === "flights" ? "airplane" : tab === "hotels" ? "building.2.fill" : "binoculars.fill";
+              const tabLabel = tab === "flights" ? t.home.flights : tab === "hotels" ? t.home.hotels : t.home.activities;
+              const isActive = activeTab === tab;
+              const activeBg = tab === "activities" ? "#10B981" : colors.primary;
+              return (
+                <Pressable
+                  key={tab}
                   style={[
-                    styles.tabLabel,
-                    { color: activeTab === tab ? "#FFFFFF" : colors.muted },
+                    styles.tabButton,
+                    isActive && { backgroundColor: activeBg },
                   ]}
+                  onPress={() => setActiveTab(tab)}
                 >
-                  {tab === "flights" ? t.home.flights : t.home.hotels}
-                </Text>
-              </Pressable>
-            ))}
+                  <IconSymbol
+                    name={tabIcon as any}
+                    size={16}
+                    color={isActive ? "#FFFFFF" : colors.muted}
+                  />
+                  <Text
+                    style={[
+                      styles.tabLabel,
+                      { color: isActive ? "#FFFFFF" : colors.muted },
+                    ]}
+                  >
+                    {tabLabel}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
           {activeTab === "flights" ? (
@@ -732,6 +760,89 @@ export default function HomeScreen() {
                 <Text style={[styles.searchButtonText, { color: colors.primary }]}>
                   {tripType === "roundtrip" ? t.home.roundTrip : t.home.searchFlights}
                 </Text>
+              </Pressable>
+            </View>
+          ) : activeTab === "activities" ? (
+            /* ── Activities Form ── */
+            <View style={styles.searchForm}>
+              {/* Destination code input */}
+              <View style={[styles.searchField, { borderColor: "#10B981" + "55", backgroundColor: colors.background }]}>
+                <IconSymbol name="binoculars.fill" size={18} color="#10B981" />
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.destination}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                    <Text
+                      style={[styles.fieldValue, { color: activityDest ? colors.foreground : colors.muted, flex: 1 }]}
+                      numberOfLines={1}
+                    >
+                      {activityDest || t.home.activityDestination}
+                    </Text>
+                    <View style={{ flexDirection: "row", gap: 4 }}>
+                      {["BCN", "PMI", "PAR", "DXB"].map((code) => (
+                        <Pressable
+                          key={code}
+                          style={({ pressed }) => ({
+                            paddingHorizontal: 8,
+                            paddingVertical: 3,
+                            borderRadius: 8,
+                            backgroundColor: activityDest === code ? "#10B981" : "#10B981" + "18",
+                            opacity: pressed ? 0.7 : 1,
+                          })}
+                          onPress={() => setActivityDest(code)}
+                        >
+                          <Text style={{ fontSize: 11, fontWeight: "700", color: activityDest === code ? "#fff" : "#10B981" }}>{code}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              {/* Date range */}
+              <View style={styles.rowFields}>
+                <View style={{ flex: 1 }}>
+                  <DatePickerField
+                    label={t.home.activityFrom}
+                    value={activityFrom}
+                    onChange={(d) => {
+                      setActivityFrom(d);
+                      const af = new Date(d);
+                      const at = new Date(activityTo);
+                      if (at <= af) {
+                        af.setDate(af.getDate() + 7);
+                        setActivityTo(af.toISOString().slice(0, 10));
+                      }
+                    }}
+                    minimumDate={new Date()}
+                    backgroundColor={colors.background}
+                    icon={<IconSymbol name="clock.fill" size={18} color="#10B981" />}
+                  />
+                </View>
+                <View style={[styles.dateArrow, { marginTop: 20 }]}>
+                  <IconSymbol name="arrow.right" size={14} color={colors.muted} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <DatePickerField
+                    label={t.home.activityTo}
+                    value={activityTo}
+                    onChange={(d) => setActivityTo(d)}
+                    minimumDate={new Date(activityFrom)}
+                    backgroundColor={colors.background}
+                    icon={<IconSymbol name="clock.fill" size={18} color="#10B981" />}
+                  />
+                </View>
+              </View>
+
+              {/* Search button */}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.searchButton,
+                  { backgroundColor: "#10B981", opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={handleActivitySearch}
+              >
+                <IconSymbol name="magnifyingglass" size={18} color="#FFFFFF" />
+                <Text style={[styles.searchButtonText, { color: "#FFFFFF" }]}>{t.home.searchActivities}</Text>
               </Pressable>
             </View>
           ) : (

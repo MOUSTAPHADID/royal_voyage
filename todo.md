@@ -18,6 +18,7 @@
 
 ## Home Screen
 - [x] Search widget with Flights/Hotels tabs
+- [x] Add Activities tab to main search bar alongside Flights and Hotels
 - [x] Featured destinations section
 - [x] Special deals section
 

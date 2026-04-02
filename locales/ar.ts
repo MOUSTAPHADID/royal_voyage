@@ -48,6 +48,11 @@ export const ar = {
     popularDestinations: "وجهات شائعة",
     trendingNow: "الأكثر طلباً",
     fromPrice: "من",
+    activities: "أنشطة",
+    activityDestination: "رمز الوجهة (BCN، PMI...)",
+    searchActivities: "بحث عن أنشطة",
+    activityFrom: "من تاريخ",
+    activityTo: "إلى تاريخ",
   },
 
   // الرحلات

@@ -397,10 +397,29 @@ export function getHBXStatus(): { configured: boolean; mode: string } {
 }
 
 // ─── HBX Activities API ──────────────────────────────────────────────────────
+// Activities API uses separate credentials
+const HBX_ACTIVITIES_API_KEY = process.env.HBX_ACTIVITIES_API_KEY ?? HBX_API_KEY;
+const HBX_ACTIVITIES_API_SECRET = process.env.HBX_ACTIVITIES_API_SECRET ?? HBX_API_SECRET;
 
 const ACTIVITIES_BASE_URL = isProduction
-  ? "https://api.hotelbeds.com/activity-api/1.0"
-  : "https://api.test.hotelbeds.com/activity-api/1.0";
+  ? "https://api.hotelbeds.com/activity-api/3.0"
+  : "https://api.test.hotelbeds.com/activity-api/3.0";
+
+function generateActivitiesSignature(): string {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const raw = HBX_ACTIVITIES_API_KEY + HBX_ACTIVITIES_API_SECRET + timestamp;
+  return crypto.createHash("sha256").update(raw).digest("hex");
+}
+
+function getActivitiesHeaders(): Record<string, string> {
+  return {
+    "Api-key": HBX_ACTIVITIES_API_KEY,
+    "X-Signature": generateActivitiesSignature(),
+    "Accept": "application/json",
+    "Accept-Encoding": "identity",
+    "Content-Type": "application/json",
+  };
+}
 
 export interface HBXActivity {
   code: string;
@@ -420,12 +439,32 @@ export async function searchActivities(params: {
   fromDate: string;
   toDate: string;
   language?: string;
+  page?: number;
+  itemsPerPage?: number;
 }): Promise<HBXActivity[]> {
-  const { destinationCode, fromDate, toDate, language = "ENG" } = params;
-  if (!HBX_API_KEY || !HBX_API_SECRET) return [];
+  const { destinationCode, fromDate, toDate, language = "en", page = 1, itemsPerPage = 20 } = params;
+  if (!HBX_ACTIVITIES_API_KEY || !HBX_ACTIVITIES_API_SECRET) return [];
   try {
-    const url = `${ACTIVITIES_BASE_URL}/activities?from=1&to=20&language=${language}&destination=${destinationCode}&fromDate=${fromDate}&toDate=${toDate}`;
-    const response = await fetch(url, { method: "GET", headers: getHeaders() });
+    const url = `${ACTIVITIES_BASE_URL}/activities`;
+    const body = JSON.stringify({
+      filters: [
+        {
+          searchFilterItems: [
+            { type: "destination", value: destinationCode }
+          ]
+        }
+      ],
+      from: fromDate,
+      to: toDate,
+      language,
+      pagination: { itemsPerPage, page },
+      order: "DEFAULT"
+    });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: getActivitiesHeaders(),
+      body
+    });
     if (!response.ok) {
       console.error(`[HBX Activities] Search error ${response.status}: ${await response.text()}`);
       return [];
@@ -450,11 +489,25 @@ export async function searchActivities(params: {
   }
 }
 
-export async function getActivityDetail(code: string, language = "ENG"): Promise<HBXActivity | null> {
-  if (!HBX_API_KEY || !HBX_API_SECRET) return null;
+export async function getActivityDetail(code: string, language = "en"): Promise<HBXActivity | null> {
+  if (!HBX_ACTIVITIES_API_KEY || !HBX_ACTIVITIES_API_SECRET) return null;
   try {
-    const url = `${ACTIVITIES_BASE_URL}/activities/${code}?language=${language}`;
-    const response = await fetch(url, { method: "GET", headers: getHeaders() });
+    // Use search with service filter to get activity detail
+    const url = `${ACTIVITIES_BASE_URL}/activities`;
+    const today = new Date();
+    const fromDate = today.toISOString().slice(0, 10);
+    const toDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const body = JSON.stringify({
+      filters: [{ searchFilterItems: [{ type: "service", value: code }] }],
+      from: fromDate,
+      to: toDate,
+      language
+    });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: getActivitiesHeaders(),
+      body
+    });
     if (!response.ok) return null;
     const data = await response.json();
     const a = data.activity;
