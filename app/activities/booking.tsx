@@ -17,6 +17,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useApp } from "@/lib/app-context";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { trpc } from "@/lib/trpc";
+import { scheduleBookingReminder24h } from "@/lib/push-notifications";
 
 type Participant = {
   id: string;
@@ -193,6 +194,15 @@ export default function ActivityBookingScreen() {
         } as any,
       } as any);
 
+      // Schedule 24h reminder notification
+      scheduleBookingReminder24h({
+        bookingRef: reference,
+        bookingName: activityName,
+        eventDate: activityDate,
+        type: "activity",
+        language: isRTL ? "ar" : "en",
+      }).catch(() => {});
+
       Alert.alert(
         isRTL ? "✅ تم الحجز" : "✅ Booking Confirmed",
         isRTL
@@ -212,6 +222,16 @@ export default function ActivityBookingScreen() {
     } catch (err: any) {
       // Fallback to local booking if HBX API fails
       const reference = `ACT${Date.now().toString().slice(-8)}`;
+
+      // Schedule 24h reminder notification even for local bookings
+      scheduleBookingReminder24h({
+        bookingRef: reference,
+        bookingName: activityName,
+        eventDate: activityDate,
+        type: "activity",
+        language: isRTL ? "ar" : "en",
+      }).catch(() => {});
+
       addBooking({
         id: reference,
         type: "activity" as any,

@@ -276,6 +276,132 @@ export async function scheduleAdminHoldExpiryNotification(
 }
 
 /**
+ * Setup Android notification channel for bookings.
+ * Call once at app startup.
+ */
+export async function setupNotificationChannel(): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync("bookings", {
+      name: "Booking Reminders",
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#1B4F72",
+      sound: "default",
+    }).catch(() => {});
+  }
+}
+
+/**
+ * Schedule a 24-hour reminder before the booking event (flight departure, hotel check-in, or activity).
+ * Also sends an immediate confirmation notification.
+ * Supports 4 languages: ar, fr, en, pt.
+ */
+export async function scheduleBookingReminder24h(
+  opts: {
+    bookingRef: string;
+    bookingName: string;
+    eventDate: string; // "YYYY-MM-DD" or full ISO
+    type: "flight" | "hotel" | "activity";
+    language?: "ar" | "fr" | "en" | "pt";
+  }
+): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
+
+  const lang = opts.language ?? "ar";
+
+  const TEXTS = {
+    ar: {
+      confirmTitle: "✅ تم تأكيد حجزك",
+      confirmBody: (ref: string) => `رقم الحجز: ${ref} — سنذكّرك قبل 24 ساعة من موعدك.`,
+      reminderTitle: "⏰ تذكير: موعدك غداً!",
+      reminderBody: (name: string, date: string) =>
+        `${name} — ${date}\nلا تنسَ الاستعداد لرحلتك. فريق Royal Voyage يتمنى لك رحلة سعيدة!`,
+    },
+    fr: {
+      confirmTitle: "✅ Réservation confirmée",
+      confirmBody: (ref: string) => `Référence: ${ref} — Nous vous rappellerons 24h avant votre départ.`,
+      reminderTitle: "⏰ Rappel: Votre voyage est demain!",
+      reminderBody: (name: string, date: string) =>
+        `${name} — ${date}\nN'oubliez pas de vous préparer. Bon voyage de la part de Royal Voyage!`,
+    },
+    en: {
+      confirmTitle: "✅ Booking Confirmed",
+      confirmBody: (ref: string) => `Reference: ${ref} — We'll remind you 24 hours before your trip.`,
+      reminderTitle: "⏰ Reminder: Your trip is tomorrow!",
+      reminderBody: (name: string, date: string) =>
+        `${name} — ${date}\nDon't forget to prepare. Have a great trip from Royal Voyage!`,
+    },
+    pt: {
+      confirmTitle: "✅ Reserva Confirmada",
+      confirmBody: (ref: string) => `Referência: ${ref} — Iremos lembrá-lo 24 horas antes da sua viagem.`,
+      reminderTitle: "⏰ Lembrete: A sua viagem é amanhã!",
+      reminderBody: (name: string, date: string) =>
+        `${name} — ${date}\nNão se esqueça de se preparar. Boa viagem da Royal Voyage!`,
+    },
+  };
+
+  const texts = TEXTS[lang] || TEXTS.ar;
+
+  try {
+    // 1. Immediate confirmation notification
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: texts.confirmTitle,
+        body: texts.confirmBody(opts.bookingRef),
+        sound: true,
+        data: { bookingRef: opts.bookingRef, type: opts.type },
+        ...(Platform.OS === "android" ? { channelId: "bookings" } : {}),
+      },
+      trigger: null,
+    });
+
+    // 2. 24-hour reminder before event
+    let eventDateTime: Date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(opts.eventDate)) {
+      eventDateTime = new Date(`${opts.eventDate}T08:00:00`);
+    } else {
+      eventDateTime = new Date(opts.eventDate);
+    }
+
+    const reminderTime = new Date(eventDateTime.getTime() - 24 * 60 * 60 * 1000);
+    const now = Date.now();
+
+    if (reminderTime.getTime() > now + 60 * 1000) {
+      const secondsUntilReminder = Math.floor((reminderTime.getTime() - now) / 1000);
+
+      const formattedDate = eventDateTime.toLocaleDateString(
+        lang === "ar" ? "ar-SA" : lang === "fr" ? "fr-FR" : lang === "pt" ? "pt-PT" : "en-GB",
+        { weekday: "long", day: "numeric", month: "long" }
+      );
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: texts.reminderTitle,
+          body: texts.reminderBody(opts.bookingName, formattedDate),
+          sound: true,
+          data: { bookingRef: opts.bookingRef, type: opts.type, isReminder: true },
+          ...(Platform.OS === "android" ? { channelId: "bookings" } : {}),
+        },
+        trigger: {
+          seconds: secondsUntilReminder,
+          repeats: false,
+        } as any,
+      });
+    }
+  } catch {
+    // Silently fail in Expo Go
+  }
+}
+
+/**
  * Schedule an immediate local notification (same device only).
  */
 export async function scheduleLocalNotification(

@@ -22,6 +22,7 @@ import { AppProvider } from "@/lib/app-context";
 import { CurrencyProvider } from "@/lib/currency-context";
 import { I18nProvider } from "@/lib/i18n";
 import { loadPricingSettings } from "@/lib/pricing-settings";
+import { setupNotificationChannel } from "@/lib/push-notifications";
 import { StripeProviderWrapper } from "@/lib/stripe-provider";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -43,6 +44,8 @@ export default function RootLayout() {
     initManusRuntime();
     // تحميل إعدادات الأسعار عند بدء التطبيق
     loadPricingSettings();
+    // إعداد قناة إشعارات الحجز
+    setupNotificationChannel().catch(() => {});
   }, []);
 
   const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {

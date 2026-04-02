@@ -1451,3 +1451,13 @@
 - [x] إضافة زر قلب في شاشة تفاصيل النشاط بجانب أزرار المشاركة
 - [x] إنشاء شاشة المفضلة app/activities/favorites.tsx مع شاشة فارغة جميلة
 - [x] إضافة زر قلب في أعلى يمين شاشة النتائج للانتقال إلى شاشة المفضلة
+
+## نظام إشعارات الحجز (Booking Notifications - 24h Reminder)
+- [x] إضافة scheduleBookingReminder24h إلى lib/push-notifications.ts مع طلب الأذونات
+- [x] إضافة setupNotificationChannel لقناة Android "bookings" واستدعاؤها في _layout.tsx
+- [x] دمج إشعار التذكير 24ساعة + فوري في شاشة تأكيد حجز الرحلات (booking/confirmation.tsx)
+- [x] دمج إشعار التذكير 24ساعة + فوري في شاشة تأكيد حجز الفنادق (booking/confirmation.tsx)
+- [x] دمج إشعار التذكير 24ساعة + فوري في شاشة حجز الأنشطة (activities/booking.tsx)
+- [x] إضافة إشعار فوري عند تأكيد الحجز (رحلات + فنادق + أنشطة)
+- [x] دعم اللغات الأربع (ar/fr/en/pt) في نصوص الإشعارات
+- [x] كتابة 19 اختبار vitest واجتيازها بنجاح

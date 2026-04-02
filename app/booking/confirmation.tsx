@@ -21,27 +21,16 @@ import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/
 import { formatAmadeusPriceMRU, formatMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
+import { scheduleBookingReminder24h } from "@/lib/push-notifications";
+import { useTranslation } from "@/lib/i18n";
 
-// Booking notification using Alert (compatible with Expo Go SDK 54+)
-// expo-notifications remote push was removed from Expo Go in SDK 53
-async function scheduleBookingNotification(type: string, reference: string) {
-  // Show a local in-app alert as confirmation notification
-  // (Remote push notifications require a development build)
-  try {
-    Alert.alert(
-      type === "flight" ? "حجز الرحلة مؤكد" : "حجز الفندق مؤكد",
-      `تم تأكيد حجزك. رقم المرجع: ${reference}`,
-      [{ text: "حسناً", style: "default" }]
-    );
-  } catch (e) {
-    // ignore
-  }
-}
+// Notification scheduling is handled by use-booking-notifications hook
 
 export default function ConfirmationScreen() {
   const router = useRouter();
   const colors = useColors();
   const { fmt } = useCurrency();
+  const { language } = useTranslation();
   const params = useLocalSearchParams<{
     reference: string;
     total: string;
@@ -127,10 +116,24 @@ export default function ConfirmationScreen() {
       ]),
     ]).start();
 
-    // Send local notification
-    scheduleBookingNotification(params.type ?? "flight", params.reference ?? "RV000");
+    // Schedule booking notifications: immediate confirmation + 24h reminder
+    const eventDate = isFlight
+      ? (params.departureTime ?? params.returnDate ?? new Date().toISOString().split("T")[0])
+      : (params.checkIn ?? new Date().toISOString().split("T")[0]);
 
-    // لا نُرسل تلقائياً — payment.tsx أرسل التذكرة بالفعل
+    const bookingName = isFlight
+      ? `${params.origin ?? ""} → ${params.destination ?? ""}`
+      : (params.hotelName ?? "Hotel");
+
+    scheduleBookingReminder24h({
+      bookingRef: params.reference ?? "RV000",
+      bookingName,
+      eventDate,
+      type: isFlight ? "flight" : "hotel",
+      language: language as any,
+    }).catch(() => {});
+
+    // لا نُرسِل تلقائياً — payment.tsx أرسل التذكرة بالفعل
     // إذا فشل الإرسال من payment.tsx، يمكن للمستخدم الضغط على زر إعادة الإرسال
   }, []);
 
