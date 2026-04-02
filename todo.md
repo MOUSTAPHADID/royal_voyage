@@ -1385,3 +1385,14 @@
 - [ ] تحديث صفحة detail.tsx لعرض تفاصيل فنادق HBX
 - [x] إضافة خدمة CheckRate قبل الحجز
 - [ ] إضافة خدمة Booking لتأكيد الحجز (تتطلب موافقة HBX Production)
+
+## تطوير تبويب الأنشطة (Activities Tab Enhancement)
+- [x] استبدال أزرار الوجهات الثابتة بحقل بحث نصي مع autocomplete في تبويب الأنشطة
+- [x] إنشاء شاشة نتائج الأنشطة (activities/index.tsx) مع قائمة الأنشطة
+- [x] إضافة فلاتر في شاشة نتائج الأنشطة (حسب الفئة: جولات، مغامرات، ثقافة، طبيعة، طعام)
+- [x] إضافة فلتر نطاق السعر في شاشة نتائج الأنشطة (منخفض/متوسط/مرتفع)
+- [x] تحديث شاشة تفاصيل النشاط (activities/[id].tsx) مع تحسينات التصميم
+- [x] HBX Activities API متكامل بالفعل في server/hbx.ts (searchActivities + getActivityDetail)
+- [x] tRPC routes موجودة بالفعل (hbxActivities.search + hbxActivities.detail)
+- [ ] إنشاء شاشة حجز النشاط (activity-booking.tsx) مع نموذج بيانات المشاركين
+- [ ] إضافة route tRPC لحجز النشاط (bookActivity) - يتطلب موافقة HBX Production

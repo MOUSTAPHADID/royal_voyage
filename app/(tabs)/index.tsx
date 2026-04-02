@@ -322,7 +322,8 @@ export default function HomeScreen() {
   const [guests, setGuests] = useState(2);
 
   // Activities search state
-  const [activityDest, setActivityDest] = useState("BCN");
+  const [activityDest, setActivityDest] = useState("");
+  const [activityDestCode, setActivityDestCode] = useState("");
   const [activityFrom, setActivityFrom] = useState(futureDate(0));
   const [activityTo, setActivityTo] = useState(futureDate(7));
 
@@ -374,17 +375,17 @@ export default function HomeScreen() {
   };
 
   const handleActivitySearch = () => {
-    const code = activityDest.trim().toUpperCase();
+    const code = (activityDestCode || activityDest).trim().toUpperCase();
     if (!code) {
       Alert.alert(
         isRTL ? "خطأ" : "Missing Destination",
-        isRTL ? "يرجى إدخال رمز الوجهة" : "Please enter a destination code."
+        isRTL ? "يرجى اختيار وجهة النشاط" : "Please select an activity destination."
       );
       return;
     }
     router.push({
       pathname: "/activities" as any,
-      params: { destinationCode: code, fromDate: activityFrom, toDate: activityTo },
+      params: { destinationCode: code, destName: activityDest, fromDate: activityFrom, toDate: activityTo },
     });
   };
 
@@ -424,7 +425,8 @@ export default function HomeScreen() {
       setHotelDest(text);
       setHotelDestCode("");
     } else if (voiceTarget === "activityDest") {
-      setActivityDest(text.toUpperCase().slice(0, 3));
+      setActivityDest(text);
+      setActivityDestCode("");
     }
   };
 
@@ -765,38 +767,19 @@ export default function HomeScreen() {
           ) : activeTab === "activities" ? (
             /* ── Activities Form ── */
             <View style={styles.searchForm}>
-              {/* Destination code input */}
-              <View style={[styles.searchField, { borderColor: "#10B981" + "55", backgroundColor: colors.background }]}>
-                <IconSymbol name="binoculars.fill" size={18} color="#10B981" />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.destination}</Text>
-                  <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                    <Text
-                      style={[styles.fieldValue, { color: activityDest ? colors.foreground : colors.muted, flex: 1 }]}
-                      numberOfLines={1}
-                    >
-                      {activityDest || t.home.activityDestination}
-                    </Text>
-                    <View style={{ flexDirection: "row", gap: 4 }}>
-                      {["BCN", "PMI", "PAR", "DXB"].map((code) => (
-                        <Pressable
-                          key={code}
-                          style={({ pressed }) => ({
-                            paddingHorizontal: 8,
-                            paddingVertical: 3,
-                            borderRadius: 8,
-                            backgroundColor: activityDest === code ? "#10B981" : "#10B981" + "18",
-                            opacity: pressed ? 0.7 : 1,
-                          })}
-                          onPress={() => setActivityDest(code)}
-                        >
-                          <Text style={{ fontSize: 11, fontWeight: "700", color: activityDest === code ? "#fff" : "#10B981" }}>{code}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </View>
-                </View>
-              </View>
+              {/* Activity destination + voice */}
+              <LocationAutocomplete
+                label={t.home.destination}
+                placeholder={isRTL ? "مدينة أو وجهة النشاط" : "City or activity destination"}
+                value={activityDest}
+                iataCode={activityDestCode}
+                onSelect={(name, code) => {
+                  setActivityDest(name);
+                  setActivityDestCode(code);
+                }}
+                iconName="location.fill"
+                onVoicePress={() => openVoiceSearch("activityDest")}
+              />
 
               {/* Date range */}
               <View style={styles.rowFields}>
