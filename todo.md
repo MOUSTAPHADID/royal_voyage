@@ -1407,3 +1407,9 @@
 - [x] إضافة قسم "الأنشطة الشعبية" في الصفحة الرئيسية (app/(tabs)/index.tsx)
 - [x] عرض 4 أنشطة مميزة في شريط أفقي قابل للتمرير (Barcelona, Dubai, Paris, Palma)
 - [x] تحديث نوع Booking لدعم "activity" في lib/mock-data.ts
+
+## ربط HBX Activities API الحقيقي (Connect Real HBX Activities API)
+- [x] حفظ مفتاح HBX_ACTIVITIES_API_KEY كمتغير بيئة
+- [x] حفظ مفتاح HBX_ACTIVITIES_API_SECRET كمتغير بيئة
+- [x] اختبار الاتصال بـ HBX Activities API - نجح (20 نشاط في برشلونة)
+- [x] التحقق من عمل البحث الحقيقي للأنشطة - يعمل

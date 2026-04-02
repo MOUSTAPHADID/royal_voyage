@@ -405,6 +405,12 @@ const ACTIVITIES_BASE_URL = isProduction
   ? "https://api.hotelbeds.com/activity-api/3.0"
   : "https://api.test.hotelbeds.com/activity-api/3.0";
 
+if (HBX_ACTIVITIES_API_KEY) {
+  console.log(`[HBX Activities] 🜢 Connected to ${isProduction ? "PRODUCTION" : "TEST"} API`);
+} else {
+  console.log("[HBX Activities] ⚠️ No HBX_ACTIVITIES_API_KEY configured");
+}
+
 function generateActivitiesSignature(): string {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const raw = HBX_ACTIVITIES_API_KEY + HBX_ACTIVITIES_API_SECRET + timestamp;
