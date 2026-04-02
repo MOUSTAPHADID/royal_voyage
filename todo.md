@@ -1332,7 +1332,17 @@
 ## إعادة تصميم لوحة الإدارة
 - [ ] إعادة تصميم شاشة تسجيل دخول الأدمن بمظهر احترافي
 - [ ] إعادة تصميم Dashboard الرئيسي للأدمن بمؤشرات KPI احترافية وتنظيم أفضل
-- [ ] استبدال emoji في admin/index.tsx (📈 و👨‍💼)
-- [ ] استبدال emoji في login-audit.tsx (✅ ❌ 📋)
-- [ ] استبدال emoji في credentials.tsx (💡)
-- [ ] استبدال emoji في employee-login.tsx (👨‍💼 🙈 👁️)
+- [x] استبدال emoji في admin/index.tsx (📈 و👨‍💼)
+- [x] استبدال emoji في login-audit.tsx (✅ ❌ 📋)
+- [x] استبدال emoji في credentials.tsx (💡)
+- [x] استبدال emoji في employee-login.tsx (👨‍💼 🙈 👁️)
+
+## تحسين لوحة الإدارة - ظهور جميع الأحداث
+- [x] إضافة قسم معلومات check-in والمقعد والوجبة في booking-detail.tsx
+- [x] إضافة عرض صورة إيصال الدفع في booking-detail.tsx
+- [x] إضافة عرض رقم المرجع البنكي (transferRef) في booking-detail.tsx
+- [x] إضافة عرض معلومات العمولة (businessAccount) في booking-detail.tsx
+- [x] استبدال emoji في booking-detail.tsx بـ MaterialIcons
+- [x] استبدال emoji في admin/index.tsx (📈 و👨‍💼 و✉️)
+- [x] استبدال emoji في login-audit.tsx (✅ ❌ 📋)
+- [x] استبدال emoji في credentials.tsx (💡)

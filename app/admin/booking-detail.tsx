@@ -55,11 +55,11 @@ export default function AdminBookingDetailScreen() {
     airline_confirmed: { bg: "#10B98115", text: "#10B981" },
   };
   const statusLabels: Record<string, string> = {
-    confirmed: "مؤكد ✅",
-    pending: "معلق ⏳",
-    cancelled: "ملغى ❌",
-    processing: "قيد المعالجة 🔄",
-    airline_confirmed: "مؤكد من شركة الطيران ✈️",
+    confirmed: "مؤكد",
+    pending: "معلق",
+    cancelled: "ملغى",
+    processing: "قيد المعالجة",
+    airline_confirmed: "مؤكد من شركة الطيران",
   };
   const statusStyle = statusColors[booking.status] ?? statusColors.pending;
 
@@ -151,15 +151,15 @@ export default function AdminBookingDetailScreen() {
   };
 
   const paymentLabels: Record<string, string> = {
-    cash: "💵 نقداً",
-    bank_transfer: "🏦 تحويل بنكي",
-    stripe: "💳 بطاقة بنكية (Visa/Mastercard)",
-    bankily: "📱 Bankily",
-    masrvi: "📱 Masrvi",
-    sedad: "📱 Sedad",
-    paypal: "🌐 PayPal (عملة أجنبية)",
-    multicaixa: "🇦🇴 Multicaixa Express (AOA)",
-    hold_24h: "⏰ حجز مؤكد 24 ساعة",
+    cash: "نقداً",
+    bank_transfer: "تحويل بنكي",
+    stripe: "بطاقة بنكية (Visa/Mastercard)",
+    bankily: "Bankily",
+    masrvi: "Masrvi",
+    sedad: "Sedad",
+    paypal: "PayPal (عملة أجنبية)",
+    multicaixa: "Multicaixa Express (AOA)",
+    hold_24h: "حجز مؤكد 24 ساعة",
   };
 
   return (
@@ -179,7 +179,7 @@ export default function AdminBookingDetailScreen() {
         {/* Ticket sent indicator */}
         {booking.ticketSent && (
           <View style={styles.ticketSentBadge}>
-            <Text style={styles.ticketSentIcon}>✉️</Text>
+            <IconSymbol name="paperplane.fill" size={13} color="#10B981" />
             <Text style={styles.ticketSentText}>أُرسلت</Text>
           </View>
         )}
@@ -198,7 +198,7 @@ export default function AdminBookingDetailScreen() {
         {/* Ticket Sent Info */}
         {booking.ticketSent && booking.ticketSentAt && (
           <View style={[styles.ticketSentBanner, { backgroundColor: "#10B98110", borderColor: "#10B98130" }]}>
-            <Text style={{ fontSize: 16 }}>✉️</Text>
+            <IconSymbol name="paperplane.fill" size={16} color="#10B981" />
             <View style={{ flex: 1 }}>
               <Text style={{ color: "#10B981", fontWeight: "700", fontSize: 13 }}>تم إرسال التذكرة</Text>
               <Text style={{ color: "#10B981", fontSize: 11, marginTop: 2 }}>
@@ -212,7 +212,7 @@ export default function AdminBookingDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.cardHeader}>
             <View style={[styles.typeIcon, { backgroundColor: booking.type === "flight" ? "#1B2B5E15" : "#C9A84C15" }]}>
-              <Text style={{ fontSize: 28 }}>{booking.type === "flight" ? "✈️" : "🏨"}</Text>
+              <IconSymbol name={booking.type === "flight" ? "paperplane.fill" : "building.fill"} size={28} color={booking.type === "flight" ? "#1B2B5E" : "#C9A84C"} />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.mainTitle, { color: colors.foreground }]}>
@@ -274,7 +274,7 @@ export default function AdminBookingDetailScreen() {
             { label: "الاسم", value: booking.passengerName ?? booking.guestName ?? "—" },
             { label: "البريد الإلكتروني", value: booking.passengerEmail ?? "—" },
             { label: "طريقة الدفع", value: paymentLabels[booking.paymentMethod ?? ""] ?? booking.paymentMethod ?? "—" },
-            { label: "Push Token", value: booking.customerPushToken ? "✅ مسجّل" : "❌ غير مسجّل" },
+            { label: "Push Token", value: booking.customerPushToken ? "مسجّل" : "غير مسجّل" },
           ].map((item) => (
             <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -336,7 +336,66 @@ export default function AdminBookingDetailScreen() {
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>الإجمالي المدفوع</Text>
             <Text style={[styles.totalValue, { color: "#1B2B5E" }]}>{formatMRU(booking.totalPrice ?? 0)}</Text>
           </View>
+          {booking.transferRef ? (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>مرجع التحويل</Text>
+              <Text style={[styles.infoValue, { color: colors.foreground, fontFamily: "monospace" }]}>{booking.transferRef}</Text>
+            </View>
+          ) : null}
+          {booking.businessAccountId ? (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>حساب الوسيط</Text>
+              <Text style={[styles.infoValue, { color: colors.foreground }]}>{booking.businessAccountId}</Text>
+            </View>
+          ) : null}
+          {booking.commissionAmount ? (
+            <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>عمولة الوسيط</Text>
+              <Text style={[styles.infoValue, { color: "#C9A84C", fontWeight: "700" }]}>{formatMRU(booking.commissionAmount)}</Text>
+            </View>
+          ) : null}
         </View>
+
+        {/* Receipt Image */}
+        {booking.receiptImage ? (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>إيصال الدفع</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <IconSymbol name="checkmark.circle.fill" size={16} color={colors.success} />
+              <Text style={{ color: colors.success, fontSize: 13, fontWeight: "600" }}>تم رفع الإيصال</Text>
+              {booking.receiptImageAt ? (
+                <Text style={{ color: colors.muted, fontSize: 11 }}>
+                  {new Date(booking.receiptImageAt).toLocaleString("ar-MR", { dateStyle: "short", timeStyle: "short" })}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        {/* Check-in Info */}
+        {booking.checkedIn ? (
+          <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>معلومات تسجيل الوصول</Text>
+            {[
+              { label: "الحالة", value: "تم تسجيل الوصول" },
+              { label: "رقم المقعد", value: booking.seatNumber ?? "—" },
+              { label: "تفضيل المقعد", value: booking.seatPreference === "window" ? "نافذة" : booking.seatPreference === "aisle" ? "ممر" : booking.seatPreference === "middle" ? "وسط" : "—" },
+              { label: "مجموعة الصعود", value: booking.boardingGroup ?? "—" },
+              { label: "ترقية المقعد", value: booking.seatUpgrade ? `نعم (+${formatMRU(booking.seatUpgradeFee ?? 0)})` : "لا" },
+              { label: "اختيار الوجبة", value: booking.mealChoice === "regular" ? "عادية" : booking.mealChoice === "vegetarian" ? "نباتية" : booking.mealChoice === "halal" ? "حلال" : booking.mealChoice === "none" ? "بدون وجبة" : "—" },
+            ].map((item) => (
+              <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+                <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
+                <Text style={[styles.infoValue, { color: colors.foreground }]}>{item.value}</Text>
+              </View>
+            ))}
+            {booking.checkedInAt ? (
+              <Text style={{ color: colors.muted, fontSize: 11, marginTop: 6 }}>
+                وقت تسجيل الوصول: {new Date(booking.checkedInAt).toLocaleString("ar-MR", { dateStyle: "short", timeStyle: "short" })}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* Resend Ticket Button */}
         {booking.status === "airline_confirmed" && booking.passengerEmail && (
@@ -351,7 +410,7 @@ export default function AdminBookingDetailScreen() {
             {resending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={{ fontSize: 18 }}>✉️</Text>
+              <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
             )}
             <Text style={styles.resendBtnText}>
               {booking.ticketSent ? "إعادة إرسال التذكرة PDF" : "إرسال التذكرة PDF"}
@@ -695,7 +754,7 @@ export default function AdminBookingDetailScreen() {
             {resending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={{ fontSize: 18 }}>📧</Text>
+              <IconSymbol name="paperplane.fill" size={18} color="#FFFFFF" />
             )}
             <Text style={styles.resendBtnText}>إرسال تذكرة للعميل</Text>
           </Pressable>

@@ -90,7 +90,6 @@ export default function LoginAuditScreen() {
   const renderItem = ({ item }: { item: LoginAttempt }) => {
     const isSuccess = item.status === "success";
     const statusColor = isSuccess ? "#22C55E" : "#EF4444";
-    const statusIcon = isSuccess ? "✅" : "❌";
     const statusLabel = isSuccess ? "ناجح" : "فاشل";
 
     return (
@@ -107,7 +106,7 @@ export default function LoginAuditScreen() {
       >
         <View style={s.cardHeader}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <Text style={{ fontSize: 18 }}>{statusIcon}</Text>
+            <IconSymbol name={isSuccess ? "checkmark.circle.fill" : "xmark.circle.fill"} size={18} color={statusColor} />
             <View>
               <Text style={[s.statusText, { color: statusColor }]}>{statusLabel}</Text>
               <Text style={[s.methodText, { color: colors.muted }]}>
@@ -196,7 +195,7 @@ export default function LoginAuditScreen() {
         }
         ListEmptyComponent={
           <View style={s.emptyContainer}>
-            <Text style={{ fontSize: 48, marginBottom: 12 }}>📋</Text>
+            <IconSymbol name="list.bullet" size={48} color={colors.muted} />
             <Text style={[s.emptyTitle, { color: colors.foreground }]}>لا توجد سجلات</Text>
             <Text style={[s.emptySubtitle, { color: colors.muted }]}>
               ستظهر هنا جميع محاولات الدخول للوحة الإدارة

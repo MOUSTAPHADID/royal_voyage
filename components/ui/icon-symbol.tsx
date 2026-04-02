@@ -94,6 +94,7 @@ const MAPPING = {
   "bell.badge.fill": "notifications-active",
   "arrow.up.circle.fill": "upgrade",
   "sparkles": "auto-awesome",
+  "list.bullet": "format-list-bulleted",
   "list.bullet.clipboard": "checklist",
   "takeoutbag.and.cup.and.straw.fill": "lunch-dining",
   "leaf.fill": "eco",

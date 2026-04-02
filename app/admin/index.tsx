@@ -993,7 +993,7 @@ export default function AdminScreen() {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#EC4899", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 20 }}>📈</Text>
+                  <IconSymbol name="chart.bar.fill" size={22} color="#FFFFFF" />
                 </View>
                 <View>
                   <Text style={[s.sectionTitle, { marginBottom: 2 }]}>التقارير المالية</Text>
@@ -1027,7 +1027,7 @@ export default function AdminScreen() {
             >
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#0EA5E9", alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 20 }}>👨‍💼</Text>
+                  <IconSymbol name="person.fill" size={22} color="#FFFFFF" />
                 </View>
                 <View>
                   <Text style={[s.sectionTitle, { marginBottom: 2 }]}>بوابة الموظفين</Text>
@@ -1391,7 +1391,7 @@ export default function AdminScreen() {
                       <Text style={s.bookingRef}>{b.reference}</Text>
                       <View style={{ flexDirection: "row", gap: 6, alignItems: "center" }}>
                         {b.ticketSent && (
-                          <Text style={{ fontSize: 14 }}>✉️</Text>
+                          <IconSymbol name="paperplane.fill" size={13} color="#10B981" />
                         )}
                         <Text style={[s.bookingType, { backgroundColor: typeColor + "20", color: typeColor }]}>
                           {b.type === "flight" ? t.admin.flight : t.admin.hotel}
@@ -1400,7 +1400,7 @@ export default function AdminScreen() {
                           {b.status === "confirmed" ? t.admin.confirmed :
                            b.status === "cancelled" ? t.admin.cancelled :
                            b.status === "processing" ? "معالجة" :
-                           b.status === "airline_confirmed" ? "مؤكد ✈️" : t.admin.pending}
+                           b.status === "airline_confirmed" ? "مؤكد" : t.admin.pending}
                         </Text>
                       </View>
                     </View>

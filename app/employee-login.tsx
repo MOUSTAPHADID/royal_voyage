@@ -131,7 +131,7 @@ export default function EmployeeLoginScreen() {
           {/* Header */}
           <View style={styles.headerSection}>
             <View style={[styles.logoCircle, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={{ fontSize: 40 }}>👨‍💼</Text>
+              <IconSymbol name="person.fill" size={40} color={colors.primary} />
             </View>
             <Text style={[styles.title, { color: colors.foreground }]}>
               بوابة الموظفين
@@ -174,7 +174,7 @@ export default function EmployeeLoginScreen() {
                 style={styles.eyeBtn}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                <Text style={{ fontSize: 16 }}>{showPassword ? "🙈" : "👁️"}</Text>
+                <IconSymbol name={showPassword ? "eye.fill" : "eye.fill"} size={18} color={colors.muted} />
               </Pressable>
             </View>
 

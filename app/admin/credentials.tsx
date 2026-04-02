@@ -234,7 +234,7 @@ export default function CredentialsScreen() {
 
         {/* Security Tips */}
         <View style={[s.tipsCard, { backgroundColor: "#FEF3C720", borderColor: "#F59E0B40" }]}>
-          <Text style={{ fontSize: 16, marginBottom: 6 }}>💡</Text>
+          <IconSymbol name="lightbulb.fill" size={20} color="#F59E0B" style={{ marginBottom: 6 }} />
           <Text style={[s.tipsTitle, { color: "#92400E" }]}>نصائح أمنية</Text>
           <Text style={[s.tipsText, { color: "#78350F" }]}>
             • استخدم كلمة مرور قوية تحتوي على أحرف وأرقام ورموز{"\n"}
