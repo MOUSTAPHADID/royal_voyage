@@ -72,7 +72,7 @@ async function startServer() {
     const currency = String(req.query.currency || "EUR");
     const booking = String(req.query.booking || "");
     const name = String(req.query.name || "");
-    const scheme = String(req.query.scheme || "manus20260323015034");
+    const scheme = String(req.query.scheme || process.env.DEEP_LINK_SCHEME || "royalvoyage");
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.send(buildCheckoutPage({ amount, currency, booking, name, scheme }));
   });

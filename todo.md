@@ -1461,3 +1461,14 @@
 - [x] إضافة إشعار فوري عند تأكيد الحجز (رحلات + فنادق + أنشطة)
 - [x] دعم اللغات الأربع (ar/fr/en/pt) في نصوص الإشعارات
 - [x] كتابة 19 اختبار vitest واجتيازها بنجاح
+
+## إصلاحات الإنتاج (Production Fixes)
+- [x] إزالة router amadeus من server/routers.ts واستبداله بـ duffel
+- [x] إزالة ملفات scripts/check-office-id*.ts و scripts/verify-amadeus-env.ts
+- [x] إزالة types/amadeus.d.ts
+- [x] إصلاح جميع trpc.amadeus -> trpc.duffel في كل ملفات العميل (9 ملفات)
+- [x] إصلاح 127.0.0.1 في admin/booking-detail.tsx باستخدام getApiBaseUrl()
+- [x] إصلاح 127.0.0.1 في hooks/use-ticket-polling.ts باستخدام getApiBaseUrl()
+- [x] إصلاح Deep Linking scheme من manus20260323015034 إلى royalvoyage في server/_core/index.ts
+- [x] إصلاح placeholder your-server.com في admin/webhooks.tsx
+- [x] الميكروفون مستخدم فعلياً في البحث الصوتي - تم الإبقاء عليه

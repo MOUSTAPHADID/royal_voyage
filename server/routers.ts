@@ -88,7 +88,7 @@ export const appRouter = router({
   }),
 
   // ─── Flight & Hotel API (Duffel) ──────────────────────────────────────────
-  amadeus: router({
+  duffel: router({
     searchLocations: publicProcedure
       .input(z.object({ keyword: z.string().min(1) }))
       .query(async ({ input }) => {

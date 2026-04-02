@@ -477,7 +477,7 @@ export default function WebhooksScreen() {
 
             <TextInput
               style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
-              placeholder="https://your-server.com/api/webhooks/duffel"
+              placeholder="https://royalvoyage-dcsedylm.manus.space/api/webhooks/duffel"
               placeholderTextColor={colors.muted}
               value={webhookUrl}
               onChangeText={setWebhookUrl}

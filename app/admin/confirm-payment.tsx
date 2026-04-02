@@ -42,7 +42,7 @@ export default function ConfirmPaymentScreen() {
   const { bookings, updateBookingStatus, confirmBookingPayment, rejectBookingPayment, updateBookingPnr, updateBookingTicketNumber } = useApp();
   const confirmPaymentMutation = trpc.email.confirmPayment.useMutation();
   const sendPushMutation = trpc.email.sendPushNotification.useMutation();
-  const payHoldOrder = trpc.amadeus.payHoldOrder.useMutation();
+  const payHoldOrder = trpc.duffel.payHoldOrder.useMutation();
   const sendHoldConfirmation = trpc.email.sendHoldConfirmation.useMutation();
 
   const [confirming, setConfirming] = useState<string | null>(null);

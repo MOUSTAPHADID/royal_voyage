@@ -87,7 +87,7 @@ function AutoInput({ value, onChange, placeholder, rtl }: { value: string; onCha
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  const { data: locations, isLoading } = trpc.amadeus.searchLocations.useQuery(
+  const { data: locations, isLoading } = trpc.duffel.searchLocations.useQuery(
     { keyword: debouncedQuery },
     { enabled: debouncedQuery.length >= 2 }
   );

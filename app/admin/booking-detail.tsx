@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getApiBaseUrl } from "@/constants/oauth";
 import {
   View,
   Text,
@@ -29,10 +30,10 @@ export default function AdminBookingDetailScreen() {
 
   const sendAirlineConfirmedTicket = trpc.email.sendAirlineConfirmedTicket.useMutation();
   const sendAirlineConfirmedHotelTicket = trpc.email.sendAirlineConfirmedHotelTicket.useMutation();
-  const queueToConsolidatorMut = trpc.amadeus.queueToConsolidator.useMutation();
-  const cancelFlightOrder = trpc.amadeus.cancelFlightOrder.useMutation();
+  const queueToConsolidatorMut = trpc.duffel.queueToConsolidator.useMutation();
+  const cancelFlightOrder = trpc.duffel.cancelFlightOrder.useMutation();
   const sendCancellationEmail = trpc.email.sendCancellation.useMutation();
-  const payHoldOrder = trpc.amadeus.payHoldOrder.useMutation();
+  const payHoldOrder = trpc.duffel.payHoldOrder.useMutation();
   const sendPaymentConfirmation = trpc.email.confirmPayment.useMutation();
 
   const booking = bookings.find((b) => b.id === id);
@@ -560,7 +561,7 @@ export default function AdminBookingDetailScreen() {
               setCheckingTicket(true);
               try {
                 const res = await fetch(
-                  `http://127.0.0.1:3000/trpc/amadeus.checkTicketIssuance?input=${encodeURIComponent(JSON.stringify({ orderId: booking.royalOrderId }))}`
+                  `${getApiBaseUrl()}/api/trpc/duffel.checkTicketIssuance?input=${encodeURIComponent(JSON.stringify({ orderId: booking.royalOrderId }))}`
                 );
                 const json = await res.json();
                 const result = json?.result?.data;

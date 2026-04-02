@@ -240,9 +240,9 @@ export default function PaymentScreen() {
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
   const sendAdminPush = trpc.email.sendPushNotification.useMutation();
-  const bookFlightWithPNR = trpc.amadeus.bookFlightWithPNR.useMutation();
-  const holdFlightOrder = trpc.amadeus.holdFlightOrder.useMutation();
-  const registerBookingContact = trpc.amadeus.registerBookingContact.useMutation();
+  const bookFlightWithPNR = trpc.duffel.bookFlightWithPNR.useMutation();
+  const holdFlightOrder = trpc.duffel.holdFlightOrder.useMutation();
+  const registerBookingContact = trpc.duffel.registerBookingContact.useMutation();
   const createPaymentIntent = trpc.stripe.createPaymentIntent.useMutation();
 
   // Stripe Payment Sheet

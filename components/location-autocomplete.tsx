@@ -49,7 +49,7 @@ export const LocationAutocomplete = React.memo(function LocationAutocomplete({
 
   const [debouncedKeyword, setDebouncedKeyword] = useState("");
 
-  const { data: suggestions = [], isFetching } = trpc.amadeus.searchLocations.useQuery(
+  const { data: suggestions = [], isFetching } = trpc.duffel.searchLocations.useQuery(
     { keyword: debouncedKeyword },
     { enabled: debouncedKeyword.length >= 2 }
   );

@@ -90,7 +90,7 @@ export default function FlightResultsScreen() {
   const useMock = false;const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
 
   // Duffel Production API query — outbound
-  const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchFlights.useQuery(
+  const { data: amadeusResult, isLoading, isError } = trpc.duffel.searchFlights.useQuery(
     {
       originCode: params.originCode || "",
       destinationCode: params.destinationCode || "",
@@ -109,7 +109,7 @@ export default function FlightResultsScreen() {
   );
 
   // Duffel Production API query — inbound (return leg)
-  const { data: returnResult, isLoading: returnLoading } = trpc.amadeus.searchFlights.useQuery(
+  const { data: returnResult, isLoading: returnLoading } = trpc.duffel.searchFlights.useQuery(
     {
       originCode: params.destinationCode || "",
       destinationCode: params.originCode || "",

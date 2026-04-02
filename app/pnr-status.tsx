@@ -100,7 +100,7 @@ export default function PnrStatusScreen() {
 
   const utils = trpc.useUtils();
 
-  const cancelMutation = trpc.amadeus.cancelFlightOrder.useMutation();
+  const cancelMutation = trpc.duffel.cancelFlightOrder.useMutation();
   const sendCancellationMutation = trpc.email.sendCancellation.useMutation();
 
   const lookupPnr = useCallback(async () => {
@@ -118,7 +118,7 @@ export default function PnrStatusScreen() {
     setOrderData(null);
 
     try {
-      const result = await utils.amadeus.getFlightOrder.fetch({ orderId: orderId.trim() });
+      const result = await utils.duffel.getFlightOrder.fetch({ orderId: orderId.trim() });
       if (result.success && result.data) {
         setOrderData(result.data);
       } else {

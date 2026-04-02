@@ -124,11 +124,11 @@ export default function AdminScreen() {
       } catch {}
     })();
   }, [bookings]);
-  const consolidatorConfig = trpc.amadeus.getConsolidatorConfig.useQuery();
-  const setConsolidatorMut = trpc.amadeus.setConsolidatorOfficeId.useMutation();
-  const setActiveMut = trpc.amadeus.setActiveConsolidator.useMutation();
-  const addConsolidatorMut = trpc.amadeus.addConsolidator.useMutation();
-  const removeConsolidatorMut = trpc.amadeus.removeConsolidator.useMutation();
+  const consolidatorConfig = trpc.duffel.getConsolidatorConfig.useQuery();
+  const setConsolidatorMut = trpc.duffel.setConsolidatorOfficeId.useMutation();
+  const setActiveMut = trpc.duffel.setActiveConsolidator.useMutation();
+  const addConsolidatorMut = trpc.duffel.addConsolidator.useMutation();
+  const removeConsolidatorMut = trpc.duffel.removeConsolidator.useMutation();
 
   // Ticket polling
   const ticketPolling = useTicketPolling();

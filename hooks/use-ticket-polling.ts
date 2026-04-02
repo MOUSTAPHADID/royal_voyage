@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
+import { getApiBaseUrl } from "@/constants/oauth";
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { useApp } from "@/lib/app-context";
@@ -55,8 +56,8 @@ export function useTicketPolling() {
   const checkBooking = useCallback(
     async (booking: (typeof bookings)[0]) => {
       try {
-        const apiUrl = `http://127.0.0.1:3000`;
-        const resp = await fetch(`${apiUrl}/api/trpc/amadeus.checkTicketIssuance`, {
+        const apiUrl = getApiBaseUrl();
+        const resp = await fetch(`${apiUrl}/api/trpc/duffel.checkTicketIssuance`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ json: { orderId: booking.royalOrderId! } }),
