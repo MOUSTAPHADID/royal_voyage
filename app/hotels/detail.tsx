@@ -50,7 +50,7 @@ export default function HotelDetailScreen() {
   }>();
   const { id } = params;
 
-  // Build hotel object from params (real Amadeus data) with fallback to local HOTELS
+  // Build hotel object from params (real HBX data) with fallback to local HOTELS
   const mockHotel = HOTELS.find((h) => h.id === id);
   const parsedAmenities = (() => {
     try { return params.amenities ? JSON.parse(params.amenities) : undefined; } catch { return undefined; }

@@ -23,7 +23,6 @@ import {
   queueToConsolidator,
   searchLocations,
   searchHotelsByCity,
-  getAmadeusStatus,
   getCachedRawOffer,
   cacheRawOffer,
 } from "../server/duffel";
@@ -60,8 +59,8 @@ describe("Duffel Module Exports", () => {
     expect(typeof queueToConsolidator).toBe("function");
   });
 
-  it("exports backward-compatible getAmadeusStatus", () => {
-    expect(typeof getAmadeusStatus).toBe("function");
+  it("exports backward-compatible getDuffelStatus", () => {
+    expect(typeof getDuffelStatus).toBe("function");
   });
 });
 
@@ -74,8 +73,8 @@ describe("Duffel Status", () => {
     expect(["live", "test"]).toContain(status.environment);
   });
 
-  it("getAmadeusStatus returns Duffel info for backward compat", () => {
-    const status = getAmadeusStatus();
+  it("getDuffelStatus returns Duffel info for backward compat", () => {
+    const status = getDuffelStatus();
     expect(status.provider).toBe("duffel");
     expect(status.isConnected).toBe(true);
   });

@@ -14,7 +14,7 @@ import {
   cancelFlightOrder,
   createHoldOrder,
   payForHoldOrder,
-  getAmadeusStatus,
+  getDuffelStatus,
   checkTicketIssuance,
   queueToConsolidator,
   getConsolidatorConfig,
@@ -23,7 +23,6 @@ import {
   addConsolidator,
   removeConsolidator,
   getConsolidatorForBooking,
-  getDuffelStatus,
 } from "./duffel";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail } from "./email";
 import {
@@ -526,7 +525,7 @@ export const appRouter = router({
 
     // ─── Get Status Info ──────────────────────────────────────────
     getStatus: publicProcedure.query(() => {
-      return getAmadeusStatus();
+      return getDuffelStatus();
     }),
 
     // ─── Get Duffel Status ──────────────────────────────────────────

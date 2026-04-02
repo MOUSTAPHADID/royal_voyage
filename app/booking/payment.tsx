@@ -522,7 +522,7 @@ export default function PaymentScreen() {
     }
 
     const ref = "RV-" + (isFlight ? "FL" : "HT") + "-" + Date.now().toString().slice(-6);
-    // Build flight data from params (real Amadeus data) with fallback to local FLIGHTS
+    // Build flight data from params (real Duffel data) with fallback to local FLIGHTS
     const flightData = isFlight ? {
       id: params.id ?? flight?.id ?? "unknown",
       airline: params.airline ?? flight?.airline ?? "",
@@ -542,7 +542,7 @@ export default function PaymentScreen() {
       seatsLeft: flight?.seatsLeft ?? 9,
     } : null;
 
-    // Build hotel data from params (real Amadeus data) with fallback to local HOTELS
+    // Build hotel data from params (real HBX data) with fallback to local HOTELS
     const hotelData = !isFlight ? {
       id: params.id ?? hotel?.id ?? "unknown",
       name: params.hotelName ?? hotel?.name ?? "",
@@ -880,7 +880,7 @@ export default function PaymentScreen() {
             </View>
           )}
 
-          {/* الضرائب مشمولة في سعر Amadeus - لا تُعرض منفصلة */}
+          {/* الضرائب مشمولة في السعر - لا تُعرض منفصلة */}
 
           {commissionAmount > 0 && (
             <View style={[styles.summaryRow, { borderBottomColor: colors.border }]}>

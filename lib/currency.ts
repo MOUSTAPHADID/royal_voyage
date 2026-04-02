@@ -116,7 +116,7 @@ export function formatCurrency(amountMRU: number, currency: AppCurrency = "MRU")
   }
 }
 
-export function formatAmadeusPriceMRU(priceStr: string, currency: string = "EUR"): string {
+export function formatDuffelPriceMRU(priceStr: string, currency: string = "EUR"): string {
   const amount = parseFloat(priceStr);
   if (isNaN(amount)) return "— MRU";
   return formatMRU(toMRU(amount, currency));

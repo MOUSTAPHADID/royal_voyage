@@ -52,7 +52,7 @@ export default function FlightDetailScreen() {
     baggageAllowanceJson: string;
   }>();
 
-  // If params have flight data (from Amadeus), use them; otherwise fall back to mock
+  // If params have flight data (from Duffel), use them; otherwise fall back to mock
   const hasFlight = !!params.airline;
   const mockFlight = FLIGHTS.find((f) => f.id === params.id) ?? FLIGHTS[0];
 

@@ -16,7 +16,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { FLIGHTS, HOTELS } from "@/lib/mock-data";
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { formatAmadeusPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { formatDuffelPriceMRU, formatMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { DatePickerField } from "@/components/ui/date-picker-field";
 

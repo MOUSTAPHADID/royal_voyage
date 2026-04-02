@@ -18,13 +18,13 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
-import { formatAmadeusPriceMRU, toMRU } from "@/lib/currency";
+import { formatDuffelPriceMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { applyMarkup, getAgencyFee } from "@/lib/pricing-settings";
 
 type SortOption = "price" | "duration" | "departure";
 
-// Amadeus FlightOffer mapped to Flight shape for rendering
+// Duffel FlightOffer mapped to Flight shape for rendering
 type AnyFlight = {
   id: string;
   airline: string;
@@ -90,7 +90,7 @@ export default function FlightResultsScreen() {
   const useMock = false;const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
 
   // Duffel Production API query — outbound
-  const { data: amadeusResult, isLoading, isError } = trpc.duffel.searchFlights.useQuery(
+  const { data: duffelResult, isLoading, isError } = trpc.duffel.searchFlights.useQuery(
     {
       originCode: params.originCode || "",
       destinationCode: params.destinationCode || "",
@@ -126,12 +126,12 @@ export default function FlightResultsScreen() {
     }
   );
 
-  const amadeusFlights: AnyFlight[] = (amadeusResult?.data ?? []) as AnyFlight[];
+  const duffelFlights: AnyFlight[] = (duffelResult?.data ?? []) as AnyFlight[];
   const returnFlights: AnyFlight[] = (returnResult?.data ?? []) as AnyFlight[];
 
   // Use live Duffel data; fallback to mock only if API fails
-  const rawFlights: AnyFlight[] = amadeusResult?.success && amadeusFlights.length > 0
-    ? amadeusFlights
+  const rawFlights: AnyFlight[] = duffelResult?.success && duffelFlights.length > 0
+    ? duffelFlights
     : isLoading
     ? []
     : (FLIGHTS as unknown as AnyFlight[]);
@@ -627,7 +627,7 @@ export default function FlightResultsScreen() {
           <View style={[styles.resultsCount, { backgroundColor: colors.background }]}>
             <Text style={[styles.resultsText, { color: colors.muted }]}>
               {filteredFlights.length} {t.flights.flightsFound}
-              {!useMock && amadeusResult?.success ? " · Live" : " · Mock"}
+              {!useMock && duffelResult?.success ? " · Live" : " · Mock"}
             </Text>
             {isError && (
               <Text style={[styles.errorNote, { color: colors.warning }]}>

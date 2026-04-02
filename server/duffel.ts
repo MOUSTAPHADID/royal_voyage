@@ -1201,7 +1201,7 @@ export function getDuffelStatus(): DuffelStatusInfo {
   };
 }
 
-// ─── Hotel Search (using Amadeus as fallback — Duffel Stays API) ────────────
+// ─── Hotel Search (using HBX/Hotelbeds — Duffel Stays API) ─────────────────
 // Note: Duffel has a Stays API but it may not be enabled for all accounts.
 // We keep the hotel search interface compatible with the existing app.
 
@@ -1283,7 +1283,7 @@ export async function searchHotelsByCity(params: {
     console.warn("[Duffel] Stays API not available or error:", err?.message);
   }
 
-  // Fallback: return empty (hotel search can still use Amadeus if needed)
+  // Fallback: return empty (hotel search uses HBX/Hotelbeds API)
   console.log("[Duffel] Hotel search: Stays API not available. Returning empty results.");
   return [];
 }
@@ -1351,15 +1351,4 @@ export function getCachedRawOffer(offerId: string) {
 
 export function cacheRawOffer(offerId: string, rawOffer: unknown) {
   cacheOffer(offerId, rawOffer);
-}
-
-export function getAmadeusStatus() {
-  return {
-    officeId: "",
-    consolidatorOfficeId: "",
-    environment: isLive ? "live" : "test",
-    isConnected: !!DUFFEL_TOKEN,
-    clientIdConfigured: !!DUFFEL_TOKEN,
-    provider: "duffel",
-  };
 }

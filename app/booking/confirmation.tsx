@@ -18,7 +18,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useColors } from "@/hooks/use-colors";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
-import { formatAmadeusPriceMRU, formatMRU, toMRU } from "@/lib/currency";
+import { formatDuffelPriceMRU, formatMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 import { scheduleBookingReminder24h } from "@/lib/push-notifications";

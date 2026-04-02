@@ -230,7 +230,7 @@ export default function SalesReportsScreen() {
           <div class="header">
             <h1>${title}</h1>
             <div class="office">Office ID: ${OFFICE_ID}</div>
-            <div class="env">Amadeus Production • Royal Voyage</div>
+            <div class="env">Duffel Production • Royal Voyage</div>
             <div style="color:rgba(255,255,255,0.6);font-size:11px;margin-top:8px;">
               تاريخ التقرير: ${new Date().toLocaleDateString("ar-MR")}
             </div>

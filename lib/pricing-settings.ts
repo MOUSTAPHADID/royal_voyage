@@ -127,7 +127,7 @@ export function getAgencyFee(originCode?: string, destinationCode?: string): num
   return s.agencyFeeMRU;
 }
 
-/** تطبيع اسم الدرجة من Duffel/Amadeus إلى مفتاح موحد */
+/** تطبيع اسم الدرجة من Duffel إلى مفتاح موحد */
 function normalizeClass(flightClass?: string): "economy" | "business" | "first" {
   if (!flightClass) return "economy";
   const c = flightClass.toUpperCase();
