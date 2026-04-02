@@ -32,6 +32,7 @@ import {
   generate2FACode,
 } from "@/lib/admin-security";
 import { useRouter } from "expo-router";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
@@ -315,16 +316,75 @@ export default function AdminScreen() {
     header: {
       flexDirection: "row",
       alignItems: "center",
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      backgroundColor: "#1B2B5E",
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      paddingTop: 18,
+      backgroundColor: "#0F1C3F",
+      gap: 12,
+    },
+    headerBackBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: "rgba(255,255,255,0.1)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerCenter: {
+      flex: 1,
+      alignItems: "center",
+      gap: 4,
     },
     headerTitle: {
-      flex: 1,
-      fontSize: 18,
-      fontWeight: "700",
+      fontSize: 17,
+      fontWeight: "800",
       color: "#FFFFFF",
-      textAlign: "center",
+      letterSpacing: 0.3,
+    },
+    headerOnlineBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
+      backgroundColor: "rgba(34,197,94,0.15)",
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 10,
+    },
+    headerOnlineDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: "#22C55E",
+    },
+    headerOnlineText: {
+      fontSize: 10,
+      fontWeight: "600",
+      color: "#22C55E",
+    },
+    headerIconBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: "rgba(255,255,255,0.1)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    notifBadge: {
+      position: "absolute",
+      top: -2,
+      right: -2,
+      backgroundColor: "#EF4444",
+      borderRadius: 8,
+      minWidth: 16,
+      height: 16,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 3,
+    },
+    notifBadgeText: {
+      color: "#FFFFFF",
+      fontSize: 9,
+      fontWeight: "700",
     },
     tabRow: {
       flexDirection: "row",
@@ -334,11 +394,21 @@ export default function AdminScreen() {
     },
     tab: {
       flex: 1,
-      paddingVertical: 12,
+      paddingVertical: 10,
       alignItems: "center",
+      gap: 3,
+    },
+    tabActive: {
+      backgroundColor: "rgba(27,43,94,0.04)",
+    },
+    tabIndicator: {
+      height: 2,
+      width: "60%",
+      backgroundColor: "#1B2B5E",
+      borderRadius: 2,
     },
     tabText: {
-      fontSize: 13,
+      fontSize: 11,
       fontWeight: "600",
     },
     section: {
@@ -545,11 +615,30 @@ export default function AdminScreen() {
     <ScreenContainer containerClassName="bg-background">
       {/* Header */}
       <View style={s.header}>
-        <Pressable onPress={() => router.back()} style={{ width: 30 }}>
-          <IconSymbol name="arrow.left" size={22} color="#FFFFFF" />
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [s.headerBackBtn, { opacity: pressed ? 0.7 : 1 }]}
+        >
+          <MaterialIcons name="arrow-back" size={20} color="#FFFFFF" />
         </Pressable>
-        <Text style={s.headerTitle}>{t.admin.title}</Text>
-        <View style={{ width: 30 }} />
+        <View style={s.headerCenter}>
+          <Text style={s.headerTitle}>{t.admin.title}</Text>
+          <View style={s.headerOnlineBadge}>
+            <View style={s.headerOnlineDot} />
+            <Text style={s.headerOnlineText}>مباشر</Text>
+          </View>
+        </View>
+        <Pressable
+          onPress={() => router.push("/admin/notifications" as any)}
+          style={({ pressed }) => [s.headerIconBtn, { opacity: pressed ? 0.7 : 1 }]}
+        >
+          <MaterialIcons name="notifications-none" size={22} color="#FFFFFF" />
+          {notifUnread > 0 && (
+            <View style={s.notifBadge}>
+              <Text style={s.notifBadgeText}>{notifUnread > 9 ? "9+" : notifUnread}</Text>
+            </View>
+          )}
+        </Pressable>
       </View>
 
       {/* Tabs */}
@@ -561,17 +650,26 @@ export default function AdminScreen() {
             tab === "bookings" ? t.admin.bookings :
             tab === "clients" ? t.admin.clients :
             "الأرباح";
+          const iconName: any =
+            tab === "overview" ? "dashboard" :
+            tab === "bookings" ? "receipt-long" :
+            tab === "clients" ? "people" :
+            "bar-chart";
           return (
             <Pressable
               key={tab}
-              style={s.tab}
-              onPress={() => setActiveTab(tab)}
+              style={[s.tab, active && s.tabActive]}
+              onPress={() => {
+                setActiveTab(tab);
+                if (Platform.OS !== "web") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              }}
             >
+              <MaterialIcons name={iconName} size={18} color={active ? "#1B2B5E" : colors.muted} />
               <Text style={[s.tabText, { color: active ? "#1B2B5E" : colors.muted }]}>
                 {label}
               </Text>
               {active && (
-                <View style={{ height: 2, width: "60%", backgroundColor: "#1B2B5E", borderRadius: 2, marginTop: 4 }} />
+                <View style={s.tabIndicator} />
               )}
             </Pressable>
           );
