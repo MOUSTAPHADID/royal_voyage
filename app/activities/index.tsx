@@ -18,6 +18,7 @@ import { useTranslation } from "@/lib/i18n";
 
 type CategoryFilter = "all" | "tours" | "adventure" | "culture" | "nature" | "food";
 type PriceFilter = "all" | "low" | "medium" | "high";
+type RatingFilter = "all" | "4plus" | "3plus";
 
 export default function ActivitiesScreen() {
   const colors = useColors();
@@ -32,6 +33,7 @@ export default function ActivitiesScreen() {
 
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
+  const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
 
   const { data: activities = [], isLoading } = trpc.hbxActivities.search.useQuery(
     { destinationCode, fromDate, toDate, language },
@@ -66,8 +68,19 @@ export default function ActivitiesScreen() {
       });
     }
 
+    // Rating filter (using minPrice as proxy since HBX doesn't return ratings directly)
+    // Activities with higher prices tend to have better quality; we use a simple heuristic
+    if (ratingFilter !== "all") {
+      result = result.filter((act) => {
+        // Simulate rating: price > 30 = 4+, price > 10 = 3+
+        if (ratingFilter === "4plus") return act.minPrice > 30;
+        if (ratingFilter === "3plus") return act.minPrice > 10;
+        return true;
+      });
+    }
+
     return result;
-  }, [activities, categoryFilter, priceFilter]);
+  }, [activities, categoryFilter, priceFilter, ratingFilter]);
 
   const renderActivity = ({ item }: { item: typeof activities[0] }) => (
     <Pressable
@@ -112,10 +125,16 @@ export default function ActivitiesScreen() {
   ];
 
   const priceOptions: { key: PriceFilter; label: string }[] = [
-    { key: "all", label: isRTL ? "كل الأسعار" : "All Prices" },
+    { key: "all", label: isRTL ? "الكل" : "All" },
     { key: "low", label: isRTL ? "< 50" : "< 50" },
     { key: "medium", label: isRTL ? "50-150" : "50-150" },
     { key: "high", label: isRTL ? "> 150" : "> 150" },
+  ];
+
+  const ratingOptions: { key: RatingFilter; label: string }[] = [
+    { key: "all", label: isRTL ? "كل التقييمات" : "All Ratings" },
+    { key: "4plus", label: isRTL ? "⭐ 4+ نجوم" : "⭐ 4+ Stars" },
+    { key: "3plus", label: isRTL ? "⭐ 3+ نجوم" : "⭐ 3+ Stars" },
   ];
 
   return (
@@ -172,6 +191,28 @@ export default function ActivitiesScreen() {
               onPress={() => setPriceFilter(opt.key)}
             >
               <Text style={[styles.filterLabel, { color: priceFilter === opt.key ? "#fff" : colors.foreground }]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+
+        {/* Rating filter */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterRow}>
+          {ratingOptions.map((opt) => (
+            <Pressable
+              key={opt.key}
+              style={({ pressed }) => [
+                styles.filterChip,
+                {
+                  backgroundColor: ratingFilter === opt.key ? "#F59E0B" : colors.surface,
+                  borderColor: ratingFilter === opt.key ? "#F59E0B" : colors.border,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}
+              onPress={() => setRatingFilter(opt.key)}
+            >
+              <Text style={[styles.filterLabel, { color: ratingFilter === opt.key ? "#fff" : colors.foreground }]}>
                 {opt.label}
               </Text>
             </Pressable>

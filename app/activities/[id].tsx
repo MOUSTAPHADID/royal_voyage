@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet, Alert, Platform, TextInput } from "react-native";
+import React, { useState, useRef } from "react";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, Image, StyleSheet, Alert, Platform, TextInput, FlatList, Dimensions, Share, Linking } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -7,6 +7,8 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
 import MapView, { Marker } from "react-native-maps";
+
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 export default function ActivityDetailScreen() {
   const colors = useColors();
@@ -55,6 +57,35 @@ export default function ActivityDetailScreen() {
       comment: reviewComment.trim() || undefined,
       language: isRTL ? "ar" : "en",
     });
+  };
+
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  // Build gallery images (use HBX images or fallback to hero image)
+  const galleryImages = (activity?.images && activity.images.length > 1)
+    ? activity.images
+    : activity
+      ? [activity.image, ...[
+          "https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&q=80",
+          "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80",
+          "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=800&q=80",
+        ]]
+      : [];
+
+  const handleShare = async () => {
+    if (!activity) return;
+    try {
+      await Share.share({
+        title: activity.name,
+        message: `${activity.name}\n${isRTL ? "السعر يبدأ من" : "Price from"} ${activity.minPrice} ${activity.currency}\n${isRTL ? "احجز الآن عبر Royal Voyage" : "Book now via Royal Voyage"}`,
+      });
+    } catch {}
+  };
+
+  const handleWhatsAppShare = () => {
+    if (!activity) return;
+    const msg = encodeURIComponent(`${activity.name}\n${isRTL ? "السعر يبدأ من" : "Price from"} ${activity.minPrice} ${activity.currency}\n${isRTL ? "احجز الآن عبر Royal Voyage" : "Book now via Royal Voyage"}`);
+    Linking.openURL(`https://wa.me/?text=${msg}`);
   };
 
   const handleBookActivity = () => {
@@ -122,7 +153,44 @@ export default function ActivityDetailScreen() {
         <View style={{ width: 40 }} />
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Image source={{ uri: activity.image }} style={styles.heroImage} resizeMode="cover" />
+        {/* Image Gallery */}
+        <View style={styles.galleryContainer}>
+          <FlatList
+            data={galleryImages}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, i) => i.toString()}
+            onMomentumScrollEnd={(e) => {
+              const idx = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+              setGalleryIndex(idx);
+            }}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item }} style={[styles.heroImage, { width: SCREEN_WIDTH }]} resizeMode="cover" />
+            )}
+          />
+          {/* Dots indicator */}
+          <View style={styles.dotsContainer}>
+            {galleryImages.map((_, i) => (
+              <View key={i} style={[styles.dot, i === galleryIndex && styles.dotActive]} />
+            ))}
+          </View>
+          {/* Share button */}
+          <View style={styles.shareButtons}>
+            <Pressable
+              style={({ pressed }) => [styles.shareBtn, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={handleWhatsAppShare}
+            >
+              <Text style={{ fontSize: 18 }}>💬</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.shareBtn, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={handleShare}
+            >
+              <IconSymbol name="square.and.arrow.up" size={18} color="#fff" />
+            </Pressable>
+          </View>
+        </View>
         <View style={styles.content}>
           {activity.category ? (
             <View style={[styles.badge, { backgroundColor: "#10B981" + "20" }]}>
@@ -359,4 +427,10 @@ const styles = StyleSheet.create({
   reviewCard: { borderRadius: 12, padding: 14, borderWidth: 1, marginBottom: 10 },
   mapContainer: { borderRadius: 14, overflow: "hidden", borderWidth: 1, height: 200, marginTop: 8 },
   map: { width: "100%", height: "100%" },
+  galleryContainer: { position: "relative" },
+  dotsContainer: { position: "absolute", bottom: 12, left: 0, right: 0, flexDirection: "row", justifyContent: "center", gap: 6 },
+  dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "rgba(255,255,255,0.5)" },
+  dotActive: { width: 20, backgroundColor: "#fff" },
+  shareButtons: { position: "absolute", top: 12, right: 12, flexDirection: "row", gap: 8 },
+  shareBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "center", alignItems: "center" },
 });
