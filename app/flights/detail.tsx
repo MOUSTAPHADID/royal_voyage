@@ -149,7 +149,7 @@ export default function FlightDetailScreen() {
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <IconSymbol name="arrow.left" size={22} color="#FFFFFF" />
         </Pressable>
-        <Text style={styles.headerTitle}>Flight Details</Text>
+        <Text style={styles.headerTitle}>تفاصيل الرحلة</Text>
         <View style={{ width: 30 }} />
       </View>
 
@@ -174,7 +174,7 @@ export default function FlightDetailScreen() {
             </View>
             <View style={[styles.priceBadge, { backgroundColor: colors.primary }]}>
               <Text style={styles.priceText}>{fmt(perPersonMRU)}</Text>
-              <Text style={styles.priceLabel}>للشخص</Text>
+              <Text style={styles.priceLabel}>للشخص الواحد</Text>
             </View>
           </View>
 
@@ -183,7 +183,7 @@ export default function FlightDetailScreen() {
             <View style={styles.routePoint}>
               <Text style={[styles.routeTime, { color: colors.foreground }]}>{flight.departureTime}</Text>
               <Text style={[styles.routeCode, { color: colors.primary }]}>{flight.originCode}</Text>
-              <Text style={[styles.routeCity, { color: colors.muted }]}>{flight.origin}</Text>
+              <Text style={[styles.routeCity, { color: colors.muted }]} numberOfLines={2}>{flight.origin}</Text>
             </View>
 
             <View style={styles.routeCenter}>
@@ -196,28 +196,28 @@ export default function FlightDetailScreen() {
                 <View style={[styles.routeDot, { backgroundColor: colors.secondary }]} />
               </View>
               <Text style={[styles.routeStops, { color: flight.stops === 0 ? colors.success : colors.warning }]}>
-                {flight.stops === 0 ? "Direct Flight" : `${flight.stops} Stop`}
+                {flight.stops === 0 ? "رحلة مباشرة" : `${flight.stops} توقف`}
               </Text>
             </View>
 
             <View style={[styles.routePoint, { alignItems: "flex-end" }]}>
               <Text style={[styles.routeTime, { color: colors.foreground }]}>{flight.arrivalTime}</Text>
               <Text style={[styles.routeCode, { color: colors.secondary }]}>{flight.destinationCode}</Text>
-              <Text style={[styles.routeCity, { color: colors.muted }]}>{flight.destination}</Text>
+              <Text style={[styles.routeCity, { color: colors.muted }]} numberOfLines={2}>{flight.destination}</Text>
             </View>
           </View>
         </View>
 
         {/* Flight Info */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Flight Information</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>معلومات الرحلة</Text>
           {[
-            { label: "Flight Number", value: flight.flightNumber },
-            { label: "Airline", value: flight.airline },
-            { label: "Class", value: flight.class },
-            { label: "Duration", value: flight.duration },
-            { label: "Stops", value: flight.stops === 0 ? "Non-stop" : `${flight.stops} stop(s)` },
-            { label: "Seats Available", value: `${flight.seatsLeft} seats` },
+            { label: "رقم الرحلة", value: flight.flightNumber },
+            { label: "شركة الطيران", value: flight.airline },
+            { label: "الدرجة", value: flight.class },
+            { label: "مدة الرحلة", value: flight.duration },
+            { label: "التوقفات", value: flight.stops === 0 ? "مباشر" : `${flight.stops} توقف` },
+            { label: "المقاعد المتاحة", value: `${flight.seatsLeft} مقعد` },
           ].map((item) => (
             <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>{item.label}</Text>
@@ -229,7 +229,7 @@ export default function FlightDetailScreen() {
 
         {/* Baggage Policy */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Baggage Policy</Text>
+          <Text style={[styles.sectionTitle, { color: colors.foreground }]}>سياسة الأمتعة</Text>
           {(() => {
             // Parse real baggage allowance from Duffel API if available
             let realBaggage: { cabin: { quantity: number; maxWeightKg?: number } | null; checked: { quantity: number; maxWeightKg?: number } | null } | null = null;
@@ -244,26 +244,26 @@ export default function FlightDetailScreen() {
             return [
             {
               iconEl: <MaterialIcons name="backpack" size={22} color={colors.primary} />,
-              title: "Personal Item",
-              desc: "1 personal item (bag under seat) included for all passengers.",
+              title: "الأغراض الشخصية",
+              desc: "قطعة واحدة تحت المقعد مشمولة لجميع الركاب.",
               included: true,
             },
             {
               iconEl: <MaterialIcons name="luggage" size={22} color={colors.primary} />,
-              title: "Cabin Baggage",
-              desc: `${cabinQty} carry-on bag${cabinQty > 1 ? "s" : ""} (max ${cabinKg} kg each) included.${isRealData ? " ✓ Airline confirmed" : ""}`,
+              title: "حقيبة الكابين",
+              desc: `${cabinQty} حقيبة يدوية (حد أقصى ${cabinKg} كغ لكل منها) مشمولة.${isRealData ? " ✓ مؤكد من شركة الطيران" : ""}`,
               included: true,
             },
             {
               iconEl: <MaterialIcons name="inventory-2" size={22} color={colors.primary} />,
-              title: "Checked Baggage",
-              desc: `${checkedQty} checked bag${checkedQty > 1 ? "s" : ""} (max ${checkedKg} kg each) included.${isRealData ? " ✓ Airline confirmed" : ""}`,
+              title: "الأمتعة المسجلة",
+              desc: `${checkedQty} حقيبة (حد أقصى ${checkedKg} كغ لكل منها) مشمولة.${isRealData ? " ✓ مؤكد من شركة الطيران" : ""}`,
               included: true,
             },
             {
               iconEl: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
-              title: "Extra Baggage",
-              desc: "Additional bags can be purchased during booking or at the airport (fees vary by airline).",
+              title: "أمتعة إضافية",
+              desc: "يمكن شراء حقائب إضافية عند الحجز أو في المطار (تختلف الرسوم حسب شركة الطيران).",
               included: false,
             },
           ].map((item) => (
@@ -293,7 +293,7 @@ export default function FlightDetailScreen() {
                     }}
                   >
                     <Text style={{ fontSize: 11, fontWeight: "600", color: item.included ? colors.success : colors.warning }}>
-                      {item.included ? "Included" : "Extra Fee"}
+                      {item.included ? "مشمول" : "رسوم إضافية"}
                     </Text>
                   </View>
                 </View>
@@ -305,7 +305,7 @@ export default function FlightDetailScreen() {
           }
           <View style={{ marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: colors.primary + "10" }}>
             <Text style={{ fontSize: 12, color: colors.primary, lineHeight: 18 }}>
-              ℹ Baggage allowances may vary by airline and route. Please verify with the airline before travel.
+              ℹ قد تختلف سياسة الأمتعة حسب شركة الطيران والمسار. يُرجى التحقق مع شركة الطيران قبل السفر.
             </Text>
           </View>
         </View>
@@ -561,7 +561,8 @@ const styles = StyleSheet.create({
   },
   routePoint: {
     alignItems: "flex-start",
-    minWidth: 70,
+    flex: 1,
+    minWidth: 0,
   },
   routeTime: {
     fontSize: 22,
@@ -573,8 +574,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   routeCity: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 2,
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
   routeCenter: {
     flex: 1,

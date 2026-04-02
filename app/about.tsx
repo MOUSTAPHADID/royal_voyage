@@ -66,7 +66,7 @@ const CONTENT: Record<Lang, {
     phone: "+222 33 70 00 00",
     email: "suporte@royalvoyage.online",
     whatsapp: "+222 33 70 00 00",
-    address: "طارق زين، نواكشوط، موريتانيا",
+    address: "تفرغ زين، نواكشوط، موريتانيا",
   },
   en: {
     dir: "ltr",
@@ -299,15 +299,20 @@ export default function AboutScreen() {
           </Text>
           <View style={[styles.airlinesGrid, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             {[
-              { name: "Royal Air Maroc", url: "https://cdn.simpleicons.org/royalairmaroc/CC0000" },
-              { name: "Qatar Airways", url: "https://cdn.simpleicons.org/qatarairways/5C0632" },
-              { name: "Turkish Airlines", url: "https://cdn.simpleicons.org/turkishairlines/C70A0A" },
-              { name: "Air Arabia", url: "https://cdn.simpleicons.org/airarabia/E31E24" },
-              { name: "EgyptAir", url: "https://cdn.simpleicons.org/egyptair/002B7F" },
-              { name: "Tunisair", url: "https://cdn.simpleicons.org/tunisair/E31E24" },
+              { name: "Royal Air Maroc", code: "AT" },
+              { name: "Qatar Airways", code: "QR" },
+              { name: "Turkish Airlines", code: "TK" },
+              { name: "Air Arabia", code: "G9" },
+              { name: "EgyptAir", code: "MS" },
+              { name: "Tunisair", code: "TU" },
             ].map((a) => (
               <View key={a.name} style={styles.airlineItem}>
-                <Image source={{ uri: a.url }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+                <Image
+                  source={{ uri: `https://images.kiwi.com/airlines/64/${a.code}.png` }}
+                  style={{ width: 40, height: 40, borderRadius: 8 }}
+                  resizeMode="contain"
+                  defaultSource={{ uri: `https://images.kiwi.com/airlines/64/${a.code}.png` }}
+                />
                 <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center", marginTop: 4 }}>{a.name}</Text>
               </View>
             ))}

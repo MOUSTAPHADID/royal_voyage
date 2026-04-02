@@ -107,6 +107,13 @@ export default function AdminScreen() {
   const [editConsolidatorIndex, setEditConsolidatorIndex] = useState(-1);
   const [notifUnread, setNotifUnread] = useState(0);
 
+  // Advanced bookings filter state
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [bookingStatusFilter, setBookingStatusFilter] = useState<"all" | "confirmed" | "pending" | "cancelled" | "processing">("all");
+  const [bookingTypeFilter, setBookingTypeFilter] = useState<"all" | "flight" | "hotel">("all");
+  const [bookingPaymentFilter, setBookingPaymentFilter] = useState<"all" | "cash" | "bank_transfer" | "paypal" | "stripe">("all");
+  const [showBookingFilters, setShowBookingFilters] = useState(false);
+
   // Sync bookings to notifications and get unread count
   useEffect(() => {
     (async () => {
@@ -1366,13 +1373,156 @@ export default function AdminScreen() {
         )}
 
         {/* BOOKINGS TAB */}
-        {activeTab === "bookings" && (
+        {activeTab === "bookings" && (() => {
+          // Apply filters
+          const filteredBookings = bookings.slice().reverse().filter((b) => {
+            if (bookingStatusFilter !== "all" && b.status !== bookingStatusFilter) return false;
+            if (bookingTypeFilter !== "all" && b.type !== bookingTypeFilter) return false;
+            if (bookingPaymentFilter !== "all") {
+              const pm = (b as any).paymentMethod || "";
+              if (bookingPaymentFilter === "cash" && pm !== "cash") return false;
+              if (bookingPaymentFilter === "bank_transfer" && pm !== "bank_transfer") return false;
+              if (bookingPaymentFilter === "paypal" && pm !== "paypal") return false;
+              if (bookingPaymentFilter === "stripe" && pm !== "stripe") return false;
+            }
+            if (bookingSearch.trim()) {
+              const q = bookingSearch.toLowerCase();
+              const ref = (b.reference || "").toLowerCase();
+              const name = ((b as any).passengerName || (b as any).guestName || "").toLowerCase();
+              const dest = (b.flight ? `${b.flight.originCode} ${b.flight.destinationCode}` : b.hotel?.name || "").toLowerCase();
+              if (!ref.includes(q) && !name.includes(q) && !dest.includes(q)) return false;
+            }
+            return true;
+          });
+
+          return (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>{t.admin.recentBookings} ({bookings.length})</Text>
-            {bookings.length === 0 ? (
-              <Text style={{ color: colors.muted, textAlign: "center", marginTop: 32 }}>{t.admin.noBookings}</Text>
+            {/* Search Bar */}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: colors.background, borderRadius: 12, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 12, paddingVertical: 10, gap: 8 }}>
+                <MaterialIcons name="search" size={18} color={colors.muted} />
+                <TextInput
+                  style={{ flex: 1, fontSize: 14, color: colors.foreground }}
+                  placeholder="بحث بالمرجع أو الاسم أو الوجهة..."
+                  placeholderTextColor={colors.muted}
+                  value={bookingSearch}
+                  onChangeText={setBookingSearch}
+                  returnKeyType="search"
+                />
+                {bookingSearch.length > 0 && (
+                  <Pressable onPress={() => setBookingSearch("")} style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}>
+                    <MaterialIcons name="close" size={16} color={colors.muted} />
+                  </Pressable>
+                )}
+              </View>
+              <Pressable
+                style={({ pressed }) => [{
+                  width: 44, height: 44, borderRadius: 12, alignItems: "center", justifyContent: "center",
+                  backgroundColor: showBookingFilters ? "#1B2B5E" : colors.background,
+                  borderWidth: 1, borderColor: showBookingFilters ? "#1B2B5E" : colors.border,
+                  opacity: pressed ? 0.7 : 1,
+                }]}
+                onPress={() => setShowBookingFilters(!showBookingFilters)}
+              >
+                <MaterialIcons name="filter-list" size={20} color={showBookingFilters ? "#FFFFFF" : colors.foreground} />
+              </Pressable>
+            </View>
+
+            {/* Advanced Filters */}
+            {showBookingFilters && (
+              <View style={{ backgroundColor: colors.surface, borderRadius: 14, padding: 14, marginBottom: 12, gap: 12, borderWidth: 1, borderColor: colors.border }}>
+                {/* Status Filter */}
+                <View>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, marginBottom: 8 }}>الحالة</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {(["all", "confirmed", "pending", "processing", "cancelled"] as const).map((s) => (
+                      <Pressable
+                        key={s}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+                          backgroundColor: bookingStatusFilter === s ? "#1B2B5E" : colors.background,
+                          borderWidth: 1, borderColor: bookingStatusFilter === s ? "#1B2B5E" : colors.border,
+                          opacity: pressed ? 0.7 : 1,
+                        }]}
+                        onPress={() => setBookingStatusFilter(s)}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: bookingStatusFilter === s ? "#FFFFFF" : colors.foreground }}>
+                          {s === "all" ? "الكل" : s === "confirmed" ? "مؤكد" : s === "pending" ? "معلق" : s === "processing" ? "معالجة" : "ملغى"}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                {/* Type Filter */}
+                <View>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, marginBottom: 8 }}>النوع</Text>
+                  <View style={{ flexDirection: "row", gap: 6 }}>
+                    {(["all", "flight", "hotel"] as const).map((tp) => (
+                      <Pressable
+                        key={tp}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+                          backgroundColor: bookingTypeFilter === tp ? "#0a7ea4" : colors.background,
+                          borderWidth: 1, borderColor: bookingTypeFilter === tp ? "#0a7ea4" : colors.border,
+                          opacity: pressed ? 0.7 : 1,
+                        }]}
+                        onPress={() => setBookingTypeFilter(tp)}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: bookingTypeFilter === tp ? "#FFFFFF" : colors.foreground }}>
+                          {tp === "all" ? "الكل" : tp === "flight" ? "طيران" : "فندق"}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                {/* Payment Filter */}
+                <View>
+                  <Text style={{ fontSize: 12, fontWeight: "700", color: colors.muted, marginBottom: 8 }}>طريقة الدفع</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {(["all", "cash", "bank_transfer", "paypal", "stripe"] as const).map((pm) => (
+                      <Pressable
+                        key={pm}
+                        style={({ pressed }) => [{
+                          paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20,
+                          backgroundColor: bookingPaymentFilter === pm ? "#C9A84C" : colors.background,
+                          borderWidth: 1, borderColor: bookingPaymentFilter === pm ? "#C9A84C" : colors.border,
+                          opacity: pressed ? 0.7 : 1,
+                        }]}
+                        onPress={() => setBookingPaymentFilter(pm)}
+                      >
+                        <Text style={{ fontSize: 12, fontWeight: "600", color: bookingPaymentFilter === pm ? "#FFFFFF" : colors.foreground }}>
+                          {pm === "all" ? "الكل" : pm === "cash" ? "نقدي" : pm === "bank_transfer" ? "تحويل بنكي" : pm === "paypal" ? "PayPal" : "Stripe"}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
+                {/* Reset */}
+                {(bookingStatusFilter !== "all" || bookingTypeFilter !== "all" || bookingPaymentFilter !== "all") && (
+                  <Pressable
+                    style={({ pressed }) => [{ alignSelf: "flex-end", opacity: pressed ? 0.6 : 1 }]}
+                    onPress={() => { setBookingStatusFilter("all"); setBookingTypeFilter("all"); setBookingPaymentFilter("all"); }}
+                  >
+                    <Text style={{ fontSize: 12, color: "#EF4444", fontWeight: "600" }}>إعادة تعيين الفلاتر</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+
+            <Text style={s.sectionTitle}>{t.admin.recentBookings} ({filteredBookings.length})</Text>
+            {filteredBookings.length === 0 ? (
+              <View style={{ alignItems: "center", paddingVertical: 40 }}>
+                <MaterialIcons name="search-off" size={48} color={colors.muted} />
+                <Text style={{ color: colors.muted, textAlign: "center", marginTop: 12, fontSize: 15 }}>لا توجد حجوزات تطابق الفلاتر</Text>
+                <Pressable
+                  style={({ pressed }) => [{ marginTop: 12, opacity: pressed ? 0.7 : 1 }]}
+                  onPress={() => { setBookingSearch(""); setBookingStatusFilter("all"); setBookingTypeFilter("all"); setBookingPaymentFilter("all"); }}
+                >
+                  <Text style={{ color: "#1B2B5E", fontWeight: "700", fontSize: 14 }}>مسح جميع الفلاتر</Text>
+                </Pressable>
+              </View>
             ) : (
-              bookings.slice().reverse().map((b) => {
+              filteredBookings.map((b) => {
                 const statusColor =
                   b.status === "confirmed" ? colors.success :
                   b.status === "cancelled" ? colors.error :
@@ -1381,6 +1531,8 @@ export default function AdminScreen() {
                 const dest = b.flight
                   ? `${b.flight.originCode} → ${b.flight.destinationCode}`
                   : b.hotel?.name ?? "—";
+                const paymentMethod = (b as any).paymentMethod;
+                const paymentLabel = paymentMethod === "cash" ? "نقدي" : paymentMethod === "bank_transfer" ? "تحويل" : paymentMethod === "paypal" ? "PayPal" : paymentMethod === "stripe" ? "Stripe" : null;
                 return (
                   <Pressable
                     key={b.id}
@@ -1410,14 +1562,20 @@ export default function AdminScreen() {
                     </View>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 2 }}>
                       <Text style={s.bookingDate}>{b.date}</Text>
-                      <Text style={{ fontSize: 11, color: colors.muted }}>اضغط للتفاصيل ›</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                        {paymentLabel && (
+                          <Text style={{ fontSize: 10, color: colors.muted, backgroundColor: colors.surface, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>{paymentLabel}</Text>
+                        )}
+                        <Text style={{ fontSize: 11, color: colors.muted }}>اضغط للتفاصيل ›</Text>
+                      </View>
                     </View>
                   </Pressable>
                 );
               })
             )}
           </View>
-        )}
+          );
+        })()}
 
         {/* CLIENTS TAB */}
         {activeTab === "clients" && (

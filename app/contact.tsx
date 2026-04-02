@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useI18n } from "@/lib/i18n";
 
 type Lang = "ar" | "en" | "fr";
 
@@ -41,7 +42,7 @@ const T: Record<Lang, {
     hours: "ساعات العمل",
     hoursVal: "السبت – الخميس: 8:00 ص – 8:00 م\nالجمعة: 2:00 م – 8:00 م",
     address: "العنوان",
-    addressVal: "طفرغ زينة، نواكشوط\nموريتانيا",
+    addressVal: "تفرغ زين، نواكشوط\nموريتانيا",
   },
   en: {
     dir: "ltr",
@@ -84,7 +85,11 @@ const T: Record<Lang, {
 export default function ContactScreen() {
   const colors = useColors();
   const router = useRouter();
-  const [lang, setLang] = useState<Lang>("ar");
+  const { language } = useI18n();
+  const [lang, setLang] = useState<Lang>(() => {
+    if (language === "ar" || language === "en" || language === "fr") return language as Lang;
+    return "ar";
+  });
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");

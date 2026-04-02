@@ -94,7 +94,7 @@ export async function syncBookingsToNotifications(bookings: Booking[]): Promise<
 
     const customerName = booking.passengerName || booking.guestName || "زبون";
     const isFlight = booking.type === "flight";
-    const bookingType = isFlight ? "✈️ رحلة" : "🏨 فندق";
+    const bookingType = isFlight ? "رحلة" : "فندق";
 
     let destination = "";
     if (isFlight && booking.flight) {
@@ -108,16 +108,16 @@ export async function syncBookingsToNotifications(bookings: Booking[]): Promise<
 
     // Determine notification type based on booking status
     let notifType: "new_booking" | "booking_cancelled" | "payment_confirmed" = "new_booking";
-    let title = `🔔 حجز جديد! ${bookingType}`;
+    let title = `حجز جديد - ${bookingType}`;
     let body = `${customerName} • ${destination} • ${price} • ${payment} • ${booking.reference}`;
 
     if (booking.status === "cancelled") {
       notifType = "booking_cancelled";
-      title = `❌ حجز ملغى ${bookingType}`;
+      title = `تم إلغاء الحجز - ${bookingType}`;
       body = `${customerName} • ${destination} • ${booking.reference}`;
     } else if (booking.paymentConfirmed) {
       notifType = "payment_confirmed";
-      title = `✅ تم تأكيد الدفع ${bookingType}`;
+      title = `تم تأكيد الدفع - ${bookingType}`;
       body = `${customerName} • ${destination} • ${price} • ${booking.reference}`;
     }
 

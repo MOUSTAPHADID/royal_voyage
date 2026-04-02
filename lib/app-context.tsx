@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Booking } from "./mock-data";
+import { addAdminNotification } from "./admin-notifications";
 
 export type User = {
   id: string;
@@ -233,6 +234,38 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updated = [booking, ...bookings];
     setBookings(updated);
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
+    // Instant admin notification for new booking
+    try {
+      const isFlight = booking.type === "flight";
+      const bookingType = isFlight ? "رحلة" : "فندق";
+      const customerName = booking.passengerName || booking.guestName || "زبون";
+      const destination = isFlight && booking.flight
+        ? `${booking.flight.originCode || booking.flight.origin} → ${booking.flight.destinationCode || booking.flight.destination}`
+        : booking.hotel?.name || "";
+      const paymentLabels: Record<string, string> = {
+        cash: "نقدي", bank_transfer: "تحويل بنكي", bankily: "بنكيلي",
+        masrvi: "مصرفي", sedad: "سداد", stripe: "Stripe", paypal: "PayPal",
+      };
+      const payment = booking.paymentMethod ? (paymentLabels[booking.paymentMethod] || booking.paymentMethod) : "غير محدد";
+      const price = booking.currency === "MRU" ? `${(booking.totalPrice || 0).toLocaleString()} MRU`
+        : booking.currency === "USD" ? `$${(booking.totalPrice || 0).toLocaleString()}`
+        : `${(booking.totalPrice || 0).toLocaleString()} ${booking.currency}`;
+      await addAdminNotification({
+        type: "new_booking",
+        title: `حجز جديد - ${bookingType}`,
+        body: `${customerName} • ${destination} • ${price} • ${payment} • ${booking.reference}`,
+        bookingRef: booking.reference,
+        bookingId: booking.id,
+      });
+      // Mark this booking as synced so syncBookingsToNotifications won't duplicate it
+      const SYNCED_KEY = "@royal_voyage_synced_booking_ids";
+      const existing = await AsyncStorage.getItem(SYNCED_KEY);
+      const ids: string[] = existing ? JSON.parse(existing) : [];
+      if (!ids.includes(booking.id)) {
+        ids.push(booking.id);
+        await AsyncStorage.setItem(SYNCED_KEY, JSON.stringify(ids));
+      }
+    } catch {}
   }, [bookings]);
 
   const cancelBooking = useCallback(async (id: string) => {
