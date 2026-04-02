@@ -589,74 +589,72 @@ export default function HomeScreen() {
                   icon={<IconSymbol name="calendar" size={18} color={colors.primary} />}
                 />
               ) : (
-                /* Round Trip — two dates side by side */
-                <View style={styles.rowFields}>
-                  <View style={{ flex: 1 }}>
-                    <DatePickerField
-                      label={t.home.departure}
-                      value={departureDate}
-                      onChange={(d) => {
-                        setDepartureDate(d);
-                        const dep = new Date(d);
-                        const ret = new Date(returnDate);
-                        if (ret <= dep) {
-                          dep.setDate(dep.getDate() + 3);
-                          setReturnDate(dep.toISOString().slice(0, 10));
-                        }
-                      }}
-                      minimumDate={new Date()}
-                      backgroundColor={colors.background}
-                      icon={<IconSymbol name="airplane" size={16} color={colors.primary} />}
-                    />
-                  </View>
-                  <View style={[styles.dateArrow, { marginTop: 20 }]}>
-                    <IconSymbol name="arrow.right" size={14} color={colors.muted} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <DatePickerField
-                      label={t.home.returnDate}
-                      value={returnDate}
-                      onChange={(d) => setReturnDate(d)}
-                      minimumDate={new Date(departureDate)}
-                      backgroundColor={colors.background}
-                      icon={<IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />}
-                    />
-                  </View>
+                /* Round Trip — two dates stacked vertically for better mobile layout */
+                <View style={styles.datesColumn}>
+                  <DatePickerField
+                    label={t.home.departure}
+                    value={departureDate}
+                    onChange={(d) => {
+                      setDepartureDate(d);
+                      const dep = new Date(d);
+                      const ret = new Date(returnDate);
+                      if (ret <= dep) {
+                        dep.setDate(dep.getDate() + 3);
+                        setReturnDate(dep.toISOString().slice(0, 10));
+                      }
+                    }}
+                    minimumDate={new Date()}
+                    backgroundColor={colors.background}
+                    icon={<IconSymbol name="airplane" size={16} color={colors.primary} />}
+                  />
+                  <View style={[styles.dateSeparator, { backgroundColor: colors.border }]} />
+                  <DatePickerField
+                    label={t.home.returnDate}
+                    value={returnDate}
+                    onChange={(d) => setReturnDate(d)}
+                    minimumDate={new Date(departureDate)}
+                    backgroundColor={colors.background}
+                    icon={<IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />}
+                  />
                 </View>
               )}
 
-              {/* Passengers + Children */}
-              <View style={styles.rowFields}>
-                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="person.2.fill" size={18} color={colors.primary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.home.passengers}</Text>
-                    <View style={styles.counterRow}>
-                      <Pressable onPress={() => setPassengers(Math.max(1, passengers - 1))}>
-                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
-                      </Pressable>
-                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{passengers}</Text>
-                      <Pressable onPress={() => setPassengers(passengers + 1)}>
-                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
-                      </Pressable>
-                    </View>
+              {/* Passengers + Children + Infants + Bags — compact grid */}
+              <View style={[styles.passengersCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                {/* Adults */}
+                <View style={styles.counterItem}>
+                  <View style={styles.counterItemLeft}>
+                    <IconSymbol name="person.2.fill" size={16} color={colors.primary} />
+                    <Text style={[styles.counterItemLabel, { color: colors.foreground }]}>{t.home.passengers}</Text>
+                  </View>
+                  <View style={styles.counterBtns}>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setPassengers(Math.max(1, passengers - 1))}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>−</Text>
+                    </Pressable>
+                    <Text style={[styles.counterNum, { color: colors.foreground }]}>{passengers}</Text>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setPassengers(passengers + 1)}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>+</Text>
+                    </Pressable>
                   </View>
                 </View>
-                <View style={[styles.searchField, { flex: 1, borderColor: colors.border, backgroundColor: colors.background }]}>
-                  <IconSymbol name="figure.and.child.holdinghands" size={18} color={colors.primary} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "أطفال" : "Children"}</Text>
-                    <View style={styles.counterRow}>
-                      <Pressable onPress={() => setChildren(Math.max(0, children - 1))}>
-                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
-                      </Pressable>
-                      <Text style={[styles.fieldValue, { color: colors.foreground }]}>{children}</Text>
-                      <Pressable onPress={() => setChildren(children + 1)}>
-                        <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
-                      </Pressable>
-                    </View>
+                <View style={[styles.counterDivider, { backgroundColor: colors.border }]} />
+                {/* Children */}
+                <View style={styles.counterItem}>
+                  <View style={styles.counterItemLeft}>
+                    <IconSymbol name="figure.and.child.holdinghands" size={16} color={colors.primary} />
+                    <Text style={[styles.counterItemLabel, { color: colors.foreground }]}>{isRTL ? "أطفال (2-11)" : "Children (2-11)"}</Text>
+                  </View>
+                  <View style={styles.counterBtns}>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setChildren(Math.max(0, children - 1))}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>−</Text>
+                    </Pressable>
+                    <Text style={[styles.counterNum, { color: colors.foreground }]}>{children}</Text>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setChildren(children + 1)}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>+</Text>
+                    </Pressable>
                   </View>
                 </View>
+
               </View>
 
               {/* Child DOB fields */}
@@ -687,35 +685,36 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              {/* Infants */}
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <IconSymbol name="heart.fill" size={18} color={colors.primary} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "رضع (أقل من سنتين)" : "Infants (under 2)"}</Text>
-                  <View style={styles.counterRow}>
-                    <Pressable onPress={() => setInfants(Math.max(0, infants - 1))}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+              {/* Infants + Bags — second card */}
+              <View style={[styles.passengersCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                <View style={styles.counterItem}>
+                  <View style={styles.counterItemLeft}>
+                    <IconSymbol name="heart.fill" size={16} color={colors.primary} />
+                    <Text style={[styles.counterItemLabel, { color: colors.foreground }]}>{isRTL ? "رضع (أقل من سنتين)" : "Infants (under 2)"}</Text>
+                  </View>
+                  <View style={styles.counterBtns}>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setInfants(Math.max(0, infants - 1))}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>−</Text>
                     </Pressable>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{infants}</Text>
-                    <Pressable onPress={() => setInfants(Math.min(infants + 1, passengers))}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                    <Text style={[styles.counterNum, { color: colors.foreground }]}>{infants}</Text>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setInfants(Math.min(infants + 1, passengers))}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>+</Text>
                     </Pressable>
                   </View>
                 </View>
-              </View>
-
-              {/* Bags */}
-              <View style={[styles.searchField, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                <MaterialIcons name="luggage" size={20} color={colors.muted} />
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.fieldLabel, { color: colors.muted }]}>{isRTL ? "الحقائب" : "Bags"}</Text>
-                  <View style={styles.counterRow}>
-                    <Pressable onPress={() => setBags(Math.max(0, bags - 1))}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>−</Text>
+                <View style={[styles.counterDivider, { backgroundColor: colors.border }]} />
+                <View style={styles.counterItem}>
+                  <View style={styles.counterItemLeft}>
+                    <MaterialIcons name="luggage" size={18} color={colors.muted} />
+                    <Text style={[styles.counterItemLabel, { color: colors.foreground }]}>{isRTL ? "الحقائب" : "Bags"}</Text>
+                  </View>
+                  <View style={styles.counterBtns}>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setBags(Math.max(0, bags - 1))}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>−</Text>
                     </Pressable>
-                    <Text style={[styles.fieldValue, { color: colors.foreground }]}>{bags}</Text>
-                    <Pressable onPress={() => setBags(Math.min(bags + 1, 3))}>
-                      <Text style={{ color: colors.primary, fontSize: 20, fontWeight: "700" }}>+</Text>
+                    <Text style={[styles.counterNum, { color: colors.foreground }]}>{bags}</Text>
+                    <Pressable style={[styles.counterCircle, { borderColor: colors.border }]} onPress={() => setBags(Math.min(bags + 1, 3))}>
+                      <Text style={[styles.counterCircleText, { color: colors.primary }]}>+</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -1404,6 +1403,65 @@ const styles = StyleSheet.create({
   rowFields: {
     flexDirection: "row",
     gap: 10,
+  },
+  datesColumn: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  dateSeparator: {
+    height: 1,
+    marginHorizontal: 12,
+  },
+  passengersCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  counterItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  counterItemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+  },
+  counterItemLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  counterBtns: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+  },
+  counterCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  counterCircleText: {
+    fontSize: 18,
+    fontWeight: "700",
+    lineHeight: 22,
+  },
+  counterNum: {
+    fontSize: 16,
+    fontWeight: "700",
+    minWidth: 24,
+    textAlign: "center",
+  },
+  counterDivider: {
+    height: 1,
+    marginHorizontal: 14,
   },
   searchField: {
     flexDirection: "row",
