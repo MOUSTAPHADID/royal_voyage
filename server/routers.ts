@@ -71,6 +71,8 @@ import {
   rejectTopUpRequest,
   getBalanceTransactions,
   deductBalance,
+  getActivityReviews,
+  addActivityReview,
 } from "./db";
 
 export const appRouter = router({
@@ -1553,6 +1555,36 @@ export const appRouter = router({
           console.error("[HBX Activities] book error:", err?.message);
           throw new Error("Failed to book activity");
         }
+      }),
+  }),
+
+  // ─── Activity Reviews (تقييمات الأنشطة) ──────────────────────────────────────
+  activityReviews: router({
+    list: publicProcedure
+      .input(z.object({ activityCode: z.string() }))
+      .query(async ({ input }) => {
+        return await getActivityReviews(input.activityCode);
+      }),
+    add: publicProcedure
+      .input(z.object({
+        activityCode: z.string(),
+        reviewerName: z.string().min(2).max(255),
+        rating: z.number().int().min(1).max(5),
+        comment: z.string().max(1000).optional(),
+        language: z.string().default("en"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const review = await addActivityReview({
+          activityCode: input.activityCode,
+          reviewerName: input.reviewerName,
+          rating: input.rating,
+          comment: input.comment || null,
+          language: input.language,
+          userId: ctx.user?.id || null,
+          verified: false,
+        });
+        if (!review) throw new Error("Failed to save review");
+        return review;
       }),
   }),
 

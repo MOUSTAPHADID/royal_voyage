@@ -180,3 +180,26 @@ export const balanceTransactions = mysqlTable("balance_transactions", {
 
 export type BalanceTransaction = typeof balanceTransactions.$inferSelect;
 export type InsertBalanceTransaction = typeof balanceTransactions.$inferInsert;
+
+// ─── Activity Reviews (تقييمات الأنشطة) ──────────────────────────────────────
+export const activityReviews = mysqlTable("activity_reviews", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Activity code from HBX */
+  activityCode: varchar("activityCode", { length: 64 }).notNull(),
+  /** User ID (optional - anonymous reviews allowed) */
+  userId: int("userId"),
+  /** Reviewer name */
+  reviewerName: varchar("reviewerName", { length: 255 }).notNull(),
+  /** Rating (1-5 stars) */
+  rating: int("rating").notNull(),
+  /** Review text */
+  comment: text("comment"),
+  /** Review language */
+  language: varchar("language", { length: 8 }).default("en").notNull(),
+  /** Is this review verified (user actually booked the activity)? */
+  verified: boolean("verified").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ActivityReview = typeof activityReviews.$inferSelect;
+export type InsertActivityReview = typeof activityReviews.$inferInsert;

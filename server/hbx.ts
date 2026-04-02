@@ -438,6 +438,8 @@ export interface HBXActivity {
   currency: string;
   duration: string;
   image: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export async function searchActivities(params: {
@@ -488,6 +490,8 @@ export async function searchActivities(params: {
       currency: a.amountsFrom?.[0]?.currency || "EUR",
       duration: a.operationDays || "",
       image: a.media?.[0]?.url || "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=400&q=70",
+      latitude: a.geoLocation?.latitude || a.coordinates?.latitude,
+      longitude: a.geoLocation?.longitude || a.coordinates?.longitude,
     }));
   } catch (err) {
     console.error("[HBX Activities] Error:", err);
@@ -529,6 +533,8 @@ export async function getActivityDetail(code: string, language = "en"): Promise<
       currency: a.amountsFrom?.[0]?.currency || "EUR",
       duration: a.operationDays || "",
       image: a.media?.[0]?.url || "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80",
+      latitude: a.geoLocation?.latitude || a.coordinates?.latitude,
+      longitude: a.geoLocation?.longitude || a.coordinates?.longitude,
     };
   } catch (err) {
     console.error("[HBX Activities] Detail error:", err);

@@ -22,18 +22,19 @@ type PriceFilter = "all" | "low" | "medium" | "high";
 export default function ActivitiesScreen() {
   const colors = useColors();
   const { t, isRTL } = useTranslation();
-  const params = useLocalSearchParams<{ destinationCode?: string; destName?: string; fromDate?: string; toDate?: string }>();
+  const params = useLocalSearchParams<{ destinationCode?: string; destName?: string; fromDate?: string; toDate?: string; language?: string; children?: string }>();
 
   const destinationCode = params.destinationCode || "BCN";
   const destName = params.destName || destinationCode;
   const fromDate = params.fromDate || new Date().toISOString().split("T")[0];
   const toDate = params.toDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const language = params.language || "en";
 
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
 
   const { data: activities = [], isLoading } = trpc.hbxActivities.search.useQuery(
-    { destinationCode, fromDate, toDate },
+    { destinationCode, fromDate, toDate, language },
     { enabled: !!destinationCode }
   );
 

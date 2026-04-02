@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -465,4 +465,40 @@ export async function deductBalance(businessAccountId: number, amount: number, b
     description,
     bookingRef,
   });
+}
+
+// ─── Activity Reviews ─────────────────────────────────────────────────────────
+
+export async function getActivityReviews(activityCode: string): Promise<ActivityReview[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await db
+      .select()
+      .from(activityReviews)
+      .where(eq(activityReviews.activityCode, activityCode))
+      .orderBy(desc(activityReviews.createdAt))
+      .limit(20);
+  } catch (err) {
+    console.error("[DB] getActivityReviews error:", err);
+    return [];
+  }
+}
+
+export async function addActivityReview(review: InsertActivityReview): Promise<ActivityReview | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    await db.insert(activityReviews).values(review);
+    const [inserted] = await db
+      .select()
+      .from(activityReviews)
+      .where(eq(activityReviews.activityCode, review.activityCode))
+      .orderBy(desc(activityReviews.createdAt))
+      .limit(1);
+    return inserted || null;
+  } catch (err) {
+    console.error("[DB] addActivityReview error:", err);
+    return null;
+  }
 }
