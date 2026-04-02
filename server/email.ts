@@ -452,7 +452,7 @@ export type PaymentConfirmationData = {
   passengerEmail: string;
   bookingRef: string;
   pnr?: string;
-  bookingType: "flight" | "hotel";
+  bookingType: "flight" | "hotel" | "activity";
   // Flight fields
   origin?: string;
   destination?: string;

@@ -772,7 +772,7 @@ export const appRouter = router({
           passengerEmail: z.string().email(),
           bookingRef: z.string(),
           pnr: z.string().optional(),
-          bookingType: z.enum(["flight", "hotel"]),
+          bookingType: z.enum(["flight", "hotel", "activity"]),
           origin: z.string().optional(),
           destination: z.string().optional(),
           airline: z.string().optional(),

@@ -19,7 +19,7 @@ import { useTranslation } from "@/lib/i18n";
 import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 
-type FilterTab = "all" | "flights" | "hotels";
+type FilterTab = "all" | "flights" | "hotels" | "activities";
 
 export default function BookingsScreen() {
   const router = useRouter();
@@ -60,7 +60,9 @@ export default function BookingsScreen() {
   const displayList = searchResult !== null ? searchResult : bookings.filter((b) => {
     if (filter === "all") return true;
     if (filter === "flights") return b.type === "flight";
-    return b.type === "hotel";
+    if (filter === "hotels") return b.type === "hotel";
+    if (filter === "activities") return b.type === "activity";
+    return true;
   });
 
   const statusColors: Record<string, { bg: string; text: string }> = {
@@ -82,13 +84,15 @@ export default function BookingsScreen() {
       >
         {/* Card Header */}
         <View style={styles.cardHeader}>
-          <View style={[styles.typeIcon, { backgroundColor: item.type === "flight" ? colors.primary + "15" : colors.secondary + "20" }]}>
-            <MaterialIcons name={item.type === "flight" ? "flight" : "hotel"} size={22} color={item.type === "flight" ? colors.primary : colors.secondary} />
+          <View style={[styles.typeIcon, { backgroundColor: item.type === "flight" ? colors.primary + "15" : item.type === "activity" ? "#10B98115" : colors.secondary + "20" }]}>
+            <MaterialIcons name={item.type === "flight" ? "flight" : item.type === "activity" ? "local-activity" : "hotel"} size={22} color={item.type === "flight" ? colors.primary : item.type === "activity" ? "#10B981" : colors.secondary} />
           </View>
           <View style={{ flex: 1 }}>
             <Text style={[styles.bookingTitle, { color: colors.foreground }]}>
               {item.type === "flight"
                 ? `${item.flight?.originCode} → ${item.flight?.destinationCode}`
+                : item.type === "activity"
+                ? item.activity?.name ?? (isRTL ? "نشاط" : "Activity")
                 : item.hotel?.name ?? "Hotel"}
             </Text>
             <Text style={[styles.bookingRef, { color: colors.muted }]}>{item.reference}</Text>
@@ -127,6 +131,21 @@ export default function BookingsScreen() {
               <View style={styles.detailItem}>
                 <Text style={[styles.detailLabel, { color: colors.muted }]}>{t.myBookings.passengers}</Text>
                 <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.passengers ?? 1}</Text>
+              </View>
+            </>
+          ) : item.type === "activity" ? (
+            <>
+              <View style={styles.detailItem}>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{isRTL ? "تاريخ" : "Date"}</Text>
+                <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.date}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{isRTL ? "مشاركون" : "Participants"}</Text>
+                <Text style={[styles.detailValue, { color: colors.foreground }]}>{item.activity?.participants ?? 1}</Text>
+              </View>
+              <View style={styles.detailItem}>
+                <Text style={[styles.detailLabel, { color: colors.muted }]}>{isRTL ? "السعر" : "Price"}</Text>
+                <Text style={[styles.detailValue, { color: "#10B981" }]}>{item.totalPrice} {item.currency}</Text>
               </View>
             </>
           ) : (
@@ -230,7 +249,7 @@ export default function BookingsScreen() {
 
       {/* Filter Tabs */}
       <View style={[styles.filterBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        {(["all", "flights", "hotels"] as FilterTab[]).map((tab) => (
+        {(["all", "flights", "hotels", "activities"] as FilterTab[]).map((tab) => (
           <Pressable
             key={tab}
             style={[
@@ -245,7 +264,7 @@ export default function BookingsScreen() {
                 { color: filter === tab ? colors.secondary : colors.muted },
               ]}
             >
-              {tab === "all" ? t.myBookings.all : tab === "flights" ? t.home.flights : t.home.hotels}
+              {tab === "all" ? t.myBookings.all : tab === "flights" ? t.home.flights : tab === "hotels" ? t.home.hotels : (isRTL ? "أنشطة" : "Activities")}
             </Text>
           </Pressable>
         ))}

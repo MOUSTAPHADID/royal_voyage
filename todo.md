@@ -1396,3 +1396,14 @@
 - [x] tRPC routes موجودة بالفعل (hbxActivities.search + hbxActivities.detail)
 - [ ] إنشاء شاشة حجز النشاط (activity-booking.tsx) مع نموذج بيانات المشاركين
 - [ ] إضافة route tRPC لحجز النشاط (bookActivity) - يتطلب موافقة HBX Production
+
+## تطوير نظام حجز الأنشطة وعرضها (Activity Booking & Display System)
+- [x] إنشاء شاشة حجز النشاط (app/activities/booking.tsx) مع نموذج بيانات المشاركين
+- [x] إضافة حقول: الاسم الكامل، الجنسية، تاريخ الميلاد، رقم الجواز لكل مشارك
+- [x] إضافة ملخص الحجز مع السعر الإجمالي وشروط الإلغاء
+- [x] ربط شاشة الحجز بزر "احجز هذا النشاط" في شاشة التفاصيل
+- [x] إضافة الأنشطة المحجوزة في قسم "حجوزاتي" (app/(tabs)/bookings.tsx)
+- [x] إنشاء بطاقة عرض خاصة بالأنشطة المحجوزة مع الحالة والتاريخ
+- [x] إضافة قسم "الأنشطة الشعبية" في الصفحة الرئيسية (app/(tabs)/index.tsx)
+- [x] عرض 4 أنشطة مميزة في شريط أفقي قابل للتمرير (Barcelona, Dubai, Paris, Palma)
+- [x] تحديث نوع Booking لدعم "activity" في lib/mock-data.ts

@@ -1037,6 +1037,52 @@ export default function HomeScreen() {
           <IconSymbol name="chevron.right" size={18} color="#10B981" />
         </Pressable>
 
+        {/* Popular Activities */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {isRTL ? "أنشطة شعبية" : "Popular Activities"}
+            </Text>
+            <Pressable onPress={() => router.push("/activities" as any)}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
+            </Pressable>
+          </View>
+          <FlatList
+            horizontal
+            scrollEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+            keyExtractor={(item) => item.id}
+            data={[
+              { id: "a1", city: "Barcelona", code: "BCN", emoji: "🇪🇸", activity: isRTL ? "جولة معمارية" : "Architecture Tour", color: "#F59E0B", image: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=400&q=80" },
+              { id: "a2", city: "Dubai", code: "DXB", emoji: "🇦🇪", activity: isRTL ? "رحلة صحراء" : "Desert Safari", color: "#EF4444", image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=400&q=80" },
+              { id: "a3", city: "Paris", code: "PAR", emoji: "🇫🇷", activity: isRTL ? "جولة برج إيفل" : "Eiffel Tower Tour", color: "#6366F1", image: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&q=80" },
+              { id: "a4", city: "Palma", code: "PMI", emoji: "🇪🇸", activity: isRTL ? "غطس ومغامرة" : "Snorkeling & Diving", color: "#10B981", image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&q=80" },
+            ]}
+            renderItem={({ item }) => (
+              <Pressable
+                style={({ pressed }) => [{
+                  width: 160,
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  opacity: pressed ? 0.9 : 1,
+                }]}
+                onPress={() => {
+                  setActiveTab("activities");
+                  setActivityDest(item.city);
+                  setActivityDestCode(item.code);
+                }}
+              >
+                <Image source={{ uri: item.image }} style={{ width: 160, height: 110 }} />
+                <View style={[{ backgroundColor: item.color + "18", padding: 10, borderWidth: 1, borderColor: item.color + "30", borderTopWidth: 0 }]}>
+                  <Text style={{ fontSize: 11, color: item.color, fontWeight: "700", marginBottom: 2 }}>{item.emoji} {item.city}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>{item.activity}</Text>
+                </View>
+              </Pressable>
+            )}
+          />
+        </View>
+
         {/* Why Book With Us */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>

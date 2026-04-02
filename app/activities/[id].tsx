@@ -20,27 +20,17 @@ export default function ActivityDetailScreen() {
   const handleBookActivity = () => {
     if (!activity) return;
     
-    Alert.alert(
-      isRTL ? "حجز النشاط" : "Book Activity",
-      isRTL 
-        ? `هل تريد حجز "${activity.name}"؟\n\nسيتم توجيهك إلى صفحة الحجز.`
-        : `Do you want to book "${activity.name}"?\n\nYou will be redirected to the booking page.`,
-      [
-        { text: isRTL ? "إلغاء" : "Cancel", style: "cancel" },
-        {
-          text: isRTL ? "متابعة" : "Continue",
-          onPress: () => {
-            // TODO: Navigate to activity booking screen when implemented
-            Alert.alert(
-              isRTL ? "قريباً" : "Coming Soon",
-              isRTL 
-                ? "سيتم إضافة نظام الحجز قريباً. يرجى الاتصال بنا على +22233700000"
-                : "Booking system coming soon. Please contact us at +22233700000"
-            );
-          },
-        },
-      ]
-    );
+    // Navigate to booking screen with activity details
+    router.push({
+      pathname: "/activities/booking" as any,
+      params: {
+        activityCode: activity.code,
+        activityName: activity.name,
+        price: activity.minPrice.toString(),
+        currency: activity.currency,
+        date: new Date().toISOString().split("T")[0],
+      },
+    });
   };
 
   if (isLoading) {

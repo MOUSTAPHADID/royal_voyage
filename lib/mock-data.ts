@@ -47,7 +47,7 @@ export type Destination = {
 
 export type Booking = {
   id: string;
-  type: "flight" | "hotel";
+  type: "flight" | "hotel" | "activity";
   status: "confirmed" | "pending" | "cancelled" | "processing" | "airline_confirmed";
   reference: string;
   pnr?: string;  // Passenger Name Record - 6 char alphanumeric code (auto-generated)
@@ -64,6 +64,13 @@ export type Booking = {
   checkOut?: string;
   guests?: number;
   rooms?: number;
+  // Activity specific
+  activity?: {
+    code: string;
+    name: string;
+    participants: number;
+    participantDetails?: any[];
+  };
   totalPrice: number;
   currency: string;
   // Passenger/guest name and email for search and notifications
