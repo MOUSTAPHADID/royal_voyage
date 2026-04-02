@@ -39,6 +39,14 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { createPaymentIntent, getPaymentIntent, isStripeConfigured, getPublishableKey } from "./stripe";
 import { storagePut } from "./storage";
 import {
+  searchHotelsByCityCode,
+  checkRate as hbxCheckRate,
+  createHotelBooking as hbxCreateBooking,
+  getHotelBooking as hbxGetBooking,
+  cancelHotelBooking as hbxCancelBooking,
+  getHBXStatus,
+} from "./hbx";
+import {
   getBusinessAccounts,
   getBusinessAccountById,
   createBusinessAccount,
@@ -1385,6 +1393,101 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         await rejectTopUpRequest(input.id, input.processedBy, input.adminNotes);
         return { success: true };
+      }),
+  }),
+
+  // ─── HBX Group Hotels API ─────────────────────────────────────────────────
+  hbx: router({
+    // Status check
+    getStatus: publicProcedure.query(() => getHBXStatus()),
+
+    // Search hotels by city IATA code
+    searchHotels: publicProcedure
+      .input(
+        z.object({
+          cityCode: z.string().min(2).max(5),
+          checkInDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          checkOutDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          adults: z.number().min(1).max(9).default(2),
+          rooms: z.number().min(1).max(5).default(1),
+          ratings: z.string().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        try {
+          const hotels = await searchHotelsByCityCode({
+            cityCode: input.cityCode,
+            checkInDate: input.checkInDate,
+            checkOutDate: input.checkOutDate,
+            adults: input.adults,
+            rooms: input.rooms,
+            ratings: input.ratings,
+          });
+          return { success: true, data: hotels };
+        } catch (err: any) {
+          console.error("[HBX] searchHotels error:", err?.message);
+          return { success: false, data: [], error: err?.message || "SEARCH_ERROR" };
+        }
+      }),
+
+    // CheckRate before booking
+    checkRate: publicProcedure
+      .input(z.object({ rateKey: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const result = await hbxCheckRate(input.rateKey);
+          return { success: !!result, data: result };
+        } catch (err: any) {
+          console.error("[HBX] checkRate error:", err?.message);
+          return { success: false, data: null, error: err?.message };
+        }
+      }),
+
+    // Create hotel booking
+    createBooking: publicProcedure
+      .input(
+        z.object({
+          rateKey: z.string(),
+          holderName: z.string(),
+          holderSurname: z.string(),
+          holderEmail: z.string().optional(),
+          holderPhone: z.string().optional(),
+          clientReference: z.string().optional(),
+          remark: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const result = await hbxCreateBooking(input);
+          return { success: !!result, data: result };
+        } catch (err: any) {
+          console.error("[HBX] createBooking error:", err?.message);
+          return { success: false, data: null, error: err?.message };
+        }
+      }),
+
+    // Get booking details
+    getBooking: publicProcedure
+      .input(z.object({ reference: z.string() }))
+      .query(async ({ input }) => {
+        try {
+          const result = await hbxGetBooking(input.reference);
+          return { success: !!result, data: result };
+        } catch (err: any) {
+          return { success: false, data: null, error: err?.message };
+        }
+      }),
+
+    // Cancel booking
+    cancelBooking: publicProcedure
+      .input(z.object({ reference: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const ok = await hbxCancelBooking(input.reference);
+          return { success: ok };
+        } catch (err: any) {
+          return { success: false, error: err?.message };
+        }
       }),
   }),
 

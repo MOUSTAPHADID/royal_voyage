@@ -1375,3 +1375,12 @@
 - [x] إضافة حقل hold24hFeeMRU في pricing-settings.ts
 - [x] إضافة قسم "رسوم الاحتفاظ بالسعر" في admin/pricing.tsx
 - [x] ربط شاشة الدفع بالرسوم الديناميكية من pricing-settings
+
+## تكامل HBX Group API للفنادق
+- [x] إنشاء ملف server/hbx.ts مع دوال البحث والحجز
+- [x] إضافة مسارات HBX في server/routers.ts
+- [x] اختبار الاتصال بـ HBX API (Test Environment يعمل بنجاح)
+- [x] تحديث صفحة results.tsx لاستخدام HBX بدلاً من Duffel للفنادق
+- [ ] تحديث صفحة detail.tsx لعرض تفاصيل فنادق HBX
+- [x] إضافة خدمة CheckRate قبل الحجز
+- [ ] إضافة خدمة Booking لتأكيد الحجز (تتطلب موافقة HBX Production)

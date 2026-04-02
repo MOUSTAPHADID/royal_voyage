@@ -54,11 +54,8 @@ export default function HotelResultsScreen() {
   const { t } = useTranslation();
   const { fmt } = useCurrency();
 
-  // Always use Duffel Production API
-  const useMock = false;
-
-  // Duffel Production API hotel search
-  const { data: amadeusResult, isLoading, isError } = trpc.amadeus.searchHotels.useQuery(
+  // HBX Group API hotel search
+  const { data: hbxResult, isLoading, isError } = trpc.hbx.searchHotels.useQuery(
     {
       cityCode: params.destinationCode || "",
       checkInDate: params.checkIn || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
@@ -67,16 +64,16 @@ export default function HotelResultsScreen() {
       rooms: 1,
     },
     {
-      enabled: true,
+      enabled: !!(params.destinationCode),
       retry: 2,
     }
   );
 
-  const amadeusHotels: AnyHotel[] = (amadeusResult?.data ?? []) as AnyHotel[];
+  const hbxHotels: AnyHotel[] = (hbxResult?.data ?? []) as AnyHotel[];
 
-  // Use live Duffel data; fallback to mock only if API fails
-  const rawHotels: AnyHotel[] = amadeusResult?.success && amadeusHotels.length > 0
-    ? amadeusHotels
+  // Use HBX data; fallback to mock only if API fails
+  const rawHotels: AnyHotel[] = hbxResult?.success && hbxHotels.length > 0
+    ? hbxHotels
     : isLoading
     ? []
     : (HOTELS as unknown as AnyHotel[]);
@@ -281,7 +278,7 @@ export default function HotelResultsScreen() {
       </View>
 
       {/* Loading */}
-      {isLoading && !useMock ? (
+      {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={[styles.loadingText, { color: colors.muted }]}>
@@ -293,7 +290,7 @@ export default function HotelResultsScreen() {
           <View style={[styles.resultsCount, { backgroundColor: colors.background }]}>
             <Text style={[styles.resultsText, { color: colors.muted }]}>
               {sortedHotels.length} {t.hotels.hotelsFound}
-              {!useMock && amadeusResult?.success ? " · Live" : " · Mock"}
+              {hbxResult?.success ? " · HBX Live" : hbxHotels.length === 0 && !isLoading ? " · Mock" : ""}
             </Text>
             {isError && (
               <Text style={[styles.errorNote, { color: colors.warning }]}>
