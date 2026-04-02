@@ -64,6 +64,7 @@ const MAPPING = {
   "figure.walk": "directions-walk",
   "person.badge.key.fill": "badge",
   "arrow.uturn.right.circle.fill": "undo",
+  "arrow.uturn.left.circle.fill": "replay",
   "airplane.departure": "flight-takeoff",
   "arrow.2.squarepath": "sync",
   "calendar": "calendar-today",

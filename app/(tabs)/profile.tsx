@@ -142,6 +142,8 @@ export default function ProfileScreen() {
         { icon: "star.fill", label: t.profile.rateApp, value: "", onPress: () => {} },
         { icon: "info.circle.fill", label: language === "ar" ? "عن الوكالة" : language === "fr" ? "À propos" : "About Us", value: "", onPress: () => router.push("/about" as any) },
         { icon: "shield.fill", label: language === "ar" ? "سياسة الخصوصية" : language === "fr" ? "Politique de Confidentialité" : "Privacy Policy", value: "", onPress: () => router.push("/privacy" as any) },
+        { icon: "doc.text.fill", label: language === "ar" ? "الشروط والأحكام" : language === "fr" ? "Conditions Générales" : "Terms & Conditions", value: "", onPress: () => router.push("/terms" as any) },
+        { icon: "arrow.uturn.left.circle.fill", label: language === "ar" ? "سياسة الإلغاء والاسترداد" : language === "fr" ? "Politique d'Annulation" : "Cancellation Policy", value: "", onPress: () => router.push("/refund" as any) },
       ],
     },
 

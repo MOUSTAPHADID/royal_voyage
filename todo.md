@@ -1472,3 +1472,13 @@
 - [x] إصلاح Deep Linking scheme من manus20260323015034 إلى royalvoyage في server/_core/index.ts
 - [x] إصلاح placeholder your-server.com في admin/webhooks.tsx
 - [x] الميكروفون مستخدم فعلياً في البحث الصوتي - تم الإبقاء عليه
+
+## صفحات الثقة (Trust Pages)
+- [ ] إنشاء app/legal/about.tsx — من نحن
+- [ ] إنشاء app/legal/privacy.tsx — سياسة الخصوصية
+- [ ] إنشاء app/legal/terms.tsx — الشروط والأحكام
+- [ ] إنشاء app/legal/contact.tsx — اتصل بنا
+- [ ] إنشاء app/legal/cancellation.tsx — سياسة الإلغاء والاسترداد
+- [ ] إنشاء app/legal/_layout.tsx — layout للصفحات القانونية
+- [ ] تحديث Footer (app/(tabs)/index.tsx أو component) لإظهار روابط الصفحات
+- [ ] تحديث صفحة Profile لإضافة قسم "قانوني" مع روابط الصفحات

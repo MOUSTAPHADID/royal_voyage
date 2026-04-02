@@ -249,7 +249,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useApp();
-  const { t, isRTL } = useTranslation();
+  const { t, isRTL, language } = useTranslation();
   const [activeTab, setActiveTab] = useState<SearchTab>("flights");
 
   // Voice search modal
@@ -1202,6 +1202,51 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        {/* ===== LEGAL FOOTER ===== */}
+        <View style={styles.legalFooter}>
+          <Text style={[styles.legalFooterTitle, { color: colors.muted }]}>
+            Royal Voyage © 2023
+          </Text>
+          <View style={styles.legalLinksRow}>
+            <Pressable onPress={() => router.push("/about" as any)}>
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                {language === "ar" ? "من نحن" : language === "fr" ? "À propos" : "About Us"}
+              </Text>
+            </Pressable>
+            <Text style={{ color: colors.muted }}> · </Text>
+            <Pressable onPress={() => router.push("/privacy" as any)}>
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                {language === "ar" ? "الخصوصية" : language === "fr" ? "Confidentialité" : "Privacy"}
+              </Text>
+            </Pressable>
+            <Text style={{ color: colors.muted }}> · </Text>
+            <Pressable onPress={() => router.push("/terms" as any)}>
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                {language === "ar" ? "الشروط" : language === "fr" ? "CGU" : "Terms"}
+              </Text>
+            </Pressable>
+            <Text style={{ color: colors.muted }}> · </Text>
+            <Pressable onPress={() => router.push("/refund" as any)}>
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                {language === "ar" ? "الإلغاء" : language === "fr" ? "Annulation" : "Cancellation"}
+              </Text>
+            </Pressable>
+            <Text style={{ color: colors.muted }}> · </Text>
+            <Pressable onPress={() => router.push("/contact" as any)}>
+              <Text style={[styles.legalLink, { color: colors.primary }]}>
+                {language === "ar" ? "تواصل" : language === "fr" ? "Contact" : "Contact"}
+              </Text>
+            </Pressable>
+          </View>
+          <Text style={[styles.legalFooterSub, { color: colors.muted }]}>
+            {language === "ar"
+              ? "وكالة سفر موثوقة • تفرغ زين، نواكشوط، موريتانيا"
+              : language === "fr"
+              ? "Agence de voyage agréée • Tavragh Zeina, Nouakchott, Mauritanie"
+              : "Licensed Travel Agency • Tavragh Zeina, Nouakchott, Mauritania"}
+          </Text>
+        </View>
+
       </ScrollView>
 
       {/* Voice Search Modal */}
@@ -1549,6 +1594,37 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 15,
+  },
+  legalFooter: {
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    alignItems: "center" as const,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    marginTop: 8,
+  },
+  legalFooterTitle: {
+    fontSize: 13,
+    fontWeight: "600" as const,
+    marginBottom: 10,
+  },
+  legalLinksRow: {
+    flexDirection: "row" as const,
+    flexWrap: "wrap" as const,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+    marginBottom: 10,
+  },
+  legalLink: {
+    fontSize: 12,
+    fontWeight: "500" as const,
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+  },
+  legalFooterSub: {
+    fontSize: 11,
+    textAlign: "center" as const,
+    lineHeight: 16,
   },
 });
 
