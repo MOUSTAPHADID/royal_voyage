@@ -7,6 +7,7 @@ import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
 import MapView, { Marker } from "react-native-maps";
+import { useFavoriteActivities } from "@/hooks/use-favorite-activities";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -40,6 +41,17 @@ export default function ActivityDetailScreen() {
   const [reviewName, setReviewName] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+
+  const { isFavorite, toggleFavorite } = useFavoriteActivities();
+  const favActivity = activity ? {
+    code: activity.code,
+    name: activity.name,
+    image: activity.images?.[0] || activity.image || "",
+    minPrice: activity.minPrice,
+    currency: activity.currency,
+    category: activity.category,
+    duration: activity.duration,
+  } : null;
 
   const avgRating = reviews.length > 0
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -175,7 +187,7 @@ export default function ActivityDetailScreen() {
               <View key={i} style={[styles.dot, i === galleryIndex && styles.dotActive]} />
             ))}
           </View>
-          {/* Share button */}
+          {/* Share + Favorite buttons */}
           <View style={styles.shareButtons}>
             <Pressable
               style={({ pressed }) => [styles.shareBtn, { opacity: pressed ? 0.7 : 1 }]}
@@ -188,6 +200,12 @@ export default function ActivityDetailScreen() {
               onPress={handleShare}
             >
               <IconSymbol name="square.and.arrow.up" size={18} color="#fff" />
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.shareBtn, { opacity: pressed ? 0.7 : 1 }]}
+              onPress={() => favActivity && toggleFavorite(favActivity)}
+            >
+              <Text style={{ fontSize: 18 }}>{favActivity && isFavorite(favActivity.code) ? "❤️" : "🤍"}</Text>
             </Pressable>
           </View>
         </View>

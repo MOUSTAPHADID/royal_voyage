@@ -8,6 +8,7 @@ import {
   Image,
   StyleSheet,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -15,6 +16,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
+import { useFavoriteActivities } from "@/hooks/use-favorite-activities";
 
 type CategoryFilter = "all" | "tours" | "adventure" | "culture" | "nature" | "food";
 type PriceFilter = "all" | "low" | "medium" | "high";
@@ -34,6 +36,7 @@ export default function ActivitiesScreen() {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [priceFilter, setPriceFilter] = useState<PriceFilter>("all");
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>("all");
+  const { isFavorite, toggleFavorite, favorites } = useFavoriteActivities();
 
   const { data: activities = [], isLoading } = trpc.hbxActivities.search.useQuery(
     { destinationCode, fromDate, toDate, language },
@@ -87,7 +90,15 @@ export default function ActivitiesScreen() {
       style={({ pressed }) => [styles.card, { backgroundColor: colors.surface, opacity: pressed ? 0.85 : 1 }]}
       onPress={() => router.push({ pathname: "/activities/[id]", params: { id: item.code, name: item.name } } as any)}
     >
-      <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
+      <View style={{ position: "relative" }}>
+        <Image source={{ uri: item.image }} style={styles.cardImage} resizeMode="cover" />
+        <TouchableOpacity
+          style={[styles.favBtn, { backgroundColor: "rgba(0,0,0,0.4)" }]}
+          onPress={(e) => { e.stopPropagation?.(); toggleFavorite({ code: item.code, name: item.name, image: item.image, minPrice: item.minPrice, currency: item.currency, category: item.category, duration: item.duration, destinationCode, destName }); }}
+        >
+          <Text style={{ fontSize: 18 }}>{isFavorite(item.code) ? "❤️" : "🤍"}</Text>
+        </TouchableOpacity>
+      </View>
       <View style={styles.cardContent}>
         {item.category ? (
           <View style={[styles.badge, { backgroundColor: "#10B981" + "20" }]}>
@@ -147,7 +158,12 @@ export default function ActivitiesScreen() {
           <Text style={[styles.headerTitle, { color: colors.foreground }]}>{isRTL ? "الأنشطة السياحية" : "Activities"}</Text>
           <Text style={[styles.headerSubtitle, { color: colors.muted }]}>{destName}</Text>
         </View>
-        <View style={{ width: 40 }} />
+        <Pressable
+          style={({ pressed }) => [styles.backBtn, { opacity: pressed ? 0.6 : 1 }]}
+          onPress={() => router.push("/activities/favorites" as any)}
+        >
+          <Text style={{ fontSize: 22 }}>{favorites.length > 0 ? "❤️" : "🤍"}</Text>
+        </Pressable>
       </View>
 
       {/* Filters */}
@@ -280,4 +296,5 @@ const styles = StyleSheet.create({
   cardFooter: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 },
   priceLabel: { fontSize: 12 },
   price: { fontSize: 16, fontWeight: "700" },
+  favBtn: { position: "absolute", top: 8, right: 8, width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
 });
