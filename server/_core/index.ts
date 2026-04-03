@@ -35,22 +35,38 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
+  // CORS — allow only trusted origins
+  const ALLOWED_ORIGINS = [
+    "https://royalvoyage.online",
+    "https://www.royalvoyage.online",
+    "https://royalvoyage-dcsedylm.manus.space",
+  ];
+  const ALLOWED_ORIGIN_PATTERNS = [
+    /^https?:\/\/localhost(:\d+)?$/,
+    /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
+    /\.manus\.computer$/,
+    /\.manuspre\.computer$/,
+  ];
+
   app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin) {
+    const isAllowed = origin && (
+      ALLOWED_ORIGINS.includes(origin) ||
+      ALLOWED_ORIGIN_PATTERNS.some((p) => p.test(origin))
+    );
+    if (isAllowed && origin) {
       res.header("Access-Control-Allow-Origin", origin);
+      res.header("Access-Control-Allow-Credentials", "true");
     }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.header(
       "Access-Control-Allow-Headers",
       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
     );
-    res.header("Access-Control-Allow-Credentials", "true");
 
     // Handle preflight requests
     if (req.method === "OPTIONS") {
-      res.sendStatus(200);
+      res.sendStatus(isAllowed ? 200 : 403);
       return;
     }
     next();

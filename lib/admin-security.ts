@@ -16,10 +16,13 @@ const STORAGE_KEYS = {
 };
 
 // Default credentials
+// NOTE: Change this password immediately after first login via Admin > Settings > Security
 const DEFAULT_EMAIL = "suporte@royalvoyage.online";
-const DEFAULT_PASSWORD = "RV@Admin#2026$Secure!";
-const MAX_ATTEMPTS = 3;
-const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes
+// Password stored as-is but only in AsyncStorage on device — never sent to any server
+// First-run password: see admin setup guide or contact suporte@royalvoyage.online
+const DEFAULT_PASSWORD = "RV@2026#Voyage$!"; // CHANGE ON FIRST LOGIN
+const MAX_ATTEMPTS = 5; // increased from 3 to reduce false lockouts
+const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 // ─── Email/Password Management ────────────────────────────────
 
