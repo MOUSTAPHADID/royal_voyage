@@ -9,12 +9,7 @@ import {
   Switch,
   Modal,
   Linking,
-  TextInput,
-  Platform,
 } from "react-native";
-import * as Haptics from "expo-haptics";
-
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
