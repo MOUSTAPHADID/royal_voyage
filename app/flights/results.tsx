@@ -99,6 +99,7 @@ export default function FlightResultsScreen() {
   const [sortBy, setSortBy] = useState<SortOption>("price");
   const [filterClass, setFilterClass] = useState<string>("All");
   const [filterBags, setFilterBags] = useState<number | null>(null); // null = All
+  const [filterDirectOnly, setFilterDirectOnly] = useState(false);
   const [activeSection, setActiveSection] = useState<"outbound" | "return">("outbound");
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 999999]);
@@ -215,12 +216,16 @@ export default function FlightResultsScreen() {
         const checkedQty = f.baggageAllowance?.checked?.quantity ?? 1;
         return checkedQty >= filterBags;
       })
+      .filter((f) => {
+        if (!filterDirectOnly) return true;
+        return f.stops === 0;
+      })
       .sort((a, b) => {
         if (sortBy === "price") return getFlightTotalMRU(a) - getFlightTotalMRU(b);
         if (sortBy === "duration") return a.duration.localeCompare(b.duration);
         return a.departureTime.localeCompare(b.departureTime);
       });
-  }, [activeFlights, filterClass, sortBy, priceRange]);
+  }, [activeFlights, filterClass, sortBy, priceRange, filterBags, filterDirectOnly]);
 
   // Cheapest price for "Best Price" badge
   const cheapestPrice = useMemo(() => {
@@ -318,12 +323,41 @@ export default function FlightResultsScreen() {
           <Text style={[styles.price, { color: colors.primary }]}>
             {fmt(flightTotal)}
           </Text>
-          <Text style={[styles.perPerson, { color: colors.muted }]}>الإجمالي</Text>
+          <Text style={[styles.perPerson, { color: colors.muted }]}>إجمالي</Text>
           {totalPassengers > 1 && (
             <Text style={[styles.perPersonDetail, { color: colors.muted }]}>
               {fmt(perPerson)} / شخص
             </Text>
           )}
+          {/* تفاصيل السعر حسب نوع المسافر */}
+          {(() => {
+            const adultCount = parseInt(params.passengers || "1", 10);
+            const childCount = parseInt(params.children || "0", 10);
+            const infantCount = parseInt(params.infants || "0", 10);
+            if (childCount === 0 && infantCount === 0) return null;
+            const adultPrice = Math.round(flightTotal / Math.max(totalPassengers, 1));
+            const childPrice = Math.round(adultPrice * 0.75);
+            const infantPrice = Math.round(adultPrice * 0.10);
+            return (
+              <View style={{ marginTop: 2, gap: 1 }}>
+                {adultCount > 0 && (
+                  <Text style={{ fontSize: 9, color: colors.muted }}>
+                    بالغ: {adultCount} × {fmt(adultPrice)}
+                  </Text>
+                )}
+                {childCount > 0 && (
+                  <Text style={{ fontSize: 9, color: colors.muted }}>
+                    طفل: {childCount} × {fmt(childPrice)}
+                  </Text>
+                )}
+                {infantCount > 0 && (
+                  <Text style={{ fontSize: 9, color: colors.muted }}>
+                    رضيع: {infantCount} × {fmt(infantPrice)}
+                  </Text>
+                )}
+              </View>
+            );
+          })()}
         </View>
       </View>
 
@@ -685,6 +719,21 @@ export default function FlightResultsScreen() {
               </Text>
             </Pressable>
           ))}
+        </View>
+        {/* Direct flights filter */}
+        <View style={[styles.classRow, { marginTop: 4 }]}>
+          <Pressable
+            style={[styles.classChip, filterDirectOnly && { backgroundColor: colors.success + "25", borderColor: colors.success }]}
+            onPress={() => setFilterDirectOnly(!filterDirectOnly)}
+          >
+            <MaterialIcons name="flight" size={14} color={filterDirectOnly ? colors.success : colors.muted} style={{ marginRight: 3 }} />
+            <Text style={[styles.classChipText, { color: filterDirectOnly ? colors.success : colors.muted, fontWeight: filterDirectOnly ? "700" : "400" }]}>
+              رحلات مباشرة فقط
+            </Text>
+          </Pressable>
+          <Text style={[styles.sortLabel, { color: colors.muted, marginLeft: 8 }]}>
+            {filteredFlights.filter(f => f.stops === 0).length} مباشرة
+          </Text>
         </View>
         {/* Bags filter row */}
         <View style={[styles.classRow, { marginTop: 4 }]}>
