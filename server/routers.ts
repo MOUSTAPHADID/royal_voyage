@@ -1123,6 +1123,8 @@ export const appRouter = router({
         address: z.string().optional(),
         city: z.string().optional(),
         country: z.string().optional(),
+        logoUrl: z.string().max(1024).optional(),
+        website: z.string().max(512).optional(),
       }))
       .mutation(async ({ input }) => {
         const id = await createBusinessAccount(input);
@@ -1143,6 +1145,8 @@ export const appRouter = router({
         address: z.string().optional(),
         city: z.string().optional(),
         country: z.string().optional(),
+        logoUrl: z.string().max(1024).optional(),
+        website: z.string().max(512).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;

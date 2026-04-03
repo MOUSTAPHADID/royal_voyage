@@ -398,6 +398,43 @@ export default function AdminBookingDetailScreen() {
           </View>
         ) : null}
 
+        {/* Preview & Issue Ticket Invoice Button */}
+        {booking.type === "flight" && booking.flight && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.resendBtn,
+              { backgroundColor: "#6366F1", opacity: pressed ? 0.7 : 1, marginBottom: 0 },
+            ]}
+            onPress={() => {
+              const flight = booking.flight!;
+              const params = new URLSearchParams({
+                mode: "ticket_invoice",
+                passengerName: booking.passengerName ?? booking.guestName ?? "",
+                passengerEmail: booking.passengerEmail ?? "",
+                bookingRef: booking.reference ?? "",
+                pnr: booking.realPnr ?? booking.pnr ?? "",
+                origin: flight.originCode ?? flight.origin ?? "",
+                originCity: flight.origin ?? "",
+                destination: flight.destinationCode ?? flight.destination ?? "",
+                destinationCity: flight.destination ?? "",
+                departureDate: booking.date ?? "",
+                departureTime: flight.departureTime ?? "",
+                arrivalTime: flight.arrivalTime ?? "",
+                airline: flight.airline ?? "",
+                flightNumber: flight.flightNumber ?? "",
+                cabinClass: flight.class ?? "ECONOMY",
+                passengers: String(booking.passengers ?? 1),
+                totalPrice: String(booking.totalPrice ?? 0),
+                businessAccountId: booking.businessAccountId ? String(booking.businessAccountId) : "",
+              });
+              router.push(`/admin/document-generator?${params.toString()}` as any);
+            }}
+          >
+            <IconSymbol name="doc.text.fill" size={18} color="#FFFFFF" />
+            <Text style={styles.resendBtnText}>معاينة وإصدار فاتورة التذكرة</Text>
+          </Pressable>
+        )}
+
         {/* Resend Ticket Button */}
         {booking.status === "airline_confirmed" && booking.passengerEmail && (
           <Pressable

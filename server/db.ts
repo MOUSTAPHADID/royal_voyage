@@ -125,6 +125,8 @@ export async function createBusinessAccount(data: {
   address?: string;
   city?: string;
   country?: string;
+  logoUrl?: string;
+  website?: string;
 }): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -139,6 +141,8 @@ export async function createBusinessAccount(data: {
     address: data.address || null,
     city: data.city || null,
     country: data.country || null,
+    logoUrl: data.logoUrl || null,
+    website: data.website || null,
   });
   return result[0].insertId;
 }
@@ -155,6 +159,8 @@ export async function updateBusinessAccount(id: number, data: {
   address?: string;
   city?: string;
   country?: string;
+  logoUrl?: string;
+  website?: string;
 }): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -170,6 +176,8 @@ export async function updateBusinessAccount(id: number, data: {
   if (data.address !== undefined) updateSet.address = data.address;
   if (data.city !== undefined) updateSet.city = data.city;
   if (data.country !== undefined) updateSet.country = data.country;
+  if (data.logoUrl !== undefined) updateSet.logoUrl = data.logoUrl;
+  if (data.website !== undefined) updateSet.website = data.website;
   if (Object.keys(updateSet).length === 0) return;
   await db.update(businessAccounts).set(updateSet).where(eq(businessAccounts.id, id));
 }

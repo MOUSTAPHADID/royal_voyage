@@ -53,6 +53,10 @@ export const businessAccounts = mysqlTable("business_accounts", {
   city: varchar("city", { length: 128 }),
   /** Country */
   country: varchar("country", { length: 128 }),
+  /** Logo URL (S3 or external image URL) for white-label ticket branding */
+  logoUrl: varchar("logoUrl", { length: 1024 }),
+  /** Agency website */
+  website: varchar("website", { length: 512 }),
   /** Total bookings made by this account */
   totalBookings: int("totalBookings").notNull().default(0),
   /** Total revenue from this account in MRU */

@@ -3,7 +3,7 @@
  * Allows admin to fill contract/invoice data and generate a custom PDF
  * Features: Save to DB, Send by Email, Ticket Invoice template
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -57,9 +57,30 @@ function Field({
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function DocumentGeneratorScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ type?: string }>();
+  const params = useLocalSearchParams<{
+    type?: string;
+    mode?: string;
+    passengerName?: string;
+    passengerEmail?: string;
+    bookingRef?: string;
+    pnr?: string;
+    origin?: string;
+    originCity?: string;
+    destination?: string;
+    destinationCity?: string;
+    departureDate?: string;
+    departureTime?: string;
+    arrivalTime?: string;
+    airline?: string;
+    flightNumber?: string;
+    cabinClass?: string;
+    passengers?: string;
+    totalPrice?: string;
+    businessAccountId?: string;
+  }>();
   const colors = useColors();
-  const [docType, setDocType] = useState<DocType>((params.type as DocType) || "employment");
+  const initialDocType: DocType = params.mode === "ticket_invoice" ? "ticket" : ((params.type as DocType) || "employment");
+  const [docType, setDocType] = useState<DocType>(initialDocType);
   const [loading, setLoading] = useState(false);
   const [generatedPdf, setGeneratedPdf] = useState<{ base64: string; filename: string } | null>(null);
   const [savedDocId, setSavedDocId] = useState<number | null>(null);
@@ -139,6 +160,30 @@ export default function DocumentGeneratorScreen() {
   const [tickCurrency, setTickCurrency] = useState("MRU");
   const [tickPayMethod, setTickPayMethod] = useState("Bank Transfer");
   const [tickNotes, setTickNotes] = useState("");
+
+  // Auto-fill ticket fields from URL params when navigating from booking detail
+  useEffect(() => {
+    if (params.mode === "ticket_invoice") {
+      if (params.passengerName) setTickPassenger(params.passengerName);
+      if (params.passengerEmail) setTickPassEmail(params.passengerEmail);
+      if (params.bookingRef) setTickBookingRef(params.bookingRef);
+      if (params.pnr) setTickPnr(params.pnr);
+      if (params.origin) setTickOrigin(params.origin);
+      if (params.originCity) setTickOriginCity(params.originCity);
+      if (params.destination) setTickDest(params.destination);
+      if (params.destinationCity) setTickDestCity(params.destinationCity);
+      if (params.departureDate) setTickDepDate(params.departureDate);
+      if (params.airline) setTickAirline(params.airline);
+      if (params.flightNumber) setTickFlightNum(params.flightNumber);
+      if (params.cabinClass) setTickCabin(params.cabinClass);
+      if (params.passengers) setTickAdults(params.passengers);
+      if (params.totalPrice) {
+        const total = parseFloat(params.totalPrice);
+        if (!isNaN(total) && total > 0) setTickAdultPrice(total.toFixed(2));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // tRPC mutations
   const empMutation = trpc.documents.generateEmploymentContract.useMutation();

@@ -35,6 +35,8 @@ type BusinessAccount = {
   address: string | null;
   city: string | null;
   country: string | null;
+  logoUrl: string | null;
+  website: string | null;
   totalBookings: number;
   totalRevenue: string;
   createdAt: string;
@@ -65,6 +67,8 @@ export default function BusinessAccountsScreen() {
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [website, setWebsite] = useState("");
 
   const accountsQuery = trpc.businessAccounts.list.useQuery();
   const createMut = trpc.businessAccounts.create.useMutation();
@@ -84,6 +88,8 @@ export default function BusinessAccountsScreen() {
     setAddress("");
     setCity("");
     setCountry("");
+    setLogoUrl("");
+    setWebsite("");
   };
 
   const handleCreate = async () => {
@@ -108,6 +114,8 @@ export default function BusinessAccountsScreen() {
         address: address.trim() || undefined,
         city: city.trim() || undefined,
         country: country.trim() || undefined,
+        logoUrl: logoUrl.trim() || undefined,
+        website: website.trim() || undefined,
       });
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowCreateModal(false);
@@ -130,6 +138,8 @@ export default function BusinessAccountsScreen() {
     setAddress(account.address || "");
     setCity(account.city || "");
     setCountry(account.country || "");
+    setLogoUrl(account.logoUrl || "");
+    setWebsite(account.website || "");
     setShowEditModal(true);
   };
 
@@ -153,6 +163,8 @@ export default function BusinessAccountsScreen() {
         address: address.trim() || undefined,
         city: city.trim() || undefined,
         country: country.trim() || undefined,
+        logoUrl: logoUrl.trim() || undefined,
+        website: website.trim() || undefined,
       });
       if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setShowEditModal(false);
@@ -341,6 +353,36 @@ export default function BusinessAccountsScreen() {
                 placeholder="0.00"
                 placeholderTextColor={colors.muted}
                 keyboardType="decimal-pad"
+              />
+            </View>
+          </View>
+
+          {/* Branding / White-Label */}
+          <Text style={[s.sectionLabel, { color: colors.muted }]}>هوية العلامة التجارية (للتذاكر)</Text>
+          <View style={[s.inputGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={s.inputRow}>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>رابط الشعار</Text>
+              <TextInput
+                style={[s.inputField, { color: colors.foreground }]}
+                value={logoUrl}
+                onChangeText={setLogoUrl}
+                placeholder="https://example.com/logo.png"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+            </View>
+            <View style={[s.divider, { backgroundColor: colors.border }]} />
+            <View style={s.inputRow}>
+              <Text style={[s.inputLabel, { color: colors.foreground }]}>الموقع الإلكتروني</Text>
+              <TextInput
+                style={[s.inputField, { color: colors.foreground }]}
+                value={website}
+                onChangeText={setWebsite}
+                placeholder="https://agence.mr"
+                placeholderTextColor={colors.muted}
+                autoCapitalize="none"
+                keyboardType="url"
               />
             </View>
           </View>

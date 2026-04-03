@@ -50,6 +50,13 @@
       "when": 1775186855381,
       "tag": "0006_fast_reavers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1775187878657,
+      "tag": "0007_ambitious_dark_beast",
+      "breakpoints": true
     }
   ]
 }
