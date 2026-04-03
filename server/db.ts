@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -533,4 +533,33 @@ export async function getLoginLogs(limit = 50): Promise<LoginLog[]> {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(loginLogs).orderBy(desc(loginLogs.createdAt)).limit(limit);
+}
+
+// ─── Generated Documents ───────────────────────────────────────────────────────────
+export async function saveGeneratedDocument(data: InsertGeneratedDocument): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+  try {
+    const result = await db.insert(generatedDocuments).values(data);
+    return (result[0] as any)?.insertId ?? null;
+  } catch (err) {
+    console.warn("[DB] saveGeneratedDocument error:", err);
+    return null;
+  }
+}
+
+export async function getGeneratedDocuments(limit = 100): Promise<GeneratedDocument[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(generatedDocuments).orderBy(desc(generatedDocuments.createdAt)).limit(limit);
+}
+
+export async function updateDocumentStatus(id: number, status: "generated" | "sent" | "signed"): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.update(generatedDocuments).set({ status }).where(eq(generatedDocuments.id, id));
+  } catch (err) {
+    console.warn("[DB] updateDocumentStatus error:", err);
+  }
 }

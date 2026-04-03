@@ -224,3 +224,30 @@ export const loginLogs = mysqlTable("login_logs", {
 });
 export type LoginLog = typeof loginLogs.$inferSelect;
 export type InsertLoginLog = typeof loginLogs.$inferInsert;
+
+// ─── Generated Documents Log (سجل الوثائق المولّدة) ──────────────────
+export const generatedDocuments = mysqlTable("generated_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Document type */
+  docType: mysqlEnum("docType", ["employment_contract", "invoice", "partnership", "ticket_invoice"]).notNull(),
+  /** Reference number or invoice number */
+  refNumber: varchar("refNumber", { length: 128 }),
+  /** Name of the other party */
+  partyName: varchar("partyName", { length: 255 }).notNull(),
+  /** Email of the other party */
+  partyEmail: varchar("partyEmail", { length: 320 }),
+  /** Phone of the other party */
+  partyPhone: varchar("partyPhone", { length: 64 }),
+  /** Total amount (for invoices) */
+  amount: decimal("amount", { precision: 12, scale: 2 }),
+  /** Currency */
+  currency: varchar("currency", { length: 8 }),
+  /** Status */
+  status: mysqlEnum("status", ["generated", "sent", "signed"]).default("generated").notNull(),
+  /** Extra metadata as JSON */
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type GeneratedDocument = typeof generatedDocuments.$inferSelect;
+export type InsertGeneratedDocument = typeof generatedDocuments.$inferInsert;

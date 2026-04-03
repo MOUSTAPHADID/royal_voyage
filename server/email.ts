@@ -798,3 +798,81 @@ export async function sendEmployeeWelcomeEmail(data: EmployeeWelcomeData): Promi
     return false;
   }
 }
+
+// ─── Send Document by Email ───────────────────────────────────────────────────
+export interface SendDocumentEmailData {
+  toEmail: string;
+  toName: string;
+  docType: "employment_contract" | "invoice" | "partnership" | "ticket_invoice";
+  pdfBase64: string;
+  filename: string;
+  refNumber?: string;
+  amount?: string;
+  currency?: string;
+}
+
+const DOC_TYPE_LABELS: Record<string, { ar: string; subject: string }> = {
+  employment_contract: { ar: "عقد عمل", subject: "عقد العمل الخاص بك — Royal Voyage" },
+  invoice: { ar: "فاتورة خدمة", subject: "فاتورة خدمة من Royal Voyage" },
+  partnership: { ar: "اتفاقية شراكة", subject: "اتفاقية الشراكة التجارية — Royal Voyage" },
+  ticket_invoice: { ar: "فاتورة تذاكر سفر", subject: "فاتورة تذاكر السفر — Royal Voyage" },
+};
+
+function documentEmailHtml(data: SendDocumentEmailData): string {
+  const label = DOC_TYPE_LABELS[data.docType] || { ar: "وثيقة", subject: "" };
+  const content = `
+    <div style="text-align:center;padding:24px 0 16px;">
+      <h1 style="color:#1B2B5E;font-size:22px;margin:0 0 6px;">مرحباً ${data.toName}</h1>
+      <p style="color:#687076;font-size:14px;margin:0;">يسعدنا إرسال ${label.ar} المرفقة إليك من وكالة Royal Voyage</p>
+    </div>
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:24px;margin:20px 0;direction:rtl;text-align:right;">
+      <h2 style="color:#1B2B5E;font-size:15px;margin:0 0 16px;border-bottom:1px solid #E2E8F0;padding-bottom:10px;">تفاصيل الوثيقة</h2>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:7px 0;color:#687076;font-size:13px;width:40%;">نوع الوثيقة</td><td style="padding:7px 0;color:#11181C;font-size:13px;font-weight:600;">${label.ar}</td></tr>
+        ${data.refNumber ? `<tr><td style="padding:7px 0;color:#687076;font-size:13px;">رقم المرجع</td><td style="padding:7px 0;color:#1B2B5E;font-size:13px;font-weight:700;">${data.refNumber}</td></tr>` : ""}
+        ${data.amount ? `<tr><td style="padding:7px 0;color:#687076;font-size:13px;">المبلغ</td><td style="padding:7px 0;color:#C9A84C;font-size:15px;font-weight:800;">${data.amount} ${data.currency || ""}</td></tr>` : ""}
+        <tr><td style="padding:7px 0;color:#687076;font-size:13px;">اسم الملف</td><td style="padding:7px 0;color:#11181C;font-size:13px;">${data.filename}</td></tr>
+      </table>
+    </div>
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:8px;padding:14px 16px;margin:16px 0;direction:rtl;text-align:right;">
+      <p style="color:#1E40AF;font-size:13px;margin:0;">📎 الوثيقة مرفقة بهذا البريد بصيغة PDF. يرجى الاحتفاظ بها للرجوع إليها عند الحاجة.</p>
+    </div>
+    <div style="text-align:center;margin:20px 0;">
+      <p style="color:#687076;font-size:12px;">للمساعدة أو الاستفسار: <a href="mailto:${COMPANY.email}" style="color:#1B2B5E;">${COMPANY.email}</a> | <a href="tel:${COMPANY.phone}" style="color:#1B2B5E;">${COMPANY.phone}</a></p>
+      <p style="color:#94a3b8;font-size:11px;margin-top:8px;">${COMPANY.address} | ${COMPANY.website}</p>
+    </div>
+  `;
+  return baseLayout(content, `${label.ar} — ${COMPANY.name}`);
+}
+
+export async function sendDocumentEmail(data: SendDocumentEmailData): Promise<boolean> {
+  const transporter = getTransporter();
+  const label = DOC_TYPE_LABELS[data.docType] || { ar: "وثيقة", subject: "وثيقة من Royal Voyage" };
+  const html = documentEmailHtml(data);
+
+  if (!transporter) {
+    console.log(`[Email] Would send document (${data.docType}) to: ${data.toEmail} | File: ${data.filename}`);
+    return true;
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage — الإدارة" <${process.env.EMAIL_USER}>`,
+      to: data.toEmail,
+      subject: label.subject,
+      html,
+      attachments: [
+        {
+          filename: data.filename,
+          content: Buffer.from(data.pdfBase64, "base64"),
+          contentType: "application/pdf",
+        },
+      ],
+    });
+    console.log(`[Email] ✅ Document email sent to ${data.toEmail} | ${data.filename}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send document email:", error);
+    return false;
+  }
+}

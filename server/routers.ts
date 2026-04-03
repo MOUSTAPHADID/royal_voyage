@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
-import { generateEmploymentContractPDF, generateInvoicePDF, generatePartnershipPDF } from "./contracts-pdf";
+import { generateEmploymentContractPDF, generateInvoicePDF, generatePartnershipPDF, generateTicketInvoicePDF } from "./contracts-pdf";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, adminProcedure } from "./_core/trpc";
@@ -25,7 +25,7 @@ import {
   removeConsolidator,
   getConsolidatorForBooking,
 } from "./duffel";
-import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail, sendEmployeeWelcomeEmail } from "./email";
+import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail, sendEmployeeWelcomeEmail, sendDocumentEmail } from "./email";
 import {
   getWebhookLog,
   getWebhookNotifications,
@@ -76,6 +76,9 @@ import {
   addLoginLog,
   getLoginLogs,
   updateEmployeeLastLogin,
+  saveGeneratedDocument,
+  getGeneratedDocuments,
+  updateDocumentStatus,
 } from "./db";
 
 export const appRouter = router({
@@ -1749,6 +1752,86 @@ export const appRouter = router({
         const pdfBuffer = await generatePartnershipPDF(input);
         const base64 = pdfBuffer.toString("base64");
         return { base64, filename: `partnership_${input.partnerName.replace(/\s+/g, "_")}.pdf` };
+      }),
+
+    // Generate Ticket Invoice PDF
+    generateTicketInvoice: publicProcedure
+      .input(z.object({
+        invoiceNumber: z.string(),
+        date: z.string(),
+        passengerName: z.string(),
+        passengerEmail: z.string().optional(),
+        passengerPhone: z.string().optional(),
+        bookingRef: z.string().optional(),
+        pnr: z.string().optional(),
+        origin: z.string(),
+        originCity: z.string(),
+        destination: z.string(),
+        destinationCity: z.string(),
+        departureDate: z.string(),
+        returnDate: z.string().optional(),
+        airline: z.string(),
+        flightNumber: z.string(),
+        cabinClass: z.string(),
+        adults: z.number().min(1),
+        children: z.number().min(0).default(0),
+        infants: z.number().min(0).default(0),
+        adultPrice: z.number(),
+        childPrice: z.number().optional(),
+        infantPrice: z.number().optional(),
+        taxes: z.number(),
+        totalPrice: z.number(),
+        currency: z.string(),
+        paymentMethod: z.string().optional(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const pdfBuffer = await generateTicketInvoicePDF(input);
+        const base64 = pdfBuffer.toString("base64");
+        return { base64, filename: `ticket_invoice_${input.invoiceNumber}.pdf` };
+      }),
+
+    // Save document record to DB
+    saveDocument: publicProcedure
+      .input(z.object({
+        docType: z.enum(["employment_contract", "invoice", "partnership", "ticket_invoice"]),
+        refNumber: z.string().optional(),
+        partyName: z.string(),
+        partyEmail: z.string().optional(),
+        partyPhone: z.string().optional(),
+        amount: z.string().optional(),
+        currency: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await saveGeneratedDocument(input);
+        return { success: true, id };
+      }),
+
+    // Get all saved documents
+    getDocuments: publicProcedure
+      .query(async () => {
+        return getGeneratedDocuments(100);
+      }),
+
+    // Send document by email
+    sendByEmail: publicProcedure
+      .input(z.object({
+        toEmail: z.string().email(),
+        toName: z.string(),
+        docType: z.enum(["employment_contract", "invoice", "partnership", "ticket_invoice"]),
+        pdfBase64: z.string(),
+        filename: z.string(),
+        refNumber: z.string().optional(),
+        amount: z.string().optional(),
+        currency: z.string().optional(),
+        documentId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const sent = await sendDocumentEmail(input);
+        if (sent && input.documentId) {
+          await updateDocumentStatus(input.documentId, "sent");
+        }
+        return { success: sent };
       }),
   }),
 });

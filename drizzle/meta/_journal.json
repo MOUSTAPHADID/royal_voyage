@@ -43,6 +43,13 @@
       "when": 1775179315437,
       "tag": "0005_powerful_the_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1775186855381,
+      "tag": "0006_fast_reavers",
+      "breakpoints": true
     }
   ]
 }

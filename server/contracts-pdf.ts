@@ -675,3 +675,176 @@ export async function generatePartnershipPDF(data: PartnershipData): Promise<Buf
     }
   });
 }
+
+// ─── Ticket Invoice PDF ───────────────────────────────────────────────────────
+export interface TicketInvoiceData {
+  invoiceNumber: string;
+  date: string;
+  passengerName: string;
+  passengerEmail?: string;
+  passengerPhone?: string;
+  bookingRef?: string;
+  pnr?: string;
+  origin: string;
+  originCity: string;
+  destination: string;
+  destinationCity: string;
+  departureDate: string;
+  returnDate?: string;
+  airline: string;
+  flightNumber: string;
+  cabinClass: string;
+  adults: number;
+  children: number;
+  infants: number;
+  adultPrice: number;
+  childPrice?: number;
+  infantPrice?: number;
+  taxes: number;
+  totalPrice: number;
+  currency: string;
+  paymentMethod?: string;
+  notes?: string;
+}
+
+export async function generateTicketInvoicePDF(data: TicketInvoiceData): Promise<Buffer> {
+  const PDFDocument = require("pdfkit");
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: "A4", margin: 0, bufferPages: true });
+      const chunks: Buffer[] = [];
+      doc.on("data", (c: Buffer) => chunks.push(c));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
+
+      const arabicFont = getArabicFontPath();
+      const arabicBoldFont = getArabicBoldFontPath();
+
+      const W = 595, H = 842;
+      const NAVY = "#1B2B5E", GOLD = "#C9A84C", WHITE = "#FFFFFF";
+      const LIGHT = "#F8FAFC", BORDER = "#E2E8F0", DARK = "#11181C";
+
+      // Header
+      drawRect(doc, 0, 0, W, 110, NAVY);
+      // Logo area
+      doc.rect(40, 20, 70, 70).fillColor(GOLD).fill();
+      doc.fillColor(NAVY).fontSize(9).font("Helvetica-Bold").text("ROYAL", 40, 42, { width: 70, align: "center" });
+      doc.fillColor(NAVY).fontSize(7).font("Helvetica-Bold").text("VOYAGE", 40, 54, { width: 70, align: "center" });
+      // Title
+      doc.fillColor(WHITE).fontSize(20).font("Helvetica-Bold").text("FLIGHT TICKET INVOICE", 130, 30, { width: 340 });
+      doc.fillColor(GOLD).fontSize(11).font("Helvetica").text("ROYAL SERVICE LIMITED", 130, 56, { width: 340 });
+      doc.fillColor("rgba(255,255,255,0.7)").fontSize(9).font("Helvetica").text("Tavragh Zeina, Nouakchott, Mauritania  |  +222 33 70 00 00", 130, 72, { width: 340 });
+      // Invoice number top right
+      doc.fillColor(GOLD).fontSize(10).font("Helvetica-Bold").text(`Invoice #${data.invoiceNumber}`, 420, 30, { width: 150, align: "right" });
+      doc.fillColor(WHITE).fontSize(9).font("Helvetica").text(`Date: ${data.date}`, 420, 46, { width: 150, align: "right" });
+
+      let y = 130;
+
+      // Passenger & Booking Info
+      drawRect(doc, 40, y, W - 80, 100, LIGHT);
+      doc.rect(40, y, W - 80, 100).strokeColor(BORDER).lineWidth(1).stroke();
+      // Left: Passenger
+      doc.fillColor(GOLD).fontSize(8).font("Helvetica-Bold").text("PASSENGER DETAILS", 55, y + 12);
+      doc.fillColor(DARK).fontSize(10).font("Helvetica-Bold").text(data.passengerName, 55, y + 26);
+      if (data.passengerEmail) doc.fillColor("#687076").fontSize(8).font("Helvetica").text(data.passengerEmail, 55, y + 40);
+      if (data.passengerPhone) doc.fillColor("#687076").fontSize(8).font("Helvetica").text(data.passengerPhone, 55, y + 52);
+      // Right: Booking ref & PNR
+      doc.fillColor(GOLD).fontSize(8).font("Helvetica-Bold").text("BOOKING REFERENCE", 320, y + 12);
+      if (data.bookingRef) doc.fillColor(DARK).fontSize(12).font("Helvetica-Bold").text(data.bookingRef, 320, y + 26);
+      if (data.pnr) {
+        doc.fillColor(GOLD).fontSize(8).font("Helvetica-Bold").text("PNR", 320, y + 46);
+        doc.fillColor(NAVY).fontSize(14).font("Helvetica-Bold").text(data.pnr, 320, y + 58);
+      }
+      y += 115;
+
+      // Flight Route
+      drawRect(doc, 40, y, W - 80, 80, NAVY);
+      // Origin
+      doc.fillColor(WHITE).fontSize(28).font("Helvetica-Bold").text(data.origin, 60, y + 15);
+      doc.fillColor("rgba(255,255,255,0.6)").fontSize(9).font("Helvetica").text(data.originCity, 60, y + 48);
+      // Arrow
+      doc.fillColor(GOLD).fontSize(22).font("Helvetica-Bold").text("→", 240, y + 22, { width: 110, align: "center" });
+      doc.fillColor("rgba(255,255,255,0.5)").fontSize(8).font("Helvetica").text(data.airline + " " + data.flightNumber, 240, y + 50, { width: 110, align: "center" });
+      // Destination
+      doc.fillColor(WHITE).fontSize(28).font("Helvetica-Bold").text(data.destination, 400, y + 15);
+      doc.fillColor("rgba(255,255,255,0.6)").fontSize(9).font("Helvetica").text(data.destinationCity, 400, y + 48);
+      y += 95;
+
+      // Flight Details Row
+      drawRect(doc, 40, y, W - 80, 55, LIGHT);
+      doc.rect(40, y, W - 80, 55).strokeColor(BORDER).lineWidth(1).stroke();
+      const cols = [
+        { label: "Departure Date", value: data.departureDate },
+        { label: "Return Date", value: data.returnDate || "One-Way" },
+        { label: "Cabin Class", value: data.cabinClass },
+        { label: "Passengers", value: `${data.adults}A${data.children > 0 ? " + " + data.children + "C" : ""}${data.infants > 0 ? " + " + data.infants + "I" : ""}` },
+      ];
+      cols.forEach((col, i) => {
+        const cx = 55 + i * 130;
+        doc.fillColor(GOLD).fontSize(7).font("Helvetica-Bold").text(col.label.toUpperCase(), cx, y + 10, { width: 120 });
+        doc.fillColor(DARK).fontSize(10).font("Helvetica-Bold").text(col.value, cx, y + 24, { width: 120 });
+      });
+      y += 70;
+
+      // Price Breakdown
+      drawRect(doc, 40, y, W - 80, 16, NAVY);
+      doc.fillColor(WHITE).fontSize(8).font("Helvetica-Bold").text("PRICE BREAKDOWN", 55, y + 4);
+      y += 20;
+
+      const priceRows = [
+        { label: `Adult Fare × ${data.adults}`, value: data.adultPrice * data.adults },
+      ];
+      if (data.children > 0 && data.childPrice) priceRows.push({ label: `Child Fare × ${data.children}`, value: data.childPrice * data.children });
+      if (data.infants > 0 && data.infantPrice) priceRows.push({ label: `Infant Fare × ${data.infants}`, value: data.infantPrice * data.infants });
+      priceRows.push({ label: "Taxes & Fees", value: data.taxes });
+
+      priceRows.forEach((row, i) => {
+        const shade = i % 2 === 0;
+        drawRect(doc, 40, y, W - 80, 22, shade ? LIGHT : WHITE);
+        doc.rect(40, y, W - 80, 22).strokeColor(BORDER).lineWidth(0.5).stroke();
+        doc.fillColor(DARK).fontSize(9).font("Helvetica").text(row.label, 55, y + 6);
+        doc.fillColor(DARK).fontSize(9).font("Helvetica-Bold").text(`${row.value.toFixed(2)} ${data.currency}`, 350, y + 6, { width: 175, align: "right" });
+        y += 22;
+      });
+
+      // Total
+      drawRect(doc, 40, y, W - 80, 32, NAVY);
+      doc.fillColor(WHITE).fontSize(11).font("Helvetica-Bold").text("TOTAL AMOUNT", 55, y + 10);
+      doc.fillColor(GOLD).fontSize(14).font("Helvetica-Bold").text(`${data.totalPrice.toFixed(2)} ${data.currency}`, 350, y + 8, { width: 175, align: "right" });
+      y += 45;
+
+      // Payment Method
+      if (data.paymentMethod) {
+        doc.fillColor(GOLD).fontSize(8).font("Helvetica-Bold").text("PAYMENT METHOD:", 55, y);
+        doc.fillColor(DARK).fontSize(8).font("Helvetica").text(data.paymentMethod, 175, y);
+        y += 18;
+      }
+
+      // Notes
+      if (data.notes) {
+        y += 5;
+        drawRect(doc, 40, y, W - 80, 40, "#FFFBEB");
+        doc.rect(40, y, W - 80, 40).strokeColor("#FDE68A").lineWidth(1).stroke();
+        doc.fillColor("#92400E").fontSize(8).font("Helvetica-Bold").text("NOTE:", 55, y + 8);
+        doc.fillColor("#92400E").fontSize(8).font("Helvetica").text(data.notes, 100, y + 8, { width: W - 160 });
+        y += 50;
+      }
+
+      // Footer
+      drawRect(doc, 0, H - 60, W, 60, NAVY);
+      doc.fillColor(GOLD).fontSize(9).font("Helvetica-Bold").text("ROYAL SERVICE LIMITED", 0, H - 48, { width: W, align: "center" });
+      doc.fillColor("rgba(255,255,255,0.6)").fontSize(8).font("Helvetica").text(
+        "Tavragh Zeina, Nouakchott, Mauritania  |  +222 33 70 00 00  |  royal-voyage@gmail.com",
+        0, H - 34, { width: W, align: "center" }
+      );
+      doc.fillColor("rgba(255,255,255,0.4)").fontSize(7).font("Helvetica").text(
+        "This is an official invoice. Please retain it for your records.",
+        0, H - 20, { width: W, align: "center" }
+      );
+
+      doc.end();
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
