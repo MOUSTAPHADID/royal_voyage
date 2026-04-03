@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { COOKIE_NAME } from "../shared/const.js";
+import { generateEmploymentContractPDF, generateInvoicePDF, generatePartnershipPDF } from "./contracts-pdf";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, adminProcedure } from "./_core/trpc";
@@ -1680,6 +1681,75 @@ export const appRouter = router({
         }
       }),
   }),
+  // ─── Company Documents PDF Generator ─────────────────────────────────────
+  documents: router({
+    // Generate Employment Contract PDF
+    generateEmploymentContract: publicProcedure
+      .input(z.object({
+        employeeName: z.string(),
+        employeeId: z.string().optional(),
+        nationality: z.string().optional(),
+        birthDate: z.string().optional(),
+        position: z.string(),
+        department: z.string().optional(),
+        startDate: z.string(),
+        contractDuration: z.string().optional(),
+        salary: z.string(),
+        workHours: z.string().optional(),
+        probationPeriod: z.string().optional(),
+        refNumber: z.string().optional(),
+        date: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const pdfBuffer = await generateEmploymentContractPDF(input);
+        const base64 = pdfBuffer.toString("base64");
+        return { base64, filename: `employment_contract_${input.employeeName.replace(/\s+/g, "_")}.pdf` };
+      }),
+    // Generate Service Invoice PDF
+    generateInvoice: publicProcedure
+      .input(z.object({
+        invoiceNumber: z.string(),
+        date: z.string(),
+        dueDate: z.string().optional(),
+        clientName: z.string(),
+        clientPhone: z.string().optional(),
+        clientEmail: z.string().optional(),
+        clientAddress: z.string().optional(),
+        items: z.array(z.object({
+          description: z.string(),
+          quantity: z.number(),
+          unitPrice: z.number(),
+        })),
+        currency: z.string(),
+        taxRate: z.number().optional(),
+        notes: z.string().optional(),
+        paymentMethod: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const pdfBuffer = await generateInvoicePDF(input);
+        const base64 = pdfBuffer.toString("base64");
+        return { base64, filename: `invoice_${input.invoiceNumber}.pdf` };
+      }),
+    // Generate Partnership Agreement PDF
+    generatePartnership: publicProcedure
+      .input(z.object({
+        partnerName: z.string(),
+        partnerLegal: z.string().optional(),
+        partnerAddress: z.string().optional(),
+        partnerPhone: z.string().optional(),
+        partnerEmail: z.string().optional(),
+        partnerRep: z.string().optional(),
+        commissionRate: z.string(),
+        startDate: z.string(),
+        duration: z.string().optional(),
+        refNumber: z.string().optional(),
+        date: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const pdfBuffer = await generatePartnershipPDF(input);
+        const base64 = pdfBuffer.toString("base64");
+        return { base64, filename: `partnership_${input.partnerName.replace(/\s+/g, "_")}.pdf` };
+      }),
+  }),
 });
-
 export type AppRouter = typeof appRouter;

@@ -399,6 +399,25 @@ export default function DocumentsScreen() {
           </View>
         ))}
 
+        {/* Create Custom Document Button */}
+        <Pressable
+          style={({ pressed }) => [{
+            marginHorizontal: 20,
+            marginBottom: 16,
+            borderRadius: 14,
+            backgroundColor: "#0D1B3E",
+            paddingVertical: 16,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 10,
+          }, pressed && { opacity: 0.8 }]}
+          onPress={() => router.push("/admin/document-generator" as any)}
+        >
+          <IconSymbol name="doc.badge.plus" size={20} color="#C9A84C" />
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>إنشاء وثيقة مخصصة</Text>
+        </Pressable>
+
         {/* Bottom info */}
         <View style={{ padding: 20, alignItems: "center" }}>
           <Text style={{ fontSize: 12, color: colors.muted, textAlign: "center" }}>
