@@ -15,6 +15,8 @@ const T = {
     add: "إضافة",
     noPartners: "لا يوجد شركاء",
     noPartnersHint: "اضغط + لإضافة شريك جديد",
+    searchPlaceholder: "بحث بالاسم أو البريد أو الهاتف...",
+    results: "نتيجة",
     active: "نشط",
     suspended: "موقوف",
     closed: "مغلق",
@@ -54,6 +56,8 @@ const T = {
     add: "Ajouter",
     noPartners: "Aucun partenaire",
     noPartnersHint: "Appuyez sur + pour ajouter",
+    searchPlaceholder: "Rechercher par nom, email ou tél...",
+    results: "résultat(s)",
     active: "Actif",
     suspended: "Suspendu",
     closed: "Fermé",
@@ -128,9 +132,13 @@ export default function PartnersScreen() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [search, setSearch] = useState("");
 
+  const q = search.trim().toLowerCase();
   const filtered = (partners ?? []).filter(p =>
-    p.companyName.toLowerCase().includes(search.toLowerCase()) ||
-    p.contactName.toLowerCase().includes(search.toLowerCase())
+    !q ||
+    p.companyName.toLowerCase().includes(q) ||
+    (p.contactName ?? "").toLowerCase().includes(q) ||
+    (p.contactEmail ?? "").toLowerCase().includes(q) ||
+    (p.contactPhone ?? "").includes(q)
   );
 
   const statusColor: Record<PartnerStatus, string> = {
@@ -207,10 +215,11 @@ export default function PartnersScreen() {
         <IconSymbol name="magnifyingglass" size={18} color={colors.muted} />
         <TextInput
           style={[styles.searchInput, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}
-          placeholder={language === "ar" ? "بحث عن شريك..." : "Rechercher..."}
+          placeholder={t.searchPlaceholder}
           placeholderTextColor={colors.muted}
           value={search}
           onChangeText={setSearch}
+          returnKeyType="search"
         />
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")}>
@@ -218,6 +227,15 @@ export default function PartnersScreen() {
           </TouchableOpacity>
         )}
       </View>
+
+      {/* Results count */}
+      {search.trim().length > 0 && !isLoading && (
+        <View style={[styles.resultsCount, { borderBottomColor: colors.border }]}>
+          <Text style={[styles.resultsText, { color: colors.muted }]}>
+            {filtered.length} {t.results}
+          </Text>
+        </View>
+      )}
 
       {/* List */}
       {isLoading ? (
@@ -392,6 +410,8 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 13, fontWeight: "700" },
   statLabel: { fontSize: 10 },
   statDivider: { width: 1, marginVertical: 4 },
+  resultsCount: { paddingHorizontal: 16, paddingVertical: 6, borderBottomWidth: 0.5 },
+  resultsText: { fontSize: 12, fontWeight: "500" },
   // Modal
   modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, paddingTop: 20 },
   modalTitle: { color: "#fff", fontSize: 17, fontWeight: "700" },
