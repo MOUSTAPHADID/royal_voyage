@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Booking } from "./mock-data";
-import { addAdminNotification } from "./admin-notifications";
 
 export type User = {
   id: string;
@@ -11,21 +10,16 @@ export type User = {
   avatar?: string;
   nationality?: string;
   passportNumber?: string;
-  isAdmin?: boolean;
   isGuest?: boolean;
   expoPushToken?: string;
 };
-
-// Admin credentials — actual credentials are stored in AsyncStorage via admin-security module
-// SECURITY: No hardcoded password in the client bundle. Credentials are set via Admin > Settings.
-const DEFAULT_ADMIN_EMAIL = "suporte@royalvoyage.online";
 
 type AppContextType = {
   // Auth
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (emailOrPhone: string, password: string) => Promise<"admin" | "user" | false>;
+  login: (emailOrPhone: string, password: string) => Promise<"user" | false>;
   loginWithPhone: (phone: string) => Promise<"user" | false>;
   loginAsGuest: () => Promise<void>;
   register: (name: string, phone: string, email?: string) => Promise<boolean>;
@@ -51,8 +45,6 @@ type AppContextType = {
   updateBookingChecklist: (id: string, checklist: Record<string, boolean>) => void;
   saveExpoPushToken: (token: string) => void;
   expoPushToken: string | null;
-  saveAdminPushToken: (token: string) => void;
-  adminPushToken: string | null;
   // Search state
   lastFlightSearch: FlightSearch | null;
   lastHotelSearch: HotelSearch | null;
@@ -86,7 +78,6 @@ const STORAGE_KEYS = {
   USER: "@royal_voyage_user",
   BOOKINGS: "@royal_voyage_bookings",
   EXPO_PUSH_TOKEN: "@royal_voyage_expo_push_token",
-  ADMIN_PUSH_TOKEN: "@royal_voyage_admin_push_token",
 };
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
@@ -96,7 +87,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lastFlightSearch, setLastFlightSearch] = useState<FlightSearch | null>(null);
   const [lastHotelSearch, setLastHotelSearch] = useState<HotelSearch | null>(null);
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
-  const [adminPushToken, setAdminPushToken] = useState<string | null>(null);
 
   useEffect(() => {
     loadStoredData();
@@ -104,16 +94,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loadStoredData = async () => {
     try {
-      const [storedUser, storedBookings, storedToken, storedAdminToken] = await Promise.all([
+      const [storedUser, storedBookings, storedToken] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.USER),
         AsyncStorage.getItem(STORAGE_KEYS.BOOKINGS),
         AsyncStorage.getItem(STORAGE_KEYS.EXPO_PUSH_TOKEN),
-        AsyncStorage.getItem(STORAGE_KEYS.ADMIN_PUSH_TOKEN),
       ]);
       if (storedUser) setUser(JSON.parse(storedUser));
       if (storedBookings) setBookings(JSON.parse(storedBookings));
       if (storedToken) setExpoPushToken(storedToken);
-      if (storedAdminToken) setAdminPushToken(storedAdminToken);
     } catch (e) {
       // ignore
     } finally {
@@ -124,27 +112,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Store pending verification codes
   const verificationCodes = React.useRef<Record<string, string>>({});
 
-  const login = useCallback(async (emailOrPhone: string, password: string): Promise<"admin" | "user" | false> => {
-    // Admin login check — read current credentials from admin-security (AsyncStorage)
-    // SECURITY: credentials are never hardcoded; they come exclusively from admin-security module
-    let adminEmail = DEFAULT_ADMIN_EMAIL;
-    let adminPassword = "";
-    try {
-      const { getAdminEmail, getAdminPassword } = require("@/lib/admin-security");
-      adminEmail = await getAdminEmail();
-      adminPassword = await getAdminPassword();
-    } catch {}
-    if (emailOrPhone.toLowerCase() === adminEmail.toLowerCase() && password === adminPassword) {
-      const adminUser: User = {
-        id: "admin",
-        name: "مدير Royal Voyage",
-        email: adminEmail,
-        isAdmin: true,
-      };
-      setUser(adminUser);
-      await AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(adminUser));
-      return "admin";
-    }
+  const login = useCallback(async (emailOrPhone: string, password: string): Promise<"user" | false> => {
     // Regular customer login — accept any credentials
     const isPhone = /^[+\d]/.test(emailOrPhone) && !emailOrPhone.includes("@");
     const mockUser: User = {
@@ -234,38 +202,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const updated = [booking, ...bookings];
     setBookings(updated);
     await AsyncStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(updated));
-    // Instant admin notification for new booking
-    try {
-      const isFlight = booking.type === "flight";
-      const bookingType = isFlight ? "رحلة" : "فندق";
-      const customerName = booking.passengerName || booking.guestName || "زبون";
-      const destination = isFlight && booking.flight
-        ? `${booking.flight.originCode || booking.flight.origin} → ${booking.flight.destinationCode || booking.flight.destination}`
-        : booking.hotel?.name || "";
-      const paymentLabels: Record<string, string> = {
-        cash: "نقدي", bank_transfer: "تحويل بنكي", bankily: "بنكيلي",
-        masrvi: "مصرفي", sedad: "سداد", stripe: "Stripe", paypal: "PayPal",
-      };
-      const payment = booking.paymentMethod ? (paymentLabels[booking.paymentMethod] || booking.paymentMethod) : "غير محدد";
-      const price = booking.currency === "MRU" ? `${(booking.totalPrice || 0).toLocaleString()} MRU`
-        : booking.currency === "USD" ? `$${(booking.totalPrice || 0).toLocaleString()}`
-        : `${(booking.totalPrice || 0).toLocaleString()} ${booking.currency}`;
-      await addAdminNotification({
-        type: "new_booking",
-        title: `حجز جديد - ${bookingType}`,
-        body: `${customerName} • ${destination} • ${price} • ${payment} • ${booking.reference}`,
-        bookingRef: booking.reference,
-        bookingId: booking.id,
-      });
-      // Mark this booking as synced so syncBookingsToNotifications won't duplicate it
-      const SYNCED_KEY = "@royal_voyage_synced_booking_ids";
-      const existing = await AsyncStorage.getItem(SYNCED_KEY);
-      const ids: string[] = existing ? JSON.parse(existing) : [];
-      if (!ids.includes(booking.id)) {
-        ids.push(booking.id);
-        await AsyncStorage.setItem(SYNCED_KEY, JSON.stringify(ids));
-      }
-    } catch {}
+
   }, [bookings]);
 
   const cancelBooking = useCallback(async (id: string) => {
@@ -384,11 +321,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(STORAGE_KEYS.EXPO_PUSH_TOKEN, token);
   }, []);
 
-  const saveAdminPushToken = useCallback(async (token: string) => {
-    setAdminPushToken(token);
-    await AsyncStorage.setItem(STORAGE_KEYS.ADMIN_PUSH_TOKEN, token);
-  }, []);
-
   const contextValue = useMemo(() => ({
     user,
     isAuthenticated: !!user,
@@ -418,14 +350,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateBookingChecklist,
     saveExpoPushToken,
     expoPushToken,
-    saveAdminPushToken,
-    adminPushToken,
     lastFlightSearch,
     lastHotelSearch,
     setLastFlightSearch,
     setLastHotelSearch,
   }), [
-    user, isLoading, bookings, expoPushToken, adminPushToken,
+    user, isLoading, bookings, expoPushToken,
     lastFlightSearch, lastHotelSearch,
     login, loginWithPhone, loginAsGuest, register, sendVerificationCode,
     verifyCode, logout, updateUser, addBooking, cancelBooking,
@@ -433,7 +363,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateBookingTicketSent, confirmBookingPayment, rejectBookingPayment,
     updateBookingReceipt, updateBookingCheckin, updateBookingFlightReminder,
     updateBookingSeatChange, updateBookingMeal, updateBookingChecklist,
-    saveExpoPushToken, saveAdminPushToken, setLastFlightSearch, setLastHotelSearch,
+    saveExpoPushToken, setLastFlightSearch, setLastHotelSearch,
   ]);
 
   return (

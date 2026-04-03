@@ -21,10 +21,6 @@ export default function Index() {
   }
 
   if (isAuthenticated) {
-    // Admin → go directly to admin panel
-    if (user?.isAdmin) {
-      return <Redirect href="/admin" />;
-    }
     return <Redirect href="/(tabs)" />;
   }
 

@@ -120,18 +120,12 @@ export default function RootLayout() {
               options={{ presentation: "fullScreenModal" }}
             />
             <Stack.Screen name="booking/detail" />
-            <Stack.Screen name="admin/booking-detail" />
-            <Stack.Screen name="admin/login" />
             <Stack.Screen name="deals" />
             <Stack.Screen name="flight-status" />
             <Stack.Screen name="online-checkin" />
             <Stack.Screen name="change-seat" />
             <Stack.Screen name="travel-checklist" />
             <Stack.Screen name="pnr-status" />
-            <Stack.Screen name="admin/sales-reports" />
-            <Stack.Screen name="admin/business-accounts" />
-            <Stack.Screen name="admin/employees" />
-            <Stack.Screen name="admin/financial-reports" />
             <Stack.Screen name="employee-login" />
             <Stack.Screen name="employee-dashboard" />
             <Stack.Screen name="oauth/callback" />

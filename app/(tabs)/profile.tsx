@@ -23,60 +23,19 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useTranslation, useI18n, LANGUAGES, Language } from "@/lib/i18n";
 import { useCurrency } from "@/lib/currency-context";
 import { CURRENCIES, AppCurrency } from "@/lib/currency";
-import {
-  scheduleDailyProfitNotification,
-  cancelDailyProfitNotification,
-  getDailyNotificationStatus,
-  DEFAULT_NOTIFICATION_HOUR,
-} from "@/lib/daily-profit-notification";
 
 export default function ProfileScreen() {
   const router = useRouter();
   const colors = useColors();
   const { user, logout, bookings } = useApp();
-  const isAdmin = user?.isAdmin === true;
   const { t } = useTranslation();
   const { language, setLanguage } = useI18n();
   const { currency, setCurrency } = useCurrency();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [showLangModal, setShowLangModal] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
-  const [dailyProfitNotif, setDailyProfitNotif] = useState(false);
 
 
-
-
-
-
-  const handleAdminAccess = () => {
-    // Open admin login screen
-    router.push("/admin/login" as any);
-  };
-
-
-
-  // تحميل حالة الإشعار اليومي (للأدمن فقط)
-  useEffect(() => {
-    if (isAdmin) {
-      getDailyNotificationStatus().then(({ enabled }) => setDailyProfitNotif(enabled));
-    }
-  }, [isAdmin]);
-
-  const toggleDailyProfitNotif = async (value: boolean) => {
-    setDailyProfitNotif(value);
-    if (value) {
-      const success = await scheduleDailyProfitNotification(DEFAULT_NOTIFICATION_HOUR);
-      if (!success) {
-        setDailyProfitNotif(false);
-        Alert.alert(
-          language === "ar" ? "لا يمكن تفعيل الإشعارات" : "Cannot enable notifications",
-          language === "ar" ? "يرجى السماح بالإشعارات من إعدادات الجهاز" : "Please allow notifications in device settings"
-        );
-      }
-    } else {
-      await cancelDailyProfitNotification();
-    }
-  };
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
 
@@ -205,30 +164,6 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Admin Daily Profit Notification - visible only to admin */}
-        {isAdmin && (
-          <View style={[styles.notifCard, { backgroundColor: colors.surface, borderColor: colors.border, marginTop: 8 }]}>
-            <View style={styles.notifLeft}>
-              <View style={[styles.notifIcon, { backgroundColor: "#1B2B5E15" }]}>
-                <IconSymbol name="chart.bar.fill" size={20} color="#1B2B5E" />
-              </View>
-              <View>
-                <Text style={[styles.notifTitle, { color: colors.foreground }]}>
-                  {language === "ar" ? "إشعار الأرباح اليومي" : "Daily Profit Alert"}
-                </Text>
-                <Text style={[styles.notifSub, { color: colors.muted }]}>
-                  {language === "ar" ? "إشعار يومي بالأرباح الساعة 8 مساءً" : "Daily profit notification at 8 PM"}
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={dailyProfitNotif}
-              onValueChange={toggleDailyProfitNotif}
-              trackColor={{ false: colors.border, true: "#1B2B5E" }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-        )}
 
         {/* Menu Sections */}
         {menuSections.map((section) => (
@@ -274,14 +209,7 @@ export default function ProfileScreen() {
 
 
 
-        {/* App Version — Long press to access admin */}
-        <Pressable
-          onLongPress={handleAdminAccess}
-          delayLongPress={1500}
-          style={{ alignSelf: "center" }}
-        >
-          <Text style={[styles.version, { color: colors.muted }]}>Royal Voyage  ·  {language === "ar" ? "منذ 2023" : language === "fr" ? "Depuis 2023" : "Since 2023"}</Text>
-        </Pressable>
+        <Text style={[styles.version, { color: colors.muted, alignSelf: "center" }]}>Royal Voyage  ·  {language === "ar" ? "منذ 2023" : language === "fr" ? "Depuis 2023" : "Since 2023"}</Text>
 
         {/* Logout */}
         <Pressable

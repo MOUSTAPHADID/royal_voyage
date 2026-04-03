@@ -21,9 +21,8 @@ import { trpc } from "@/lib/trpc";
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { login, loginWithPhone, loginAsGuest, sendVerificationCode, verifyCode, saveExpoPushToken, saveAdminPushToken } = useApp();
+  const { login, loginWithPhone, loginAsGuest, sendVerificationCode, verifyCode, saveExpoPushToken } = useApp();
   const { t } = useTranslation();
-  const saveAdminTokenMutation = trpc.adminToken.save.useMutation();
 
   const [phoneOrEmail, setPhoneOrEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -100,18 +99,7 @@ export default function LoginScreen() {
     setError("");
     try {
       const result = await login(phoneOrEmail.trim(), password);
-      if (result === "admin") {
-        registerForPushNotifications()
-          .then((token) => {
-            if (token) {
-              saveAdminPushToken(token);
-              // Also save to server so new bookings can reach admin on any device
-              saveAdminTokenMutation.mutate({ token });
-            }
-          })
-          .catch(() => {});
-        router.replace("/admin" as any);
-      } else if (result === "user") {
+      if (result === "user") {
         registerForPushNotifications()
           .then((token) => { if (token) saveExpoPushToken(token); })
           .catch(() => {});

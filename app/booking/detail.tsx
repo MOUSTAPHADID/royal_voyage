@@ -18,7 +18,6 @@ import { useApp } from "@/lib/app-context";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
-import { addAdminNotification } from "@/lib/admin-notifications";
 import { generateFlightTicket, generateHotelVoucher, COMPANY_INFO } from "@/lib/ticket-generator";
 import { shareFlightTicketPDF, shareHotelVoucherPDF } from "@/lib/pdf-ticket-generator";
 import { Platform } from "react-native";
@@ -41,7 +40,7 @@ function useCountdown(deadlineISO?: string) {
 export default function BookingDetailScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { bookings, cancelBooking, adminPushToken } = useApp();
+  const { bookings, cancelBooking } = useApp();
   const { fmt } = useCurrency();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [sendingTicket, setSendingTicket] = useState(false);
@@ -156,35 +155,6 @@ export default function BookingDetailScreen() {
           onPress: () => {
             cancelBooking(booking.id);
 
-            // إرسال إشعار للمدير عند إلغاء حجز
-            const bookingType = booking.type === "flight" ? "رحلة" : "فندق";
-            const customerName = (booking.passengerName ?? booking.guestName ?? "زبون");
-            const dest = booking.type === "flight"
-              ? `${booking.flight?.originCode ?? ""} → ${booking.flight?.destinationCode ?? ""}`
-              : booking.hotel?.name ?? "";
-            const notifTitle = `إلغاء حجز - ${bookingType}`;
-            const notifBody = `${customerName} • ${dest} • ${fmt(booking.totalPrice)} • ${booking.reference}`;
-
-            // حفظ الإشعار محلياً
-            addAdminNotification({
-              type: "booking_cancelled",
-              title: notifTitle,
-              body: notifBody,
-              bookingRef: booking.reference,
-              bookingId: booking.id,
-            }).catch(() => {});
-
-            // إرسال Push للمدير
-            if (adminPushToken) {
-              sendAdminPush.mutateAsync({
-                expoPushToken: adminPushToken,
-                title: notifTitle,
-                body: notifBody,
-                data: { bookingRef: booking.reference, type: "booking_cancelled" },
-                sound: "new_booking.wav",
-                channelId: "booking_cancelled",
-              }).catch(() => {});
-            }
 
             router.back();
           },

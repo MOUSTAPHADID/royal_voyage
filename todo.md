@@ -1501,3 +1501,4 @@
 - [x] Limpeza de produção: bundle ID com.royalvoyage.app e scheme royalvoyage confirmados
 - [x] Limpeza de produção: TypeScript 0 erros confirmado
 - [x] Limpeza de produção: auditoria final passou (0 issues críticos/altos)
+- [x] إزالة نظام الإدارة الكامل من تطبيق العملاء (app/admin، lib/admin-*، مراجع isAdmin)

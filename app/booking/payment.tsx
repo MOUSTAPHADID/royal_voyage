@@ -27,7 +27,6 @@ import { formatMRU, fromMRU, formatCurrency } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
 import { trpc } from "@/lib/trpc";
 import { scheduleCashPaymentReminder, scheduleHoldExpiryReminders, scheduleAdminHoldExpiryNotification } from "@/lib/push-notifications";
-import { addAdminNotification } from "@/lib/admin-notifications";
 import { getPricingSettings } from "@/lib/pricing-settings";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { usePaymentSheet } from "@/hooks/use-stripe-payment";
@@ -120,7 +119,7 @@ const WALLET_NUMBERS: Record<string, string> = {
 export default function PaymentScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { addBooking, updateBookingReceipt, expoPushToken, adminPushToken } = useApp();
+  const { addBooking, updateBookingReceipt, expoPushToken } = useApp();
   const { fmt, currency } = useCurrency();
   const params = useLocalSearchParams<{
     type: string;
@@ -646,35 +645,14 @@ export default function PaymentScreen() {
       const notifTitle = `حجز جديد - ${bookingType}`;
       const notifBody = `${customerName} • ${dest} • ${fmt(total)} • ${ref}`;
 
-      // حفظ الإشعار محلياً في سجل الإشعارات
-      addAdminNotification({
-        type: "new_booking",
+      // إرسال إشعار للخادم عبر تطبيق الإدارة
+      sendToAdmin.mutateAsync({
         title: notifTitle,
         body: notifBody,
-        bookingRef: ref,
-        bookingId: booking.id,
-      }).catch(() => {});
-
-      // Send via local token if available, otherwise via server-stored token
-      if (adminPushToken) {
-        sendAdminPush.mutateAsync({
-          expoPushToken: adminPushToken,
-          title: notifTitle,
-          body: notifBody,
-          data: { bookingRef: ref, type: "new_booking" },
-          sound: "new_booking.wav",
-          channelId: "new_booking",
-        }).catch((err) => console.error("[Payment] Admin push failed:", err));
-      } else {
-        // Fallback: send via server-stored admin token (works across devices)
-        sendToAdmin.mutateAsync({
-          title: notifTitle,
-          body: notifBody,
-          data: { bookingRef: ref, type: "new_booking" },
-          sound: "new_booking.wav",
-          channelId: "new_booking",
-        }).catch((err) => console.error("[Payment] Server admin push failed:", err));
-      }
+        data: { bookingRef: ref, type: "new_booking" },
+        sound: "new_booking.wav",
+        channelId: "new_booking",
+      }).catch((err) => console.error("[Payment] Server admin push failed:", err));
     }
 
     // إشعار خاص بدفعة Multicaixa Express
@@ -683,32 +661,13 @@ export default function PaymentScreen() {
       const mcxTitle = "دفعة Multicaixa Express جديدة";
       const mcxCustomer = `${params.firstName ?? ""} ${params.lastName ?? ""}`.trim() || "زبون";
       const mcxBody = `${mcxCustomer} • ${mcxFormatted} • Ref: ${transferRef.trim()} • ${ref}`;
-      addAdminNotification({
-        type: "new_booking",
+      sendToAdmin.mutateAsync({
         title: mcxTitle,
         body: mcxBody,
-        bookingRef: ref,
-        bookingId: booking.id,
-      }).catch(() => {});
-
-      if (adminPushToken) {
-        sendAdminPush.mutateAsync({
-          expoPushToken: adminPushToken,
-          title: mcxTitle,
-          body: mcxBody,
-          data: { bookingRef: ref, type: "multicaixa_payment" },
-          sound: "new_booking.wav",
-          channelId: "new_booking",
-        }).catch((err) => console.error("[Payment] Multicaixa push failed:", err));
-      } else {
-        sendToAdmin.mutateAsync({
-          title: mcxTitle,
-          body: mcxBody,
-          data: { bookingRef: ref, type: "multicaixa_payment" },
-          sound: "new_booking.wav",
-          channelId: "new_booking",
-        }).catch((err) => console.error("[Payment] Server Multicaixa push failed:", err));
-      }
+        data: { bookingRef: ref, type: "multicaixa_payment" },
+        sound: "new_booking.wav",
+        channelId: "new_booking",
+      }).catch((err) => console.error("[Payment] Server Multicaixa push failed:", err));
     }
 
     // Schedule payment reminder (1h before deadline) for cash and hold_24h
