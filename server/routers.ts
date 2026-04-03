@@ -24,7 +24,7 @@ import {
   removeConsolidator,
   getConsolidatorForBooking,
 } from "./duffel";
-import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail } from "./email";
+import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail, sendEmployeeWelcomeEmail } from "./email";
 import {
   getWebhookLog,
   getWebhookNotifications,
@@ -1150,6 +1150,14 @@ export const appRouter = router({
           throw new Error("البريد الإلكتروني مستخدم بالفعل");
         }
         const id = await createEmployee(input);
+        // Send welcome email with login credentials
+        sendEmployeeWelcomeEmail({
+          fullName: input.fullName,
+          email: input.email,
+          password: input.password,
+          role: input.role,
+          department: input.department,
+        }).catch((e) => console.warn("[Email] Failed to send employee welcome:", e));
         return { success: true, id };
       }),
 

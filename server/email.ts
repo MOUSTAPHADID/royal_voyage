@@ -732,3 +732,69 @@ export async function sendHoldConfirmationEmail(data: HoldConfirmationEmailData)
     return false;
   }
 }
+
+// ─── Employee Welcome Email ───────────────────────────────────────────────────
+
+export interface EmployeeWelcomeData {
+  fullName: string;
+  email: string;
+  password: string;
+  role: string;
+  department?: string;
+}
+
+const ROLE_LABELS_AR: Record<string, string> = {
+  manager: "مدير",
+  accountant: "محاسب",
+  booking_agent: "وكيل حجز",
+  support: "دعم فني",
+};
+
+function employeeWelcomeHtml(data: EmployeeWelcomeData): string {
+  const roleLabel = ROLE_LABELS_AR[data.role] || data.role;
+  const content = `
+    <div style="text-align:center;padding:24px 0 16px;">
+      <h1 style="color:#1B2B5E;font-size:22px;margin:0 0 6px;">مرحباً بك في Royal Voyage</h1>
+      <p style="color:#687076;font-size:14px;margin:0;">تم إنشاء حسابك بنجاح — يرجى الاحتفاظ بهذه البيانات</p>
+    </div>
+    <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:24px;margin:20px 0;direction:rtl;text-align:right;">
+      <h2 style="color:#1B2B5E;font-size:15px;margin:0 0 16px;border-bottom:1px solid #E2E8F0;padding-bottom:10px;">بيانات تسجيل الدخول</h2>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr><td style="padding:7px 0;color:#687076;font-size:13px;width:40%;">الاسم الكامل</td><td style="padding:7px 0;color:#11181C;font-size:13px;font-weight:600;">${data.fullName}</td></tr>
+        <tr><td style="padding:7px 0;color:#687076;font-size:13px;">البريد الإلكتروني</td><td style="padding:7px 0;color:#1B2B5E;font-size:13px;font-weight:700;">${data.email}</td></tr>
+        <tr><td style="padding:7px 0;color:#687076;font-size:13px;">كلمة المرور</td><td style="padding:7px 0;font-size:18px;font-weight:900;color:#1B2B5E;letter-spacing:3px;font-family:monospace;">${data.password}</td></tr>
+        <tr><td style="padding:7px 0;color:#687076;font-size:13px;">المنصب</td><td style="padding:7px 0;color:#11181C;font-size:13px;font-weight:600;">${roleLabel}</td></tr>
+        ${data.department ? `<tr><td style="padding:7px 0;color:#687076;font-size:13px;">القسم</td><td style="padding:7px 0;color:#11181C;font-size:13px;font-weight:600;">${data.department}</td></tr>` : ""}
+      </table>
+    </div>
+    <div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:14px 16px;margin:16px 0;direction:rtl;text-align:right;">
+      <p style="color:#92400E;font-size:13px;margin:0;">⚠️ <strong>تنبيه أمني:</strong> يرجى تغيير كلمة المرور فور تسجيل الدخول لأول مرة. لا تشارك بيانات دخولك مع أي شخص.</p>
+    </div>
+    <div style="text-align:center;margin:20px 0;">
+      <p style="color:#687076;font-size:12px;">للمساعدة: <a href="mailto:${COMPANY.email}" style="color:#1B2B5E;">${COMPANY.email}</a> | <a href="tel:${COMPANY.phone}" style="color:#1B2B5E;">${COMPANY.phone}</a></p>
+    </div>
+  `;
+  return baseLayout(content, `مرحباً بك في ${COMPANY.name}`);
+}
+
+export async function sendEmployeeWelcomeEmail(data: EmployeeWelcomeData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = employeeWelcomeHtml(data);
+  if (!transporter) {
+    console.log(`[Email] Would send employee welcome to: ${data.email} | Role: ${data.role} | Password: ${data.password}`);
+    return true;
+  }
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage — الإدارة" <${process.env.EMAIL_USER}>`,
+      to: data.email,
+      subject: `🎉 مرحباً بك في Royal Voyage — بيانات حسابك`,
+      html,
+    });
+    console.log(`[Email] ✅ Employee welcome email sent to ${data.email}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send employee welcome email:", error);
+    return false;
+  }
+}

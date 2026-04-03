@@ -138,6 +138,11 @@ export default function EmployeesScreen() {
       setShowCreateModal(false);
       resetForm();
       employeesQuery.refetch();
+      Alert.alert(
+        "✅ تم إنشاء الحساب",
+        `تم إنشاء حساب ${fullName.trim()} بنجاح.\n\nتم إرسال بيانات تسجيل الدخول إلى:\n${email.trim().toLowerCase()}`,
+        [{ text: "حسناً" }]
+      );
     } catch (err: any) {
       Alert.alert("خطأ", err?.message || "فشل في إنشاء الموظف");
     }
