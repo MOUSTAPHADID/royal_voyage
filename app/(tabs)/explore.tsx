@@ -56,9 +56,11 @@ export default function ExploreScreen() {
       <View style={styles.destInfo}>
         <Text style={styles.destCity}>{item.city}</Text>
         <Text style={styles.destCountry}>{item.country}</Text>
-        <View style={[styles.pricePill, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
-          <Text style={{ color: "#C9A84C", fontSize: 11 }}>
-            {isRTL ? "ابحث الآن" : "Search now"}
+        <View style={[styles.pricePill, { backgroundColor: "rgba(0,0,0,0.55)" }]}>
+          <Text style={{ color: "#C9A84C", fontSize: 10, fontWeight: "700" }}>
+            {isRTL
+              ? `من ${(item.flightPrice / 1000).toFixed(0)}K MRU`
+              : `From ${(item.flightPrice / 1000).toFixed(0)}K MRU`}
           </Text>
         </View>
       </View>

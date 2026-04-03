@@ -30,6 +30,7 @@ import {
   set2FASecret,
   get2FASecret,
   generate2FACode,
+  generate2FAUri,
 } from "@/lib/admin-security";
 import { useRouter } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -95,6 +96,7 @@ export default function AdminScreen() {
   const [twoFASetupSecret, setTwoFASetupSecret] = useState("");
   const [twoFASetupCode, setTwoFASetupCode] = useState("");
   const [twoFASetupError, setTwoFASetupError] = useState("");
+  const [twoFASetupUri, setTwoFASetupUri] = useState("");
   const [currentAdminEmail, setCurrentAdminEmail] = useState("");
 
   // Multi-Consolidator state
@@ -178,14 +180,16 @@ export default function AdminScreen() {
 
   const handleEnable2FA = async () => {
     const secret = generateNew2FASecret();
+    const email = await getAdminEmail();
     setTwoFASetupSecret(secret);
+    setTwoFASetupUri(generate2FAUri(secret, email));
     setTwoFASetupCode("");
     setTwoFASetupError("");
     setShow2FASetupModal(true);
   };
 
   const handleConfirm2FASetup = async () => {
-    const expectedCode = generate2FACode(twoFASetupSecret);
+    const expectedCode = await generate2FACode(twoFASetupSecret);
     if (twoFASetupCode === expectedCode) {
       await set2FASecret(twoFASetupSecret);
       await set2FAEnabled(true);
@@ -1562,11 +1566,16 @@ export default function AdminScreen() {
             </Text>
 
             {/* Secret Key Display */}
-            <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 16, marginBottom: 16, alignItems: "center" }}>
-              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 6 }}>المفتاح السري</Text>
-              <Text style={{ fontSize: 16, fontWeight: "700", color: colors.foreground, letterSpacing: 3, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" }}>
-                {twoFASetupSecret}
+            <View style={{ backgroundColor: colors.background, borderRadius: 12, padding: 16, marginBottom: 12, alignItems: "center" }}>
+              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 6 }}>المفتاح السري — أدخله يدوياً في التطبيق</Text>
+              <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, letterSpacing: 2, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", textAlign: "center" }}>
+                {twoFASetupSecret.match(/.{1,4}/g)?.join(" ") ?? twoFASetupSecret}
               </Text>
+            </View>
+            {/* otpauth URI for manual entry */}
+            <View style={{ backgroundColor: colors.primary + "15", borderRadius: 10, padding: 10, marginBottom: 12 }}>
+              <Text style={{ fontSize: 11, color: colors.primary, fontWeight: "600", textAlign: "center", marginBottom: 4 }}>متوافق مع Google Authenticator / Authy</Text>
+              <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center" }}>افتح التطبيق ← إضافة حساب ← مفتاح إعداد يدوي ← الصق المفتاح أعلاه</Text>
             </View>
 
             {twoFASetupError !== "" && (

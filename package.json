@@ -68,6 +68,7 @@
     "mysql2": "^3.16.0",
     "nativewind": "^4.2.1",
     "nodemailer": "^8.0.3",
+    "otplib": "^13.4.0",
     "pdfkit": "^0.18.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",

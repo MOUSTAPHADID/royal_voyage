@@ -1101,17 +1101,17 @@ export const appRouter = router({
 
   // ─── Business Accounts Management (Admin) ──────────────────────────────────
   businessAccounts: router({
-    list: publicProcedure.query(async () => {
+    list: adminProcedure.query(async () => {
       return await getBusinessAccounts();
     }),
 
-    getById: publicProcedure
+    getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return await getBusinessAccountById(input.id);
       }),
 
-    create: publicProcedure
+    create: adminProcedure
       .input(z.object({
         companyName: z.string().min(1).max(255),
         contactName: z.string().min(1).max(255),
@@ -1131,7 +1131,7 @@ export const appRouter = router({
         return { success: true, id };
       }),
 
-    update: publicProcedure
+    update: adminProcedure
       .input(z.object({
         id: z.number(),
         companyName: z.string().min(1).max(255).optional(),
@@ -1154,7 +1154,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteBusinessAccount(input.id);
@@ -1164,13 +1164,13 @@ export const appRouter = router({
 
   // ─── Employee Management (Admin) ───────────────────────────────────────────
   employees: router({
-    list: publicProcedure.query(async () => {
+    list: adminProcedure.query(async () => {
       const emps = await getEmployees();
       // Strip password hashes from response
       return emps.map(({ passwordHash, ...rest }) => rest);
     }),
 
-    getById: publicProcedure
+    getById: adminProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         const emp = await getEmployeeById(input.id);
@@ -1179,7 +1179,7 @@ export const appRouter = router({
         return rest;
       }),
 
-    create: publicProcedure
+    create: adminProcedure
       .input(z.object({
         fullName: z.string().min(1).max(255),
         email: z.string().email().max(320),
@@ -1208,7 +1208,7 @@ export const appRouter = router({
         return { success: true, id };
       }),
 
-    update: publicProcedure
+    update: adminProcedure
       .input(z.object({
         id: z.number(),
         fullName: z.string().min(1).max(255).optional(),
@@ -1227,7 +1227,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    delete: publicProcedure
+    delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await deleteEmployee(input.id);
@@ -1727,7 +1727,7 @@ export const appRouter = router({
   // ─── Company Documents PDF Generator ─────────────────────────────────────
   documents: router({
     // Generate Employment Contract PDF
-    generateEmploymentContract: publicProcedure
+    generateEmploymentContract: adminProcedure
       .input(z.object({
         employeeName: z.string(),
         employeeId: z.string().optional(),
@@ -1749,7 +1749,7 @@ export const appRouter = router({
         return { base64, filename: `employment_contract_${input.employeeName.replace(/\s+/g, "_")}.pdf` };
       }),
     // Generate Service Invoice PDF
-    generateInvoice: publicProcedure
+    generateInvoice: adminProcedure
       .input(z.object({
         invoiceNumber: z.string(),
         date: z.string(),
@@ -1774,7 +1774,7 @@ export const appRouter = router({
         return { base64, filename: `invoice_${input.invoiceNumber}.pdf` };
       }),
     // Generate Partnership Agreement PDF
-    generatePartnership: publicProcedure
+    generatePartnership: adminProcedure
       .input(z.object({
         partnerName: z.string(),
         partnerLegal: z.string().optional(),
@@ -1795,7 +1795,7 @@ export const appRouter = router({
       }),
 
     // Generate Ticket Invoice PDF
-    generateTicketInvoice: publicProcedure
+    generateTicketInvoice: adminProcedure
       .input(z.object({
         invoiceNumber: z.string(),
         date: z.string(),
@@ -1832,7 +1832,7 @@ export const appRouter = router({
       }),
 
     // Save document record to DB
-    saveDocument: publicProcedure
+    saveDocument: adminProcedure
       .input(z.object({
         docType: z.enum(["employment_contract", "invoice", "partnership", "ticket_invoice"]),
         refNumber: z.string().optional(),
@@ -1848,12 +1848,12 @@ export const appRouter = router({
       }),
 
       // Get all saved documents
-    getDocuments: publicProcedure
+    getDocuments: adminProcedure
       .query(async () => {
         return getGeneratedDocuments(100);
       }),
     // Update document status
-    updateDocStatus: publicProcedure
+    updateDocStatus: adminProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["generated", "sent", "signed"]),
@@ -1863,7 +1863,7 @@ export const appRouter = router({
         return { success: true };
       }),
     // Send document by email
-    sendByEmail: publicProcedure
+    sendByEmail: adminProcedure
       .input(z.object({
         toEmail: z.string().email(),
         toName: z.string(),
@@ -1885,7 +1885,7 @@ export const appRouter = router({
   }),
   // ─── Logo Upload ──────────────────────────────────────────────────────────
   uploadLogo: router({
-    upload: publicProcedure
+    upload: adminProcedure
       .input(z.object({
         base64: z.string(),
         mimeType: z.string().default("image/png"),

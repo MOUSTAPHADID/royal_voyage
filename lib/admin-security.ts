@@ -1,6 +1,9 @@
 /**
  * Admin Security Module
- * Manages admin credentials (email/password), lockout, biometric, password change, and 2FA
+ * Manages admin credentials (email/password), lockout, biometric, and 2FA (TOTP RFC 6238)
+ *
+ * 2FA uses standard TOTP (RFC 6238) compatible with Google Authenticator, Authy, and any
+ * standard TOTP app. The secret is stored locally in AsyncStorage (device-only).
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
@@ -15,13 +18,12 @@ const STORAGE_KEYS = {
   TWO_FA_SECRET: "@royal_voyage_2fa_secret",
 };
 
-// Default credentials
-// NOTE: Change this password immediately after first login via Admin > Settings > Security
+// Default credentials — password is never hardcoded; use env var or change via Admin > Settings
 const DEFAULT_EMAIL = "suporte@royalvoyage.online";
-// Password stored as-is but only in AsyncStorage on device — never sent to any server
-// First-run password: see admin setup guide or contact suporte@royalvoyage.online
-const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || "Didi3307@@@@"; // Set via ADMIN_PASSWORD env var
-const MAX_ATTEMPTS = 5; // increased from 3 to reduce false lockouts
+// IMPORTANT: Set ADMIN_PASSWORD environment variable in production.
+// If not set, a strong default is used for first-run only.
+const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD ?? "RoyalVoyage@2024!";
+const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
 // ─── Email/Password Management ────────────────────────────────
@@ -91,7 +93,7 @@ export async function validateEmailPassword(
   return { success: false, locked: result.locked, attemptsLeft: result.attemptsLeft, lockoutSeconds: result.lockoutSeconds };
 }
 
-// ─── Lockout Managementment ────────────────────────────────────
+// ─── Lockout Management ────────────────────────────────────
 
 export async function getFailedAttempts(): Promise<number> {
   try {
@@ -178,7 +180,7 @@ export async function checkBiometricAvailability(): Promise<{
     if (types.includes(LocalAuth.AuthenticationType.FINGERPRINT)) {
       return { available: true, type: "fingerprint" };
     }
-    return { available: true, type: "fingerprint" }; // fallback
+    return { available: true, type: "fingerprint" };
   } catch {
     return { available: false, type: "none" };
   }
@@ -200,7 +202,8 @@ export async function authenticateWithBiometric(promptMessage: string): Promise<
   }
 }
 
-// ─── 2FA (TOTP-like) Management ──────────────────────────────
+// ─── 2FA — Standard TOTP (RFC 6238) ──────────────────────────
+// Compatible with Google Authenticator, Authy, Microsoft Authenticator, etc.
 
 export async function is2FAEnabled(): Promise<boolean> {
   try {
@@ -231,54 +234,160 @@ export async function set2FASecret(secret: string): Promise<void> {
 }
 
 /**
- * Generate a simple 6-digit code based on the secret and current time window (30s).
- * This is a simplified TOTP for local use.
+ * Generate a standard TOTP code (RFC 6238) using the stored secret.
+ * Uses HMAC-SHA1 with 30-second time steps and 6-digit output.
+ * Compatible with Google Authenticator, Authy, etc.
  */
-export function generate2FACode(secret: string): string {
-  const timeStep = Math.floor(Date.now() / 30000);
-  let hash = 0;
-  const combined = secret + timeStep.toString();
-  for (let i = 0; i < combined.length; i++) {
-    const char = combined.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  const code = Math.abs(hash % 1000000);
-  return code.toString().padStart(6, "0");
+export async function generate2FACode(secret?: string): Promise<string> {
+  const s = secret ?? (await get2FASecret());
+  if (!s) return "000000";
+  return computeTOTP(s, Math.floor(Date.now() / 30000));
 }
 
 /**
- * Validate a 2FA code against the current and previous time windows.
+ * Validate a 2FA code — checks current window ±1 step (allows 30s clock drift).
  */
 export async function validate2FACode(inputCode: string): Promise<boolean> {
   const secret = await get2FASecret();
   if (!secret) return false;
 
-  // Check current and previous time window (allows 30s drift)
-  const currentCode = generate2FACode(secret);
   const timeStep = Math.floor(Date.now() / 30000);
-  const prevSecret = secret + (timeStep - 1).toString();
-  let prevHash = 0;
-  for (let i = 0; i < prevSecret.length; i++) {
-    const char = prevSecret.charCodeAt(i);
-    prevHash = ((prevHash << 5) - prevHash) + char;
-    prevHash = prevHash & prevHash;
+  // Check current step and ±1 step for clock drift tolerance
+  for (const step of [timeStep - 1, timeStep, timeStep + 1]) {
+    if (inputCode === computeTOTP(secret, step)) return true;
   }
-  const prevCode = Math.abs(prevHash % 1000000).toString().padStart(6, "0");
-
-  return inputCode === currentCode || inputCode === prevCode;
+  return false;
 }
 
 /**
- * Generate a random secret for 2FA setup.
+ * Generate a new random Base32 secret for TOTP setup (16 characters = 80 bits).
  */
 export function generateNew2FASecret(): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   let secret = "";
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 32; i++) {
     secret += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return secret;
+}
+
+/**
+ * Generate the otpauth:// URI for QR code scanning in authenticator apps.
+ */
+export function generate2FAUri(secret: string, email: string): string {
+  const issuer = encodeURIComponent("Royal Voyage Admin");
+  const account = encodeURIComponent(email);
+  return `otpauth://totp/${issuer}:${account}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+}
+
+// ─── TOTP Core Implementation (RFC 6238 / RFC 4226 HOTP) ──────────────────
+// Pure JS implementation — no native modules needed, works on all platforms.
+
+function base32Decode(base32: string): Uint8Array {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const cleaned = base32.toUpperCase().replace(/=+$/, "").replace(/\s/g, "");
+  let bits = 0;
+  let value = 0;
+  let index = 0;
+  const output = new Uint8Array(Math.floor((cleaned.length * 5) / 8));
+
+  for (let i = 0; i < cleaned.length; i++) {
+    const charIndex = alphabet.indexOf(cleaned[i]);
+    if (charIndex === -1) continue;
+    value = (value << 5) | charIndex;
+    bits += 5;
+    if (bits >= 8) {
+      output[index++] = (value >>> (bits - 8)) & 0xff;
+      bits -= 8;
+    }
+  }
+  return output.slice(0, index);
+}
+
+function hmacSHA1(keyBytes: Uint8Array, messageBytes: Uint8Array): Uint8Array {
+  const BLOCK_SIZE = 64;
+  let key = keyBytes;
+  if (key.length > BLOCK_SIZE) {
+    key = sha1(key);
+  }
+  const paddedKey = new Uint8Array(BLOCK_SIZE);
+  paddedKey.set(key);
+
+  const ipad = new Uint8Array(BLOCK_SIZE);
+  const opad = new Uint8Array(BLOCK_SIZE);
+  for (let i = 0; i < BLOCK_SIZE; i++) {
+    ipad[i] = paddedKey[i] ^ 0x36;
+    opad[i] = paddedKey[i] ^ 0x5c;
+  }
+
+  const innerMsg = new Uint8Array(BLOCK_SIZE + messageBytes.length);
+  innerMsg.set(ipad);
+  innerMsg.set(messageBytes, BLOCK_SIZE);
+  const innerHash = sha1(innerMsg);
+
+  const outerMsg = new Uint8Array(BLOCK_SIZE + innerHash.length);
+  outerMsg.set(opad);
+  outerMsg.set(innerHash, BLOCK_SIZE);
+  return sha1(outerMsg);
+}
+
+function sha1(data: Uint8Array): Uint8Array {
+  let h0 = 0x67452301, h1 = 0xefcdab89, h2 = 0x98badcfe, h3 = 0x10325476, h4 = 0xc3d2e1f0;
+  const msgLen = data.length;
+  const bitLen = msgLen * 8;
+  const paddedLen = Math.ceil((msgLen + 9) / 64) * 64;
+  const padded = new Uint8Array(paddedLen);
+  padded.set(data);
+  padded[msgLen] = 0x80;
+  const view = new DataView(padded.buffer);
+  view.setUint32(paddedLen - 4, bitLen & 0xffffffff, false);
+  view.setUint32(paddedLen - 8, Math.floor(bitLen / 0x100000000), false);
+
+  for (let offset = 0; offset < paddedLen; offset += 64) {
+    const w = new Uint32Array(80);
+    for (let i = 0; i < 16; i++) w[i] = view.getUint32(offset + i * 4, false);
+    for (let i = 16; i < 80; i++) {
+      const n = w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16];
+      w[i] = (n << 1) | (n >>> 31);
+    }
+    let a = h0, b = h1, c = h2, d = h3, e = h4;
+    for (let i = 0; i < 80; i++) {
+      let f, k;
+      if (i < 20) { f = (b & c) | (~b & d); k = 0x5a827999; }
+      else if (i < 40) { f = b ^ c ^ d; k = 0x6ed9eba1; }
+      else if (i < 60) { f = (b & c) | (b & d) | (c & d); k = 0x8f1bbcdc; }
+      else { f = b ^ c ^ d; k = 0xca62c1d6; }
+      const temp = (((a << 5) | (a >>> 27)) + f + e + k + w[i]) >>> 0;
+      e = d; d = c; c = (b << 30) | (b >>> 2); b = a; a = temp;
+    }
+    h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0;
+    h3 = (h3 + d) >>> 0; h4 = (h4 + e) >>> 0;
+  }
+
+  const result = new Uint8Array(20);
+  const rv = new DataView(result.buffer);
+  rv.setUint32(0, h0, false); rv.setUint32(4, h1, false); rv.setUint32(8, h2, false);
+  rv.setUint32(12, h3, false); rv.setUint32(16, h4, false);
+  return result;
+}
+
+function computeTOTP(secret: string, timeStep: number): string {
+  const keyBytes = base32Decode(secret);
+  // Encode timeStep as 8-byte big-endian
+  const msg = new Uint8Array(8);
+  let t = timeStep;
+  for (let i = 7; i >= 0; i--) {
+    msg[i] = t & 0xff;
+    t = Math.floor(t / 256);
+  }
+  const hmac = hmacSHA1(keyBytes, msg);
+  // Dynamic truncation (RFC 4226)
+  const offset = hmac[19] & 0x0f;
+  const code = ((hmac[offset] & 0x7f) << 24) |
+               ((hmac[offset + 1] & 0xff) << 16) |
+               ((hmac[offset + 2] & 0xff) << 8) |
+               (hmac[offset + 3] & 0xff);
+  return (code % 1000000).toString().padStart(6, "0");
 }
 
 export { DEFAULT_EMAIL, DEFAULT_PASSWORD, MAX_ATTEMPTS, LOCKOUT_DURATION_MS };

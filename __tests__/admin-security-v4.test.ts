@@ -124,7 +124,7 @@ describe("Admin Security - Two-Factor Authentication", () => {
   it("should generate a 6-digit code from secret", async () => {
     const { generateNew2FASecret, generate2FACode } = await import("../lib/admin-security");
     const secret = generateNew2FASecret();
-    const code = generate2FACode(secret);
+    const code = await generate2FACode(secret);
     expect(typeof code).toBe("string");
     expect(code.length).toBe(6);
     expect(/^\d{6}$/.test(code)).toBe(true);
