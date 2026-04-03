@@ -403,7 +403,7 @@ export default function DocumentsScreen() {
         <Pressable
           style={({ pressed }) => [{
             marginHorizontal: 20,
-            marginBottom: 16,
+            marginBottom: 10,
             borderRadius: 14,
             backgroundColor: "#0D1B3E",
             paddingVertical: 16,
@@ -416,6 +416,25 @@ export default function DocumentsScreen() {
         >
           <IconSymbol name="doc.badge.plus" size={20} color="#C9A84C" />
           <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>إنشاء وثيقة مخصصة</Text>
+        </Pressable>
+
+        {/* Document History Button */}
+        <Pressable
+          style={({ pressed }) => [{
+            marginHorizontal: 20,
+            marginBottom: 16,
+            borderRadius: 14,
+            backgroundColor: "#6366F1",
+            paddingVertical: 16,
+            alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 10,
+          }, pressed && { opacity: 0.8 }]}
+          onPress={() => router.push("/admin/document-history" as any)}
+        >
+          <IconSymbol name="doc.text.fill" size={20} color="#FFFFFF" />
+          <Text style={{ fontSize: 15, fontWeight: "700", color: "#FFFFFF" }}>سجل الوثائق المولّدة</Text>
         </Pressable>
 
         {/* Bottom info */}

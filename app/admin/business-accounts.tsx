@@ -12,8 +12,10 @@ import {
   ActivityIndicator,
   Platform,
   RefreshControl,
+  Image,
 } from "react-native";
 import * as Haptics from "expo-haptics";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -70,10 +72,49 @@ export default function BusinessAccountsScreen() {
   const [logoUrl, setLogoUrl] = useState("");
   const [website, setWebsite] = useState("");
 
+  const [logoUploading, setLogoUploading] = useState(false);
+
   const accountsQuery = trpc.businessAccounts.list.useQuery();
   const createMut = trpc.businessAccounts.create.useMutation();
   const updateMut = trpc.businessAccounts.update.useMutation();
   const deleteMut = trpc.businessAccounts.delete.useMutation();
+  const uploadLogoMut = trpc.uploadLogo.upload.useMutation();
+
+  const handlePickLogo = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("خطأ", "يجب السماح للتطبيق بالوصول إلى مكتبة الصور");
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert("خطأ", "تعذّر قراءة الصورة");
+        return;
+      }
+      setLogoUploading(true);
+      const ext = asset.uri.split(".").pop() || "jpg";
+      const mimeType = asset.mimeType || `image/${ext}`;
+      const { url } = await uploadLogoMut.mutateAsync({
+        base64: asset.base64,
+        mimeType,
+        filename: `logo_${Date.now()}.${ext}`,
+      });
+      setLogoUrl(url);
+      setLogoUploading(false);
+    } catch (err: any) {
+      setLogoUploading(false);
+      Alert.alert("خطأ", err?.message || "فشل رفع الشعار");
+    }
+  };
 
   const accounts = (accountsQuery.data || []) as unknown as BusinessAccount[];
 
@@ -359,20 +400,45 @@ export default function BusinessAccountsScreen() {
 
           {/* Branding / White-Label */}
           <Text style={[s.sectionLabel, { color: colors.muted }]}>هوية العلامة التجارية (للتذاكر)</Text>
-          <View style={[s.inputGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={s.inputRow}>
-              <Text style={[s.inputLabel, { color: colors.foreground }]}>رابط الشعار</Text>
-              <TextInput
-                style={[s.inputField, { color: colors.foreground }]}
-                value={logoUrl}
-                onChangeText={setLogoUrl}
-                placeholder="https://example.com/logo.png"
-                placeholderTextColor={colors.muted}
-                autoCapitalize="none"
-                keyboardType="url"
+          {/* Logo Picker */}
+          <View style={{ marginBottom: 12, alignItems: "center" }}>
+            {logoUrl ? (
+              <Image
+                source={{ uri: logoUrl }}
+                style={{ width: 90, height: 90, borderRadius: 14, marginBottom: 8, borderWidth: 1, borderColor: colors.border }}
+                resizeMode="contain"
               />
-            </View>
-            <View style={[s.divider, { backgroundColor: colors.border }]} />
+            ) : (
+              <View style={{ width: 90, height: 90, borderRadius: 14, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+                <IconSymbol name="doc.fill" size={32} color={colors.muted} />
+              </View>
+            )}
+            <Pressable
+              style={({ pressed }) => ({
+                flexDirection: "row", alignItems: "center", gap: 6,
+                paddingHorizontal: 18, paddingVertical: 10, borderRadius: 20,
+                backgroundColor: logoUploading ? colors.border : "#1B2B5E",
+                opacity: pressed ? 0.8 : 1,
+              })}
+              onPress={handlePickLogo}
+              disabled={logoUploading}
+            >
+              {logoUploading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <IconSymbol name="square.and.arrow.up" size={16} color="#FFFFFF" />
+              )}
+              <Text style={{ fontSize: 13, fontWeight: "700", color: "#FFFFFF" }}>
+                {logoUploading ? "جارٍ الرفع..." : "رفع شعار الشريك"}
+              </Text>
+            </Pressable>
+            {logoUrl ? (
+              <Pressable onPress={() => setLogoUrl("")} style={{ marginTop: 6 }}>
+                <Text style={{ fontSize: 12, color: colors.error || "#EF4444" }}>حذف الشعار</Text>
+              </Pressable>
+            ) : null}
+          </View>
+          <View style={[s.inputGroup, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={s.inputRow}>
               <Text style={[s.inputLabel, { color: colors.foreground }]}>الموقع الإلكتروني</Text>
               <TextInput

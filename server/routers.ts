@@ -1847,12 +1847,21 @@ export const appRouter = router({
         return { success: true, id };
       }),
 
-    // Get all saved documents
+      // Get all saved documents
     getDocuments: publicProcedure
       .query(async () => {
         return getGeneratedDocuments(100);
       }),
-
+    // Update document status
+    updateDocStatus: publicProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["generated", "sent", "signed"]),
+      }))
+      .mutation(async ({ input }) => {
+        await updateDocumentStatus(input.id, input.status);
+        return { success: true };
+      }),
     // Send document by email
     sendByEmail: publicProcedure
       .input(z.object({
@@ -1872,6 +1881,21 @@ export const appRouter = router({
           await updateDocumentStatus(input.documentId, "sent");
         }
         return { success: sent };
+      }),
+  }),
+  // ─── Logo Upload ──────────────────────────────────────────────────────────
+  uploadLogo: router({
+    upload: publicProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.string().default("image/png"),
+        filename: z.string().default("logo.png"),
+      }))
+      .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.base64, "base64");
+        const key = `logos/${Date.now()}_${input.filename}`;
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url };
       }),
   }),
 });
