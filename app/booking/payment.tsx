@@ -497,7 +497,15 @@ export default function PaymentScreen() {
           } else {
             const bookError = result.error || '';
             console.warn(`[Payment] Duffel booking failed: ${bookError}. Using fallback PNR.`);
-            if (bookError.includes('insufficient balance')) {
+            if (bookError === 'OFFER_EXPIRED' || bookError.includes('expired') || bookError.includes('not found')) {
+              Alert.alert(
+                'انتهت صلاحية العرض',
+                'انتهت صلاحية هذا العرض (30 دقيقة). يرجى العودة للبحث واختيار رحلة جديدة.',
+                [{ text: 'العودة للبحث', onPress: () => router.push('/(tabs)' as any) }]
+              );
+              setIsProcessing(false);
+              return;
+            } else if (bookError.includes('insufficient balance')) {
               Alert.alert(
                 'تنبيه',
                 'لا يمكن تأكيد الحجز حالياً. سيتم حفظ الحجز وتأكيده لاحقاً من قبل الإدارة.',
