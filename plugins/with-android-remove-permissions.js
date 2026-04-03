@@ -1,26 +1,22 @@
 /**
  * Expo Config Plugin: Remove Unnecessary Android Permissions
  *
- * Third-party libraries (expo-audio, expo-image-picker, etc.) inject
- * permissions into the merged AndroidManifest that are broader than
- * what this travel booking app actually needs.
+ * Removes unwanted permissions injected by third-party libraries by
+ * directly modifying the generated AndroidManifest.xml file.
  *
- * This plugin removes the following permissions at build time:
+ * Uses withFinalizedMod to ensure this runs AFTER all other plugins
+ * (including expo-audio, expo-image-picker, etc.) have finished injecting
+ * their permissions into the AndroidManifest.
  *
+ * Permissions removed:
  * - SYSTEM_ALERT_WINDOW: allows drawing over other apps — not needed
- * - READ_EXTERNAL_STORAGE: legacy storage access (pre-Android 13) — replaced by READ_MEDIA_IMAGES
+ * - READ_EXTERNAL_STORAGE: legacy storage access — replaced by READ_MEDIA_IMAGES
  * - WRITE_EXTERNAL_STORAGE: write access to shared storage — not needed
- * - MODIFY_AUDIO_SETTINGS: modifies global audio settings — not needed (only recording is used)
- *
- * Permissions intentionally KEPT:
- * - RECORD_AUDIO: required for voice search feature
- * - CAMERA: required for capturing payment receipts
- * - READ_MEDIA_IMAGES: modern photo picker (Android 13+)
- * - POST_NOTIFICATIONS: required for booking status push notifications
- * - INTERNET / ACCESS_NETWORK_STATE: required for all API calls
- * - FOREGROUND_SERVICE / FOREGROUND_SERVICE_MEDIA_PLAYBACK: injected by expo-audio, harmless
+ * - MODIFY_AUDIO_SETTINGS: modifies global audio settings — not needed
  */
-const { withAndroidManifest } = require("@expo/config-plugins");
+const { withMod } = require("@expo/config-plugins");
+const fs = require("fs");
+const path = require("path");
 
 const PERMISSIONS_TO_REMOVE = [
   "android.permission.SYSTEM_ALERT_WINDOW",
@@ -29,24 +25,43 @@ const PERMISSIONS_TO_REMOVE = [
   "android.permission.MODIFY_AUDIO_SETTINGS",
 ];
 
-module.exports = withAndroidManifest(async (config) => {
-  const manifest = config.modResults;
+module.exports = (config) =>
+  withMod(config, {
+    platform: "android",
+    mod: "finalized",
+    action: async (config) => {
+      const manifestPath = path.join(
+        config.modRequest.platformProjectRoot,
+        "app",
+        "src",
+        "main",
+        "AndroidManifest.xml"
+      );
 
-  if (!manifest.manifest["uses-permission"]) {
-    return config;
-  }
+      if (!fs.existsSync(manifestPath)) return config;
 
-  // Filter out unwanted permissions
-  manifest.manifest["uses-permission"] = manifest.manifest[
-    "uses-permission"
-  ].filter((perm) => {
-    const name = perm.$?.["android:name"] ?? "";
-    const shouldRemove = PERMISSIONS_TO_REMOVE.includes(name);
-    if (shouldRemove) {
-      console.log(`[with-android-remove-permissions] Removed: ${name}`);
-    }
-    return !shouldRemove;
+      let content = fs.readFileSync(manifestPath, "utf8");
+
+      for (const permission of PERMISSIONS_TO_REMOVE) {
+        const escaped = permission.replace(/\./g, "\\.");
+        const regex = new RegExp(
+          `[ \\t]*<uses-permission[^>]*android:name="${escaped}"[^/]*/?>\\n?`,
+          "g"
+        );
+        if (regex.test(content)) {
+          content = content.replace(
+            new RegExp(
+              `[ \\t]*<uses-permission[^>]*android:name="${escaped}"[^/]*/?>\\n?`,
+              "g"
+            ),
+            ""
+          );
+          console.log(`[with-android-remove-permissions] Removed: ${permission}`);
+        }
+      }
+
+      fs.writeFileSync(manifestPath, content, "utf8");
+
+      return config;
+    },
   });
-
-  return config;
-});

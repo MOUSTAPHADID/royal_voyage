@@ -2,28 +2,54 @@
  * Expo Config Plugin: Disable Android Backup
  *
  * Sets android:allowBackup="false" and android:fullBackupContent="false"
- * on the <application> element to prevent sensitive user, booking, and
- * payment data from being backed up to Google Drive or transferred via
- * adb backup.
+ * by directly modifying the generated AndroidManifest.xml file.
+ *
+ * Uses withFinalizedMod to ensure this runs AFTER all other plugins
+ * (including expo-audio, expo-image-picker, etc.) have finished writing
+ * to the AndroidManifest.
  *
  * Security rationale: The app handles PII (passport numbers, payment
  * details, booking references) that must not leave the device via
  * automatic backup channels.
  */
-const { withAndroidManifest } = require("@expo/config-plugins");
+const { withMod } = require("@expo/config-plugins");
+const fs = require("fs");
+const path = require("path");
 
-module.exports = withAndroidManifest(async (config) => {
-  const manifest = config.modResults;
-  const application = manifest.manifest.application?.[0];
+module.exports = (config) =>
+  withMod(config, {
+    platform: "android",
+    mod: "finalized",
+    action: async (config) => {
+      const manifestPath = path.join(
+        config.modRequest.platformProjectRoot,
+        "app",
+        "src",
+        "main",
+        "AndroidManifest.xml"
+      );
 
-  if (application) {
-    // Disable all forms of Android backup
-    application.$["android:allowBackup"] = "false";
-    // Suppress the fullBackupContent warning that appears when allowBackup=false
-    application.$["android:fullBackupContent"] = "false";
-    // Prevent data extraction via USB debugging
-    application.$["android:allowClearUserData"] = "true";
-  }
+      if (!fs.existsSync(manifestPath)) return config;
 
-  return config;
-});
+      let content = fs.readFileSync(manifestPath, "utf8");
+
+      // Set allowBackup=false
+      content = content.replace(
+        /android:allowBackup="true"/g,
+        'android:allowBackup="false"'
+      );
+
+      // Add fullBackupContent=false if not already present
+      if (!content.includes("android:fullBackupContent")) {
+        content = content.replace(
+          /android:allowBackup="false"/,
+          'android:allowBackup="false" android:fullBackupContent="false"'
+        );
+      }
+
+      fs.writeFileSync(manifestPath, content, "utf8");
+      console.log("[with-android-no-backup] Set allowBackup=false ✓");
+
+      return config;
+    },
+  });

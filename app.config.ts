@@ -1,5 +1,3 @@
-// Load environment variables with proper priority (system > .env)
-import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
 // ─── Production Bundle Configuration ─────────────────────────────────────────
