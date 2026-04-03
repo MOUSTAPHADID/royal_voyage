@@ -1502,3 +1502,13 @@
 - [x] Limpeza de produção: TypeScript 0 erros confirmado
 - [x] Limpeza de produção: auditoria final passou (0 issues críticos/altos)
 - [x] إزالة نظام الإدارة الكامل من تطبيق العملاء (app/admin، lib/admin-*، مراجع isAdmin)
+
+## دمج تطبيق Admin في المشروع الرئيسي
+- [x] نسخ شاشات Admin (dashboard, bookings, employees, reports, partners, settings) إلى app/admin/
+- [x] نسخ ملفات lib (admin-context, admin-security) إلى lib/
+- [x] إضافة bookingContacts router في routers.ts
+- [x] إضافة appSettings router في routers.ts
+- [x] إضافة getAllBookingContacts و updateBookingContactPnrById في db.ts
+- [x] إضافة شاشة إدارة الشركاء (partners.tsx)
+- [x] إضافة تصدير التقارير إلى Excel في reports.tsx
+- [x] إصلاح أخطاء TypeScript في ملفات Admin

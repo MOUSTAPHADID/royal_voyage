@@ -79,6 +79,9 @@ import {
   saveGeneratedDocument,
   getGeneratedDocuments,
   updateDocumentStatus,
+  getAllBookingContacts,
+  updateBookingContactPnrById,
+  getBookingContactByOrderId,
 } from "./db";
 
 export const appRouter = router({
@@ -1881,6 +1884,44 @@ export const appRouter = router({
           await updateDocumentStatus(input.documentId, "sent");
         }
         return { success: sent };
+      }),
+  }),
+  // ─── App Settings (Admin) ──────────────────────────────────────────────────────────
+  appSettings: router({
+    get: adminProcedure.query(async () => {
+      const settings = (global as any).__appSettings ?? {
+        priceRetentionFee: 0,
+        priceRetentionType: "fixed" as "fixed" | "percent",
+        priceRetentionDurationHours: 24,
+      };
+      return settings;
+    }),
+    update: adminProcedure
+      .input(z.object({
+        priceRetentionFee: z.number().min(0),
+        priceRetentionType: z.enum(["fixed", "percent"]),
+        priceRetentionDurationHours: z.number().min(1).max(168),
+      }))
+      .mutation(async ({ input }) => {
+        (global as any).__appSettings = input;
+        return { success: true };
+      }),
+  }),
+  // ─── Booking Contacts (Admin) ──────────────────────────────────────────────────────────
+  bookingContacts: router({
+    list: adminProcedure.query(async () => {
+      return await getAllBookingContacts();
+    }),
+    getByOrderId: adminProcedure
+      .input(z.object({ duffelOrderId: z.string() }))
+      .query(async ({ input }) => {
+        return await getBookingContactByOrderId(input.duffelOrderId);
+      }),
+    updatePnr: adminProcedure
+      .input(z.object({ id: z.number(), pnr: z.string() }))
+      .mutation(async ({ input }) => {
+        await updateBookingContactPnrById(input.id, input.pnr);
+        return { success: true };
       }),
   }),
   // ─── Logo Upload ──────────────────────────────────────────────────────────

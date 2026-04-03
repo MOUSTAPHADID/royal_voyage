@@ -571,3 +571,17 @@ export async function updateDocumentStatus(id: number, status: "generated" | "se
     console.warn("[DB] updateDocumentStatus error:", err);
   }
 }
+
+// ─── Admin: Get All Booking Contacts ─────────────────────────────────────────
+export async function getAllBookingContacts(): Promise<BookingContact[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bookingContacts).orderBy(desc(bookingContacts.createdAt));
+}
+
+// ─── Admin: Update Booking Contact PNR by ID ─────────────────────────────────
+export async function updateBookingContactPnrById(id: number, pnr: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(bookingContacts).set({ pnr }).where(eq(bookingContacts.id, id));
+}
