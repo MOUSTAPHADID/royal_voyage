@@ -260,6 +260,9 @@ export default function HomeScreen() {
   // Trip type
   const [tripType, setTripType] = useState<TripType>("oneway");
 
+  // Flexible dates (±3 days)
+  const [flexibleDates, setFlexibleDates] = useState(false);
+
   // Cabin class
   const [cabinClass, setCabinClass] = useState<CabinClass>("ECONOMY");
 
@@ -372,6 +375,7 @@ export default function HomeScreen() {
         cabinClass,
         bags: bags.toString(),
         useMock: "false",
+        flexibleDates: flexibleDates ? "true" : "false",
       },
     });
   };
@@ -758,6 +762,25 @@ export default function HomeScreen() {
                   </View>
                 </View>
               </View>
+
+              {/* Flexible Dates Toggle */}
+              <Pressable
+                style={[styles.flexibleToggle, { borderColor: flexibleDates ? colors.primary : colors.border, backgroundColor: flexibleDates ? colors.primary + "18" : colors.background }]}
+                onPress={() => setFlexibleDates(!flexibleDates)}
+              >
+                <View style={[styles.flexibleCheckbox, { borderColor: flexibleDates ? colors.primary : colors.border, backgroundColor: flexibleDates ? colors.primary : "transparent" }]}>
+                  {flexibleDates && <IconSymbol name="checkmark" size={12} color="#fff" />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.flexibleTitle, { color: flexibleDates ? colors.primary : colors.foreground }]}>
+                    {isRTL ? "تواريخ مرنة (±3 أيام)" : "Flexible Dates (±3 days)"}
+                  </Text>
+                  <Text style={[styles.flexibleSub, { color: colors.muted }]}>
+                    {isRTL ? "سنبحث في 7 تواريخ ونعرض أفضل سعر لكل يوم" : "We'll search 7 dates and show the best price per day"}
+                  </Text>
+                </View>
+                <IconSymbol name="calendar.badge.clock" size={20} color={flexibleDates ? colors.primary : colors.muted} />
+              </Pressable>
 
               <Pressable
                 style={({ pressed }) => [
@@ -1462,6 +1485,31 @@ const styles = StyleSheet.create({
   counterDivider: {
     height: 1,
     marginHorizontal: 14,
+  },
+  flexibleToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+  },
+  flexibleCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  flexibleTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  flexibleSub: {
+    fontSize: 11,
+    marginTop: 2,
   },
   searchField: {
     flexDirection: "row",

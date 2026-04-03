@@ -71,7 +71,25 @@ export default function FlightResultsScreen() {
     childAges: string;
     childDobs: string;
     useMock: string;
+    flexibleDates: string;
   }>();
+
+  const isFlexible = params.flexibleDates === "true";
+
+  // Generate ±3 day window dates
+  const flexDates = useMemo(() => {
+    if (!isFlexible || !params.date) return [];
+    const base = new Date(params.date);
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(base);
+      d.setDate(d.getDate() + (i - 3));
+      return d.toISOString().slice(0, 10);
+    });
+  }, [isFlexible, params.date]);
+
+  // Selected flexible date (null = use original date)
+  const [selectedFlexDate, setSelectedFlexDate] = useState<string | null>(null);
+  const effectiveDate = selectedFlexDate ?? params.date;
 
   const isRoundTrip = params.tripType === "roundtrip" && !!params.returnDate;
   const { t } = useTranslation();
@@ -94,7 +112,7 @@ export default function FlightResultsScreen() {
     {
       originCode: params.originCode || "",
       destinationCode: params.destinationCode || "",
-      departureDate: params.date || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
+      departureDate: effectiveDate || new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
       returnDate: isRoundTrip ? params.returnDate : undefined,
       adults: parseInt(params.passengers || "1", 10),
       children: parseInt(params.children || "0", 10),
@@ -107,6 +125,26 @@ export default function FlightResultsScreen() {
       retry: 2,
     }
   );
+
+  // Flexible dates — fetch cheapest price per day (7 queries, enabled only when flexible)
+  const flexQuery0 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[0] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[0], retry: 1 });
+  const flexQuery1 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[1] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[1], retry: 1 });
+  const flexQuery2 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[2] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[2], retry: 1 });
+  const flexQuery3 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[3] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[3], retry: 1 });
+  const flexQuery4 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[4] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[4], retry: 1 });
+  const flexQuery5 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[5] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[5], retry: 1 });
+  const flexQuery6 = trpc.duffel.searchFlights.useQuery({ originCode: params.originCode || "", destinationCode: params.destinationCode || "", departureDate: flexDates[6] || "", adults: parseInt(params.passengers || "1", 10), children: parseInt(params.children || "0", 10), infants: parseInt(params.infants || "0", 10), max: 3 }, { enabled: isFlexible && !!flexDates[6], retry: 1 });
+
+  // Map flex queries to date → cheapest price
+  const flexPrices = useMemo(() => {
+    const queries = [flexQuery0, flexQuery1, flexQuery2, flexQuery3, flexQuery4, flexQuery5, flexQuery6];
+    return flexDates.map((date, i) => {
+      const q = queries[i];
+      const offers = (q.data?.data ?? []) as AnyFlight[];
+      const cheapest = offers.length > 0 ? Math.min(...offers.map((f) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class))) : null;
+      return { date, price: cheapest, isLoading: q.isLoading };
+    });
+  }, [flexDates, flexQuery0.data, flexQuery1.data, flexQuery2.data, flexQuery3.data, flexQuery4.data, flexQuery5.data, flexQuery6.data]);
 
   // Duffel Production API query — inbound (return leg)
   const { data: returnResult, isLoading: returnLoading } = trpc.duffel.searchFlights.useQuery(
@@ -421,6 +459,59 @@ export default function FlightResultsScreen() {
           <IconSymbol name="slider.horizontal.3" size={20} color="#FFFFFF" />
         </Pressable>
       </View>
+
+      {/* Flexible Dates Strip */}
+      {isFlexible && flexDates.length > 0 && (
+        <View style={[styles.flexStrip, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <Text style={[styles.flexStripLabel, { color: colors.muted }]}>
+            تواريخ مرنة ±3 أيام
+          </Text>
+          <FlatList
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            data={flexPrices}
+            keyExtractor={(item) => item.date}
+            contentContainerStyle={{ paddingHorizontal: 12, gap: 8 }}
+            renderItem={({ item }) => {
+              const isSelected = effectiveDate === item.date;
+              const isOriginal = item.date === params.date;
+              const dayLabel = new Date(item.date).toLocaleDateString("ar-SA", { weekday: "short", month: "short", day: "numeric" });
+              const allPrices = flexPrices.filter((p) => p.price !== null).map((p) => p.price as number);
+              const cheapestDay = allPrices.length > 0 ? Math.min(...allPrices) : null;
+              const isCheapestDay = item.price !== null && item.price === cheapestDay;
+              return (
+                <Pressable
+                  style={[styles.flexDayChip, {
+                    backgroundColor: isSelected ? colors.primary : colors.background,
+                    borderColor: isCheapestDay ? colors.success : isSelected ? colors.primary : colors.border,
+                    borderWidth: isCheapestDay || isSelected ? 2 : 1,
+                  }]}
+                  onPress={() => setSelectedFlexDate(item.date)}
+                >
+                  {isCheapestDay && (
+                    <Text style={[styles.flexCheapBadge, { color: colors.success }]}>أرخص</Text>
+                  )}
+                  {isOriginal && !isCheapestDay && (
+                    <Text style={[styles.flexCheapBadge, { color: colors.muted }]}>مختار</Text>
+                  )}
+                  <Text style={[styles.flexDayText, { color: isSelected ? "#fff" : colors.foreground }]}>
+                    {dayLabel}
+                  </Text>
+                  {item.isLoading ? (
+                    <ActivityIndicator size="small" color={isSelected ? "#fff" : colors.primary} />
+                  ) : item.price !== null ? (
+                    <Text style={[styles.flexDayPrice, { color: isSelected ? "#fff" : colors.primary }]}>
+                      {fmt(item.price)}
+                    </Text>
+                  ) : (
+                    <Text style={[styles.flexDayPrice, { color: colors.muted }]}>—</Text>
+                  )}
+                </Pressable>
+              );
+            }}
+          />
+        </View>
+      )}
 
       {/* Round Trip section tabs */}
       {isRoundTrip && (
@@ -852,4 +943,40 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   presetText: { fontSize: 12, fontWeight: "600" },
+  flexStrip: {
+    borderBottomWidth: 1,
+    paddingTop: 8,
+    paddingBottom: 10,
+  },
+  flexStripLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    textAlign: "right",
+  },
+  flexDayChip: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    minWidth: 80,
+    gap: 2,
+  },
+  flexCheapBadge: {
+    fontSize: 9,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  flexDayText: {
+    fontSize: 11,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+  flexDayPrice: {
+    fontSize: 12,
+    fontWeight: "700",
+    textAlign: "center",
+  },
 });
