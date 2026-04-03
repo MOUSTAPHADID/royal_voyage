@@ -4,8 +4,14 @@ const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
-// Web mock for react-native-maps (not supported on web)
+// Add PDF and binary asset support
 config.resolver = config.resolver || {};
+config.resolver.assetExts = config.resolver.assetExts || [];
+if (!config.resolver.assetExts.includes("pdf")) {
+  config.resolver.assetExts.push("pdf");
+}
+
+// Web mock for react-native-maps (not supported on web)
 config.resolver.resolveRequest = (context, moduleName, platform) => {
   if (platform === "web" && moduleName === "react-native-maps") {
     return {

@@ -32,6 +32,8 @@ const MAPPING = {
   "checkmark.circle.fill": "check-circle",
   "creditcard.fill": "credit-card",
   "doc.text.fill": "description",
+  "doc.fill": "description",
+  "arrow.down.to.line": "file-download",
   "bell.fill": "notifications",
   "gear": "settings",
   "arrow.left": "arrow-back",
