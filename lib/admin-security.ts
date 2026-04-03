@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
 const DEFAULT_EMAIL = "suporte@royalvoyage.online";
 // Password stored as-is but only in AsyncStorage on device — never sent to any server
 // First-run password: see admin setup guide or contact suporte@royalvoyage.online
-const DEFAULT_PASSWORD = "RV@2026#Voyage$!"; // CHANGE ON FIRST LOGIN
+const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || "Didi3307@@@@"; // Set via ADMIN_PASSWORD env var
 const MAX_ATTEMPTS = 5; // increased from 3 to reduce false lockouts
 const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 
