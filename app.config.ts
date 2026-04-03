@@ -31,6 +31,14 @@ const config: ExpoConfig = {
     bundleIdentifier: env.iosBundleId,
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
+      // Microphone usage description (required for voice search feature)
+      NSMicrophoneUsageDescription:
+        "Royal Voyage uses the microphone for voice search only. No audio is stored or transmitted.",
+      // Photo library usage (required for uploading payment receipts and partner logos)
+      NSPhotoLibraryUsageDescription:
+        "Royal Voyage needs access to your photo library to upload payment receipts and partner logos.",
+      NSCameraUsageDescription:
+        "Royal Voyage needs camera access to capture payment receipts.",
     },
   },
   android: {
@@ -43,7 +51,20 @@ const config: ExpoConfig = {
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
     package: env.androidPackage,
-    permissions: ["POST_NOTIFICATIONS"],
+    // ─── Minimum required permissions ────────────────────────────────────────
+    // RECORD_AUDIO: required for voice search (expo-audio)
+    // CAMERA: required for capturing payment receipts (expo-image-picker)
+    // READ_MEDIA_IMAGES: modern replacement for READ_EXTERNAL_STORAGE (Android 13+)
+    // POST_NOTIFICATIONS: required for booking status push notifications
+    // INTERNET & ACCESS_NETWORK_STATE: required for all API calls
+    permissions: [
+      "android.permission.INTERNET",
+      "android.permission.ACCESS_NETWORK_STATE",
+      "android.permission.POST_NOTIFICATIONS",
+      "android.permission.RECORD_AUDIO",
+      "android.permission.CAMERA",
+      "android.permission.READ_MEDIA_IMAGES",
+    ],
     intentFilters: [
       {
         action: "VIEW",
@@ -57,6 +78,9 @@ const config: ExpoConfig = {
         category: ["BROWSABLE", "DEFAULT"],
       },
     ],
+    // ─── Security hardening ───────────────────────────────────────────────────
+    // allowBackup=false: prevents backup of sensitive booking/payment data
+    // This is set via the withAndroidManifest plugin below
   },
   web: {
     bundler: "metro",
@@ -74,7 +98,8 @@ const config: ExpoConfig = {
     [
       "expo-audio",
       {
-        microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
+        microphonePermission:
+          "Allow $(PRODUCT_NAME) to access your microphone for voice search.",
       },
     ],
     [
@@ -111,6 +136,14 @@ const config: ExpoConfig = {
         },
       },
     ],
+    // ─── Security: disable Android backup ────────────────────────────────────
+    // Prevents sensitive user/booking/payment data from being backed up
+    // to Google Drive or transferred via adb backup
+    "./plugins/with-android-no-backup.js",
+    // ─── Security: remove unnecessary permissions ─────────────────────────────
+    // Removes SYSTEM_ALERT_WINDOW, READ_EXTERNAL_STORAGE, WRITE_EXTERNAL_STORAGE
+    // that may be injected by third-party libraries
+    "./plugins/with-android-remove-permissions.js",
   ],
   experiments: {
     typedRoutes: true,

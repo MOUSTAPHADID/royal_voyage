@@ -59,6 +59,16 @@ export default function AdminLoginScreen() {
       shake();
       return;
     }
+    // First-run detection: if no password has been set yet, redirect to credentials setup
+    try {
+      const { getAdminPassword } = require("@/lib/admin-security");
+      const currentPwd = await getAdminPassword();
+      if (currentPwd === "CHANGE_ME_ON_FIRST_LOGIN") {
+        router.push("/admin/credentials" as any);
+        return;
+      }
+    } catch {}
+
     setIsLoading(true);
     setError("");
     try {

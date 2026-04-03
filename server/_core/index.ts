@@ -35,11 +35,11 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // CORS — allow only trusted origins
+  // CORS — allow only trusted origins (production)
   const ALLOWED_ORIGINS = [
     "https://royalvoyage.online",
     "https://www.royalvoyage.online",
-    "https://royalvoyage-dcsedylm.manus.space",
+    // NOTE: manus.space sandbox domain removed for production hardening
   ];
   const ALLOWED_ORIGIN_PATTERNS = [
     /^https?:\/\/localhost(:\d+)?$/,

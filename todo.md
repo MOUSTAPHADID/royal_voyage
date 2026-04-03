@@ -1494,3 +1494,10 @@
 - [x] إعداد SMTP Gmail لإرسال البريد الإلكتروني
 - [x] إصلاح تنسيق نموذج البحث على الهاتف (التواريخ والمسافرون)
 - [x] إشعار Push للأدمن عند وصول حجز جديد
+- [x] Limpeza de produção: allowBackup=false via plugin withAndroidManifest
+- [x] Limpeza de produção: remover permissões desnecessárias (SYSTEM_ALERT_WINDOW, READ/WRITE_EXTERNAL_STORAGE, MODIFY_AUDIO_SETTINGS)
+- [x] Limpeza de produção: remover domínio sandbox manus.space do CORS
+- [x] Limpeza de produção: remover senha hardcoded do bundle do cliente
+- [x] Limpeza de produção: bundle ID com.royalvoyage.app e scheme royalvoyage confirmados
+- [x] Limpeza de produção: TypeScript 0 erros confirmado
+- [x] Limpeza de produção: auditoria final passou (0 issues críticos/altos)

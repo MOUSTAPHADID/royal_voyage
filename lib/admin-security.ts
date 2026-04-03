@@ -18,11 +18,14 @@ const STORAGE_KEYS = {
   TWO_FA_SECRET: "@royal_voyage_2fa_secret",
 };
 
-// Default credentials — password is never hardcoded; use env var or change via Admin > Settings
+// Default credentials
+// SECURITY: The default password is NOT hardcoded in the client bundle.
+// On first run, the admin must set the password via Admin > Settings.
+// The password is stored exclusively in AsyncStorage (device-local, encrypted keychain on iOS).
 const DEFAULT_EMAIL = "suporte@royalvoyage.online";
-// IMPORTANT: Set ADMIN_PASSWORD environment variable in production.
-// If not set, a strong default is used for first-run only.
-const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD ?? "RoyalVoyage@2024!";
+// Sentinel value: if AsyncStorage has no password yet, the admin must set one via the Settings screen.
+// This prevents any hardcoded credential from being extracted from the APK/IPA bundle.
+const DEFAULT_PASSWORD = "CHANGE_ME_ON_FIRST_LOGIN";
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes
 

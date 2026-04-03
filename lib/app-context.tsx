@@ -16,10 +16,9 @@ export type User = {
   expoPushToken?: string;
 };
 
-// Admin credentials — stored only in app logic, never shown to customers
-// Fallback defaults — actual credentials come from admin-security (AsyncStorage)
+// Admin credentials — actual credentials are stored in AsyncStorage via admin-security module
+// SECURITY: No hardcoded password in the client bundle. Credentials are set via Admin > Settings.
 const DEFAULT_ADMIN_EMAIL = "suporte@royalvoyage.online";
-const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "RoyalVoyage@2024!"; // Set via ADMIN_PASSWORD env var
 
 type AppContextType = {
   // Auth
@@ -126,9 +125,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const verificationCodes = React.useRef<Record<string, string>>({});
 
   const login = useCallback(async (emailOrPhone: string, password: string): Promise<"admin" | "user" | false> => {
-    // Admin login check — read current credentials from admin-security (supports password change)
+    // Admin login check — read current credentials from admin-security (AsyncStorage)
+    // SECURITY: credentials are never hardcoded; they come exclusively from admin-security module
     let adminEmail = DEFAULT_ADMIN_EMAIL;
-    let adminPassword = DEFAULT_ADMIN_PASSWORD;
+    let adminPassword = "";
     try {
       const { getAdminEmail, getAdminPassword } = require("@/lib/admin-security");
       adminEmail = await getAdminEmail();
