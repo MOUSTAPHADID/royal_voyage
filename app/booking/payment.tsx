@@ -240,6 +240,7 @@ export default function PaymentScreen() {
   const sendFlightTicket = trpc.email.sendFlightTicket.useMutation();
   const sendHotelConfirmation = trpc.email.sendHotelConfirmation.useMutation();
   const sendAdminPush = trpc.email.sendPushNotification.useMutation();
+  const sendToAdmin = trpc.adminToken.sendToAdmin.useMutation();
   const bookFlightWithPNR = trpc.duffel.bookFlightWithPNR.useMutation();
   const holdFlightOrder = trpc.duffel.holdFlightOrder.useMutation();
   const registerBookingContact = trpc.duffel.registerBookingContact.useMutation();
@@ -646,6 +647,7 @@ export default function PaymentScreen() {
         bookingId: booking.id,
       }).catch(() => {});
 
+      // Send via local token if available, otherwise via server-stored token
       if (adminPushToken) {
         sendAdminPush.mutateAsync({
           expoPushToken: adminPushToken,
@@ -655,6 +657,15 @@ export default function PaymentScreen() {
           sound: "new_booking.wav",
           channelId: "new_booking",
         }).catch((err) => console.error("[Payment] Admin push failed:", err));
+      } else {
+        // Fallback: send via server-stored admin token (works across devices)
+        sendToAdmin.mutateAsync({
+          title: notifTitle,
+          body: notifBody,
+          data: { bookingRef: ref, type: "new_booking" },
+          sound: "new_booking.wav",
+          channelId: "new_booking",
+        }).catch((err) => console.error("[Payment] Server admin push failed:", err));
       }
     }
 
@@ -681,6 +692,14 @@ export default function PaymentScreen() {
           sound: "new_booking.wav",
           channelId: "new_booking",
         }).catch((err) => console.error("[Payment] Multicaixa push failed:", err));
+      } else {
+        sendToAdmin.mutateAsync({
+          title: mcxTitle,
+          body: mcxBody,
+          data: { bookingRef: ref, type: "multicaixa_payment" },
+          sound: "new_booking.wav",
+          channelId: "new_booking",
+        }).catch((err) => console.error("[Payment] Server Multicaixa push failed:", err));
       }
     }
 

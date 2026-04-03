@@ -16,12 +16,14 @@ import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { useTranslation } from "@/lib/i18n";
 import { registerForPushNotifications } from "@/lib/push-notifications";
+import { trpc } from "@/lib/trpc";
 
 export default function LoginScreen() {
   const router = useRouter();
   const colors = useColors();
   const { login, loginWithPhone, loginAsGuest, sendVerificationCode, verifyCode, saveExpoPushToken, saveAdminPushToken } = useApp();
   const { t } = useTranslation();
+  const saveAdminTokenMutation = trpc.adminToken.save.useMutation();
 
   const [phoneOrEmail, setPhoneOrEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -100,7 +102,13 @@ export default function LoginScreen() {
       const result = await login(phoneOrEmail.trim(), password);
       if (result === "admin") {
         registerForPushNotifications()
-          .then((token) => { if (token) saveAdminPushToken(token); })
+          .then((token) => {
+            if (token) {
+              saveAdminPushToken(token);
+              // Also save to server so new bookings can reach admin on any device
+              saveAdminTokenMutation.mutate({ token });
+            }
+          })
           .catch(() => {});
         router.replace("/admin" as any);
       } else if (result === "user") {

@@ -1628,6 +1628,58 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ─── Admin Push Token Storage ─────────────────────────────────────────
+  adminToken: router({
+    // Save admin push token to server (persists across devices)
+    save: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        // Store in memory (survives server restarts via env fallback)
+        (global as any).__adminPushToken = input.token;
+        console.log("[AdminToken] Saved admin push token:", input.token.slice(0, 30) + "...");
+        return { success: true };
+      }),
+    // Get admin push token
+    get: publicProcedure
+      .query(async () => {
+        const token = (global as any).__adminPushToken ?? null;
+        return { token };
+      }),
+    // Send push notification to admin using stored token
+    sendToAdmin: publicProcedure
+      .input(z.object({
+        title: z.string(),
+        body: z.string(),
+        data: z.record(z.string(), z.unknown()).optional(),
+        sound: z.string().optional(),
+        channelId: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const token = (global as any).__adminPushToken;
+        if (!token) return { success: false, error: "No admin token registered" };
+        try {
+          const response = await fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Accept": "application/json" },
+            body: JSON.stringify({
+              to: token,
+              sound: input.sound ?? "default",
+              title: input.title,
+              body: input.body,
+              data: input.data ?? {},
+              channelId: input.channelId,
+            }),
+          });
+          const result = await response.json();
+          console.log("[AdminToken] Push sent:", JSON.stringify(result));
+          return { success: true, result };
+        } catch (err: any) {
+          console.error("[AdminToken] Push failed:", err?.message);
+          return { success: false, error: err?.message };
+        }
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
