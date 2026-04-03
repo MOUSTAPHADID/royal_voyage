@@ -22,7 +22,7 @@ const CONTENT: Record<Lang, {
     dir: "rtl",
     title: "سياسة الاسترداد والإلغاء",
     updated: "آخر تحديث: أبريل 2026",
-    intro: "تلتزم شركة ROYAL SERVICE L. (Royal Voyage) بتقديم سياسة إلغاء واسترداد شفافة وعادلة. يرجى قراءة هذه السياسة بعناية قبل إتمام أي حجز.",
+    intro: "تلتزم شركة ROYAL SERVICE LIMITED (Royal Voyage) بتقديم سياسة إلغاء واسترداد شفافة وعادلة. يرجى قراءة هذه السياسة بعناية قبل إتمام أي حجز.",
     tableTitle: "جدول رسوم الإلغاء",
     tableHeaders: { when: "وقت الإلغاء", fee: "رسوم الإلغاء", note: "ملاحظة" },
     table: [
@@ -71,7 +71,7 @@ const CONTENT: Record<Lang, {
       },
       {
         heading: "10. التواصل",
-        body: "ROYAL SERVICE L. — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
       },
     ],
     contactTitle: "تواصل معنا لطلب الاسترداد",
@@ -80,7 +80,7 @@ const CONTENT: Record<Lang, {
     dir: "ltr",
     title: "Refund & Cancellation Policy",
     updated: "Last updated: April 2026",
-    intro: "ROYAL SERVICE L. (Royal Voyage) is committed to providing a transparent and fair cancellation and refund policy. Please read this policy carefully before completing any booking.",
+    intro: "ROYAL SERVICE LIMITED (Royal Voyage) is committed to providing a transparent and fair cancellation and refund policy. Please read this policy carefully before completing any booking.",
     tableTitle: "Cancellation Fee Schedule",
     tableHeaders: { when: "Cancellation Time", fee: "Cancellation Fee", note: "Note" },
     table: [
@@ -129,7 +129,7 @@ const CONTENT: Record<Lang, {
       },
       {
         heading: "10. Contact",
-        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
       },
     ],
     contactTitle: "Contact Us to Request a Refund",
@@ -138,7 +138,7 @@ const CONTENT: Record<Lang, {
     dir: "ltr",
     title: "Politique de Remboursement et d'Annulation",
     updated: "Dernière mise à jour : avril 2026",
-    intro: "ROYAL SERVICE L. (Royal Voyage) s'engage à fournir une politique d'annulation et de remboursement transparente et équitable. Veuillez lire attentivement cette politique avant de finaliser toute réservation.",
+    intro: "ROYAL SERVICE LIMITED (Royal Voyage) s'engage à fournir une politique d'annulation et de remboursement transparente et équitable. Veuillez lire attentivement cette politique avant de finaliser toute réservation.",
     tableTitle: "Tableau des frais d'annulation",
     tableHeaders: { when: "Moment d'annulation", fee: "Frais d'annulation", note: "Note" },
     table: [
@@ -187,7 +187,7 @@ const CONTENT: Record<Lang, {
       },
       {
         heading: "10. Contact",
-        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
       },
     ],
     contactTitle: "Contactez-nous pour demander un remboursement",

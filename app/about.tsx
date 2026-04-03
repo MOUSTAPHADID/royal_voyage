@@ -44,13 +44,13 @@ const CONTENT: Record<Lang, {
     title: "عن وكالة Royal Voyage",
     subtitle: "شريكك المميز في السفر منذ 2023",
     since: "منذ 2023",
-    legalName: "ROYAL SERVICE L.",
+    legalName: "ROYAL SERVICE LIMITED",
     legalLabel: "الاسم القانوني للشركة",
     sections: [
       {
         icon: "star",
         heading: "من نحن",
-        body: "Royal Voyage هي وكالة سفر موريتانية متخصصة في تقديم خدمات الحجز الجوي والفندقي وحجز الأنشطة السياحية بأعلى معايير الجودة. تأسست عام 2023 في نواكشوط تحت الاسم القانوني ROYAL SERVICE L.، وتسعى إلى تقديم تجربة سفر استثنائية لعملائها في موريتانيا وخارجها.",
+        body: "Royal Voyage هي وكالة سفر موريتانية متخصصة في تقديم خدمات الحجز الجوي والفندقي وحجز الأنشطة السياحية بأعلى معايير الجودة. تأسست عام 2023 في نواكشوط تحت الاسم القانوني ROYAL SERVICE LIMITED، وتسعى إلى تقديم تجربة سفر استثنائية لعملائها في موريتانيا وخارجها.",
       },
       {
         icon: "bullseye",
@@ -94,20 +94,20 @@ const CONTENT: Record<Lang, {
     whatsapp: "+222 33 70 00 00",
     address: "تفرغ زين، نواكشوط",
     country: "موريتانيا",
-    disclaimer: "© 2023–2026 ROYAL SERVICE L. جميع الحقوق محفوظة. Royal Voyage وكالة سفر مرخصة في موريتانيا.",
+    disclaimer: "© 2023–2026 ROYAL SERVICE LIMITED جميع الحقوق محفوظة. Royal Voyage وكالة سفر مرخصة في موريتانيا.",
   },
   en: {
     dir: "ltr",
     title: "About Royal Voyage",
     subtitle: "Your Premium Travel Partner Since 2023",
     since: "Since 2023",
-    legalName: "ROYAL SERVICE L.",
+    legalName: "ROYAL SERVICE LIMITED",
     legalLabel: "Legal Company Name",
     sections: [
       {
         icon: "star",
         heading: "Who We Are",
-        body: "Royal Voyage is a Mauritanian travel agency specializing in flight, hotel, and activity bookings with the highest quality standards. Founded in 2023 in Nouakchott under the legal name ROYAL SERVICE L., we strive to deliver an exceptional travel experience for clients in Mauritania and beyond.",
+        body: "Royal Voyage is a Mauritanian travel agency specializing in flight, hotel, and activity bookings with the highest quality standards. Founded in 2023 in Nouakchott under the legal name ROYAL SERVICE LIMITED, we strive to deliver an exceptional travel experience for clients in Mauritania and beyond.",
       },
       {
         icon: "bullseye",
@@ -151,20 +151,20 @@ const CONTENT: Record<Lang, {
     whatsapp: "+222 33 70 00 00",
     address: "Tevragh Zeina, Nouakchott",
     country: "Mauritania",
-    disclaimer: "© 2023–2026 ROYAL SERVICE L. All rights reserved. Royal Voyage is a licensed travel agency in Mauritania.",
+    disclaimer: "© 2023–2026 ROYAL SERVICE LIMITED All rights reserved. Royal Voyage is a licensed travel agency in Mauritania.",
   },
   fr: {
     dir: "ltr",
     title: "À propos de Royal Voyage",
     subtitle: "Votre Partenaire de Voyage Premium depuis 2023",
     since: "Depuis 2023",
-    legalName: "ROYAL SERVICE L.",
+    legalName: "ROYAL SERVICE LIMITED",
     legalLabel: "Raison sociale",
     sections: [
       {
         icon: "star",
         heading: "Qui Sommes-Nous",
-        body: "Royal Voyage est une agence de voyage mauritanienne spécialisée dans les réservations de vols, d'hôtels et d'activités touristiques selon les plus hauts standards de qualité. Fondée en 2023 à Nouakchott sous la raison sociale ROYAL SERVICE L., nous nous efforçons d'offrir une expérience de voyage exceptionnelle à nos clients en Mauritanie et au-delà.",
+        body: "Royal Voyage est une agence de voyage mauritanienne spécialisée dans les réservations de vols, d'hôtels et d'activités touristiques selon les plus hauts standards de qualité. Fondée en 2023 à Nouakchott sous la raison sociale ROYAL SERVICE LIMITED, nous nous efforçons d'offrir une expérience de voyage exceptionnelle à nos clients en Mauritanie et au-delà.",
       },
       {
         icon: "bullseye",
@@ -208,7 +208,7 @@ const CONTENT: Record<Lang, {
     whatsapp: "+222 33 70 00 00",
     address: "Tevragh Zeina, Nouakchott",
     country: "Mauritanie",
-    disclaimer: "© 2023–2026 ROYAL SERVICE L. Tous droits réservés. Royal Voyage est une agence de voyage agréée en Mauritanie.",
+    disclaimer: "© 2023–2026 ROYAL SERVICE LIMITED Tous droits réservés. Royal Voyage est une agence de voyage agréée en Mauritanie.",
   },
 };
 

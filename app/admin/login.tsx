@@ -16,7 +16,7 @@ import { useRouter } from "expo-router";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
-import { validateEmailPassword } from "@/lib/admin-security";
+import { validateEmailPassword, is2FAEnabled, validate2FACode } from "@/lib/admin-security";
 import { recordLoginAttempt } from "@/lib/admin-login-audit";
 import { trpc } from "@/lib/trpc";
 import * as Haptics from "expo-haptics";
@@ -33,6 +33,13 @@ export default function AdminLoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
+
+  // 2FA state
+  const [show2FAStep, setShow2FAStep] = useState(false);
+  const [twoFACode, setTwoFACode] = useState("");
+  const [twoFAFocused, setTwoFAFocused] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingPassword, setPendingPassword] = useState("");
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -70,16 +77,55 @@ export default function AdminLoginScreen() {
         shake();
         return;
       }
-      const result = await login(email.trim(), password);
-      if (result === "admin") {
-        recordLoginAttempt({ status: "success", method: "email", email: email.trim() });
-        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.replace("/admin" as any);
-      } else {
-        recordLoginAttempt({ status: "failed", method: "email", email: email.trim(), detail: "خطأ غير محدد" });
-        setError("خطأ في تسجيل الدخول. يرجى المحاولة مجدداً");
-        shake();
+      // Check if 2FA is enabled — if yes, show 2FA step before completing login
+      const twoFAActive = await is2FAEnabled();
+      if (twoFAActive) {
+        setPendingEmail(email.trim());
+        setPendingPassword(password);
+        setShow2FAStep(true);
+        setIsLoading(false);
+        return;
       }
+      // No 2FA — complete login directly
+      await completeLogin(email.trim(), password);
+    } catch {
+      setError("حدث خطأ. يرجى المحاولة مجدداً");
+      shake();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completeLogin = async (emailVal: string, passwordVal: string) => {
+    const result = await login(emailVal, passwordVal);
+    if (result === "admin") {
+      recordLoginAttempt({ status: "success", method: "email", email: emailVal });
+      if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      router.replace("/admin" as any);
+    } else {
+      recordLoginAttempt({ status: "failed", method: "email", email: emailVal, detail: "خطأ غير محدد" });
+      setError("خطأ في تسجيل الدخول. يرجى المحاولة مجدداً");
+      shake();
+    }
+  };
+
+  const handle2FAVerify = async () => {
+    if (!twoFACode.trim() || twoFACode.length !== 6) {
+      setError("أدخل رمز التحقق المكون من 6 أرقام");
+      shake();
+      return;
+    }
+    setIsLoading(true);
+    setError("");
+    try {
+      const valid = await validate2FACode(twoFACode.trim());
+      if (!valid) {
+        setError("رمز التحقق غير صحيح أو منتهي الصلاحية");
+        if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        shake();
+        return;
+      }
+      await completeLogin(pendingEmail, pendingPassword);
     } catch {
       setError("حدث خطأ. يرجى المحاولة مجدداً");
       shake();

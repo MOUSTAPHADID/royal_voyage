@@ -15,11 +15,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. القبول بالشروط",
-        body: "باستخدامك لتطبيق Royal Voyage أو الموقع الإلكتروني royalvoyage.online، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام خدماتنا. هذه الشروط تُعدّ اتفاقية قانونية ملزمة بينك وبين شركة ROYAL SERVICE L.",
+        body: "باستخدامك لتطبيق Royal Voyage أو الموقع الإلكتروني royalvoyage.online، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي من هذه الشروط، يرجى عدم استخدام خدماتنا. هذه الشروط تُعدّ اتفاقية قانونية ملزمة بينك وبين شركة ROYAL SERVICE LIMITED",
       },
       {
         heading: "2. هوية الشركة",
-        body: "الاسم القانوني: ROYAL SERVICE L.\nالعلامة التجارية: Royal Voyage\nالعنوان: تفرغ زين، نواكشوط، موريتانيا\nالبريد الإلكتروني: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nالموقع الإلكتروني: royalvoyage.online",
+        body: "الاسم القانوني: ROYAL SERVICE LIMITED\nالعلامة التجارية: Royal Voyage\nالعنوان: تفرغ زين، نواكشوط، موريتانيا\nالبريد الإلكتروني: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nالموقع الإلكتروني: royalvoyage.online",
       },
       {
         heading: "3. طبيعة خدماتنا — نحن وسيط",
@@ -43,11 +43,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "8. حدود المسؤولية",
-        body: "لا تتحمل ROYAL SERVICE L. المسؤولية عن:\n• تأخيرات الرحلات أو إلغاءاتها من قِبل شركات الطيران\n• الأضرار الناتجة عن ظروف خارجة عن إرادتنا (قوة قاهرة: كوارث طبيعية، إضرابات، قرارات حكومية)\n• فقدان الأمتعة أو تلفها (مسؤولية شركة الطيران)\n• تغييرات في جداول الرحلات تقوم بها شركات الطيران\n\nفي جميع الحالات، تقتصر مسؤوليتنا القصوى على قيمة الحجز المدفوعة.",
+        body: "لا تتحمل ROYAL SERVICE LIMITED المسؤولية عن:\n• تأخيرات الرحلات أو إلغاءاتها من قِبل شركات الطيران\n• الأضرار الناتجة عن ظروف خارجة عن إرادتنا (قوة قاهرة: كوارث طبيعية، إضرابات، قرارات حكومية)\n• فقدان الأمتعة أو تلفها (مسؤولية شركة الطيران)\n• تغييرات في جداول الرحلات تقوم بها شركات الطيران\n\nفي جميع الحالات، تقتصر مسؤوليتنا القصوى على قيمة الحجز المدفوعة.",
       },
       {
         heading: "9. الملكية الفكرية",
-        body: "جميع محتويات التطبيق والموقع، بما في ذلك الشعارات والنصوص والصور والتصميمات، هي ملك حصري لـ ROYAL SERVICE L. ومحمية بموجب قوانين حقوق الملكية الفكرية. يُحظر نسخها أو توزيعها أو استخدامها تجارياً دون إذن كتابي مسبق.",
+        body: "جميع محتويات التطبيق والموقع، بما في ذلك الشعارات والنصوص والصور والتصميمات، هي ملك حصري لـ ROYAL SERVICE LIMITED ومحمية بموجب قوانين حقوق الملكية الفكرية. يُحظر نسخها أو توزيعها أو استخدامها تجارياً دون إذن كتابي مسبق.",
       },
       {
         heading: "10. حماية البيانات",
@@ -63,7 +63,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "13. التواصل",
-        body: "ROYAL SERVICE L. — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
       },
     ],
   },
@@ -74,11 +74,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. Acceptance of Terms",
-        body: "By using the Royal Voyage app or the website royalvoyage.online, you agree to be bound by these Terms and Conditions. If you do not agree to any of these terms, please do not use our services. These terms constitute a legally binding agreement between you and ROYAL SERVICE L.",
+        body: "By using the Royal Voyage app or the website royalvoyage.online, you agree to be bound by these Terms and Conditions. If you do not agree to any of these terms, please do not use our services. These terms constitute a legally binding agreement between you and ROYAL SERVICE LIMITED",
       },
       {
         heading: "2. Company Identity",
-        body: "Legal Name: ROYAL SERVICE L.\nBrand: Royal Voyage\nAddress: Tevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWebsite: royalvoyage.online",
+        body: "Legal Name: ROYAL SERVICE LIMITED\nBrand: Royal Voyage\nAddress: Tevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWebsite: royalvoyage.online",
       },
       {
         heading: "3. Nature of Our Services — We Are an Intermediary",
@@ -102,11 +102,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "8. Limitation of Liability",
-        body: "ROYAL SERVICE L. is not liable for:\n• Flight delays or cancellations by airlines\n• Damages resulting from circumstances beyond our control (force majeure: natural disasters, strikes, government decisions)\n• Loss or damage of luggage (airline's responsibility)\n• Schedule changes made by airlines\n\nIn all cases, our maximum liability is limited to the value of the booking paid.",
+        body: "ROYAL SERVICE LIMITED is not liable for:\n• Flight delays or cancellations by airlines\n• Damages resulting from circumstances beyond our control (force majeure: natural disasters, strikes, government decisions)\n• Loss or damage of luggage (airline's responsibility)\n• Schedule changes made by airlines\n\nIn all cases, our maximum liability is limited to the value of the booking paid.",
       },
       {
         heading: "9. Intellectual Property",
-        body: "All content on the app and website, including logos, text, images, and designs, is the exclusive property of ROYAL SERVICE L. and is protected by intellectual property laws. Copying, distributing, or commercial use without prior written permission is prohibited.",
+        body: "All content on the app and website, including logos, text, images, and designs, is the exclusive property of ROYAL SERVICE LIMITED and is protected by intellectual property laws. Copying, distributing, or commercial use without prior written permission is prohibited.",
       },
       {
         heading: "10. Data Protection",
@@ -122,7 +122,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "13. Contact",
-        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
       },
     ],
   },
@@ -133,11 +133,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. Acceptation des conditions",
-        body: "En utilisant l'application Royal Voyage ou le site royalvoyage.online, vous acceptez d'être lié par ces Conditions Générales. Ces conditions constituent un accord juridiquement contraignant entre vous et ROYAL SERVICE L.",
+        body: "En utilisant l'application Royal Voyage ou le site royalvoyage.online, vous acceptez d'être lié par ces Conditions Générales. Ces conditions constituent un accord juridiquement contraignant entre vous et ROYAL SERVICE LIMITED",
       },
       {
         heading: "2. Identité de la société",
-        body: "Raison sociale : ROYAL SERVICE L.\nMarque : Royal Voyage\nAdresse : Tevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nSite web : royalvoyage.online",
+        body: "Raison sociale : ROYAL SERVICE LIMITED\nMarque : Royal Voyage\nAdresse : Tevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nSite web : royalvoyage.online",
       },
       {
         heading: "3. Nature de nos services — Nous sommes un intermédiaire",
@@ -161,11 +161,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "8. Limitation de responsabilité",
-        body: "ROYAL SERVICE L. n'est pas responsable des retards ou annulations de vols, des dommages résultant de circonstances indépendantes de notre volonté (force majeure), ou de la perte/détérioration des bagages. Notre responsabilité maximale est limitée à la valeur de la réservation payée.",
+        body: "ROYAL SERVICE LIMITED n'est pas responsable des retards ou annulations de vols, des dommages résultant de circonstances indépendantes de notre volonté (force majeure), ou de la perte/détérioration des bagages. Notre responsabilité maximale est limitée à la valeur de la réservation payée.",
       },
       {
         heading: "9. Propriété intellectuelle",
-        body: "Tout le contenu de l'application et du site est la propriété exclusive de ROYAL SERVICE L. et est protégé par les lois sur la propriété intellectuelle. Toute copie ou utilisation commerciale sans autorisation écrite préalable est interdite.",
+        body: "Tout le contenu de l'application et du site est la propriété exclusive de ROYAL SERVICE LIMITED et est protégé par les lois sur la propriété intellectuelle. Toute copie ou utilisation commerciale sans autorisation écrite préalable est interdite.",
       },
       {
         heading: "10. Protection des données",
@@ -181,7 +181,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "13. Contact",
-        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
       },
     ],
   },

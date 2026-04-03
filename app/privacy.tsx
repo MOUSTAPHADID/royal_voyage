@@ -16,11 +16,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. مقدمة",
-        body: "تلتزم شركة ROYAL SERVICE L. (المشغّلة لتطبيق ومنصة Royal Voyage) بحماية خصوصية مستخدميها. تصف هذه السياسة بالتفصيل كيفية جمع المعلومات الشخصية واستخدامها ومشاركتها وحمايتها عند استخدام تطبيق Royal Voyage أو الموقع الإلكتروني royalvoyage.online.",
+        body: "تلتزم شركة ROYAL SERVICE LIMITED (المشغّلة لتطبيق ومنصة Royal Voyage) بحماية خصوصية مستخدميها. تصف هذه السياسة بالتفصيل كيفية جمع المعلومات الشخصية واستخدامها ومشاركتها وحمايتها عند استخدام تطبيق Royal Voyage أو الموقع الإلكتروني royalvoyage.online.",
       },
       {
         heading: "2. هوية المتحكم في البيانات",
-        body: "الاسم القانوني: ROYAL SERVICE L.\nالعلامة التجارية: Royal Voyage\nالعنوان: تفرغ زين، نواكشوط، موريتانيا\nالبريد الإلكتروني: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00",
+        body: "الاسم القانوني: ROYAL SERVICE LIMITED\nالعلامة التجارية: Royal Voyage\nالعنوان: تفرغ زين، نواكشوط، موريتانيا\nالبريد الإلكتروني: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00",
       },
       {
         heading: "3. المعلومات التي نجمعها",
@@ -60,7 +60,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "12. التواصل",
-        body: "ROYAL SERVICE L. — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nتفرغ زين، نواكشوط، موريتانيا\nالبريد: suporte@royalvoyage.online\nالهاتف: +222 33 70 00 00\nواتساب: +222 33 70 00 00",
       },
     ],
   },
@@ -71,11 +71,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. Introduction",
-        body: "ROYAL SERVICE L. (operating the Royal Voyage app and platform) is committed to protecting the privacy of its users. This policy describes in detail how personal information is collected, used, shared, and protected when using the Royal Voyage app or the website royalvoyage.online.",
+        body: "ROYAL SERVICE LIMITED (operating the Royal Voyage app and platform) is committed to protecting the privacy of its users. This policy describes in detail how personal information is collected, used, shared, and protected when using the Royal Voyage app or the website royalvoyage.online.",
       },
       {
         heading: "2. Data Controller Identity",
-        body: "Legal Name: ROYAL SERVICE L.\nBrand: Royal Voyage\nAddress: Tevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00",
+        body: "Legal Name: ROYAL SERVICE LIMITED\nBrand: Royal Voyage\nAddress: Tevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00",
       },
       {
         heading: "3. Information We Collect",
@@ -115,7 +115,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "12. Contact",
-        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritania\nEmail: suporte@royalvoyage.online\nPhone: +222 33 70 00 00\nWhatsApp: +222 33 70 00 00",
       },
     ],
   },
@@ -126,11 +126,11 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
     sections: [
       {
         heading: "1. Introduction",
-        body: "ROYAL SERVICE L. (exploitant l'application et la plateforme Royal Voyage) s'engage à protéger la vie privée de ses utilisateurs. Cette politique décrit en détail comment les informations personnelles sont collectées, utilisées, partagées et protégées lors de l'utilisation de l'application Royal Voyage ou du site royalvoyage.online.",
+        body: "ROYAL SERVICE LIMITED (exploitant l'application et la plateforme Royal Voyage) s'engage à protéger la vie privée de ses utilisateurs. Cette politique décrit en détail comment les informations personnelles sont collectées, utilisées, partagées et protégées lors de l'utilisation de l'application Royal Voyage ou du site royalvoyage.online.",
       },
       {
         heading: "2. Identité du responsable du traitement",
-        body: "Raison sociale : ROYAL SERVICE L.\nMarque : Royal Voyage\nAdresse : Tevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00",
+        body: "Raison sociale : ROYAL SERVICE LIMITED\nMarque : Royal Voyage\nAdresse : Tevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00",
       },
       {
         heading: "3. Informations que nous collectons",
@@ -170,7 +170,7 @@ const CONTENT: Record<Lang, { dir: "rtl" | "ltr"; title: string; updated: string
       },
       {
         heading: "12. Contact",
-        body: "ROYAL SERVICE L. — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
+        body: "ROYAL SERVICE LIMITED — Royal Voyage\nTevragh Zeina, Nouakchott, Mauritanie\nEmail : suporte@royalvoyage.online\nTél : +222 33 70 00 00\nWhatsApp : +222 33 70 00 00",
       },
     ],
   },
