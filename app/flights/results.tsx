@@ -20,7 +20,7 @@ import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
 import { formatDuffelPriceMRU, toMRU } from "@/lib/currency";
 import { useCurrency } from "@/lib/currency-context";
-import { applyMarkup, getAgencyFee } from "@/lib/pricing-settings";
+import { applyMarkup, getAgencyFee, toMRUWithSettings } from "@/lib/pricing-settings";
 
 type SortOption = "price" | "duration" | "departure";
 
@@ -141,7 +141,7 @@ export default function FlightResultsScreen() {
     return flexDates.map((date, i) => {
       const q = queries[i];
       const offers = (q.data?.data ?? []) as AnyFlight[];
-      const cheapest = offers.length > 0 ? Math.min(...offers.map((f) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class))) : null;
+      const cheapest = offers.length > 0 ? Math.min(...offers.map((f) => applyMarkup(toMRUWithSettings(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class))) : null;
       return { date, price: cheapest, isLoading: q.isLoading };
     });
   }, [flexDates, flexQuery0.data, flexQuery1.data, flexQuery2.data, flexQuery3.data, flexQuery4.data, flexQuery5.data, flexQuery6.data]);
@@ -180,7 +180,7 @@ export default function FlightResultsScreen() {
 
   const activeFlights = activeSection === "outbound" ? rawFlights : rawReturnFlights;
 
-  const getFlightTotalMRU = (f: AnyFlight) => applyMarkup(toMRU(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
+  const getFlightTotalMRU = (f: AnyFlight) => applyMarkup(toMRUWithSettings(f.price, f.currency || "EUR") + getAgencyFee(f.originCode, f.destinationCode), f.originCode, f.destinationCode, f.class);
 
   // Calculate min/max prices for slider
   const { minPrice, maxPrice } = useMemo(() => {
@@ -475,7 +475,8 @@ export default function FlightResultsScreen() {
             renderItem={({ item }) => {
               const isSelected = effectiveDate === item.date;
               const isOriginal = item.date === params.date;
-              const dayLabel = new Date(item.date).toLocaleDateString("ar-SA", { weekday: "short", month: "short", day: "numeric" });
+              // إصلاح timezone: إضافة T12:00:00 لتجنب إزاحة اليوم
+              const dayLabel = new Date(item.date + "T12:00:00").toLocaleDateString("ar-SA", { weekday: "short", month: "short", day: "numeric" });
               const allPrices = flexPrices.filter((p) => p.price !== null).map((p) => p.price as number);
               const cheapestDay = allPrices.length > 0 ? Math.min(...allPrices) : null;
               const isCheapestDay = item.price !== null && item.price === cheapestDay;
