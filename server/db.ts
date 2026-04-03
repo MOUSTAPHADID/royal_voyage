@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -501,4 +501,36 @@ export async function addActivityReview(review: InsertActivityReview): Promise<A
     console.error("[DB] addActivityReview error:", err);
     return null;
   }
+}
+
+// ─── Login Audit Log ──────────────────────────────────────────────────────────
+
+export async function addLoginLog(data: {
+  identifier: string;
+  accountType: "admin" | "employee";
+  success: boolean;
+  ipAddress?: string;
+  userAgent?: string;
+  failureReason?: string;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try {
+    await db.insert(loginLogs).values({
+      identifier: data.identifier,
+      accountType: data.accountType,
+      success: data.success,
+      ipAddress: data.ipAddress || null,
+      userAgent: data.userAgent || null,
+      failureReason: data.failureReason || null,
+    });
+  } catch (err) {
+    console.warn("[DB] addLoginLog error:", err);
+  }
+}
+
+export async function getLoginLogs(limit = 50): Promise<LoginLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(loginLogs).orderBy(desc(loginLogs.createdAt)).limit(limit);
 }

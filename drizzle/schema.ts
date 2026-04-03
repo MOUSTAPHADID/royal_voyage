@@ -203,3 +203,24 @@ export const activityReviews = mysqlTable("activity_reviews", {
 });
 export type ActivityReview = typeof activityReviews.$inferSelect;
 export type InsertActivityReview = typeof activityReviews.$inferInsert;
+
+// ─── Login Audit Log ──────────────────────────────────────────────────────────
+/** Records all admin and employee login attempts for security auditing */
+export const loginLogs = mysqlTable("login_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Who attempted to log in: "admin" or employee email */
+  identifier: varchar("identifier", { length: 320 }).notNull(),
+  /** Type of account: admin or employee */
+  accountType: mysqlEnum("accountType", ["admin", "employee"]).notNull().default("admin"),
+  /** Whether the login was successful */
+  success: boolean("success").notNull().default(false),
+  /** IP address of the request (optional, may not be available on mobile) */
+  ipAddress: varchar("ipAddress", { length: 64 }),
+  /** Device/platform info */
+  userAgent: varchar("userAgent", { length: 512 }),
+  /** Failure reason if login failed */
+  failureReason: varchar("failureReason", { length: 255 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type LoginLog = typeof loginLogs.$inferSelect;
+export type InsertLoginLog = typeof loginLogs.$inferInsert;

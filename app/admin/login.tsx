@@ -17,6 +17,8 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useColors } from "@/hooks/use-colors";
 import { useApp } from "@/lib/app-context";
 import { validateEmailPassword } from "@/lib/admin-security";
+import { recordLoginAttempt } from "@/lib/admin-login-audit";
+import { trpc } from "@/lib/trpc";
 import * as Haptics from "expo-haptics";
 
 export default function AdminLoginScreen() {
@@ -56,21 +58,25 @@ export default function AdminLoginScreen() {
       const validation = await validateEmailPassword(email.trim(), password);
       if (validation.locked) {
         setError(`الحساب مقفل. حاول بعد ${validation.lockoutSeconds} ثانية`);
+        recordLoginAttempt({ status: "failed", method: "email", email: email.trim(), detail: "مقفل مؤقتاً" });
         shake();
         return;
       }
       if (!validation.success) {
         const left = validation.attemptsLeft;
         setError(`بيانات الدخول غير صحيحة. ${left > 0 ? `متبقي ${left} محاولات` : "تم قفل الحساب مؤقتاً"}`);
+        recordLoginAttempt({ status: "failed", method: "email", email: email.trim(), detail: "كلمة مرور خاطئة" });
         if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         shake();
         return;
       }
       const result = await login(email.trim(), password);
       if (result === "admin") {
+        recordLoginAttempt({ status: "success", method: "email", email: email.trim() });
         if (Platform.OS !== "web") Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         router.replace("/admin" as any);
       } else {
+        recordLoginAttempt({ status: "failed", method: "email", email: email.trim(), detail: "خطأ غير محدد" });
         setError("خطأ في تسجيل الدخول. يرجى المحاولة مجدداً");
         shake();
       }

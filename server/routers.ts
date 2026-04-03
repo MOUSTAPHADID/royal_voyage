@@ -72,6 +72,9 @@ import {
   deductBalance,
   getActivityReviews,
   addActivityReview,
+  addLoginLog,
+  getLoginLogs,
+  updateEmployeeLastLogin,
 } from "./db";
 
 export const appRouter = router({
@@ -1601,6 +1604,28 @@ export const appRouter = router({
       .input(z.object({ businessAccountId: z.number() }))
       .query(async ({ input }) => {
         return await getBalanceTransactions(input.businessAccountId);
+      }),
+  }),
+
+  // ─── Login Audit Log (سجل محاولات الدخول) ────────────────────────────────────
+  loginLogs: router({
+    list: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(200).optional() }))
+      .query(async ({ input }) => {
+        return await getLoginLogs(input.limit ?? 50);
+      }),
+    add: publicProcedure
+      .input(z.object({
+        identifier: z.string(),
+        accountType: z.enum(["admin", "employee"]),
+        success: z.boolean(),
+        ipAddress: z.string().optional(),
+        userAgent: z.string().optional(),
+        failureReason: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await addLoginLog(input);
+        return { success: true };
       }),
   }),
 });
