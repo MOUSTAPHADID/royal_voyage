@@ -178,6 +178,8 @@ export default function UpdateStatusScreen() {
                         currency: "MRU",
                         tripType: "one-way",
                         expoPushToken: booking.customerPushToken,
+                        // Brand ticket with partner info if booking is from a business account
+                        businessAccountId: booking.businessAccountId ? parseInt(booking.businessAccountId) : undefined,
                       });
                       console.log("[Status] ✈️ Flight ticket sent to", email);
                     } else if (booking.type === "hotel" && booking.hotel) {

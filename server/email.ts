@@ -31,9 +31,20 @@ function getTransporter() {
   });
 }
 
+// ─── Partner Info ───────────────────────────────────────────────────────────
+export interface PartnerInfo {
+  companyName: string;
+  contactName?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+}
+
 // ─── HTML Templates ───────────────────────────────────────────────────────────
 
-function baseLayout(content: string, title: string): string {
+function baseLayout(content: string, title: string, partner?: PartnerInfo): string {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -76,17 +87,18 @@ function baseLayout(content: string, title: string): string {
 <body>
   <div class="wrapper">
     <div class="header">
-      <div class="header-logo">✈ ROYAL VOYAGE</div>
-      <div class="header-sub">Your Premium Travel Partner</div>
+      <div class="header-logo">✈ ${partner ? partner.companyName.toUpperCase() : 'ROYAL VOYAGE'}</div>
+      <div class="header-sub">${partner ? 'Your Trusted Travel Agency' : 'Your Premium Travel Partner'}</div>
     </div>
     <div class="body">
       ${content}
     </div>
     <div class="footer">
       <p>
-        <strong style="color:#C9A84C">Royal Voyage Travel Agency</strong><br/>
-        ${COMPANY.address}<br/>
-        📞 ${COMPANY.phone} &nbsp;|&nbsp; ✉ <a href="mailto:${COMPANY.email}">${COMPANY.email}</a>
+        <strong style="color:#C9A84C">${partner ? partner.companyName : 'Royal Voyage Travel Agency'}</strong><br/>
+        ${partner ? ((partner.address || '') + (partner.city ? ', ' + partner.city : '') + (partner.country ? ', ' + partner.country : '')) : COMPANY.address}<br/>
+        📞 ${partner && partner.contactPhone ? partner.contactPhone : COMPANY.phone}
+        ${partner && partner.contactEmail ? ` &nbsp;|&nbsp; ✉ <a href="mailto:${partner.contactEmail}">${partner.contactEmail}</a>` : ` &nbsp;|&nbsp; ✉ <a href="mailto:${COMPANY.email}">${COMPANY.email}</a>`}
       </p>
       <p style="margin-top:12px; font-size:11px; opacity:0.5">
         This is an automated email. Please do not reply directly to this message.
@@ -121,6 +133,8 @@ export interface FlightTicketData {
   currency: string;
   tripType: "one-way" | "round-trip";
   returnDate?: string;
+  /** If booking was made by a business partner, include their info to brand the ticket */
+  partnerInfo?: PartnerInfo;
 }
 
 function flightTicketHtml(data: FlightTicketData): string {
@@ -206,7 +220,7 @@ function flightTicketHtml(data: FlightTicketData): string {
       ⚠ Please arrive at the airport at least 2 hours before departure. Carry a valid ID or passport.
     </div>
   `;
-  return baseLayout(content, `Flight Ticket — ${data.bookingRef}`);
+  return baseLayout(content, `Flight Ticket — ${data.bookingRef}`, data.partnerInfo);
 }
 
 // ─── Hotel Confirmation Template ──────────────────────────────────────────────

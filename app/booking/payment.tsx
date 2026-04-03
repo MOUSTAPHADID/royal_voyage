@@ -756,6 +756,8 @@ export default function PaymentScreen() {
             currency: "MRU",
             tripType: params.tripType === "roundtrip" ? "round-trip" : "one-way",
             returnDate: params.returnDate ?? undefined,
+            // Brand ticket with partner info if booking is from a business account
+            businessAccountId: params.businessAccountId ? parseInt(params.businessAccountId) : undefined,
           });
         } else {
           const checkInDate = params.checkIn ?? "";

@@ -720,10 +720,28 @@ export const appRouter = router({
           currency: z.string().default("MRU"),
           tripType: z.enum(["one-way", "round-trip"]).default("one-way"),
           returnDate: z.string().optional(),
+          /** Optional: business partner account ID — ticket will be branded with partner info */
+          businessAccountId: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const success = await sendFlightTicket(input);
+        const { businessAccountId, ...ticketData } = input;
+        let partnerInfo = undefined;
+        if (businessAccountId) {
+          const account = await getBusinessAccountById(businessAccountId);
+          if (account) {
+            partnerInfo = {
+              companyName: account.companyName,
+              contactName: account.contactName || undefined,
+              contactEmail: account.contactEmail || undefined,
+              contactPhone: account.contactPhone || undefined,
+              address: account.address || undefined,
+              city: account.city || undefined,
+              country: account.country || undefined,
+            };
+          }
+        }
+        const success = await sendFlightTicket({ ...ticketData, partnerInfo });
         return { success };
       }),
 
@@ -855,12 +873,30 @@ export const appRouter = router({
           returnDate: z.string().optional(),
           // Push notification
           expoPushToken: z.string().optional(),
+          /** Optional: business partner account ID — ticket will be branded with partner info */
+          businessAccountId: z.number().optional(),
         })
       )
       .mutation(async ({ input }) => {
-        const { expoPushToken, ...ticketData } = input;
-        // Send PDF ticket via email
-        const emailSent = await sendFlightTicket(ticketData);
+        const { expoPushToken, businessAccountId, ...ticketData } = input;
+        // Fetch partner info if booking is from a business account
+        let partnerInfo = undefined;
+        if (businessAccountId) {
+          const account = await getBusinessAccountById(businessAccountId);
+          if (account) {
+            partnerInfo = {
+              companyName: account.companyName,
+              contactName: account.contactName || undefined,
+              contactEmail: account.contactEmail || undefined,
+              contactPhone: account.contactPhone || undefined,
+              address: account.address || undefined,
+              city: account.city || undefined,
+              country: account.country || undefined,
+            };
+          }
+        }
+        // Send PDF ticket via email (branded with partner info if applicable)
+        const emailSent = await sendFlightTicket({ ...ticketData, partnerInfo });
         // Send push notification
         let pushSent = false;
         if (expoPushToken) {
