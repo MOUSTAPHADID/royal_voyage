@@ -62,6 +62,31 @@ const PAYMENT_LOGOS = [
   { name: "UnionPay", url: "https://cdn.simpleicons.org/unionpay/E21836" },
 ];
 
+// ── Popular Destinations ──────────────────────────────────────────────────
+const POPULAR_DESTINATIONS = [
+  { city_ar: "دبي", city_en: "Dubai", country_ar: "الإمارات", country_en: "UAE", code: "DXB", price_mru: 48000, img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80" },
+  { city_ar: "باريس", city_en: "Paris", country_ar: "فرنسا", country_en: "France", code: "CDG", price_mru: 62000, img: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600&q=80" },
+  { city_ar: "إسطنبول", city_en: "Istanbul", country_ar: "تركيا", country_en: "Turkey", code: "IST", price_mru: 41000, img: "https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=600&q=80" },
+  { city_ar: "الدار البيضاء", city_en: "Casablanca", country_ar: "المغرب", country_en: "Morocco", code: "CMN", price_mru: 28000, img: "https://images.unsplash.com/photo-1539020140153-e479b8c22e70?w=600&q=80" },
+  { city_ar: "القاهرة", city_en: "Cairo", country_ar: "مصر", country_en: "Egypt", code: "CAI", price_mru: 35000, img: "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?w=600&q=80" },
+  { city_ar: "مدريد", city_en: "Madrid", country_ar: "إسبانيا", country_en: "Spain", code: "MAD", price_mru: 58000, img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
+];
+
+// ── Today's Deals ──────────────────────────────────────────────────────────
+const TODAYS_DEALS_AR = [
+  { from: "نواكشوط", to: "الدار البيضاء", fromCode: "NKC", toCode: "CMN", airline: "Royal Air Maroc", price: 28500, oldPrice: 42000, date: "2026-05-15", duration: "3ساعة 20د", direct: true },
+  { from: "نواكشوط", to: "دبي", fromCode: "NKC", toCode: "DXB", airline: "Emirates", price: 48000, oldPrice: 68000, date: "2026-05-20", duration: "7ساعة 45د", direct: false },
+  { from: "نواكشوط", to: "إسطنبول", fromCode: "NKC", toCode: "IST", airline: "Turkish Airlines", price: 41000, oldPrice: 55000, date: "2026-06-01", duration: "5ساعة 30د", direct: false },
+  { from: "نواكشوط", to: "باريس", fromCode: "NKC", toCode: "CDG", airline: "Air France", price: 62000, oldPrice: 85000, date: "2026-05-25", duration: "5ساعة 10د", direct: true },
+];
+
+const TODAYS_DEALS_EN = [
+  { from: "Nouakchott", to: "Casablanca", fromCode: "NKC", toCode: "CMN", airline: "Royal Air Maroc", price: 28500, oldPrice: 42000, date: "2026-05-15", duration: "3h 20m", direct: true },
+  { from: "Nouakchott", to: "Dubai", fromCode: "NKC", toCode: "DXB", airline: "Emirates", price: 48000, oldPrice: 68000, date: "2026-05-20", duration: "7h 45m", direct: false },
+  { from: "Nouakchott", to: "Istanbul", fromCode: "NKC", toCode: "IST", airline: "Turkish Airlines", price: 41000, oldPrice: 55000, date: "2026-06-01", duration: "5h 30m", direct: false },
+  { from: "Nouakchott", to: "Paris", fromCode: "NKC", toCode: "CDG", airline: "Air France", price: 62000, oldPrice: 85000, date: "2026-05-25", duration: "5h 10m", direct: true },
+];
+
 const AIRLINE_LOGOS = [
   { name: "Emirates", url: "https://cdn.simpleicons.org/emirates" },
   { name: "Air France", url: "https://cdn.simpleicons.org/airfrance/002157" },
@@ -437,6 +462,121 @@ export default function LandingPage() {
           </View>
         </View>
 
+        {/* ── POPULAR DESTINATIONS ── */}
+        <View style={[styles.destSection, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <Text style={[styles.sectionTitle, { textAlign: isAr ? "right" : "left" }]}>
+                {isAr ? "وجهات شعبية" : "Popular Destinations"}
+              </Text>
+              <Pressable onPress={() => router.push("/flights/results" as any)}>
+                <Text style={styles.seeAllLink}>{isAr ? "عرض الكل ←" : "View all →"}</Text>
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
+              {POPULAR_DESTINATIONS.map((dest) => (
+                <Pressable
+                  key={dest.code}
+                  style={({ pressed }) => [styles.destCard, { opacity: pressed ? 0.9 : 1 }]}
+                  onPress={() => {
+                    setTo(isAr ? dest.city_ar : dest.city_en);
+                    setToCode(dest.code);
+                    setSearchTab("flights");
+                  }}
+                >
+                  <Image source={{ uri: dest.img }} style={styles.destImg} resizeMode="cover" />
+                  <View style={styles.destOverlay} />
+                  <View style={styles.destInfo}>
+                    <Text style={styles.destCity}>{isAr ? dest.city_ar : dest.city_en}</Text>
+                    <Text style={styles.destCountry}>{isAr ? dest.country_ar : dest.country_en}</Text>
+                    <View style={styles.destPriceBadge}>
+                      <Text style={styles.destPriceText}>
+                        {isAr ? `من ${dest.price_mru.toLocaleString()} أوق` : `From ${dest.price_mru.toLocaleString()} MRU`}
+                      </Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+
+        {/* ── TODAY'S DEALS ── */}
+        <View style={[styles.dealsSection, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10 }}>
+                <Text style={[styles.sectionTitle, { textAlign: isAr ? "right" : "left" }]}>
+                  {isAr ? "عروض اليوم" : "Today's Deals"}
+                </Text>
+                <View style={styles.dealsBadge}>
+                  <Text style={styles.dealsBadgeText}>{isAr ? "خصم حتى 60%" : "Up to 60% off"}</Text>
+                </View>
+              </View>
+              <Pressable onPress={() => router.push("/flights/results" as any)}>
+                <Text style={styles.seeAllLink}>{isAr ? "عرض الكل ←" : "View all →"}</Text>
+              </Pressable>
+            </View>
+            <View style={[{ gap: 12 }, isDesktop && { flexDirection: isAr ? "row-reverse" : "row", flexWrap: "wrap" }]}>
+              {(isAr ? TODAYS_DEALS_AR : TODAYS_DEALS_EN).map((deal, i) => (
+                <Pressable
+                  key={i}
+                  style={({ pressed }) => [styles.dealCard, isDesktop && { flex: 1, minWidth: 220 }, { opacity: pressed ? 0.92 : 1 }]}
+                  onPress={() => {
+                    setFrom(deal.from); setFromCode(deal.fromCode);
+                    setTo(deal.to); setToCode(deal.toCode);
+                    setSearchTab("flights");
+                    handleFlightSearch();
+                  }}
+                >
+                  <View style={{ flexDirection: isAr ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                        <Text style={styles.dealFrom}>{deal.from}</Text>
+                        <MaterialIcons name="flight" size={14} color="#1B6CA8" style={{ transform: [{ rotate: isAr ? "180deg" : "0deg" }] }} />
+                        <Text style={styles.dealTo}>{deal.to}</Text>
+                      </View>
+                      <Text style={[styles.dealAirline, { textAlign: isAr ? "right" : "left" }]}>{deal.airline}</Text>
+                      <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                        <View style={styles.dealTag}>
+                          <MaterialIcons name="schedule" size={11} color="#666" />
+                          <Text style={styles.dealTagText}>{deal.duration}</Text>
+                        </View>
+                        <View style={styles.dealTag}>
+                          <MaterialIcons name="calendar-today" size={11} color="#666" />
+                          <Text style={styles.dealTagText}>{deal.date}</Text>
+                        </View>
+                        {deal.direct && (
+                          <View style={[styles.dealTag, { backgroundColor: "#e8f5e9" }]}>
+                            <Text style={[styles.dealTagText, { color: "#22C55E" }]}>{isAr ? "مباشر" : "Direct"}</Text>
+                          </View>
+                        )}
+                      </View>
+                    </View>
+                    <View style={{ alignItems: isAr ? "flex-start" : "flex-end" }}>
+                      <Text style={styles.dealOldPrice}>{deal.oldPrice.toLocaleString()} {isAr ? "أوق" : "MRU"}</Text>
+                      <Text style={styles.dealPrice}>{deal.price.toLocaleString()} {isAr ? "أوق" : "MRU"}</Text>
+                      <View style={styles.dealDiscount}>
+                        <Text style={styles.dealDiscountText}>-{Math.round((1 - deal.price / deal.oldPrice) * 100)}%</Text>
+                      </View>
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => {
+                      setFrom(deal.from); setFromCode(deal.fromCode);
+                      setTo(deal.to); setToCode(deal.toCode);
+                      setSearchTab("flights");
+                    }}
+                    style={styles.dealBookBtn}
+                  >
+                    <Text style={styles.dealBookBtnText}>{isAr ? "احجز الآن" : "Book now"}</Text>
+                  </Pressable>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+
         {/* ── DIVIDER ── */}
         <View style={{ height: 1, backgroundColor: "#e8ecf0", marginHorizontal: sectionPadding }} />
 
@@ -696,6 +836,34 @@ const styles = StyleSheet.create({
   logoImg: { width: 74, height: 28 },
   footerBottom: { borderTopWidth: 1, borderTopColor: "#d0d8e4", padding: 20, alignItems: "center" },
   footerCopyright: { fontSize: 12, color: "#888", textAlign: "center", lineHeight: 20 },
+  // Popular Destinations
+  destSection: { paddingVertical: 32, backgroundColor: "#f8faff" },
+  sectionTitle: { fontSize: 20, fontWeight: "800", color: "#1a1a2e" },
+  seeAllLink: { fontSize: 13, color: "#1B6CA8", textDecorationLine: "underline", fontWeight: "600" },
+  destCard: { width: 200, height: 260, borderRadius: 16, overflow: "hidden", position: "relative" },
+  destImg: { width: "100%", height: "100%", position: "absolute" },
+  destOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: 140, backgroundColor: "transparent" },
+  destInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 14, backgroundColor: "rgba(0,0,0,0.45)" },
+  destCity: { fontSize: 16, fontWeight: "800", color: "#fff", marginBottom: 2 },
+  destCountry: { fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 8 },
+  destPriceBadge: { backgroundColor: "rgba(27,108,168,0.9)", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: "flex-start" },
+  destPriceText: { fontSize: 11, color: "#fff", fontWeight: "700" },
+  // Today's Deals
+  dealsSection: { paddingVertical: 32, backgroundColor: "#fff" },
+  dealsBadge: { backgroundColor: "#e53e3e", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  dealsBadgeText: { fontSize: 11, color: "#fff", fontWeight: "700" },
+  dealCard: { backgroundColor: "#fff", borderRadius: 12, padding: 16, borderWidth: 1, borderColor: "#e0e8f0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  dealFrom: { fontSize: 14, fontWeight: "700", color: "#1a1a2e" },
+  dealTo: { fontSize: 14, fontWeight: "700", color: "#1a1a2e" },
+  dealAirline: { fontSize: 12, color: "#666", marginTop: 2 },
+  dealTag: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#f0f4f8", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  dealTagText: { fontSize: 11, color: "#555" },
+  dealOldPrice: { fontSize: 12, color: "#aaa", textDecorationLine: "line-through", textAlign: "right" },
+  dealPrice: { fontSize: 18, fontWeight: "800", color: "#1B6CA8", textAlign: "right" },
+  dealDiscount: { backgroundColor: "#e53e3e", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, marginTop: 4 },
+  dealDiscountText: { fontSize: 11, color: "#fff", fontWeight: "700" },
+  dealBookBtn: { backgroundColor: "#1B6CA8", borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 14 },
+  dealBookBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
   // WhatsApp FAB
   whatsappFab: { position: "absolute", bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: "#25D366", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
   duffelCard: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1.5, borderColor: "#1a1a2e", paddingHorizontal: 24, paddingVertical: 16, alignItems: "center", minWidth: 160, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
