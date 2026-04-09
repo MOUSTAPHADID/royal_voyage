@@ -62,6 +62,21 @@ const PAYMENT_LOGOS = [
   { name: "UnionPay", url: "https://cdn.simpleicons.org/unionpay/E21836" },
 ];
 
+// ── Customer Reviews ────────────────────────────────────────────────────────────────────
+const REVIEWS_AR = [
+  { name: "محمد ولد أحمد", city: "نواكشوط", rating: 5, text: "خدمة رائعة وأسعار لا تصدق! حجزت رحلتي إلى دبي بسعر أقل بكثير مما وجدته في مواقع أخرى. سأعود بالتأكيد.", avatar: "مو" },
+  { name: "فاطمة بنت سيدي", city: "نواديبو", rating: 5, text: "سهل جداً في الاستخدام، واجهة واضحة ومريحة. حجزت رحلة إسطنبول في دقيقتين فقط!", avatar: "فب" },
+  { name: "أحمدو ولد محمود", city: "كيفة", rating: 4, text: "أفضل تطبيق لحجز التذاكر في موريتانيا. الأسعار تنافسية والدعم سريع الاستجابة.", avatar: "أم" },
+  { name: "مريم منتو", city: "روسو", rating: 5, text: "وفرت أكثر من 15,000 أوقية على رحلتي إلى القاهرة مقارنةً بالمواقع الأخرى. شكراً Royal Voyage!", avatar: "مم" },
+];
+
+const REVIEWS_EN = [
+  { name: "Mohamed Ould Ahmed", city: "Nouakchott", rating: 5, text: "Amazing service and unbelievable prices! I booked my Dubai trip for much less than I found elsewhere. Definitely coming back.", avatar: "MO" },
+  { name: "Fatima Bint Sidi", city: "Nouadhibou", rating: 5, text: "Very easy to use, clean interface. Booked an Istanbul flight in just 2 minutes!", avatar: "FB" },
+  { name: "Ahmadou Ould Mahmoud", city: "Kiffa", rating: 4, text: "Best flight booking app in Mauritania. Competitive prices and fast support.", avatar: "AM" },
+  { name: "Mariem Mento", city: "Rosso", rating: 5, text: "Saved over 15,000 MRU on my Cairo trip compared to other sites. Thank you Royal Voyage!", avatar: "MM" },
+];
+
 // ── Popular Destinations ──────────────────────────────────────────────────
 const POPULAR_DESTINATIONS = [
   { city_ar: "دبي", city_en: "Dubai", country_ar: "الإمارات", country_en: "UAE", code: "DXB", price_mru: 48000, img: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80" },
@@ -477,7 +492,7 @@ export default function LandingPage() {
               {POPULAR_DESTINATIONS.map((dest) => (
                 <Pressable
                   key={dest.code}
-                  style={({ pressed }) => [styles.destCard, { opacity: pressed ? 0.9 : 1 }]}
+                  style={({ pressed }) => [styles.destCard, { opacity: pressed ? 0.9 : 1, width: 240, height: 280 }]}
                   onPress={() => {
                     setTo(isAr ? dest.city_ar : dest.city_en);
                     setToCode(dest.code);
@@ -566,12 +581,56 @@ export default function LandingPage() {
                       setFrom(deal.from); setFromCode(deal.fromCode);
                       setTo(deal.to); setToCode(deal.toCode);
                       setSearchTab("flights");
+                      // Scroll to search form
+                      if (isWeb) {
+                        const el = document.getElementById("search-form");
+                        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                      }
                     }}
                     style={styles.dealBookBtn}
                   >
                     <Text style={styles.dealBookBtnText}>{isAr ? "احجز الآن" : "Book now"}</Text>
                   </Pressable>
                 </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* ── CUSTOMER REVIEWS ── */}
+        <View style={[styles.reviewsSection, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 12, marginBottom: 24 }}>
+              <Text style={[styles.sectionTitle, { textAlign: isAr ? "right" : "left" }]}>
+                {isAr ? "ماذا يقول عملاؤنا" : "What Our Customers Say"}
+              </Text>
+              <View style={styles.reviewsRatingBadge}>
+                <MaterialIcons name="star" size={14} color="#F59E0B" />
+                <Text style={styles.reviewsRatingText}>4.8 / 5</Text>
+              </View>
+            </View>
+            <View style={[{ gap: 16 }, isDesktop && { flexDirection: isAr ? "row-reverse" : "row" }]}>
+              {(isAr ? REVIEWS_AR : REVIEWS_EN).map((review, i) => (
+                <View key={i} style={[styles.reviewCard, isDesktop && { flex: 1 }]}>
+                  {/* Stars */}
+                  <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 2, marginBottom: 10 }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <MaterialIcons key={s} name="star" size={16} color={s <= review.rating ? "#F59E0B" : "#E5E7EB"} />
+                    ))}
+                  </View>
+                  {/* Review text */}
+                  <Text style={[styles.reviewText, { textAlign: isAr ? "right" : "left" }]}>“{review.text}”</Text>
+                  {/* Author */}
+                  <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginTop: 14 }}>
+                    <View style={styles.reviewAvatar}>
+                      <Text style={styles.reviewAvatarText}>{review.avatar}</Text>
+                    </View>
+                    <View>
+                      <Text style={[styles.reviewName, { textAlign: isAr ? "right" : "left" }]}>{review.name}</Text>
+                      <Text style={[styles.reviewCity, { textAlign: isAr ? "right" : "left" }]}>{review.city}</Text>
+                    </View>
+                  </View>
+                </View>
               ))}
             </View>
           </View>
@@ -864,6 +923,16 @@ const styles = StyleSheet.create({
   dealDiscountText: { fontSize: 11, color: "#fff", fontWeight: "700" },
   dealBookBtn: { backgroundColor: "#1B6CA8", borderRadius: 8, paddingVertical: 10, alignItems: "center", marginTop: 14 },
   dealBookBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  // Customer Reviews
+  reviewsSection: { paddingVertical: 36, backgroundColor: "#f8faff" },
+  reviewsRatingBadge: { flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: "#FEF3C7", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  reviewsRatingText: { fontSize: 13, fontWeight: "700", color: "#D97706" },
+  reviewCard: { backgroundColor: "#fff", borderRadius: 14, padding: 18, borderWidth: 1, borderColor: "#e0e8f0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  reviewText: { fontSize: 14, color: "#444", lineHeight: 22, fontStyle: "italic" },
+  reviewAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#1B6CA8", justifyContent: "center", alignItems: "center" },
+  reviewAvatarText: { fontSize: 13, fontWeight: "700", color: "#fff" },
+  reviewName: { fontSize: 14, fontWeight: "700", color: "#1a1a2e" },
+  reviewCity: { fontSize: 12, color: "#888", marginTop: 2 },
   // WhatsApp FAB
   whatsappFab: { position: "absolute", bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: "#25D366", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
   duffelCard: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1.5, borderColor: "#1a1a2e", paddingHorizontal: 24, paddingVertical: 16, alignItems: "center", minWidth: 160, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
