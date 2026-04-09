@@ -11,14 +11,24 @@ if (!config.resolver.assetExts.includes("pdf")) {
   config.resolver.assetExts.push("pdf");
 }
 
-// Web mock for react-native-maps (not supported on web)
+// Web mocks for native-only modules
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // Mock react-native-maps on web (not supported)
   if (platform === "web" && moduleName === "react-native-maps") {
     return {
       filePath: path.resolve(__dirname, "mocks/react-native-maps.js"),
       type: "sourceFile",
     };
   }
+  
+  // Mock @stripe/stripe-react-native on web (not supported)
+  if (platform === "web" && moduleName === "@stripe/stripe-react-native") {
+    return {
+      filePath: path.resolve(__dirname, "mocks/stripe-react-native.js"),
+      type: "sourceFile",
+    };
+  }
+  
   return context.resolveRequest(context, moduleName, platform);
 };
 

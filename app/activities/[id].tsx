@@ -6,7 +6,16 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/lib/i18n";
-import MapView, { Marker } from "react-native-maps";
+// react-native-maps is not available in Expo Go — use dynamic import
+let MapView: any = null;
+let Marker: any = null;
+try {
+  const maps = require("react-native-maps");
+  MapView = maps.default ?? maps.MapView;
+  Marker = maps.Marker;
+} catch {
+  // Not available in Expo Go
+}
 import { useFavoriteActivities } from "@/hooks/use-favorite-activities";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
