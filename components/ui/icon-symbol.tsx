@@ -88,6 +88,9 @@ const MAPPING = {
   "timer": "timer",
   "bolt.fill": "bolt",
   "mappin.and.ellipse": "pin-drop",
+  "mappin.fill": "location-on",
+  "gearshape.2.fill": "manage-accounts",
+  "chevron.left": "chevron-left",
   "airplane.circle.fill": "connecting-airports",
   "exclamationmark.triangle.fill": "warning",
   "door.left.hand.open": "meeting-room",
@@ -129,7 +132,7 @@ const MAPPING = {
   "briefcase.fill": "work",
   "message.fill": "chat",
   "binoculars.fill": "explore",
-} as IconMapping;
+} as unknown as IconMapping;
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.

@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, TextInput, Modal, ScrollView, KeyboardAvoidingView, Platform,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAdmin } from "@/lib/admin-context";
@@ -17,9 +18,11 @@ const T = {
     noPartnersHint: "اضغط + لإضافة شريك جديد",
     searchPlaceholder: "بحث بالاسم أو البريد أو الهاتف...",
     results: "نتيجة",
+    filterAll: "الكل",
     active: "نشط",
     suspended: "موقوف",
     closed: "مغلق",
+    details: "التفاصيل",
     commission: "العمولة",
     credit: "الائتمان",
     balance: "الرصيد",
@@ -58,9 +61,11 @@ const T = {
     noPartnersHint: "Appuyez sur + pour ajouter",
     searchPlaceholder: "Rechercher par nom, email ou tél...",
     results: "résultat(s)",
+    filterAll: "Tous",
     active: "Actif",
     suspended: "Suspendu",
     closed: "Fermé",
+    details: "Détails",
     commission: "Commission",
     credit: "Crédit",
     balance: "Solde",
@@ -127,19 +132,23 @@ export default function PartnersScreen() {
   const updateMutation = trpc.businessAccounts.update.useMutation({ onSuccess: () => { refetch(); setModalVisible(false); } });
   const deleteMutation = trpc.businessAccounts.delete.useMutation({ onSuccess: () => refetch() });
 
+  const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | PartnerStatus>("all");
 
   const q = search.trim().toLowerCase();
-  const filtered = (partners ?? []).filter(p =>
-    !q ||
-    p.companyName.toLowerCase().includes(q) ||
-    (p.contactName ?? "").toLowerCase().includes(q) ||
-    (p.contactEmail ?? "").toLowerCase().includes(q) ||
-    (p.contactPhone ?? "").includes(q)
-  );
+  const filtered = (partners ?? []).filter(p => {
+    const matchSearch = !q ||
+      p.companyName.toLowerCase().includes(q) ||
+      (p.contactName ?? "").toLowerCase().includes(q) ||
+      (p.contactEmail ?? "").toLowerCase().includes(q) ||
+      (p.contactPhone ?? "").includes(q);
+    const matchStatus = statusFilter === "all" || p.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   const statusColor: Record<PartnerStatus, string> = {
     active: "#22C55E",
@@ -228,8 +237,30 @@ export default function PartnersScreen() {
         )}
       </View>
 
+      {/* Status Filter */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterRow}>
+        {(["all", "active", "suspended", "closed"] as const).map(s => {
+          const label = s === "all" ? t.filterAll : s === "active" ? t.active : s === "suspended" ? t.suspended : t.closed;
+          const color = s === "all" ? colors.primary : statusColor[s as PartnerStatus];
+          const isActive = statusFilter === s;
+          return (
+            <TouchableOpacity
+              key={s}
+              style={[styles.filterChip, { borderColor: isActive ? color : colors.border, backgroundColor: isActive ? color + "18" : colors.surface }]}
+              onPress={() => setStatusFilter(s)}
+            >
+              {s !== "all" && <View style={[styles.filterDot, { backgroundColor: color }]} />}
+              <Text style={[styles.filterChipText, { color: isActive ? color : colors.muted }]}>{label}</Text>
+              {isActive && s !== "all" && (
+                <Text style={[styles.filterCount, { color }]}>{(partners ?? []).filter(p => p.status === s).length}</Text>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+
       {/* Results count */}
-      {search.trim().length > 0 && !isLoading && (
+      {(search.trim().length > 0 || statusFilter !== "all") && !isLoading && (
         <View style={[styles.resultsCount, { borderBottomColor: colors.border }]}>
           <Text style={[styles.resultsText, { color: colors.muted }]}>
             {filtered.length} {t.results}
@@ -279,6 +310,9 @@ export default function PartnersScreen() {
                     </Text>
                   </View>
                   <View style={styles.actionBtns}>
+                    <TouchableOpacity onPress={() => router.push(`/admin/partner-detail/${item.id}` as any)} style={styles.iconBtn}>
+                      <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => openEdit(item)} style={styles.iconBtn}>
                       <IconSymbol name="pencil" size={18} color={colors.primary} />
                     </TouchableOpacity>
@@ -386,7 +420,13 @@ const styles = StyleSheet.create({
   headerTitle: { color: "#fff", fontSize: 20, fontWeight: "800" },
   addBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   addBtnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
-  searchBar: { flexDirection: "row", alignItems: "center", margin: 12, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, gap: 8 },
+  searchBar: { flexDirection: "row", alignItems: "center", marginHorizontal: 12, marginTop: 12, marginBottom: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1, gap: 8 },
+  filterScroll: { flexGrow: 0 },
+  filterRow: { flexDirection: "row", paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
+  filterChip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1.5 },
+  filterDot: { width: 7, height: 7, borderRadius: 4 },
+  filterChipText: { fontSize: 13, fontWeight: "600" },
+  filterCount: { fontSize: 11, fontWeight: "700", marginLeft: 2 },
   searchInput: { flex: 1, fontSize: 14 },
   center: { flex: 1, justifyContent: "center", alignItems: "center", gap: 10 },
   emptyText: { fontSize: 16, fontWeight: "600" },

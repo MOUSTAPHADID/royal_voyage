@@ -33,6 +33,8 @@ export default function ProfileScreen() {
 
 
   const confirmedBookings = bookings.filter((b) => b.status === "confirmed").length;
+  const ADMIN_EMAIL = "elidrisi.lda@gmail.com";
+  const isAdmin = user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
 
   // مستوى المسافر بناءً على عدد الحجوزات المؤكدة
   const getTravelerLevel = () => {
@@ -100,7 +102,12 @@ export default function ProfileScreen() {
         { icon: "arrow.uturn.left.circle.fill", label: language === "ar" ? "سياسة الإلغاء والاسترداد" : language === "fr" ? "Politique d'Annulation" : "Cancellation Policy", value: "", onPress: () => router.push("/refund" as any) },
       ],
     },
-
+    ...(isAdmin ? [{
+      title: language === "ar" ? "لوحة التحكم" : language === "fr" ? "Administration" : "Administration",
+      items: [
+        { icon: "gearshape.2.fill", label: language === "ar" ? "لوحة تحكم الإدارة" : language === "fr" ? "Tableau de bord Admin" : "Admin Dashboard", value: "", highlight: true, onPress: () => router.push("/admin" as any) },
+      ],
+    }] : []),
   ];
 
   return (
