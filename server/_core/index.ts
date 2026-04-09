@@ -39,13 +39,15 @@ async function startServer() {
   const ALLOWED_ORIGINS = [
     "https://royalvoyage.online",
     "https://www.royalvoyage.online",
-    // NOTE: manus.space sandbox domain removed for production hardening
+    "https://royalvoyage-dcsedylm.manus.space",
+    // NOTE: manus.space sandbox domain added for deployed preview
   ];
   const ALLOWED_ORIGIN_PATTERNS = [
     /^https?:\/\/localhost(:\d+)?$/,
     /^https?:\/\/127\.0\.0\.1(:\d+)?$/,
     /\.manus\.computer$/,
     /\.manuspre\.computer$/,
+    /\.manus\.space$/,
   ];
 
   app.use((req, res, next) => {
@@ -344,18 +346,18 @@ async function startServer() {
 
   // Landing Page - serve at /landing and redirect root to landing
   app.get("/landing", (_req, res) => {
-    res.sendFile(path.join(distPath, "landing.html"));
+    res.sendFile(path.join(webDistPath, "landing.html"));
   });
   // Root redirect to landing page
   app.get("/", (_req, res) => {
-    res.sendFile(path.join(distPath, "landing.html"));
+    res.sendFile(path.join(webDistPath, "landing.html"));
   });
   // Serve icon and favicon for landing page
   app.get("/icon.png", (_req, res) => {
-    res.sendFile(path.join(distPath, "icon.png"));
+    res.sendFile(path.join(webDistPath, "icon.png"));
   });
   app.get("/favicon.png", (_req, res) => {
-    res.sendFile(path.join(distPath, "favicon.png"));
+    res.sendFile(path.join(webDistPath, "favicon.png"));
   });
 
   // SEO files
