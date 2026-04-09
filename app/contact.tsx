@@ -150,12 +150,27 @@ export default function ContactScreen() {
       return;
     }
     setSending(true);
-    // Open email client with pre-filled message as fallback
-    const mailtoUrl = `mailto:suporte@royalvoyage.online?subject=${encodeURIComponent(subject || "Contact from Royal Voyage App")}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`;
-    await Linking.openURL(mailtoUrl).catch(() => {});
-    setSending(false);
-    Alert.alert(t.sent, t.sentMsg);
-    setName(""); setEmail(""); setSubject(""); setMessage("");
+    try {
+      const res = await fetch("https://formspree.io/f/xwpblqkb", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ name, email, subject: subject || "Contact from Royal Voyage", message }),
+      });
+      if (res.ok) {
+        Alert.alert(t.sent, t.sentMsg);
+        setName(""); setEmail(""); setSubject(""); setMessage("");
+      } else {
+        throw new Error("failed");
+      }
+    } catch {
+      // Fallback to mailto if fetch fails
+      const mailtoUrl = `mailto:suporte@royalvoyage.online?subject=${encodeURIComponent(subject || "Contact from Royal Voyage App")}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`)}`;
+      await Linking.openURL(mailtoUrl).catch(() => {});
+      Alert.alert(t.sent, t.sentMsg);
+      setName(""); setEmail(""); setSubject(""); setMessage("");
+    } finally {
+      setSending(false);
+    }
   };
 
   const channels = [
@@ -319,10 +334,10 @@ export default function ContactScreen() {
           </Pressable>
           <Text style={[styles.formNote, { color: colors.muted, textAlign: isRTL ? "right" : "left" }]}>
             {lang === "ar"
-              ? "سيفتح تطبيق البريد الإلكتروني تلقائياً لإرسال رسالتك إلى suporte@royalvoyage.online"
+              ? "سيتم إرسال رسالتك مباشرةً إلى suporte@royalvoyage.online وسنرد عليك خلال 24 ساعة"
               : lang === "fr"
-              ? "L'application e-mail s'ouvrira automatiquement pour envoyer votre message à suporte@royalvoyage.online"
-              : "Your email app will open automatically to send your message to suporte@royalvoyage.online"}
+              ? "Votre message sera envoy\u00e9 directement \u00e0 suporte@royalvoyage.online. Nous vous r\u00e9pondrons dans les 24h."
+              : "Your message will be sent directly to suporte@royalvoyage.online. We'll reply within 24 hours."}
           </Text>
         </View>
 

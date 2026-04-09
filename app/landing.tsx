@@ -87,6 +87,17 @@ const POPULAR_DESTINATIONS = [
   { city_ar: "مدريد", city_en: "Madrid", country_ar: "إسبانيا", country_en: "Spain", code: "MAD", price_mru: 58000, img: "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?w=600&q=80" },
 ];
 
+
+// ── Mauritanian Destinations ───────────────────────────────────────────────
+const MAURITANIA_DESTINATIONS = [
+  { city_ar: 'شنقيط', city_en: 'Chinguetti', country_ar: 'موريتانيا', country_en: 'Mauritania', desc_ar: 'مدينة التراث العالمي في قلب الصحراء', desc_en: 'UNESCO World Heritage city in the Sahara', img: require('@/assets/images/mauritania/chinguetti.jpg') },
+  { city_ar: 'ودان', city_en: 'Ouadane', country_ar: 'موريتانيا', country_en: 'Mauritania', desc_ar: 'مدينة أثرية عمرها 800 عام', desc_en: 'Ancient city 800 years old', img: require('@/assets/images/mauritania/ouadane.jpg') },
+  { city_ar: 'تيشيت', city_en: 'Tichitt', country_ar: 'موريتانيا', country_en: 'Mauritania', desc_ar: 'مدينة صحراوية عريقة مدرجة في التراث العالمي', desc_en: 'Ancient desert city on UNESCO list', img: require('@/assets/images/mauritania/tichitt.jpg') },
+  { city_ar: 'ترجيت', city_en: 'Terjit', country_ar: 'موريتانيا', country_en: 'Mauritania', desc_ar: 'واحة خضراء وسط الصحراء الكبرى', desc_en: 'Green oasis in the heart of the Sahara', img: require('@/assets/images/mauritania/terjit.jpg') },
+  { city_ar: 'نواكشوط', city_en: 'Nouakchott', country_ar: 'موريتانيا', country_en: 'Mauritania', desc_ar: 'عاصمة موريتانيا على المحيط الأطلسي', desc_en: "Mauritania's capital on the Atlantic", img: require('@/assets/images/mauritania/nouakchott.jpg') },
+  { city_ar: 'بانك دارغان', city_en: "Banc d'Arguin", country_ar: 'موريتانيا', country_en: 'Mauritania', desc_ar: 'محمية طبيعية عالمية للطيور المهاجرة', desc_en: 'World natural reserve for migratory birds', img: require('@/assets/images/mauritania/banc_arguin.jpg') },
+];
+
 // ── Today's Deals ──────────────────────────────────────────────────────────
 const TODAYS_DEALS_AR = [
   { from: "نواكشوط", to: "الدار البيضاء", fromCode: "NKC", toCode: "CMN", airline: "Royal Air Maroc", price: 28500, oldPrice: 42000, date: "2026-05-15", duration: "3ساعة 20د", direct: true },
@@ -683,6 +694,45 @@ export default function LandingPage() {
           </View>
         </View>
 
+
+        {/* ── MAURITANIAN DESTINATIONS ── */}
+        <View style={[styles.mauritaniaSection, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
+            <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 12, marginBottom: 8 }}>
+              <Text style={[styles.sectionTitle, { textAlign: isAr ? "right" : "left" }]}>
+                {isAr ? "اكتشف موريتانيا" : "Discover Mauritania"}
+              </Text>
+              <View style={[styles.dealsBadge, { backgroundColor: "#C9A84C" }]}>
+                <Text style={styles.dealsBadgeText}>{isAr ? "تراث عالمي" : "World Heritage"}</Text>
+              </View>
+            </View>
+            <Text style={[styles.mauritaniaSubtitle, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr
+                ? "استكشف جمال موريتانيا الخفي — من مدن التراث العالمي في الصحراء إلى شواطئ المحيط الأطلسي"
+                : "Explore Mauritania's hidden beauty — from UNESCO Saharan cities to Atlantic Ocean beaches"}
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingBottom: 8 }}>
+              {MAURITANIA_DESTINATIONS.map((dest, i) => (
+                <Pressable
+                  key={i}
+                  style={({ pressed }) => [styles.mauritaniaCard, { opacity: pressed ? 0.9 : 1 }]}
+                  onPress={() => Linking.openURL("https://wa.me/22233700000?text=" + encodeURIComponent(isAr ? `أريد معلومات عن السياحة في ${dest.city_ar}` : `I want info about tourism in ${dest.city_en}`))}
+                >
+                  <Image source={dest.img} style={styles.mauritaniaImg} resizeMode="cover" />
+                  <View style={styles.mauritaniaOverlay} />
+                  <View style={styles.mauritaniaInfo}>
+                    <Text style={styles.mauritaniaCity}>{isAr ? dest.city_ar : dest.city_en}</Text>
+                    <Text style={styles.mauritaniaDesc}>{isAr ? dest.desc_ar : dest.desc_en}</Text>
+                    <View style={styles.mauritaniaBtn}>
+                      <Text style={styles.mauritaniaBtnText}>{isAr ? "استفسر الآن" : "Inquire now"}</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+
         {/* ── DIVIDER ── */}
         <View style={{ height: 1, backgroundColor: "#e8ecf0", marginHorizontal: sectionPadding }} />
 
@@ -1050,6 +1100,17 @@ const styles = StyleSheet.create({
   reviewAvatarText: { fontSize: 13, fontWeight: "700", color: "#fff" },
   reviewName: { fontSize: 14, fontWeight: "700", color: "#1a1a2e" },
   reviewCity: { fontSize: 12, color: "#888", marginTop: 2 },
+  // Mauritanian Destinations
+  mauritaniaSection: { paddingVertical: 36, backgroundColor: "#fff9f0" },
+  mauritaniaSubtitle: { fontSize: 13, color: "#666", marginBottom: 20, lineHeight: 20 },
+  mauritaniaCard: { width: 220, height: 280, borderRadius: 16, overflow: "hidden", position: "relative" },
+  mauritaniaImg: { width: "100%", height: "100%", position: "absolute" },
+  mauritaniaOverlay: { position: "absolute", bottom: 0, left: 0, right: 0, height: 160, backgroundColor: "transparent" },
+  mauritaniaInfo: { position: "absolute", bottom: 0, left: 0, right: 0, padding: 14, backgroundColor: "rgba(0,0,0,0.5)" },
+  mauritaniaCity: { fontSize: 17, fontWeight: "800", color: "#fff", marginBottom: 4 },
+  mauritaniaDesc: { fontSize: 11, color: "rgba(255,255,255,0.85)", marginBottom: 10, lineHeight: 16 },
+  mauritaniaBtn: { backgroundColor: "rgba(201,168,76,0.9)", paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, alignSelf: "flex-start" },
+  mauritaniaBtnText: { fontSize: 11, color: "#fff", fontWeight: "700" },
   // WhatsApp FAB
   whatsappFab: { position: "absolute", bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: "#25D366", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
   duffelCard: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1.5, borderColor: "#1a1a2e", paddingHorizontal: 24, paddingVertical: 16, alignItems: "center", minWidth: 160, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
