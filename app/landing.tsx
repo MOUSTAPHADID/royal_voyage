@@ -1,10 +1,9 @@
-import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Dimensions, Image, TextInput, ActivityIndicator } from "react-native";
+import { Platform, ScrollView, View, Text, Pressable, Linking, StyleSheet, Image, TextInput, ActivityIndicator, useWindowDimensions } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useRouter } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 
-const { width } = Dimensions.get("window");
 const isWeb = Platform.OS === "web";
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -52,7 +51,6 @@ const FOOTER_LINKS = {
   },
 };
 
-// شعارات الدفع - Simple Icons CDN (موثوق، لا يحجب الطلبات)
 const PAYMENT_LOGOS = [
   { name: "Visa", url: "https://cdn.simpleicons.org/visa/1A1F71" },
   { name: "Mastercard", url: "https://cdn.simpleicons.org/mastercard" },
@@ -64,7 +62,6 @@ const PAYMENT_LOGOS = [
   { name: "UnionPay", url: "https://cdn.simpleicons.org/unionpay/E21836" },
 ];
 
-// شعارات شركات الطيران - Simple Icons CDN
 const AIRLINE_LOGOS = [
   { name: "Emirates", url: "https://cdn.simpleicons.org/emirates" },
   { name: "Air France", url: "https://cdn.simpleicons.org/airfrance/002157" },
@@ -145,6 +142,10 @@ function AutoInput({ value, onChange, placeholder, rtl }: { value: string; onCha
 // ── Main Component ─────────────────────────────────────────────────────────
 export default function LandingPage() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const isDesktop = isWeb && width >= 768;
+  const isLargeDesktop = isWeb && width >= 1100;
+
   const [lang, setLang] = useState<"ar" | "en">("ar");
   const [searchTab, setSearchTab] = useState<"flights" | "hotels">("flights");
   const [tripType, setTripType] = useState<"roundtrip" | "oneway" | "multicity">("roundtrip");
@@ -164,7 +165,6 @@ export default function LandingPage() {
   const [hotelGuests, setHotelGuests] = useState(2);
   const [searchError, setSearchError] = useState("");
   const [showBanner, setShowBanner] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const isAr = lang === "ar";
 
@@ -187,14 +187,30 @@ export default function LandingPage() {
     setSearchError("");
     router.push({
       pathname: "/flights/results" as any,
-      params: { origin: from, originCode: fromCode || from, destination: to, destinationCode: toCode || to, date: departDate, returnDate: tripType === "roundtrip" ? returnDate : "", tripType, passengers: adults.toString(), children: children2.toString(), infants: "0", childAges: "[]", childDobs: "[]", cabinClass: "ECONOMY", bags: bags.toString(), useMock: "false" },
+      params: {
+        origin: from, originCode: fromCode || from,
+        destination: to, destinationCode: toCode || to,
+        date: departDate, returnDate: tripType === "roundtrip" ? returnDate : "",
+        tripType, passengers: adults.toString(), children: children2.toString(),
+        infants: "0", childAges: "[]", childDobs: "[]", cabinClass: "ECONOMY",
+        bags: bags.toString(),
+      },
     });
   };
 
   const handleHotelSearch = () => {
-    if (!hotelDest) { setSearchError(isAr ? "يرجى اختيار مدينة الوجهة" : "Please select a destination"); return; }
+    if (!hotelDest) {
+      setSearchError(isAr ? "يرجى اختيار الوجهة" : "Please select a destination");
+      return;
+    }
     setSearchError("");
-    router.push({ pathname: "/hotels/results" as any, params: { destination: hotelDest, destinationCode: hotelDestCode || hotelDest, checkIn, checkOut, guests: hotelGuests.toString(), children: "0", useMock: "false" } });
+    router.push({
+      pathname: "/hotels/results" as any,
+      params: {
+        destination: hotelDest, destinationCode: hotelDestCode || hotelDest,
+        checkIn, checkOut, guests: hotelGuests.toString(), rooms: "1",
+      },
+    });
   };
 
   const swapLocations = () => {
@@ -208,6 +224,14 @@ export default function LandingPage() {
   const tips = isAr ? TIPS_AR : TIPS_EN;
   const footer = isAr ? FOOTER_LINKS.ar : FOOTER_LINKS.en;
 
+  // Dynamic styles based on screen width
+  const heroMinHeight = isDesktop ? 520 : 320;
+  const heroTitleSize = isLargeDesktop ? 38 : isDesktop ? 30 : 22;
+  const heroTitleLineHeight = isLargeDesktop ? 52 : isDesktop ? 42 : 32;
+  const searchCardMaxWidth = isDesktop ? 900 : "100%";
+  const contentMaxWidth = isLargeDesktop ? 1280 : isDesktop ? 1024 : "100%";
+  const sectionPadding = isDesktop ? 48 : 24;
+
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} stickyHeaderIndices={[0]}>
@@ -215,67 +239,73 @@ export default function LandingPage() {
         {/* ── TOP BANNER ── */}
         {showBanner && (
           <View style={styles.topBanner}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.bannerTitle}>{isAr ? "ضمان أفضل سعر" : "Best Price Guarantee"}</Text>
-              <Text style={styles.bannerSub}>{isAr ? "أدنى أسعار الرحلات مضمونة على تطبيق Royal Voyage" : "Lowest fares guaranteed on the Royal Voyage app"}</Text>
-              <Pressable onPress={() => router.push("/auth/login" as any)}>
-                <Text style={styles.bannerLink}>{isAr ? "تحميل ومعرفة المزيد" : "Download and learn more"}</Text>
+            <View style={{ flex: 1, maxWidth: contentMaxWidth as any, alignSelf: "center", flexDirection: "row", alignItems: "center" }}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.bannerTitle}>{isAr ? "ضمان أفضل سعر" : "Best Price Guarantee"}</Text>
+                <Text style={styles.bannerSub}>{isAr ? "أدنى أسعار الرحلات مضمونة على تطبيق Royal Voyage" : "Lowest fares guaranteed on the Royal Voyage app"}</Text>
+                <Pressable onPress={() => router.push("/auth/login" as any)}>
+                  <Text style={styles.bannerLink}>{isAr ? "تحميل ومعرفة المزيد" : "Download and learn more"}</Text>
+                </Pressable>
+              </View>
+              <Pressable onPress={() => setShowBanner(false)} style={styles.bannerClose}>
+                <MaterialIcons name="close" size={16} color="#555" />
               </Pressable>
             </View>
-            <Pressable onPress={() => setShowBanner(false)} style={styles.bannerClose}>
-              <MaterialIcons name="close" size={16} color="#555" />
-            </Pressable>
           </View>
         )}
 
         {/* ── NAVBAR ── */}
-        <View style={[styles.navbar, { flexDirection: isAr ? "row-reverse" : "row" }]}>
-          {/* Logo */}
-          <Pressable onPress={() => {}} style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
-            <MaterialIcons name="star" size={22} color="#D4AF37" />
-            <Text style={styles.logoText}>Royal <Text style={{ color: "#1B6CA8" }}>Voyage</Text></Text>
-          </Pressable>
+        <View style={styles.navbarWrapper}>
+          <View style={[styles.navbar, { flexDirection: isAr ? "row-reverse" : "row", maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }]}>
+            {/* Logo */}
+            <Pressable onPress={() => {}} style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 6 }}>
+              <MaterialIcons name="star" size={22} color="#D4AF37" />
+              <Text style={styles.logoText}>Royal <Text style={{ color: "#1B6CA8" }}>Voyage</Text></Text>
+            </Pressable>
 
-          {/* Nav links - web only */}
-          {isWeb && (
-            <View style={{ flexDirection: "row", gap: 4, flex: 1, marginHorizontal: 24 }}>
-              {navLinks.map((link, i) => (
-                <Pressable key={i} onPress={() => { if (i === 0) setSearchTab("flights"); else if (i === 1) setSearchTab("hotels"); }}
-                  style={[styles.navLink, searchTab === (i === 0 ? "flights" : "hotels") && i < 2 && styles.navLinkActive]}>
-                  <Text style={[styles.navLinkText, searchTab === (i === 0 ? "flights" : "hotels") && i < 2 && { color: "#1B6CA8", fontWeight: "700" }]}>{link}</Text>
+            {/* Nav links - desktop only */}
+            {isDesktop && (
+              <View style={{ flexDirection: "row", gap: 4, flex: 1, marginHorizontal: 24 }}>
+                {navLinks.map((link, i) => (
+                  <Pressable key={i} onPress={() => { if (i === 0) setSearchTab("flights"); else if (i === 1) setSearchTab("hotels"); }}
+                    style={[styles.navLink, searchTab === (i === 0 ? "flights" : "hotels") && i < 2 && styles.navLinkActive]}>
+                    <Text style={[styles.navLinkText, searchTab === (i === 0 ? "flights" : "hotels") && i < 2 && { color: "#1B6CA8", fontWeight: "700" }]}>{link}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+
+            {/* Right actions */}
+            <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
+              <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={styles.langBtn}>
+                <MaterialIcons name="language" size={14} color="#1B6CA8" />
+                <Text style={styles.langBtnText}>{isAr ? "English" : "عربي"}</Text>
+              </Pressable>
+              {isDesktop && (
+                <Pressable onPress={() => Linking.openURL("https://wa.me/22233700000")} style={styles.supportBtn}>
+                  <MaterialIcons name="chat" size={14} color="#1B6CA8" />
+                  <Text style={styles.supportBtnText}>{isAr ? "الدعم" : "Support"}</Text>
                 </Pressable>
-              ))}
+              )}
+              <Pressable onPress={() => router.push("/auth/login" as any)} style={styles.bookingsBtn}>
+                <MaterialIcons name="person" size={14} color="#1B6CA8" />
+                <Text style={styles.bookingsBtnText}>{isAr ? "حجوزاتي" : "My Bookings"}</Text>
+              </Pressable>
             </View>
-          )}
-
-          {/* Right actions */}
-          <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
-            <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={styles.langBtn}>
-              <MaterialIcons name="language" size={14} color="#1B6CA8" />
-              <Text style={styles.langBtnText}>{isAr ? "English" : "عربي"}</Text>
-            </Pressable>
-            <Pressable onPress={() => Linking.openURL("https://wa.me/22233700000")} style={styles.supportBtn}>
-              <MaterialIcons name="chat" size={14} color="#1B6CA8" />
-              <Text style={styles.supportBtnText}>{isAr ? "الدعم" : "Support"}</Text>
-            </Pressable>
-            <Pressable onPress={() => router.push("/auth/login" as any)} style={styles.bookingsBtn}>
-              <MaterialIcons name="person" size={14} color="#1B6CA8" />
-              <Text style={styles.bookingsBtnText}>{isAr ? "حجوزاتي" : "My Bookings"}</Text>
-            </Pressable>
           </View>
         </View>
 
         {/* ── HERO with Search ── */}
-        <View style={styles.heroContainer}>
+        <View style={[styles.heroContainer, { minHeight: heroMinHeight }]}>
           <Image source={{ uri: HERO_BG }} style={styles.heroBgImage} resizeMode="cover" />
           <View style={styles.heroOverlay} />
-          <View style={styles.heroContent}>
-            <Text style={styles.heroTitle}>
+          <View style={[styles.heroContent, { maxWidth: contentMaxWidth as any }]}>
+            <Text style={[styles.heroTitle, { fontSize: heroTitleSize, lineHeight: heroTitleLineHeight }]}>
               {isAr ? "وفّر حتى 60% على رحلاتك الجوية لأي وجهة" : "Save up to 60% on your cheap flight to any destination"}
             </Text>
 
             {/* Search Card */}
-            <View style={styles.searchCard}>
+            <View style={[styles.searchCard, { maxWidth: searchCardMaxWidth as any, width: "100%" }]}>
               {/* Tabs */}
               <View style={[styles.searchTabs, { flexDirection: isAr ? "row-reverse" : "row" }]}>
                 {(["flights", "hotels"] as const).map((tab) => (
@@ -321,12 +351,12 @@ export default function LandingPage() {
 
                   {/* Dates + Passengers + Bags + Search */}
                   <View style={[styles.datesRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
-                    <View style={{ flex: 1 }}>
+                    <View style={{ flex: 1, minWidth: isDesktop ? 140 : 100 }}>
                       <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تاريخ الذهاب" : "Departure"}</Text>
                       <TextInput value={departDate} onChangeText={setDepartDate} style={[styles.searchInput, { textAlign: isAr ? "right" : "left" }]} placeholder="YYYY-MM-DD" placeholderTextColor="#aaa" />
                     </View>
                     {tripType === "roundtrip" && (
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1, minWidth: isDesktop ? 140 : 100 }}>
                         <Text style={[styles.fieldLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تاريخ العودة" : "Return"}</Text>
                         <TextInput value={returnDate} onChangeText={setReturnDate} style={[styles.searchInput, { textAlign: isAr ? "right" : "left" }]} placeholder="YYYY-MM-DD" placeholderTextColor="#aaa" />
                       </View>
@@ -388,120 +418,126 @@ export default function LandingPage() {
         </View>
 
         {/* ── 3 FEATURE COLUMNS ── */}
-        <View style={[styles.featuresSection, { flexDirection: isWeb ? (isAr ? "row-reverse" : "row") : "column" }]}>
-          {features.map((f, i) => (
-            <View key={i} style={[styles.featureCol, { flex: isWeb ? 1 : undefined }]}>
-              <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                <MaterialIcons name={f.icon as any} size={32} color="#1B6CA8" />
-                <Text style={[styles.featureTitle, { textAlign: isAr ? "right" : "left" }]}>{f.title}</Text>
+        <View style={[styles.featuresSection, { flexDirection: isDesktop ? (isAr ? "row-reverse" : "row") : "column", paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%", flexDirection: isDesktop ? (isAr ? "row-reverse" : "row") : "column", gap: 24 }}>
+            {features.map((f, i) => (
+              <View key={i} style={[styles.featureCol, { flex: isDesktop ? 1 : undefined }]}>
+                <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <MaterialIcons name={f.icon as any} size={32} color="#1B6CA8" />
+                  <Text style={[styles.featureTitle, { textAlign: isAr ? "right" : "left" }]}>{f.title}</Text>
+                </View>
+                <Text style={[styles.featureDesc, { textAlign: isAr ? "right" : "left" }]}>{f.desc}</Text>
+                <Pressable onPress={() => router.push("/auth/login" as any)} style={{ marginTop: 12 }}>
+                  <Text style={styles.featureLink}>
+                    {i === 0 ? (isAr ? "اكتشف المزيد ←" : "Discover more →") : i === 1 ? (isAr ? "تسجيل الدخول لحجوزاتي ←" : "Log in to My Bookings →") : (isAr ? "تحميل التطبيق مجاناً ←" : "Download the app for free →")}
+                  </Text>
+                </Pressable>
               </View>
-              <Text style={[styles.featureDesc, { textAlign: isAr ? "right" : "left" }]}>{f.desc}</Text>
-              <Pressable onPress={() => router.push("/auth/login" as any)} style={{ marginTop: 12 }}>
-                <Text style={styles.featureLink}>
-                  {i === 0 ? (isAr ? "اكتشف المزيد ←" : "Discover more →") : i === 1 ? (isAr ? "تسجيل الدخول لحجوزاتي ←" : "Log in to My Bookings →") : (isAr ? "تحميل التطبيق مجاناً ←" : "Download the app for free →")}
-                </Text>
-              </Pressable>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
 
         {/* ── DIVIDER ── */}
-        <View style={{ height: 1, backgroundColor: "#e8ecf0", marginHorizontal: 24 }} />
+        <View style={{ height: 1, backgroundColor: "#e8ecf0", marginHorizontal: sectionPadding }} />
 
         {/* ── FIND BEST DEALS ARTICLE ── */}
-        <View style={styles.articleSection}>
-          <Text style={[styles.articleH1, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr ? "ابحث عن أفضل عروض الرحلات مع Royal Voyage" : "Find the Best Deals on Flights with Royal Voyage"}
-          </Text>
-          <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr
-              ? "ابحث واحجز رحلاتك الجوية بأسعار رخيصة في ثوانٍ مع Royal Voyage، مقارنةً بأسعار أكثر من 500 شركة طيران لضمان أفضل الأسعار. استمتع بخصومات حصرية وتذاكر مرنة ودعم عملاء على مدار الساعة. وفّر أكثر بالحجز المبكر والمرونة في تواريخ السفر ومراعاة المطارات القريبة."
-              : "Find and book cheap flights in seconds with Royal Voyage, comparing prices from 500+ airlines to secure the best fares. Enjoy exclusive discounts, flexible ticket options, and 24/7 customer support. Save more by booking early, staying flexible with travel dates, and considering nearby airports."}
-          </Text>
-          <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr
-              ? "مع منصتنا، يمكنك بسهولة مقارنة آلاف الرحلات للعثور على أفضل تذاكر الطيران لوجهتك المفضلة. لا تفوّت العروض المحدودة التي تجعل السفر في متناول الجميع أكثر من أي وقت مضى."
-              : "With our platform, you can effortlessly compare thousands of flights to find the best airline tickets and airfares for your dream destination. Don't miss out on limited-time deals that make travel more affordable than ever."}
-          </Text>
-          <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr ? "ابدأ رحلتك اليوم وسافر أكثر بتكلفة أقل مع Royal Voyage!" : "Start your journey today and travel more for less with Royal Voyage!"}
-          </Text>
+        <View style={[styles.articleSection, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
+            <Text style={[styles.articleH1, { textAlign: isAr ? "right" : "left", fontSize: isDesktop ? 22 : 18 }]}>
+              {isAr ? "ابحث عن أفضل عروض الرحلات مع Royal Voyage" : "Find the Best Deals on Flights with Royal Voyage"}
+            </Text>
+            <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr
+                ? "ابحث واحجز رحلاتك الجوية بأسعار رخيصة في ثوانٍ مع Royal Voyage، مقارنةً بأسعار أكثر من 500 شركة طيران لضمان أفضل الأسعار. استمتع بخصومات حصرية وتذاكر مرنة ودعم عملاء على مدار الساعة. وفّر أكثر بالحجز المبكر والمرونة في تواريخ السفر ومراعاة المطارات القريبة."
+                : "Find and book cheap flights in seconds with Royal Voyage, comparing prices from 500+ airlines to secure the best fares. Enjoy exclusive discounts, flexible ticket options, and 24/7 customer support. Save more by booking early, staying flexible with travel dates, and considering nearby airports."}
+            </Text>
+            <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr
+                ? "مع منصتنا، يمكنك بسهولة مقارنة آلاف الرحلات للعثور على أفضل تذاكر الطيران لوجهتك المفضلة. لا تفوّت العروض المحدودة التي تجعل السفر في متناول الجميع أكثر من أي وقت مضى."
+                : "With our platform, you can effortlessly compare thousands of flights to find the best airline tickets and airfares for your dream destination. Don't miss out on limited-time deals that make travel more affordable than ever."}
+            </Text>
+            <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr ? "ابدأ رحلتك اليوم وسافر أكثر بتكلفة أقل مع Royal Voyage!" : "Start your journey today and travel more for less with Royal Voyage!"}
+            </Text>
 
-          <Text style={[styles.articleH2, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr ? "كيف تجد أرخص الرحلات الجوية" : "How to Find the Cheapest Flights"}
-          </Text>
-          <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
-            {isAr
-              ? "إيجاد أفضل سعر للرحلة ليس أمراً معقداً. القليل من المرونة والتخطيط الذكي يمكن أن يوفر عليك الكثير في أسعار التذاكر. سواء كنت تحجز رحلة عفوية أو تخطط مسبقاً، هذه النصائح ستساعدك في إيجاد أدنى الأسعار مع Royal Voyage."
-              : "Finding the best flight price doesn't have to be complicated. A little flexibility and smart planning can help you save big on airfare. Whether you're booking a spontaneous getaway or planning months in advance, these tips will help you find the lowest prices on flights with Royal Voyage."}
-          </Text>
-          {tips.map((tip, i) => (
-            <View key={i} style={[styles.tipRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
-              <MaterialIcons name="check-circle" size={18} color="#22C55E" style={{ marginTop: 2 }} />
-              <Text style={[styles.tipText, { textAlign: isAr ? "right" : "left" }]}>
-                <Text style={{ fontWeight: "700" }}>{tip.bold}</Text>{tip.text}
-              </Text>
-            </View>
-          ))}
+            <Text style={[styles.articleH2, { textAlign: isAr ? "right" : "left", fontSize: isDesktop ? 18 : 16 }]}>
+              {isAr ? "كيف تجد أرخص الرحلات الجوية" : "How to Find the Cheapest Flights"}
+            </Text>
+            <Text style={[styles.articleP, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr
+                ? "إيجاد أفضل سعر للرحلة ليس أمراً معقداً. القليل من المرونة والتخطيط الذكي يمكن أن يوفر عليك الكثير في أسعار التذاكر. سواء كنت تحجز رحلة عفوية أو تخطط مسبقاً، هذه النصائح ستساعدك في إيجاد أدنى الأسعار مع Royal Voyage."
+                : "Finding the best flight price doesn't have to be complicated. A little flexibility and smart planning can help you save big on airfare. Whether you're booking a spontaneous getaway or planning months in advance, these tips will help you find the lowest prices on flights with Royal Voyage."}
+            </Text>
+            {tips.map((tip, i) => (
+              <View key={i} style={[styles.tipRow, { flexDirection: isAr ? "row-reverse" : "row" }]}>
+                <MaterialIcons name="check-circle" size={18} color="#22C55E" style={{ marginTop: 2 }} />
+                <Text style={[styles.tipText, { textAlign: isAr ? "right" : "left" }]}>
+                  <Text style={{ fontWeight: "700" }}>{tip.bold}</Text>{tip.text}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* ── FOOTER ── */}
         <View style={styles.footerContainer}>
-          <View style={[styles.footerTop, { flexDirection: isWeb ? (isAr ? "row-reverse" : "row") : "column" }]}>
-            {/* Products */}
-            <View style={styles.footerCol}>
-              <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{footer.products.title}</Text>
-              {footer.products.links.map((l, i) => (
-                <Pressable key={i} onPress={() => router.push(l.route as any)}>
-                  <Text style={[styles.footerLink, { textAlign: isAr ? "right" : "left" }]}>{l.label}</Text>
+          <View style={[styles.footerTop, { flexDirection: isDesktop ? (isAr ? "row-reverse" : "row") : "column", paddingHorizontal: sectionPadding }]}>
+            <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%", flexDirection: isDesktop ? (isAr ? "row-reverse" : "row") : "column", gap: 24 }}>
+              {/* Products */}
+              <View style={styles.footerCol}>
+                <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{footer.products.title}</Text>
+                {footer.products.links.map((l, i) => (
+                  <Pressable key={i} onPress={() => router.push(l.route as any)}>
+                    <Text style={[styles.footerLink, { textAlign: isAr ? "right" : "left" }]}>{l.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {/* About */}
+              <View style={styles.footerCol}>
+                <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{footer.about.title}</Text>
+                {footer.about.links.map((l, i) => (
+                  <Pressable key={i} onPress={() => router.push(l.route as any)}>
+                    <Text style={[styles.footerLink, { textAlign: isAr ? "right" : "left" }]}>{l.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {/* Support */}
+              <View style={styles.footerCol}>
+                <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{footer.support.title}</Text>
+                {footer.support.links.map((l, i) => (
+                  <Pressable key={i} onPress={() => router.push(l.route as any)}>
+                    <Text style={[styles.footerLink, { textAlign: isAr ? "right" : "left" }]}>{l.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {/* Log in */}
+              <View style={styles.footerCol}>
+                <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تسجيل الدخول" : "Log in"}</Text>
+                <Pressable onPress={() => router.push("/auth/login" as any)} style={styles.footerLoginBtn}>
+                  <MaterialIcons name="person" size={14} color="#1B6CA8" />
+                  <Text style={styles.footerLoginBtnText}>{isAr ? "حجوزاتي" : "My Bookings"}</Text>
                 </Pressable>
-              ))}
-            </View>
-            {/* About */}
-            <View style={styles.footerCol}>
-              <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{footer.about.title}</Text>
-              {footer.about.links.map((l, i) => (
-                <Pressable key={i} onPress={() => router.push(l.route as any)}>
-                  <Text style={[styles.footerLink, { textAlign: isAr ? "right" : "left" }]}>{l.label}</Text>
+                <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={[styles.footerLoginBtn, { marginTop: 8 }]}>
+                  <MaterialIcons name="language" size={14} color="#1B6CA8" />
+                  <Text style={styles.footerLoginBtnText}>{isAr ? "English" : "عربي"}</Text>
                 </Pressable>
-              ))}
-            </View>
-            {/* Support */}
-            <View style={styles.footerCol}>
-              <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{footer.support.title}</Text>
-              {footer.support.links.map((l, i) => (
-                <Pressable key={i} onPress={() => router.push(l.route as any)}>
-                  <Text style={[styles.footerLink, { textAlign: isAr ? "right" : "left" }]}>{l.label}</Text>
-                </Pressable>
-              ))}
-            </View>
-            {/* Log in */}
-            <View style={styles.footerCol}>
-              <Text style={[styles.footerColTitle, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تسجيل الدخول" : "Log in"}</Text>
-              <Pressable onPress={() => router.push("/auth/login" as any)} style={styles.footerLoginBtn}>
-                <MaterialIcons name="person" size={14} color="#1B6CA8" />
-                <Text style={styles.footerLoginBtnText}>{isAr ? "حجوزاتي" : "My Bookings"}</Text>
-              </Pressable>
-              <Pressable onPress={() => setLang(isAr ? "en" : "ar")} style={[styles.footerLoginBtn, { marginTop: 8 }]}>
-                <MaterialIcons name="language" size={14} color="#1B6CA8" />
-                <Text style={styles.footerLoginBtnText}>{isAr ? "English" : "عربي"}</Text>
-              </Pressable>
-              {/* App store badges */}
-              <View style={{ gap: 8, marginTop: 16 }}>
-                <Pressable onPress={() => Linking.openURL("https://apps.apple.com")} style={styles.storeBadge}>
-                  <MaterialIcons name="apple" size={20} color="#fff" />
-                  <View>
-                    <Text style={{ color: "#fff", fontSize: 9 }}>{isAr ? "متوفر على" : "Download on the"}</Text>
-                    <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>App Store</Text>
-                  </View>
-                </Pressable>
-                <Pressable onPress={() => Linking.openURL("https://play.google.com")} style={[styles.storeBadge, { backgroundColor: "#1a1a2e" }]}>
-                  <MaterialIcons name="play-arrow" size={20} color="#fff" />
-                  <View>
-                    <Text style={{ color: "#fff", fontSize: 9 }}>{isAr ? "احصل عليه من" : "Get it on"}</Text>
-                    <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>Google Play</Text>
-                  </View>
-                </Pressable>
+                {/* App store badges */}
+                <View style={{ gap: 8, marginTop: 16 }}>
+                  <Pressable onPress={() => Linking.openURL("https://apps.apple.com")} style={styles.storeBadge}>
+                    <MaterialIcons name="apple" size={20} color="#fff" />
+                    <View>
+                      <Text style={{ color: "#fff", fontSize: 9 }}>{isAr ? "متوفر على" : "Download on the"}</Text>
+                      <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>App Store</Text>
+                    </View>
+                  </Pressable>
+                  <Pressable onPress={() => Linking.openURL("https://play.google.com")} style={[styles.storeBadge, { backgroundColor: "#1a1a2e" }]}>
+                    <MaterialIcons name="play-arrow" size={20} color="#fff" />
+                    <View>
+                      <Text style={{ color: "#fff", fontSize: 9 }}>{isAr ? "احصل عليه من" : "Get it on"}</Text>
+                      <Text style={{ color: "#fff", fontSize: 13, fontWeight: "700" }}>Google Play</Text>
+                    </View>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </View>
@@ -579,13 +615,14 @@ export default function LandingPage() {
 // ── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   // Banner
-  topBanner: { backgroundColor: "#f0f7ff", borderBottomWidth: 1, borderBottomColor: "#d0e4f7", padding: 12, paddingHorizontal: 20, flexDirection: "row", alignItems: "flex-start", gap: 12 },
+  topBanner: { backgroundColor: "#f0f7ff", borderBottomWidth: 1, borderBottomColor: "#d0e4f7", padding: 12, paddingHorizontal: 20 },
   bannerTitle: { fontSize: 13, fontWeight: "700", color: "#1B6CA8", marginBottom: 2 },
   bannerSub: { fontSize: 12, color: "#444", lineHeight: 18 },
   bannerLink: { fontSize: 12, color: "#1B6CA8", textDecorationLine: "underline", marginTop: 4 },
   bannerClose: { padding: 4 },
   // Navbar
-  navbar: { backgroundColor: "#fff", paddingHorizontal: 20, paddingVertical: 12, justifyContent: "space-between", alignItems: "center", borderBottomWidth: 1, borderBottomColor: "#e8ecf0", zIndex: 100 },
+  navbarWrapper: { backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e8ecf0", zIndex: 100 },
+  navbar: { paddingHorizontal: 20, paddingVertical: 12, justifyContent: "space-between", alignItems: "center" },
   logoText: { fontSize: 20, fontWeight: "800", color: "#1a1a2e" },
   navLink: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6 },
   navLinkActive: { borderBottomWidth: 2, borderBottomColor: "#1B6CA8" },
@@ -597,13 +634,13 @@ const styles = StyleSheet.create({
   bookingsBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 6, borderWidth: 1.5, borderColor: "#1B6CA8" },
   bookingsBtnText: { fontSize: 13, color: "#1B6CA8", fontWeight: "600" },
   // Hero
-  heroContainer: { position: "relative", minHeight: isWeb ? 400 : 320, justifyContent: "center", alignItems: "center" },
+  heroContainer: { position: "relative", justifyContent: "center", alignItems: "center" },
   heroBgImage: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" },
   heroOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,30,80,0.55)" },
-  heroContent: { zIndex: 1, padding: 24, alignItems: "center", width: "100%", maxWidth: 800, alignSelf: "center" },
-  heroTitle: { fontSize: isWeb ? 32 : 22, fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 20, lineHeight: isWeb ? 42 : 32 },
+  heroContent: { zIndex: 1, padding: 24, alignItems: "center", width: "100%", alignSelf: "center" },
+  heroTitle: { fontWeight: "800", color: "#fff", textAlign: "center", marginBottom: 20 },
   // Search Card
-  searchCard: { backgroundColor: "#fff", borderRadius: 12, padding: 20, width: "100%", maxWidth: 760, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
+  searchCard: { backgroundColor: "#fff", borderRadius: 12, padding: 20, alignSelf: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 12, elevation: 8 },
   searchTabs: { marginBottom: 16, gap: 4 },
   searchTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 6 },
   searchTabActive: { backgroundColor: "#e8f0fe" },
@@ -630,23 +667,23 @@ const styles = StyleSheet.create({
   dropdown: { position: "absolute", top: 44, left: 0, right: 0, backgroundColor: "#fff", borderWidth: 1, borderColor: "#d0d8e4", borderRadius: 8, zIndex: 999, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 8 },
   dropdownItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#f0f4f8" },
   // Features
-  featuresSection: { padding: 32, gap: 24, backgroundColor: "#fff" },
+  featuresSection: { paddingVertical: 32, backgroundColor: "#fff" },
   featureCol: { gap: 4 },
   featureTitle: { fontSize: 17, fontWeight: "700", color: "#1a1a2e" },
   featureDesc: { fontSize: 14, color: "#555", lineHeight: 22 },
   featureLink: { fontSize: 13, color: "#1B6CA8", textDecorationLine: "underline", fontWeight: "600" },
   // Article
-  articleSection: { padding: 32, backgroundColor: "#fff" },
-  articleH1: { fontSize: isWeb ? 22 : 18, fontWeight: "700", color: "#1a1a2e", marginBottom: 12, lineHeight: 30 },
-  articleH2: { fontSize: isWeb ? 18 : 16, fontWeight: "700", color: "#1a1a2e", marginTop: 24, marginBottom: 10, lineHeight: 26 },
+  articleSection: { paddingVertical: 32, backgroundColor: "#fff" },
+  articleH1: { fontWeight: "700", color: "#1a1a2e", marginBottom: 12, lineHeight: 30 },
+  articleH2: { fontWeight: "700", color: "#1a1a2e", marginTop: 24, marginBottom: 10, lineHeight: 26 },
   articleP: { fontSize: 14, color: "#444", lineHeight: 24, marginBottom: 10 },
   tipRow: { gap: 10, marginBottom: 8, alignItems: "flex-start" },
   tipCheck: { color: "#1B6CA8", fontSize: 14, fontWeight: "700", marginTop: 2 },
   tipText: { flex: 1, fontSize: 14, color: "#444", lineHeight: 22 },
   // Footer
   footerContainer: { backgroundColor: "#f0f4f8", borderTopWidth: 1, borderTopColor: "#d0d8e4" },
-  footerTop: { padding: 32, gap: 24, flexWrap: "wrap" },
-  footerCol: { minWidth: 140, flex: isWeb ? 1 : undefined },
+  footerTop: { paddingVertical: 32, gap: 24 },
+  footerCol: { minWidth: 140, flex: 1 },
   footerColTitle: { fontSize: 14, fontWeight: "700", color: "#1a1a2e", marginBottom: 12 },
   footerLink: { fontSize: 13, color: "#1B6CA8", textDecorationLine: "underline", marginBottom: 8, lineHeight: 20 },
   footerLoginBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, borderWidth: 1.5, borderColor: "#1B6CA8", backgroundColor: "#fff", alignSelf: "flex-start" },
