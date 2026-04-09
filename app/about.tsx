@@ -429,6 +429,44 @@ export default function AboutScreen() {
             ))}
           </View>
 
+          {/* Brand Values */}
+          <Text style={[styles.servicesTitle, { color: NAVY, marginTop: 8 }]}>
+            {lang === "ar" ? "قيمنا" : lang === "fr" ? "Nos Valeurs" : "Our Values"}
+          </Text>
+          <View style={{ gap: 10 }}>
+            {[
+              { icon: "gem", color: GOLD, title: lang === "ar" ? "الجودة" : lang === "fr" ? "Qualit\u00e9" : "Quality", desc: lang === "ar" ? "نلتزم بأعلى معايير الجودة في كل حجز وخدمة." : lang === "fr" ? "Nous maintenons les plus hauts standards de qualit\u00e9 dans chaque r\u00e9servation." : "We maintain the highest quality standards in every booking and service." },
+              { icon: "shield-alt", color: "#22C55E", title: lang === "ar" ? "الأمانة" : lang === "fr" ? "Confiance" : "Trust", desc: lang === "ar" ? "شفافية كاملة في الأسعار والرسوم وسياسات الإلغاء." : lang === "fr" ? "Transparence totale sur les prix, frais et politiques d'annulation." : "Full transparency on prices, fees, and cancellation policies." },
+              { icon: "bolt", color: "#F59E0B", title: lang === "ar" ? "السرعة" : lang === "fr" ? "Rapidit\u00e9" : "Speed", desc: lang === "ar" ? "تذاكر إلكترونية فورية تصلك خلال دقائق من إتمام الحجز." : lang === "fr" ? "Billets instantan\u00e9s envoy\u00e9s en quelques minutes apr\u00e8s la r\u00e9servation." : "Instant e-tickets delivered within minutes of completing your booking." },
+              { icon: "heart", color: "#EF4444", title: lang === "ar" ? "العناية بالعميل" : lang === "fr" ? "Service Client" : "Customer Care", desc: lang === "ar" ? "فريقنا متاح 6 أيام في الأسبوع لمساعدتك بالعربية والفرنسية والإنجليزية." : lang === "fr" ? "Notre \u00e9quipe est disponible 6 jours/semaine en arabe, fran\u00e7ais et anglais." : "Our team is available 6 days/week in Arabic, French, and English." },
+            ].map((v, i) => (
+              <View key={i} style={[styles.valueCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: isRTL ? "row-reverse" : "row" }]}>
+                <View style={[styles.valueIcon, { backgroundColor: v.color + "18" }]}>
+                  <FontAwesome5 name={v.icon as any} size={18} color={v.color} />
+                </View>
+                <View style={{ flex: 1, alignItems: isRTL ? "flex-end" : "flex-start" }}>
+                  <Text style={[styles.valueTitle, { color: NAVY }]}>{v.title}</Text>
+                  <Text style={[styles.valueDesc, { color: colors.foreground }]}>{v.desc}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Stats */}
+          <View style={[styles.statsRow, { backgroundColor: NAVY }]}>
+            {[
+              { num: "+500", label: lang === "ar" ? "شركة طيران" : lang === "fr" ? "Compagnies" : "Airlines" },
+              { num: "+50K", label: lang === "ar" ? "رحلة محجوزة" : lang === "fr" ? "R\u00e9servations" : "Bookings" },
+              { num: "4.8★", label: lang === "ar" ? "تقييم العملاء" : lang === "fr" ? "Note Client" : "Rating" },
+              { num: "2023", label: lang === "ar" ? "تأسيس الشركة" : lang === "fr" ? "Fond\u00e9e" : "Founded" },
+            ].map((s, i) => (
+              <View key={i} style={styles.statBlock}>
+                <Text style={styles.statBlockNum}>{s.num}</Text>
+                <Text style={styles.statBlockLabel}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+
           {/* Footer */}
           <Text style={[styles.footer, { color: colors.muted }]}>{c.disclaimer}</Text>
         </View>
@@ -611,4 +649,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   airlineItem: { width: "30%", flexGrow: 1, alignItems: "center", padding: 8 },
+  // Brand Values
+  valueCard: { padding: 14, borderRadius: 12, borderWidth: 1, alignItems: "center", gap: 12 },
+  valueIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
+  valueTitle: { fontSize: 14, fontWeight: "700", marginBottom: 2 },
+  valueDesc: { fontSize: 12, lineHeight: 18 },
+  // Stats Row
+  statsRow: { borderRadius: 14, padding: 20, flexDirection: "row", justifyContent: "space-around", flexWrap: "wrap", gap: 12 },
+  statBlock: { alignItems: "center", minWidth: 60 },
+  statBlockNum: { fontSize: 22, fontWeight: "900", color: GOLD },
+  statBlockLabel: { fontSize: 11, color: "rgba(255,255,255,0.75)", marginTop: 2, textAlign: "center" },
 });

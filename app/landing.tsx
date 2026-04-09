@@ -506,6 +506,24 @@ export default function LandingPage() {
           </View>
         </View>
 
+        {/* ── STATS STRIP ── */}
+        <View style={[styles.statsStrip, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%", flexDirection: isAr ? "row-reverse" : "row", justifyContent: "space-around", flexWrap: "wrap", gap: 16 }}>
+            {[
+              { icon: "flight", num: isAr ? "+500" : "500+", label: isAr ? "شركة طيران" : "Airlines" },
+              { icon: "confirmation-number", num: isAr ? "+50,000" : "50,000+", label: isAr ? "رحلة محجوزة" : "Flights Booked" },
+              { icon: "star", num: "4.8", label: isAr ? "تقييم العملاء" : "Customer Rating" },
+              { icon: "support-agent", num: "24/7", label: isAr ? "دعم متواصل" : "Support" },
+            ].map((stat, i) => (
+              <View key={i} style={styles.statItem}>
+                <MaterialIcons name={stat.icon as any} size={28} color="#1B6CA8" />
+                <Text style={styles.statNum}>{stat.num}</Text>
+                <Text style={styles.statLabel}>{stat.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
         {/* ── POPULAR DESTINATIONS ── */}
         <View style={[styles.destSection, { paddingHorizontal: sectionPadding }]}>
           <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
@@ -1035,6 +1053,11 @@ const styles = StyleSheet.create({
   // WhatsApp FAB
   whatsappFab: { position: "absolute", bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: "#25D366", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
   duffelCard: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1.5, borderColor: "#1a1a2e", paddingHorizontal: 24, paddingVertical: 16, alignItems: "center", minWidth: 160, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
+  // Stats Strip
+  statsStrip: { paddingVertical: 32, backgroundColor: "#f0f7ff", borderTopWidth: 1, borderTopColor: "#d8eaf7", borderBottomWidth: 1, borderBottomColor: "#d8eaf7" },
+  statItem: { alignItems: "center", gap: 6, minWidth: 100 },
+  statNum: { fontSize: 26, fontWeight: "900", color: "#1B6CA8" },
+  statLabel: { fontSize: 13, color: "#555", fontWeight: "500" },
   // Promo Popup
   popupOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", alignItems: "center", zIndex: 9999 },
   popupCard: { backgroundColor: "#fff", borderRadius: 20, padding: 28, width: "90%", maxWidth: 420, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 20 },
