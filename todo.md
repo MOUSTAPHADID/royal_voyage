@@ -1551,3 +1551,6 @@
 - [x] إصلاح مسار landing.html في الخادم (كان يبحث في dist/ بدلاً من web-dist/)
 - [x] إضافة royalvoyage-dcsedylm.manus.space إلى CORS المسموح بها
 - [x] إضافة نمط manus.space إلى ALLOWED_ORIGIN_PATTERNS
+
+## Google Analytics
+- [x] إضافة Google Analytics (G-L9C4EJXPG6) إلى الموقع
