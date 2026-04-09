@@ -205,8 +205,37 @@ export default function LandingPage() {
   const [hotelGuests, setHotelGuests] = useState(2);
   const [searchError, setSearchError] = useState("");
   const [showBanner, setShowBanner] = useState(true);
+  const [showPromoPopup, setShowPromoPopup] = useState(false);
+  const [promoEmail, setPromoEmail] = useState("");
+  const [promoSubmitted, setPromoSubmitted] = useState(false);
+  const [promoError, setPromoError] = useState("");
 
   const isAr = lang === "ar";
+
+  // Show promo popup after 3s for first-time visitors
+  useEffect(() => {
+    if (!isWeb) return;
+    const dismissed = sessionStorage.getItem("rv_promo_dismissed");
+    if (dismissed) return;
+    const timer = setTimeout(() => setShowPromoPopup(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handlePromoSubmit = () => {
+    if (!promoEmail || !promoEmail.includes("@")) {
+      setPromoError(isAr ? "يرجى إدخال بريد إلكتروني صحيح" : "Please enter a valid email");
+      return;
+    }
+    setPromoError("");
+    setPromoSubmitted(true);
+    if (isWeb) sessionStorage.setItem("rv_promo_dismissed", "1");
+    setTimeout(() => setShowPromoPopup(false), 2500);
+  };
+
+  const handlePromoClose = () => {
+    setShowPromoPopup(false);
+    if (isWeb) sessionStorage.setItem("rv_promo_dismissed", "1");
+  };
 
   useEffect(() => {
     const today = new Date();
@@ -807,6 +836,76 @@ export default function LandingPage() {
       >
         <MaterialIcons name="chat" size={26} color="#fff" />
       </Pressable>
+
+      {/* ── PROMO POPUP ── */}
+      {showPromoPopup && (
+        <View style={styles.popupOverlay}>
+          <View style={[styles.popupCard, { direction: isAr ? "rtl" : "ltr" } as any]}>
+            {/* Close button */}
+            <Pressable onPress={handlePromoClose} style={styles.popupClose}>
+              <MaterialIcons name="close" size={20} color="#888" />
+            </Pressable>
+
+            {/* Badge */}
+            <View style={styles.popupBadge}>
+              <Text style={styles.popupBadgeText}>{isAr ? "عرض حصري" : "Exclusive Offer"}</Text>
+            </View>
+
+            {/* Discount circle */}
+            <View style={styles.popupDiscountCircle}>
+              <Text style={styles.popupDiscountNum}>10%</Text>
+              <Text style={styles.popupDiscountLabel}>{isAr ? "خصم" : "OFF"}</Text>
+            </View>
+
+            {/* Title */}
+            <Text style={[styles.popupTitle, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr ? "وفّر 10% على أول حجز!" : "Save 10% on Your First Booking!"}
+            </Text>
+            <Text style={[styles.popupSubtitle, { textAlign: isAr ? "right" : "left" }]}>
+              {isAr
+                ? "أدخل بريدك الإلكتروني واحصل على كود خصم حصري لأول رحلة مع Royal Voyage."
+                : "Enter your email and get an exclusive discount code for your first trip with Royal Voyage."}
+            </Text>
+
+            {promoSubmitted ? (
+              <View style={styles.popupSuccess}>
+                <MaterialIcons name="check-circle" size={32} color="#22C55E" />
+                <Text style={[styles.popupSuccessText, { textAlign: isAr ? "right" : "left" }]}>
+                  {isAr ? "شكراً! تم إرسال كود الخصم إلى بريدك." : "Thank you! Your discount code has been sent to your email."}
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View style={styles.popupInputRow}>
+                  <TextInput
+                    value={promoEmail}
+                    onChangeText={setPromoEmail}
+                    placeholder={isAr ? "بريدك الإلكتروني" : "Your email address"}
+                    placeholderTextColor="#aaa"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    style={[styles.popupInput, { textAlign: isAr ? "right" : "left" }]}
+                    returnKeyType="done"
+                    onSubmitEditing={handlePromoSubmit}
+                  />
+                </View>
+                {promoError ? <Text style={styles.popupError}>{promoError}</Text> : null}
+                <Pressable
+                  onPress={handlePromoSubmit}
+                  style={({ pressed }) => [styles.popupBtn, { opacity: pressed ? 0.88 : 1 }]}
+                >
+                  <Text style={styles.popupBtnText}>
+                    {isAr ? "احصل على الخصم" : "Get My Discount"}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={handlePromoClose} style={{ marginTop: 10, alignItems: "center" }}>
+                  <Text style={styles.popupSkip}>{isAr ? "لا شكراً، سأدفع السعر الكامل" : "No thanks, I'll pay full price"}</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -936,4 +1035,23 @@ const styles = StyleSheet.create({
   // WhatsApp FAB
   whatsappFab: { position: "absolute", bottom: 24, right: 20, width: 54, height: 54, borderRadius: 27, backgroundColor: "#25D366", justifyContent: "center", alignItems: "center", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 8, elevation: 8 },
   duffelCard: { backgroundColor: "#fff", borderRadius: 12, borderWidth: 1.5, borderColor: "#1a1a2e", paddingHorizontal: 24, paddingVertical: 16, alignItems: "center", minWidth: 160, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 3 },
+  // Promo Popup
+  popupOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "center", alignItems: "center", zIndex: 9999 },
+  popupCard: { backgroundColor: "#fff", borderRadius: 20, padding: 28, width: "90%", maxWidth: 420, shadowColor: "#000", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.2, shadowRadius: 20, elevation: 20 },
+  popupClose: { position: "absolute", top: 14, right: 14, padding: 6, zIndex: 1 },
+  popupBadge: { backgroundColor: "#e53e3e", paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20, alignSelf: "flex-start", marginBottom: 16 },
+  popupBadgeText: { fontSize: 11, fontWeight: "700", color: "#fff", letterSpacing: 0.5, textTransform: "uppercase" },
+  popupDiscountCircle: { width: 90, height: 90, borderRadius: 45, backgroundColor: "#1B6CA8", justifyContent: "center", alignItems: "center", alignSelf: "center", marginBottom: 18, shadowColor: "#1B6CA8", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 6 },
+  popupDiscountNum: { fontSize: 28, fontWeight: "900", color: "#fff", lineHeight: 32 },
+  popupDiscountLabel: { fontSize: 13, fontWeight: "700", color: "rgba(255,255,255,0.85)", marginTop: 2 },
+  popupTitle: { fontSize: 20, fontWeight: "800", color: "#1a1a2e", marginBottom: 8, lineHeight: 28 },
+  popupSubtitle: { fontSize: 14, color: "#555", lineHeight: 22, marginBottom: 20 },
+  popupInputRow: { marginBottom: 8 },
+  popupInput: { borderWidth: 1.5, borderColor: "#d0d8e4", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: "#1a1a2e", backgroundColor: "#f8faff" },
+  popupError: { fontSize: 12, color: "#e53e3e", marginBottom: 8 },
+  popupBtn: { backgroundColor: "#1B6CA8", borderRadius: 10, paddingVertical: 14, alignItems: "center", marginTop: 4 },
+  popupBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
+  popupSkip: { fontSize: 12, color: "#aaa", textDecorationLine: "underline" },
+  popupSuccess: { alignItems: "center", gap: 12, paddingVertical: 16 },
+  popupSuccessText: { fontSize: 15, color: "#22C55E", fontWeight: "700", lineHeight: 22 },
 });
