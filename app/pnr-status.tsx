@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -18,8 +18,24 @@ import { useTranslation } from "@/lib/i18n";
 import { trpc } from "@/lib/trpc";
 import { useApp } from "@/lib/app-context";
 import * as Haptics from "expo-haptics";
+import * as Notifications from "expo-notifications";
 
 type OrderStatus = "CONFIRMED" | "TICKETED" | "CANCELLED" | "PENDING" | "UNKNOWN";
+
+// Ticket lifecycle steps in order
+const TICKET_STEPS = [
+  { key: "PENDING",   label: "في الانتظار",     icon: "clock.fill" as const },
+  { key: "CONFIRMED", label: "مؤكد",            icon: "checkmark.circle.fill" as const },
+  { key: "TICKETED",  label: "تم إصدار التذكرة", icon: "ticket.fill" as const },
+  { key: "ISSUED",    label: "تم التسليم",       icon: "paperplane.fill" as const },
+];
+
+function getStepIndex(status: string): number {
+  const s = status.toUpperCase();
+  if (s === "CANCELLED") return -1;
+  const idx = TICKET_STEPS.findIndex(st => st.key === s);
+  return idx === -1 ? 0 : idx;
+}
 
 function getStatusColor(status: string, colors: any) {
   switch (status.toUpperCase()) {
@@ -97,11 +113,32 @@ export default function PnrStatusScreen() {
   const [cancelling, setCancelling] = useState(false);
   const [orderData, setOrderData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const prevStatusRef = useRef<string | null>(null);
+  const autoRefreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const utils = trpc.useUtils();
 
   const cancelMutation = trpc.duffel.cancelFlightOrder.useMutation();
   const sendCancellationMutation = trpc.email.sendCancellation.useMutation();
+
+  // Send local notification when ticket status changes to TICKETED
+  const sendTicketIssuedNotification = useCallback(async (pnr: string) => {
+    try {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") return;
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "تم إصدار تذكرتك!",
+          body: `PNR: ${pnr} — تذكرتك جاهزة. تحقق من بريدك الإلكتروني.`,
+          sound: true,
+        },
+        trigger: null,
+      });
+    } catch (e) {
+      console.warn("[PNR Status] Failed to send notification:", e);
+    }
+  }, []);
 
   const lookupPnr = useCallback(async () => {
     if (!orderId.trim()) {
@@ -209,6 +246,42 @@ export default function PnrStatusScreen() {
     );
   }, [orderData, params.bookingId, bookings, updateBookingStatus, sendCancellationMutation]);
 
+  // Auto-refresh every 60 seconds when enabled
+  useEffect(() => {
+    if (autoRefresh && orderId.trim()) {
+      autoRefreshTimerRef.current = setInterval(() => {
+        lookupPnr();
+      }, 60000);
+    } else {
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+        autoRefreshTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (autoRefreshTimerRef.current) {
+        clearInterval(autoRefreshTimerRef.current);
+        autoRefreshTimerRef.current = null;
+      }
+    };
+  }, [autoRefresh, orderId, lookupPnr]);
+
+  // Watch for status change → TICKETED/ISSUED and send notification
+  useEffect(() => {
+    if (!orderData?.status) return;
+    const newStatus = orderData.status.toUpperCase();
+    const prevStatus = prevStatusRef.current;
+    if (prevStatus && prevStatus !== newStatus) {
+      if (newStatus === "TICKETED" || newStatus === "ISSUED") {
+        sendTicketIssuedNotification(orderData.pnr || "");
+        if (Platform.OS !== "web") {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      }
+    }
+    prevStatusRef.current = newStatus;
+  }, [orderData?.status, orderData?.pnr, sendTicketIssuedNotification]);
+
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -223,6 +296,20 @@ export default function PnrStatusScreen() {
           <Text style={[styles.title, { color: colors.foreground }]}>حالة الحجز</Text>
           <View style={{ width: 40 }} />
         </View>
+
+        {/* Auto-refresh toggle */}
+        {orderId.trim() && orderData && (
+          <Pressable
+            onPress={() => setAutoRefresh(v => !v)}
+            style={({ pressed }) => [styles.autoRefreshRow, pressed && { opacity: 0.7 }]}
+          >
+            <View style={[styles.autoRefreshDot, { backgroundColor: autoRefresh ? colors.success : colors.muted }]} />
+            <Text style={[styles.autoRefreshText, { color: autoRefresh ? colors.success : colors.muted }]}>
+              {autoRefresh ? "تحديث تلقائي كل دقيقة (مفعّل)" : "تفعيل التحديث التلقائي"}
+            </Text>
+            <IconSymbol name={autoRefresh ? "checkmark.circle.fill" : "checkmark.circle.fill"} size={20} color={autoRefresh ? colors.success : colors.border} />
+          </Pressable>
+        )}
 
         {/* Search Section */}
         <View style={[styles.searchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -291,6 +378,37 @@ export default function PnrStatusScreen() {
         {/* Order Data */}
         {orderData && !loading && (
           <View style={styles.resultContainer}>
+            {/* Ticket Progress Steps */}
+            {orderData.status?.toUpperCase() !== "CANCELLED" && (
+              <View style={[styles.stepsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Text style={[styles.stepsTitle, { color: colors.foreground }]}>مسار التذكرة</Text>
+                <View style={styles.stepsRow}>
+                  {TICKET_STEPS.map((step, idx) => {
+                    const currentIdx = getStepIndex(orderData.status || "PENDING");
+                    const done = idx <= currentIdx;
+                    const active = idx === currentIdx;
+                    return (
+                      <View key={step.key} style={styles.stepItem}>
+                        <View style={[
+                          styles.stepCircle,
+                          { backgroundColor: done ? colors.primary : colors.border },
+                          active && { borderWidth: 3, borderColor: colors.primary + "60" },
+                        ]}>
+                          <IconSymbol name={step.icon} size={14} color={done ? "#fff" : colors.muted} />
+                        </View>
+                        {idx < TICKET_STEPS.length - 1 && (
+                          <View style={[styles.stepLine, { backgroundColor: done && idx < currentIdx ? colors.primary : colors.border }]} />
+                        )}
+                        <Text style={[styles.stepLabel, { color: done ? colors.primary : colors.muted }]} numberOfLines={2}>
+                          {step.label}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
             {/* Status Badge */}
             <View style={[styles.statusCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={styles.statusRow}>
@@ -697,4 +815,54 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: "center", paddingVertical: 60, gap: 12, paddingHorizontal: 20 },
   emptyTitle: { fontSize: 18, fontWeight: "700" },
   emptyDesc: { fontSize: 14, textAlign: "center", lineHeight: 22 },
+  autoRefreshRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    marginBottom: 8,
+  },
+  autoRefreshDot: { width: 8, height: 8, borderRadius: 4 },
+  autoRefreshText: { flex: 1, fontSize: 13, fontWeight: "500" },
+  stepsCard: {
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    marginBottom: 0,
+  },
+  stepsTitle: { fontSize: 14, fontWeight: "700", marginBottom: 14 },
+  stepsRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+  stepItem: {
+    flex: 1,
+    alignItems: "center",
+    position: "relative",
+  },
+  stepCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1,
+  },
+  stepLine: {
+    position: "absolute",
+    top: 15,
+    left: "50%",
+    right: "-50%",
+    height: 2,
+    zIndex: 0,
+  },
+  stepLabel: {
+    fontSize: 10,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 14,
+  },
 });

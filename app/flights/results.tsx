@@ -388,40 +388,69 @@ export default function FlightResultsScreen() {
           </View>
         </View>
         <View style={styles.priceBox}>
+          {/* السعر الإجمالي */}
           <Text style={[styles.price, { color: colors.primary }]}>
             {fmt(flightTotal)}
           </Text>
           <Text style={[styles.perPerson, { color: colors.muted }]}>إجمالي</Text>
-          {totalPassengers > 1 && (
-            <Text style={[styles.perPersonDetail, { color: colors.muted }]}>
-              {fmt(perPerson)} / شخص
-            </Text>
-          )}
           {/* تفاصيل السعر حسب نوع المسافر */}
           {(() => {
             const adultCount = parseInt(params.passengers || "1", 10);
             const childCount = parseInt(params.children || "0", 10);
             const infantCount = parseInt(params.infants || "0", 10);
-            if (childCount === 0 && infantCount === 0) return null;
-            const adultPrice = Math.round(flightTotal / Math.max(totalPassengers, 1));
+            // سعر البالغ = السعر الأساسي للرحلة (قبل ضرب في عدد المسافرين)
+            // Amadeus يُرجع السعر الإجمالي لجميع المسافرين
+            // نحسب سعر البالغ الواحد بقسمة الإجمالي على عدد المسافرين المكافئ
+            // (طفل = 0.75 بالغ، رضيع = 0.10 بالغ)
+            const equivalentAdults = adultCount + childCount * 0.75 + infantCount * 0.10;
+            const adultPrice = Math.round(flightTotal / Math.max(equivalentAdults, 1));
             const childPrice = Math.round(adultPrice * 0.75);
             const infantPrice = Math.round(adultPrice * 0.10);
-            return (
-              <View style={{ marginTop: 2, gap: 1 }}>
-                {adultCount > 0 && (
-                  <Text style={{ fontSize: 9, color: colors.muted }}>
-                    بالغ: {adultCount} × {fmt(adultPrice)}
+            if (childCount === 0 && infantCount === 0) {
+              // بالغون فقط — عرض سعر البالغ الواحد
+              if (adultCount > 1) {
+                return (
+                  <Text style={[styles.perPersonDetail, { color: colors.muted }]}>
+                    {fmt(adultPrice)} / بالغ
                   </Text>
+                );
+              }
+              return null;
+            }
+            return (
+              <View style={{ marginTop: 3, gap: 2, alignItems: "flex-end" }}>
+                {adultCount > 0 && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                    <Text style={{ fontSize: 10, color: colors.muted }}>
+                      {adultCount}×
+                    </Text>
+                    <Text style={{ fontSize: 10, color: colors.foreground, fontWeight: "600" }}>
+                      {fmt(adultPrice)}
+                    </Text>
+                    <Text style={{ fontSize: 9, color: colors.muted }}>بالغ</Text>
+                  </View>
                 )}
                 {childCount > 0 && (
-                  <Text style={{ fontSize: 9, color: colors.muted }}>
-                    طفل: {childCount} × {fmt(childPrice)}
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                    <Text style={{ fontSize: 10, color: colors.muted }}>
+                      {childCount}×
+                    </Text>
+                    <Text style={{ fontSize: 10, color: colors.warning, fontWeight: "600" }}>
+                      {fmt(childPrice)}
+                    </Text>
+                    <Text style={{ fontSize: 9, color: colors.muted }}>طفل</Text>
+                  </View>
                 )}
                 {infantCount > 0 && (
-                  <Text style={{ fontSize: 9, color: colors.muted }}>
-                    رضيع: {infantCount} × {fmt(infantPrice)}
-                  </Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                    <Text style={{ fontSize: 10, color: colors.muted }}>
+                      {infantCount}×
+                    </Text>
+                    <Text style={{ fontSize: 10, color: colors.muted, fontWeight: "600" }}>
+                      {fmt(infantPrice)}
+                    </Text>
+                    <Text style={{ fontSize: 9, color: colors.muted }}>رضيع</Text>
+                  </View>
                 )}
               </View>
             );
@@ -1146,7 +1175,7 @@ const styles = StyleSheet.create({
   },
   airlineName: { fontSize: 15, fontWeight: "600" },
   flightNumber: { fontSize: 12, marginTop: 2 },
-  priceBox: { alignItems: "flex-end", flexShrink: 0, minWidth: 90 },
+  priceBox: { alignItems: "flex-end", flexShrink: 0, minWidth: 100 },
   price: { fontSize: 18, fontWeight: "700" },
   perPerson: { fontSize: 11 },
   perPersonDetail: { fontSize: 10, marginTop: 1 },
