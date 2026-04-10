@@ -32,7 +32,7 @@ import {
   getDuffelStatus,
   getCachedOffer,
 } from "./duffel";
-import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail, sendEmployeeWelcomeEmail, sendDocumentEmail } from "./email";
+import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail, sendEmployeeWelcomeEmail, sendDocumentEmail, sendPaymentRejectionEmail } from "./email";
 import {
   getWebhookLog,
   getWebhookNotifications,
@@ -72,6 +72,7 @@ import {
   upsertBookingContact,
   deleteBookingContact,
   confirmBookingPayment,
+  rejectBookingPayment,
   getTopUpRequests,
   getTopUpRequestsByAccount,
   getTopUpRequestById,
@@ -2079,6 +2080,47 @@ export const appRouter = router({
               title: "✅ Payment Confirmed",
               body: `Your booking ${booking.bookingRef} has been confirmed.`,
               data: { type: "payment_confirmed", bookingRef: booking.bookingRef },
+            }),
+          }).catch(() => {});
+        }
+
+        return { success: true, booking };
+      }),
+
+    rejectPayment: adminProcedure
+      .input(z.object({
+        duffelOrderId: z.string(),
+        rejectionReason: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const booking = await rejectBookingPayment(input.duffelOrderId, input.rejectionReason);
+        if (!booking) throw new Error("Booking not found");
+
+        // Send payment rejection email to passenger
+        if (booking.passengerEmail) {
+          const emailSent = await sendPaymentRejectionEmail({
+            passengerName: booking.passengerName,
+            passengerEmail: booking.passengerEmail,
+            bookingRef: booking.bookingRef,
+            route: booking.routeSummary ?? undefined,
+            totalAmount: booking.totalPrice ? parseFloat(booking.totalPrice).toLocaleString() : undefined,
+            currency: booking.currency ?? "MRU",
+            rejectionReason: input.rejectionReason,
+          });
+          console.log(`[Admin] Payment rejection email sent: ${emailSent}`);
+        }
+
+        // Send push notification to customer if token available
+        if (booking.customerPushToken) {
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: booking.customerPushToken,
+              sound: "default",
+              title: "❌ Payment Rejected",
+              body: `Your payment for booking ${booking.bookingRef} has been rejected.${input.rejectionReason ? " Reason: " + input.rejectionReason : ""}`,
+              data: { type: "payment_rejected", bookingRef: booking.bookingRef },
             }),
           }).catch(() => {});
         }

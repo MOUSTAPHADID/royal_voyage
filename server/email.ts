@@ -890,3 +890,77 @@ export async function sendDocumentEmail(data: SendDocumentEmailData): Promise<bo
     return false;
   }
 }
+
+// ─── Payment Rejection Email ─────────────────────────────────────────────────
+export type PaymentRejectionData = {
+  passengerEmail: string;
+  passengerName: string;
+  bookingRef: string;
+  route?: string;
+  totalAmount?: string;
+  currency?: string;
+  rejectionReason?: string;
+};
+
+function paymentRejectionHtml(data: PaymentRejectionData): string {
+  const content = `
+    <div class="body">
+      <h2 style="color: #EF4444; margin-bottom: 8px;">❌ Payment Rejected</h2>
+      <p style="color: #687076; margin-bottom: 24px;">
+        Dear ${data.passengerName}, unfortunately your payment for booking <strong>${data.bookingRef}</strong> has been rejected.
+      </p>
+      <div style="background: #FEF2F2; border: 2px solid #EF4444; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 24px;">
+        <p style="color: #EF4444; font-size: 14px; font-weight: 700; margin-bottom: 4px;">Payment Status</p>
+        <p style="font-size: 22px; font-weight: 800; color: #EF4444; margin: 0;">❌ Rejected</p>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px;">
+        <tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Booking Reference</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.bookingRef}</td>
+        </tr>
+        ${data.route ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Route</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.route}</td>
+        </tr>` : ""}
+        ${data.totalAmount ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Amount</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; text-align: right;">${data.currency ?? "MRU"} ${data.totalAmount}</td>
+        </tr>` : ""}
+        ${data.rejectionReason ? `<tr>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; color: #687076;">Reason</td>
+          <td style="padding: 12px 16px; border-bottom: 1px solid #E5E7EB; font-weight: 700; color: #EF4444; text-align: right;">${data.rejectionReason}</td>
+        </tr>` : ""}
+      </table>
+      <p style="color: #687076; font-size: 14px;">
+        Please contact us to resolve this issue. You can reach us at <strong>${COMPANY.phone}</strong> or <strong>${COMPANY.email}</strong>.
+      </p>
+    </div>
+    <div class="footer">
+      <p>${COMPANY.name} — ${COMPANY.address}</p>
+      <p>${COMPANY.phone} | ${COMPANY.email}</p>
+    </div>
+  `;
+  return baseLayout(content, `Payment Rejected — ${data.bookingRef}`);
+}
+
+export async function sendPaymentRejectionEmail(data: PaymentRejectionData): Promise<boolean> {
+  const transporter = getTransporter();
+  const html = paymentRejectionHtml(data);
+  if (!transporter) {
+    console.log(`[Email] Would send payment rejection email to: ${data.passengerEmail}`);
+    return true;
+  }
+  try {
+    await transporter.sendMail({
+      from: `"Royal Voyage ✈" <${process.env.EMAIL_USER}>`,
+      to: data.passengerEmail,
+      subject: `❌ Payment Rejected — ${data.bookingRef} | Royal Voyage`,
+      html,
+    });
+    console.log(`[Email] ✅ Payment rejection email sent to ${data.passengerEmail}`);
+    return true;
+  } catch (error) {
+    console.error("[Email] ❌ Failed to send payment rejection email:", error);
+    return false;
+  }
+}

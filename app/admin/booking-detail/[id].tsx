@@ -102,6 +102,8 @@ export default function BookingDetailScreen() {
   const [ticketStatus, setTicketStatus] = useState<string | null>(null);
   const [checkingTicket, setCheckingTicket] = useState(false);
   const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+  const [showRejectReason, setShowRejectReason] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const { data: bookingsData, isLoading, refetch } = trpc.bookingContacts.list.useQuery();
   const updatePnrMutation = trpc.bookingContacts.updatePnr.useMutation({
@@ -121,6 +123,15 @@ export default function BookingDetailScreen() {
       setShowPaymentMethods(false);
       refetch();
       Alert.alert("✅", language === "ar" ? "تم تأكيد الدفع وإرسال بريد التأكيد للعميل" : "Paiement confirmé et email envoyé au client");
+    },
+    onError: (err) => Alert.alert("❌", err.message),
+  });
+  const rejectPaymentMutation = trpc.bookingContacts.rejectPayment.useMutation({
+    onSuccess: () => {
+      setShowRejectReason(false);
+      setRejectReason("");
+      refetch();
+      Alert.alert("✅", language === "ar" ? "تم رفض الدفع وإرسال إشعار للعميل" : "Paiement rejeté et notification envoyée au client");
     },
     onError: (err) => Alert.alert("❌", err.message),
   });
@@ -223,6 +234,7 @@ export default function BookingDetailScreen() {
 
   const isConfirmed = !!booking.pnr;
   const isPaymentConfirmed = (booking as any).paymentStatus === "confirmed";
+  const isPaymentRejected = (booking as any).paymentStatus === "rejected";
   const paymentConfirmedAt = (booking as any).paymentConfirmedAt
     ? new Date((booking as any).paymentConfirmedAt).toLocaleString("ar-MR", { dateStyle: "short", timeStyle: "short" })
     : null;
@@ -398,18 +410,121 @@ export default function BookingDetailScreen() {
                 </Text>
               </View>
             </View>
+          ) : isPaymentRejected ? (
+            <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 6 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                <IconSymbol name="xmark.circle.fill" size={16} color="#EF4444" />
+                <Text style={{ color: "#EF4444", fontSize: 13, fontWeight: "700" }}>
+                  {language === "ar" ? "تم رفض الدفع" : "Paiement rejeté"}
+                </Text>
+              </View>
+              {(booking as any).paymentMethod?.startsWith("rejected:") && (
+                <Text style={{ color: colors.muted, fontSize: 13 }}>
+                  {language === "ar" ? "سبب الرفض: " : "Raison: "}
+                  <Text style={{ color: "#EF4444", fontWeight: "600" }}>
+                    {(booking as any).paymentMethod.replace("rejected:", "")}
+                  </Text>
+                </Text>
+              )}
+              {/* Allow re-confirming after rejection */}
+              <TouchableOpacity
+                style={[styles.checkTicketBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E", marginTop: 8 }]}
+                onPress={() => setShowPaymentMethods(true)}
+              >
+                <IconSymbol name="checkmark.seal.fill" size={18} color="#22C55E" />
+                <Text style={[styles.checkTicketText, { color: "#22C55E" }]}>
+                  {language === "ar" ? "تأكيد الدفع" : "Confirmer le paiement"}
+                </Text>
+              </TouchableOpacity>
+              {showPaymentMethods && (
+                <View style={{ gap: 8, marginTop: 4 }}>
+                  <Text style={{ color: colors.muted, fontSize: 13 }}>
+                    {language === "ar" ? "اختر طريقة الدفع:" : "Choisir la méthode:"}
+                  </Text>
+                  {paymentMethods.map(pm => (
+                    <TouchableOpacity
+                      key={pm.key}
+                      style={[styles.checkTicketBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}
+                      onPress={() => {
+                        if (!booking) return;
+                        confirmPaymentMutation.mutate({ duffelOrderId: booking.duffelOrderId, paymentMethod: pm.label });
+                      }}
+                      disabled={confirmPaymentMutation.isPending}
+                    >
+                      <Text style={[styles.checkTicketText, { color: colors.primary }]}>{pm.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowPaymentMethods(false)}>
+                    <Text style={[styles.cancelBtnText, { color: colors.muted }]}>{language === "ar" ? "إلغاء" : "Annuler"}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           ) : (
             <View style={{ padding: 16, paddingTop: 4, gap: 10 }}>
-              {!showPaymentMethods ? (
-                <TouchableOpacity
-                  style={[styles.checkTicketBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E" }]}
-                  onPress={() => setShowPaymentMethods(true)}
-                >
-                  <IconSymbol name="checkmark.seal.fill" size={18} color="#22C55E" />
-                  <Text style={[styles.checkTicketText, { color: "#22C55E" }]}>
-                    {language === "ar" ? "تأكيد الدفع" : "Confirmer le paiement"}
+              {!showPaymentMethods && !showRejectReason ? (
+                <View style={{ gap: 8 }}>
+                  <TouchableOpacity
+                    style={[styles.checkTicketBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E" }]}
+                    onPress={() => setShowPaymentMethods(true)}
+                  >
+                    <IconSymbol name="checkmark.seal.fill" size={18} color="#22C55E" />
+                    <Text style={[styles.checkTicketText, { color: "#22C55E" }]}>
+                      {language === "ar" ? "تأكيد الدفع" : "Confirmer le paiement"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.checkTicketBtn, { backgroundColor: "#EF444415", borderColor: "#EF4444" }]}
+                    onPress={() => setShowRejectReason(true)}
+                  >
+                    <IconSymbol name="xmark.circle.fill" size={18} color="#EF4444" />
+                    <Text style={[styles.checkTicketText, { color: "#EF4444" }]}>
+                      {language === "ar" ? "رفض الدفع" : "Rejeter le paiement"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : showRejectReason ? (
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.muted, fontSize: 13 }}>
+                    {language === "ar" ? "سبب الرفض (اختياري):" : "Raison du rejet (optionnel):"}
                   </Text>
-                </TouchableOpacity>
+                  <TextInput
+                    style={[styles.pnrInput, { borderColor: "#EF4444", color: colors.foreground, backgroundColor: colors.background }]}
+                    value={rejectReason}
+                    onChangeText={setRejectReason}
+                    placeholder={language === "ar" ? "مثال: الدفعة غير مكتملة" : "Ex: Paiement incomplet"}
+                    placeholderTextColor={colors.muted}
+                    returnKeyType="done"
+                  />
+                  <TouchableOpacity
+                    style={[styles.checkTicketBtn, { backgroundColor: "#EF444415", borderColor: "#EF4444" }]}
+                    onPress={() => {
+                      if (!booking) return;
+                      rejectPaymentMutation.mutate({
+                        duffelOrderId: booking.duffelOrderId,
+                        rejectionReason: rejectReason.trim() || undefined,
+                      });
+                    }}
+                    disabled={rejectPaymentMutation.isPending}
+                  >
+                    {rejectPaymentMutation.isPending ? (
+                      <ActivityIndicator size="small" color="#EF4444" />
+                    ) : (
+                      <IconSymbol name="xmark.circle.fill" size={18} color="#EF4444" />
+                    )}
+                    <Text style={[styles.checkTicketText, { color: "#EF4444" }]}>
+                      {language === "ar" ? "تأكيد الرفض" : "Confirmer le rejet"}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.cancelBtn, { borderColor: colors.border }]}
+                    onPress={() => { setShowRejectReason(false); setRejectReason(""); }}
+                  >
+                    <Text style={[styles.cancelBtnText, { color: colors.muted }]}>
+                      {language === "ar" ? "إلغاء" : "Annuler"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               ) : (
                 <View style={{ gap: 8 }}>
                   <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 4 }}>

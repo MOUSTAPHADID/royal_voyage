@@ -358,6 +358,17 @@ export async function confirmBookingPayment(duffelOrderId: string, paymentMethod
   return getBookingContactByOrderId(duffelOrderId);
 }
 
+export async function rejectBookingPayment(duffelOrderId: string, rejectionReason?: string): Promise<BookingContact | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  await db.update(bookingContacts)
+    .set({
+      paymentStatus: "rejected",
+      ...(rejectionReason ? { paymentMethod: `rejected:${rejectionReason}` } : {}),
+    })
+    .where(eq(bookingContacts.duffelOrderId, duffelOrderId));
+  return getBookingContactByOrderId(duffelOrderId);
+}
 
 // ─── Top-Up Requests (طلبات شحن الرصيد) ──────────────────────────────────────
 

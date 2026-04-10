@@ -47,7 +47,7 @@ const T = {
   },
 };
 
-type FilterTab = "all" | "today" | "pending" | "confirmed";
+type FilterTab = "all" | "today" | "pending" | "confirmed" | "paid" | "unpaid" | "rejected";
 
 function isSameDay(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false;
@@ -93,11 +93,18 @@ export default function BookingsScreen() {
     [bookingsData]
   );
 
+  const paidCount = useMemo(() => (bookingsData ?? []).filter((b: any) => b.paymentStatus === "confirmed").length, [bookingsData]);
+  const unpaidCount = useMemo(() => (bookingsData ?? []).filter((b: any) => !b.paymentStatus || b.paymentStatus === "pending").length, [bookingsData]);
+  const rejectedCount = useMemo(() => (bookingsData ?? []).filter((b: any) => b.paymentStatus === "rejected").length, [bookingsData]);
+
   const filteredBookings = useMemo(() => {
     let list = bookingsData ?? [];
     if (activeFilter === "today") list = list.filter((b: any) => isSameDay(b.createdAt));
     else if (activeFilter === "pending") list = list.filter((b: any) => !b.pnr);
     else if (activeFilter === "confirmed") list = list.filter((b: any) => !!b.pnr);
+    else if (activeFilter === "paid") list = list.filter((b: any) => b.paymentStatus === "confirmed");
+    else if (activeFilter === "unpaid") list = list.filter((b: any) => !b.paymentStatus || b.paymentStatus === "pending");
+    else if (activeFilter === "rejected") list = list.filter((b: any) => b.paymentStatus === "rejected");
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -140,9 +147,12 @@ export default function BookingsScreen() {
     }
   };
 
-  const filterTabs: { key: FilterTab; label: string; badge?: number }[] = [
+  const filterTabs: { key: FilterTab; label: string; badge?: number; color?: string }[] = [
     { key: "all", label: t.all, badge: bookingsData?.length },
     { key: "today", label: t.today, badge: todayCount },
+    { key: "paid", label: language === "ar" ? "مدفوع" : "Payé", badge: paidCount, color: "#22C55E" },
+    { key: "unpaid", label: language === "ar" ? "غير مدفوع" : "Non payé", badge: unpaidCount, color: "#F59E0B" },
+    { key: "rejected", label: language === "ar" ? "مرفوض" : "Refusé", badge: rejectedCount, color: "#EF4444" },
     { key: "pending", label: t.pending },
     { key: "confirmed", label: t.confirmed },
   ];
@@ -190,19 +200,20 @@ export default function BookingsScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={styles.filterContent}>
         {filterTabs.map(tab => {
           const isActive = activeFilter === tab.key;
+          const tabColor = tab.color ?? colors.primary;
           return (
             <TouchableOpacity
               key={tab.key}
               style={[styles.filterTab, {
-                backgroundColor: isActive ? colors.primary : colors.surface,
-                borderColor: isActive ? colors.primary : colors.border,
+                backgroundColor: isActive ? tabColor : colors.surface,
+                borderColor: isActive ? tabColor : (tab.color ? tab.color + "50" : colors.border),
               }]}
               onPress={() => setActiveFilter(tab.key)}
             >
-              <Text style={[styles.filterTabText, { color: isActive ? "#fff" : colors.muted }]}>{tab.label}</Text>
+              <Text style={[styles.filterTabText, { color: isActive ? "#fff" : (tab.color ?? colors.muted) }]}>{tab.label}</Text>
               {tab.badge !== undefined && tab.badge > 0 && (
-                <View style={[styles.filterBadge, { backgroundColor: isActive ? "#ffffff40" : colors.primary + "20" }]}>
-                  <Text style={[styles.filterBadgeText, { color: isActive ? "#fff" : colors.primary }]}>{tab.badge}</Text>
+                <View style={[styles.filterBadge, { backgroundColor: isActive ? "#ffffff40" : (tab.color ?? colors.primary) + "20" }]}>
+                  <Text style={[styles.filterBadgeText, { color: isActive ? "#fff" : (tab.color ?? colors.primary) }]}>{tab.badge}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -238,14 +249,23 @@ export default function BookingsScreen() {
             const dateStr = (item as any).createdAt
               ? new Date((item as any).createdAt).toLocaleDateString(language === "ar" ? "ar-SA" : "fr-FR", { day: "2-digit", month: "short" })
               : null;
+            const payStatus = (item as any).paymentStatus;
+            const isPaymentConfirmed = payStatus === "confirmed";
+            const isPaymentRejected = payStatus === "rejected";
+            const payColor = isPaymentConfirmed ? "#22C55E" : isPaymentRejected ? "#EF4444" : "#F59E0B";
+            const payLabel = isPaymentConfirmed
+              ? (language === "ar" ? "مدفوع" : "Payé")
+              : isPaymentRejected
+              ? (language === "ar" ? "مرفوض" : "Refusé")
+              : (language === "ar" ? "غير مدفوع" : "Non payé");
             return (
               <TouchableOpacity
-                style={[styles.bookingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                style={[styles.bookingCard, { backgroundColor: colors.surface, borderColor: isPaymentRejected ? "#EF444430" : isPaymentConfirmed ? "#22C55E30" : colors.border }]}
                 onPress={() => router.push({ pathname: "/admin/booking-detail/[id]" as any, params: { id: item.duffelOrderId } })}
                 activeOpacity={0.75}
               >
-                <View style={[styles.cardIcon, { backgroundColor: item.pnr ? "#22C55E18" : "#F59E0B18" }]}>
-                  <IconSymbol name="airplane" size={18} color={item.pnr ? "#22C55E" : "#F59E0B"} />
+                <View style={[styles.cardIcon, { backgroundColor: payColor + "18" }]}>
+                  <IconSymbol name="airplane" size={18} color={payColor} />
                 </View>
                 <View style={styles.cardInfo}>
                   <Text style={[styles.passengerName, { color: colors.foreground }]} numberOfLines={1}>
@@ -260,10 +280,8 @@ export default function BookingsScreen() {
                   ) : null}
                 </View>
                 <View style={styles.cardRight}>
-                  <View style={[styles.statusBadge, { backgroundColor: (item.pnr ? "#22C55E" : "#F59E0B") + "20" }]}>
-                    <Text style={[styles.statusText, { color: item.pnr ? "#22C55E" : "#F59E0B" }]}>
-                      {item.pnr ? t.confirmed : t.pending}
-                    </Text>
+                  <View style={[styles.statusBadge, { backgroundColor: payColor + "20" }]}>
+                    <Text style={[styles.statusText, { color: payColor }]}>{payLabel}</Text>
                   </View>
                   {(item as any).totalPrice ? (
                     <Text style={[styles.priceText, { color: colors.foreground }]}>
