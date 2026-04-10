@@ -53,15 +53,31 @@ if (legacyConsolidator) {
   });
 }
 
-// Second consolidator: LAD282354 (AOA)
+// Second consolidator: LAD282354 (AOA) — from env AMADEUS_CONSOLIDATOR_OFFICE_ID_2
 const ladConsolidator = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID_2 || "LAD282354";
 if (ladConsolidator) {
-  consolidators.push({
-    officeId: ladConsolidator,
-    currency: "AOA",
-    label: buildConsolidatorLabel(ladConsolidator, "AOA"),
-    city: parseConsolidatorCity(ladConsolidator),
-  });
+  // Only add if not already present (avoid duplicates)
+  if (!consolidators.find(c => c.officeId === ladConsolidator)) {
+    consolidators.push({
+      officeId: ladConsolidator,
+      currency: "AOA",
+      label: buildConsolidatorLabel(ladConsolidator, "AOA"),
+      city: parseConsolidatorCity(ladConsolidator),
+    });
+  }
+}
+
+// Third consolidator: from env AMADEUS_CONSOLIDATOR_OFFICE_ID_3 (optional)
+const nkc2Consolidator = process.env.AMADEUS_CONSOLIDATOR_OFFICE_ID_3 || "";
+if (nkc2Consolidator) {
+  if (!consolidators.find(c => c.officeId === nkc2Consolidator)) {
+    consolidators.push({
+      officeId: nkc2Consolidator,
+      currency: "MRU",
+      label: buildConsolidatorLabel(nkc2Consolidator, "MRU"),
+      city: parseConsolidatorCity(nkc2Consolidator),
+    });
+  }
 }
 
 // Active consolidator (default: first one)
