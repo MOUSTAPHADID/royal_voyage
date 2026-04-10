@@ -1352,3 +1352,186 @@ export function getCachedRawOffer(offerId: string) {
 export function cacheRawOffer(offerId: string, rawOffer: unknown) {
   cacheOffer(offerId, rawOffer);
 }
+
+// ─── Multi-City Flight Search ────────────────────────────────────────────────
+// Supports up to 5 legs (slices) in a single Duffel offer request.
+
+export type MultiCityLeg = {
+  originCode: string;
+  destinationCode: string;
+  departureDate: string; // YYYY-MM-DD
+};
+
+export type MultiCityFlightOffer = {
+  id: string;
+  totalPrice: number;
+  currency: string;
+  legs: Array<{
+    origin: string;
+    originCode: string;
+    destination: string;
+    destinationCode: string;
+    departureTime: string;
+    arrivalTime: string;
+    duration: string;
+    stops: number;
+    airline: string;
+    airlineCode: string;
+    flightNumber: string;
+    class: string;
+  }>;
+  rawOffer: unknown;
+  baggageAllowance?: {
+    cabin: { quantity: number; maxWeightKg?: number } | null;
+    checked: { quantity: number; maxWeightKg?: number } | null;
+  };
+};
+
+export async function searchFlightsMultiCity(params: {
+  legs: MultiCityLeg[];
+  adults: number;
+  children?: number;
+  infants?: number;
+  childAges?: number[];
+  travelClass?: string;
+  max?: number;
+}): Promise<MultiCityFlightOffer[]> {
+  if (!params.legs || params.legs.length < 2) {
+    throw new Error("Multi-city search requires at least 2 legs");
+  }
+
+  // Build slices from legs
+  const slices = params.legs.map((leg) => ({
+    origin: leg.originCode.toUpperCase(),
+    destination: leg.destinationCode.toUpperCase(),
+    departure_date: leg.departureDate,
+  }));
+
+  // Build passengers array
+  const passengers: any[] = [];
+  for (let i = 0; i < params.adults; i++) {
+    passengers.push({ type: "adult" as const });
+  }
+  if (params.children) {
+    const ages = params.childAges || [];
+    for (let i = 0; i < params.children; i++) {
+      const age = ages[i] ?? 5;
+      passengers.push({ age });
+    }
+  }
+  if (params.infants) {
+    for (let i = 0; i < params.infants; i++) {
+      passengers.push({ type: "infant_without_seat" as const });
+    }
+  }
+
+  // Map travel class
+  const cabinClassMap: Record<string, string> = {
+    ECONOMY: "economy",
+    PREMIUM_ECONOMY: "premium_economy",
+    BUSINESS: "business",
+    FIRST: "first",
+  };
+  const cabinClass = params.travelClass
+    ? cabinClassMap[params.travelClass] || "economy"
+    : undefined;
+
+  const routeLabel = params.legs.map((l) => `${l.originCode}→${l.destinationCode}`).join(", ");
+  console.log(`[Duffel] Multi-city search: ${routeLabel}`);
+
+  const offerRequestResponse = await duffel.offerRequests.create({
+    slices,
+    passengers,
+    cabin_class: cabinClass as any,
+    return_offers: true,
+    max_connections: 2,
+  });
+
+  const offers = offerRequestResponse.data.offers || [];
+  const maxResults = params.max ?? 10;
+
+  console.log(`[Duffel] Multi-city found ${offers.length} offers, returning top ${maxResults}`);
+
+  return offers.slice(0, maxResults).map((offer: any): MultiCityFlightOffer => {
+    // Cache the offer for booking
+    cacheOffer(offer.id, offer);
+
+    const totalPrice = parseFloat(offer.total_amount || "0");
+    const currency = offer.total_currency || "USD";
+
+    // Map each slice to a leg
+    const legs = (offer.slices || []).map((slice: any) => {
+      const segments = slice.segments || [];
+      const firstSeg = segments[0];
+      const lastSeg = segments[segments.length - 1];
+
+      const airlineCode =
+        offer.owner?.iata_code ||
+        firstSeg?.marketing_carrier?.iata_code ||
+        firstSeg?.operating_carrier?.iata_code ||
+        "";
+      const airlineName =
+        offer.owner?.name ||
+        getAirlineName(airlineCode);
+
+      let duration = "";
+      if (firstSeg && lastSeg) {
+        const depTime = new Date(firstSeg.departing_at).getTime();
+        const arrTime = new Date(lastSeg.arriving_at).getTime();
+        const diffMs = arrTime - depTime;
+        const hours = Math.floor(diffMs / (1000 * 60 * 60));
+        const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        duration = `${hours}h ${mins}m`;
+      } else if (slice.duration) {
+        duration = parseDuration(slice.duration);
+      }
+
+      const flightNumber = firstSeg
+        ? `${firstSeg.marketing_carrier?.iata_code || airlineCode} ${firstSeg.marketing_carrier_flight_number || ""}`
+        : "";
+
+      const cabinClassDisplay =
+        firstSeg?.passengers?.[0]?.cabin_class_marketing_name ||
+        firstSeg?.passengers?.[0]?.cabin_class ||
+        "economy";
+
+      return {
+        origin: firstSeg?.origin?.name || slice.origin?.name || "",
+        originCode: firstSeg?.origin?.iata_code || slice.origin?.iata_code || "",
+        destination: lastSeg?.destination?.name || slice.destination?.name || "",
+        destinationCode: lastSeg?.destination?.iata_code || slice.destination?.iata_code || "",
+        departureTime: firstSeg?.departing_at ? formatTime(firstSeg.departing_at) : "",
+        arrivalTime: lastSeg?.arriving_at ? formatTime(lastSeg.arriving_at) : "",
+        duration,
+        stops: Math.max(0, segments.length - 1),
+        airline: airlineName,
+        airlineCode,
+        flightNumber,
+        class: cabinClassDisplay.toUpperCase(),
+      };
+    });
+
+    // Extract baggage from first slice
+    const firstSlice = offer.slices?.[0];
+    const firstSegBag = firstSlice?.segments?.[0];
+    const baggageAllowance = firstSegBag
+      ? {
+          cabin: firstSegBag.passengers?.[0]?.cabin_bag_allowance
+            ? { quantity: firstSegBag.passengers[0].cabin_bag_allowance.quantity ?? 1, maxWeightKg: firstSegBag.passengers[0].cabin_bag_allowance.max_weight_kg }
+            : null,
+          checked: firstSegBag.passengers?.[0]?.baggages?.[0]
+            ? { quantity: firstSegBag.passengers[0].baggages[0].quantity ?? 0, maxWeightKg: firstSegBag.passengers[0].baggages[0].max_weight_kg }
+            : null,
+        }
+      : undefined;
+
+    return {
+      id: offer.id,
+      totalPrice,
+      currency,
+      legs,
+      rawOffer: offer,
+      baggageAllowance,
+    };
+  });
+}

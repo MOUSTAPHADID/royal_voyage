@@ -35,7 +35,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { Linking } from "react-native";
 
 type SearchTab = "flights" | "hotels" | "activities";
-type TripType = "oneway" | "roundtrip";
+type TripType = "oneway" | "roundtrip" | "multicity";
 type CabinClass = "ECONOMY" | "PREMIUM_ECONOMY" | "BUSINESS" | "FIRST";
 
 // Helper: get next date N days from now in YYYY-MM-DD
@@ -260,6 +260,41 @@ export default function HomeScreen() {
   // Trip type
   const [tripType, setTripType] = useState<TripType>("oneway");
 
+  // Multi-city legs state (min 2, max 5)
+  const [multiCityLegs, setMultiCityLegs] = useState([
+    { from: "Casablanca", fromCode: "CMN", to: "", toCode: "", date: futureDate(30) },
+    { from: "", fromCode: "", to: "", toCode: "", date: futureDate(37) },
+  ]);
+
+  const addMultiCityLeg = () => {
+    if (multiCityLegs.length >= 5) return;
+    const lastLeg = multiCityLegs[multiCityLegs.length - 1];
+    setMultiCityLegs((prev) => [
+      ...prev,
+      { from: lastLeg.to, fromCode: lastLeg.toCode, to: "", toCode: "", date: futureDate(37 + prev.length * 7) },
+    ]);
+  };
+
+  const removeMultiCityLeg = (index: number) => {
+    if (multiCityLegs.length <= 2) return;
+    setMultiCityLegs((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const updateMultiCityLeg = (index: number, field: string, value: string) => {
+    setMultiCityLegs((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      // Auto-fill next leg's origin from this leg's destination
+      if (field === "to" && index + 1 < next.length) {
+        next[index + 1] = { ...next[index + 1], from: value };
+      }
+      if (field === "toCode" && index + 1 < next.length) {
+        next[index + 1] = { ...next[index + 1], fromCode: value };
+      }
+      return next;
+    });
+  };
+
   // Flexible dates (±3 days)
   const [flexibleDates, setFlexibleDates] = useState(false);
 
@@ -340,6 +375,39 @@ export default function HomeScreen() {
     setFlightFromCode(flightToCode || "");
     setFlightTo(tmpName);
     setFlightToCode(tmpCode);
+  };
+
+  const handleMultiCitySearch = () => {
+    // Validate all legs
+    for (let i = 0; i < multiCityLegs.length; i++) {
+      const leg = multiCityLegs[i];
+      if (!leg.fromCode || !leg.from) {
+        Alert.alert(isRTL ? "خطأ" : "Missing Origin", `${isRTL ? "يرجى اختيار مطار الإقلاع للرحلة" : "Please select departure airport for leg"} ${i + 1}`);
+        return;
+      }
+      if (!leg.toCode || !leg.to) {
+        Alert.alert(isRTL ? "خطأ" : "Missing Destination", `${isRTL ? "يرجى اختيار مطار الوصول للرحلة" : "Please select destination airport for leg"} ${i + 1}`);
+        return;
+      }
+    }
+    router.push({
+      pathname: "/flights/multi-city-results" as any,
+      params: {
+        legs: JSON.stringify(multiCityLegs.map((l) => ({
+          originCode: l.fromCode,
+          destinationCode: l.toCode,
+          origin: l.from,
+          destination: l.to,
+          departureDate: l.date,
+        }))),
+        passengers: passengers.toString(),
+        children: children.toString(),
+        infants: infants.toString(),
+        childAges: JSON.stringify(getChildAges()),
+        childDobs: JSON.stringify(childDobs),
+        cabinClass,
+      },
+    });
   };
 
   const handleFlightSearch = () => {
@@ -515,7 +583,7 @@ export default function HomeScreen() {
 
               {/* ── Trip Type Toggle ── */}
               <View style={[styles.tripTypeRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                {(["oneway", "roundtrip"] as TripType[]).map((type) => (
+                 {(["oneway", "roundtrip", "multicity"] as TripType[]).map((type) => (
                   <Pressable
                     key={type}
                     style={[
@@ -535,92 +603,161 @@ export default function HomeScreen() {
                         { color: tripType === type ? "#FFFFFF" : colors.muted },
                       ]}
                     >
-                      {type === "oneway" ? t.home.oneWay : t.home.roundTrip}
+                      {type === "oneway" ? (isRTL ? "ذهاب فقط" : "One Way") : type === "roundtrip" ? (isRTL ? "ذهاب وعودة" : "Round Trip") : (isRTL ? "متعدد المدن" : "Multi-City")}
                     </Text>
                   </Pressable>
                 ))}
               </View>
 
+              {/* ── Multi-City Form ── */}
+              {tripType === "multicity" && (
+                <View style={{ gap: 8 }}>
+                  {multiCityLegs.map((leg, index) => (
+                    <View key={index} style={[styles.multiLegCard, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+                      <View style={[styles.multiLegHeader, { borderBottomColor: colors.border }]}>
+                        <Text style={[styles.multiLegTitle, { color: colors.primary }]}>
+                          {isRTL ? `الرحلة ${index + 1}` : `Flight ${index + 1}`}
+                        </Text>
+                        {multiCityLegs.length > 2 && (
+                          <Pressable onPress={() => removeMultiCityLeg(index)} style={styles.multiLegRemove}>
+                            <MaterialIcons name="close" size={16} color={colors.error || "#EF4444"} />
+                          </Pressable>
+                        )}
+                      </View>
+                      <LocationAutocomplete
+                        label={isRTL ? "من" : "From"}
+                        placeholder={isRTL ? "مطار الإقلاع" : "Departure airport"}
+                        value={leg.from}
+                        iataCode={leg.fromCode}
+                        onSelect={(name, code) => {
+                          updateMultiCityLeg(index, "from", name);
+                          updateMultiCityLeg(index, "fromCode", code);
+                        }}
+                        iconName="airplane"
+                      />
+                      <LocationAutocomplete
+                        label={isRTL ? "إلى" : "To"}
+                        placeholder={isRTL ? "مطار الوصول" : "Arrival airport"}
+                        value={leg.to}
+                        iataCode={leg.toCode}
+                        onSelect={(name, code) => {
+                          updateMultiCityLeg(index, "to", name);
+                          updateMultiCityLeg(index, "toCode", code);
+                        }}
+                        iconName="location.fill"
+                      />
+                      <DatePickerField
+                        label={isRTL ? "تاريخ السفر" : "Travel Date"}
+                        value={leg.date}
+                        onChange={(d) => updateMultiCityLeg(index, "date", d)}
+                        minimumDate={index > 0 ? new Date(multiCityLegs[index - 1].date) : new Date()}
+                        backgroundColor={colors.background}
+                        icon={<IconSymbol name="calendar" size={18} color={colors.primary} />}
+                      />
+                    </View>
+                  ))}
+                  {multiCityLegs.length < 5 && (
+                    <Pressable
+                      style={[styles.addLegBtn, { borderColor: colors.primary, backgroundColor: colors.primary + "12" }]}
+                      onPress={addMultiCityLeg}
+                    >
+                      <MaterialIcons name="add" size={18} color={colors.primary} />
+                      <Text style={[styles.addLegText, { color: colors.primary }]}>
+                        {isRTL ? "إضافة رحلة" : "Add Flight"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
+              )}
+
               {/* From — with autocomplete + voice */}
-              <LocationAutocomplete
-                label={t.home.from}
-                placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
-                value={flightFrom}
-                iataCode={flightFromCode}
-                onSelect={(name, code) => {
-                  setFlightFrom(name);
-                  setFlightFromCode(code);
-                }}
-                iconName="airplane"
-                onVoicePress={() => openVoiceSearch("flightFrom")}
-              />
+              {tripType !== "multicity" && (
+                <LocationAutocomplete
+                  label={t.home.from}
+                  placeholder={isRTL ? "مدينة أو مطار الإقلاع" : "Origin city or airport"}
+                  value={flightFrom}
+                  iataCode={flightFromCode}
+                  onSelect={(name, code) => {
+                    setFlightFrom(name);
+                    setFlightFromCode(code);
+                  }}
+                  iconName="airplane"
+                  onVoicePress={() => openVoiceSearch("flightFrom")}
+                />
+              )}
 
               {/* Swap button */}
-              <View style={styles.swapRow}>
-                <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
-                <Pressable
-                  style={[styles.swapBtn, { backgroundColor: colors.primary, borderColor: colors.surface }]}
-                  onPress={handleSwap}
-                >
-                  <IconSymbol name="arrow.up.arrow.down" size={16} color="#FFFFFF" />
-                </Pressable>
-                <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
-              </View>
+              {tripType !== "multicity" && (
+                <View style={styles.swapRow}>
+                  <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
+                  <Pressable
+                    style={[styles.swapBtn, { backgroundColor: colors.primary, borderColor: colors.surface }]}
+                    onPress={handleSwap}
+                  >
+                    <IconSymbol name="arrow.up.arrow.down" size={16} color="#FFFFFF" />
+                  </Pressable>
+                  <View style={[styles.swapDivider, { backgroundColor: colors.border }]} />
+                </View>
+              )}
 
               {/* To — with autocomplete + voice */}
-              <LocationAutocomplete
-                label={t.home.to}
-                placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
-                value={flightTo}
-                iataCode={flightToCode}
-                onSelect={(name, code) => {
-                  setFlightTo(name);
-                  setFlightToCode(code);
-                }}
-                iconName="location.fill"
-                onVoicePress={() => openVoiceSearch("flightTo")}
-              />
-
-              {/* Date fields */}
-              {tripType === "oneway" ? (
-                /* One Way — single date */
-                <DatePickerField
-                  label={t.home.departure}
-                  value={departureDate}
-                  onChange={(d) => setDepartureDate(d)}
-                  minimumDate={new Date()}
-                  backgroundColor={colors.background}
-                  icon={<IconSymbol name="calendar" size={18} color={colors.primary} />}
+              {tripType !== "multicity" && (
+                <LocationAutocomplete
+                  label={t.home.to}
+                  placeholder={isRTL ? "مدينة أو مطار الوجهة" : "Destination city or airport"}
+                  value={flightTo}
+                  iataCode={flightToCode}
+                  onSelect={(name, code) => {
+                    setFlightTo(name);
+                    setFlightToCode(code);
+                  }}
+                  iconName="location.fill"
+                  onVoicePress={() => openVoiceSearch("flightTo")}
                 />
-              ) : (
-                /* Round Trip — two dates stacked vertically for better mobile layout */
-                <View style={styles.datesColumn}>
+              )}
+
+              {/* Date fields (only for one-way and round-trip) */}
+              {tripType !== "multicity" && (
+                tripType === "oneway" ? (
+                  /* One Way — single date */
                   <DatePickerField
                     label={t.home.departure}
                     value={departureDate}
-                    onChange={(d) => {
-                      setDepartureDate(d);
-                      const dep = new Date(d);
-                      const ret = new Date(returnDate);
-                      if (ret <= dep) {
-                        dep.setDate(dep.getDate() + 3);
-                        setReturnDate(dep.toISOString().slice(0, 10));
-                      }
-                    }}
+                    onChange={(d) => setDepartureDate(d)}
                     minimumDate={new Date()}
                     backgroundColor={colors.background}
-                    icon={<IconSymbol name="airplane" size={16} color={colors.primary} />}
+                    icon={<IconSymbol name="calendar" size={18} color={colors.primary} />}
                   />
-                  <View style={[styles.dateSeparator, { backgroundColor: colors.border }]} />
-                  <DatePickerField
-                    label={t.home.returnDate}
-                    value={returnDate}
-                    onChange={(d) => setReturnDate(d)}
-                    minimumDate={new Date(departureDate)}
-                    backgroundColor={colors.background}
-                    icon={<IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />}
-                  />
-                </View>
+                ) : (
+                  /* Round Trip — two dates stacked vertically for better mobile layout */
+                  <View style={styles.datesColumn}>
+                    <DatePickerField
+                      label={t.home.departure}
+                      value={departureDate}
+                      onChange={(d) => {
+                        setDepartureDate(d);
+                        const dep = new Date(d);
+                        const ret = new Date(returnDate);
+                        if (ret <= dep) {
+                          dep.setDate(dep.getDate() + 3);
+                          setReturnDate(dep.toISOString().slice(0, 10));
+                        }
+                      }}
+                      minimumDate={new Date()}
+                      backgroundColor={colors.background}
+                      icon={<IconSymbol name="airplane" size={16} color={colors.primary} />}
+                    />
+                    <View style={[styles.dateSeparator, { backgroundColor: colors.border }]} />
+                    <DatePickerField
+                      label={t.home.returnDate}
+                      value={returnDate}
+                      onChange={(d) => setReturnDate(d)}
+                      minimumDate={new Date(departureDate)}
+                      backgroundColor={colors.background}
+                      icon={<IconSymbol name="airplane.arrival" size={16} color={colors.secondary} />}
+                    />
+                  </View>
+                )
               )}
 
               {/* Passengers + Children + Infants + Bags — compact grid */}
@@ -763,35 +900,37 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              {/* Flexible Dates Toggle */}
-              <Pressable
-                style={[styles.flexibleToggle, { borderColor: flexibleDates ? colors.primary : colors.border, backgroundColor: flexibleDates ? colors.primary + "18" : colors.background }]}
-                onPress={() => setFlexibleDates(!flexibleDates)}
-              >
-                <View style={[styles.flexibleCheckbox, { borderColor: flexibleDates ? colors.primary : colors.border, backgroundColor: flexibleDates ? colors.primary : "transparent" }]}>
-                  {flexibleDates && <IconSymbol name="checkmark" size={12} color="#fff" />}
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.flexibleTitle, { color: flexibleDates ? colors.primary : colors.foreground }]}>
-                    {isRTL ? "تواريخ مرنة (±3 أيام)" : "Flexible Dates (±3 days)"}
-                  </Text>
-                  <Text style={[styles.flexibleSub, { color: colors.muted }]}>
-                    {isRTL ? "سنبحث في 7 تواريخ ونعرض أفضل سعر لكل يوم" : "We'll search 7 dates and show the best price per day"}
-                  </Text>
-                </View>
-                <IconSymbol name="calendar.badge.clock" size={20} color={flexibleDates ? colors.primary : colors.muted} />
-              </Pressable>
+              {/* Flexible Dates Toggle (only for one-way/round-trip) */}
+              {tripType !== "multicity" && (
+                <Pressable
+                  style={[styles.flexibleToggle, { borderColor: flexibleDates ? colors.primary : colors.border, backgroundColor: flexibleDates ? colors.primary + "18" : colors.background }]}
+                  onPress={() => setFlexibleDates(!flexibleDates)}
+                >
+                  <View style={[styles.flexibleCheckbox, { borderColor: flexibleDates ? colors.primary : colors.border, backgroundColor: flexibleDates ? colors.primary : "transparent" }]}>
+                    {flexibleDates && <IconSymbol name="checkmark" size={12} color="#fff" />}
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.flexibleTitle, { color: flexibleDates ? colors.primary : colors.foreground }]}>
+                      {isRTL ? "تواريخ مرنة (±3 أيام)" : "Flexible Dates (±3 days)"}
+                    </Text>
+                    <Text style={[styles.flexibleSub, { color: colors.muted }]}>
+                      {isRTL ? "سنبحث في 7 تواريخ ونعرض أفضل سعر لكل يوم" : "We'll search 7 dates and show the best price per day"}
+                    </Text>
+                  </View>
+                  <IconSymbol name="calendar.badge.clock" size={20} color={flexibleDates ? colors.primary : colors.muted} />
+                </Pressable>
+              )}
 
               <Pressable
                 style={({ pressed }) => [
                   styles.searchButton,
                   { backgroundColor: colors.secondary, opacity: pressed ? 0.85 : 1 },
                 ]}
-                onPress={handleFlightSearch}
+                onPress={tripType === "multicity" ? handleMultiCitySearch : handleFlightSearch}
               >
                 <IconSymbol name="magnifyingglass" size={18} color={colors.primary} />
                 <Text style={[styles.searchButtonText, { color: colors.primary }]}>
-                  {tripType === "roundtrip" ? t.home.roundTrip : t.home.searchFlights}
+                  {tripType === "multicity" ? (isRTL ? "بحث متعدد المدن" : "Search Multi-City") : tripType === "roundtrip" ? t.home.roundTrip : t.home.searchFlights}
                 </Text>
               </Pressable>
             </View>
@@ -1731,6 +1870,42 @@ const styles = StyleSheet.create({
     fontSize: 11,
     textAlign: "center" as const,
     lineHeight: 16,
+  },
+  // Multi-city styles
+  multiLegCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 8,
+  },
+  multiLegHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    marginBottom: 4,
+  },
+  multiLegTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  multiLegRemove: {
+    padding: 4,
+  },
+  addLegBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderStyle: "dashed",
+  },
+  addLegText: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 });
 

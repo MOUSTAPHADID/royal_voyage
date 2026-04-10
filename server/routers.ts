@@ -6,6 +6,7 @@ import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, adminProcedure } from "./_core/trpc";
 import {
   searchFlights,
+  searchFlightsMultiCity,
   searchLocations,
   searchHotelsByCity,
   priceFlightOffer,
@@ -149,6 +150,45 @@ export const appRouter = router({
           return { success: true, data: flights };
         } catch (err: any) {
           console.error("[Duffel] searchFlights error:", err?.code || err?.message);
+          return { success: false, data: [], error: err?.code || err?.message || "SEARCH_ERROR" };
+        }
+      }),
+
+    // ─── Multi-City Flight Search ──────────────────────────────────
+    searchFlightsMultiCity: publicProcedure
+      .input(
+        z.object({
+          legs: z.array(
+            z.object({
+              originCode: z.string().length(3),
+              destinationCode: z.string().length(3),
+              departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            })
+          ).min(2).max(5),
+          adults: z.number().min(1).max(9).default(1),
+          children: z.number().min(0).max(8).default(0),
+          infants: z.number().min(0).max(4).default(0),
+          childAges: z.array(z.number().min(2).max(11)).optional(),
+          travelClass: z
+            .enum(["ECONOMY", "PREMIUM_ECONOMY", "BUSINESS", "FIRST"])
+            .optional(),
+          max: z.number().min(1).max(10).default(10),
+        })
+      )
+      .query(async ({ input }) => {
+        try {
+          const offers = await searchFlightsMultiCity({
+            legs: input.legs,
+            adults: input.adults,
+            children: input.children,
+            infants: input.infants,
+            childAges: input.childAges,
+            travelClass: input.travelClass,
+            max: input.max,
+          });
+          return { success: true, data: offers };
+        } catch (err: any) {
+          console.error("[Duffel] searchFlightsMultiCity error:", err?.code || err?.message);
           return { success: false, data: [], error: err?.code || err?.message || "SEARCH_ERROR" };
         }
       }),

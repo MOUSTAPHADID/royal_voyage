@@ -1560,3 +1560,4 @@
 - [ ] Backend tRPC route per salvare i feedback nel database PostgreSQL
 - [ ] Visualizzazione recensioni dinamiche dalla DB nella landing page (sostituisce dati mock)
 - [x] Sezione feedback clienti con modulo valutazioni a stelle (DB + tRPC + UI nella landing page)
+- [ ] بحث الرحلات متعددة المدن (Multi-city flight search)
