@@ -156,6 +156,9 @@ export type FlightOffer = {
   arrivalTime: string;
   duration: string;
   stops: number;
+  stopCodes?: string[]; // IATA codes of intermediate airports
+  operatingAirlines?: string[]; // operating carrier codes per segment
+  allFlightNumbers?: string[]; // all segment flight numbers
   price: number;
   currency: string;
   class: string;
@@ -341,6 +344,15 @@ export async function searchFlights(params: {
       arrivalTime: formatTime(lastSeg.arrival.at),
       duration: parseDuration(itinerary.duration),
       stops: segments.length - 1,
+      stopCodes: segments.length > 1
+        ? segments.slice(0, -1).map((seg: any) => seg.arrival.iataCode)
+        : [],
+      operatingAirlines: segments.map((seg: any) =>
+        seg.operating?.carrierCode || seg.carrierCode
+      ),
+      allFlightNumbers: segments.map((seg: any) =>
+        `${seg.carrierCode}${seg.number}`
+      ),
       price: parseFloat(offer.price.total),
       currency: offer.price.currency,
       class:

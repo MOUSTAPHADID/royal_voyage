@@ -38,6 +38,9 @@ type AnyFlight = {
   arrivalTime: string;
   duration: string;
   stops: number;
+  stopCodes?: string[];
+  operatingAirlines?: string[];
+  allFlightNumbers?: string[];
   price: number;
   currency: string;
   class: string;
@@ -314,9 +317,40 @@ export default function FlightResultsScreen() {
               <MaterialIcons name="flight" size={22} color={colors.muted} />
             )}
           </View>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={[styles.airlineName, { color: colors.foreground }]}>{item.airline}</Text>
-            <Text style={[styles.flightNumber, { color: colors.muted }]}>{item.flightNumber}</Text>
+            {/* Show all flight numbers for multi-segment */}
+            {item.allFlightNumbers && item.allFlightNumbers.length > 1 ? (
+              <Text style={[styles.flightNumber, { color: colors.muted }]}>
+                {item.allFlightNumbers.join(" · ")}
+              </Text>
+            ) : (
+              <Text style={[styles.flightNumber, { color: colors.muted }]}>{item.flightNumber}</Text>
+            )}
+            {/* Additional carriers: show logos + names for unique operating airlines */}
+            {(() => {
+              const uniqueOps = [...new Set(
+                (item.operatingAirlines || []).filter(c => c && c !== item.airlineCode)
+              )];
+              if (uniqueOps.length === 0) return null;
+              return (
+                <View style={styles.additionalCarriersRow}>
+                  <MaterialIcons name="connecting-airports" size={11} color={colors.muted} />
+                  {uniqueOps.map((code) => (
+                    <View key={code} style={styles.additionalCarrierItem}>
+                      <Image
+                        source={{ uri: `https://images.kiwi.com/airlines/64/${code}.png` }}
+                        style={styles.additionalCarrierLogo}
+                        resizeMode="contain"
+                      />
+                      <Text style={[styles.additionalCarrierName, { color: colors.muted }]}>
+                        {code}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              );
+            })()}
           </View>
         </View>
         <View style={styles.priceBox}>
@@ -372,22 +406,40 @@ export default function FlightResultsScreen() {
         </View>
 
         <View style={styles.routeMiddle}>
-          <Text style={[styles.duration, { color: colors.muted }]}>{item.duration}</Text>
+          {/* Duration — prominent */}
+          <Text style={[styles.duration, { color: colors.foreground, fontWeight: "700" }]}>
+            {item.duration}
+          </Text>
+          {/* Route line with stop dots */}
           <View style={styles.routeLine}>
             <View style={[styles.dot, { backgroundColor: colors.primary }]} />
-            <View style={[styles.line, { backgroundColor: colors.border }]} />
-            {item.stops > 0 && <View style={[styles.stopDot, { backgroundColor: colors.warning }]} />}
+            {item.stops > 0 && item.stopCodes && item.stopCodes.map((code, i) => (
+              <React.Fragment key={code + i}>
+                <View style={[styles.line, { backgroundColor: colors.border }]} />
+                <View style={[styles.stopDot, { backgroundColor: colors.warning }]} />
+              </React.Fragment>
+            ))}
+            {item.stops === 0 && <View style={[styles.line, { backgroundColor: colors.border }]} />}
             <View style={[styles.line, { backgroundColor: colors.border }]} />
             <View style={[styles.dot, { backgroundColor: colors.secondary }]} />
           </View>
+          {/* Stop status */}
           <Text
             style={[
               styles.stops,
               { color: item.stops === 0 ? colors.success : colors.warning },
             ]}
           >
-            {item.stops === 0 ? t.flights.nonStop : `${item.stops} ${item.stops > 1 ? t.flights.stops : t.flights.stop}`}
+            {item.stops === 0
+              ? t.flights.nonStop
+              : `${item.stops} ${item.stops > 1 ? t.flights.stops : t.flights.stop}`}
           </Text>
+          {/* Stopover airport codes */}
+          {item.stopCodes && item.stopCodes.length > 0 && (
+            <Text style={[styles.stopCodes, { color: colors.warning }]}>
+              via {item.stopCodes.join(" · ")}
+            </Text>
+          )}
         </View>
 
         <View style={[styles.routePoint, { alignItems: "flex-end" }]}>
@@ -902,6 +954,26 @@ const styles = StyleSheet.create({
   line: { flex: 1, height: 1.5 },
   stopDot: { width: 6, height: 6, borderRadius: 3 },
   stops: { fontSize: 11, fontWeight: "600" },
+  stopCodes: { fontSize: 10, fontWeight: "600", textAlign: "center" },
+  operatedBy: { fontSize: 10, marginTop: 1, fontStyle: "italic" },
+  additionalCarriersRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 3,
+    gap: 4,
+    flexWrap: "wrap",
+  },
+  additionalCarrierItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    backgroundColor: "rgba(0,0,0,0.04)",
+    borderRadius: 6,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  additionalCarrierLogo: { width: 14, height: 14, borderRadius: 2 },
+  additionalCarrierName: { fontSize: 10, fontWeight: "600" },
   cardFooter: {
     flexDirection: "row",
     alignItems: "center",
