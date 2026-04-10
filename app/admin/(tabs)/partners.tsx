@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Alert, TextInput, Modal, ScrollView, KeyboardAvoidingView, Platform,
+  ActivityIndicator, Alert, TextInput, Modal, ScrollView, KeyboardAvoidingView, Platform, Image,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -9,6 +9,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useAdmin } from "@/lib/admin-context";
 import { trpc } from "@/lib/trpc";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import * as ImagePicker from "expo-image-picker";
 
 const T = {
   ar: {
@@ -53,6 +54,10 @@ const T = {
     cancel: "إلغاء",
     saving: "جارٍ الحفظ...",
     required: "الحقول المطلوبة غير مكتملة",
+    logoLabel: "شعار الشركة",
+    logoUpload: "رفع شعار",
+    logoChange: "تغيير الشعار",
+    uploading: "جارٍ الرفع...",
   },
   fr: {
     title: "Gestion des Partenaires",
@@ -95,6 +100,10 @@ const T = {
     cancel: "Annuler",
     saving: "Enregistrement...",
     required: "Champs obligatoires manquants",
+    logoLabel: "Logo de la société",
+    logoUpload: "Télécharger logo",
+    logoChange: "Changer le logo",
+    uploading: "Téléchargement...",
   },
 };
 
@@ -113,12 +122,13 @@ interface FormState {
   website: string;
   notes: string;
   status: PartnerStatus;
+  logoUrl: string;
 }
 
 const EMPTY_FORM: FormState = {
   companyName: "", contactName: "", contactEmail: "", contactPhone: "",
   commissionPercent: "0", creditLimit: "0", address: "", city: "",
-  country: "", website: "", notes: "", status: "active",
+  country: "", website: "", notes: "", status: "active", logoUrl: "",
 };
 
 export default function PartnersScreen() {
@@ -131,6 +141,7 @@ export default function PartnersScreen() {
   const createMutation = trpc.businessAccounts.create.useMutation({ onSuccess: () => { refetch(); setModalVisible(false); } });
   const updateMutation = trpc.businessAccounts.update.useMutation({ onSuccess: () => { refetch(); setModalVisible(false); } });
   const deleteMutation = trpc.businessAccounts.delete.useMutation({ onSuccess: () => refetch() });
+  const uploadLogoMutation = trpc.uploadLogo.upload.useMutation();
 
   const router = useRouter();
   const [modalVisible, setModalVisible] = useState(false);
@@ -138,6 +149,7 @@ export default function PartnersScreen() {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | PartnerStatus>("all");
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   const q = search.trim().toLowerCase();
   const filtered = (partners ?? []).filter(p => {
@@ -183,8 +195,41 @@ export default function PartnersScreen() {
       website: p.website ?? "",
       notes: p.notes ?? "",
       status: p.status ?? "active",
+      logoUrl: p.logoUrl ?? "",
     });
     setModalVisible(true);
+  };
+
+  const handlePickLogo = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        base64: true,
+      });
+      if (result.canceled || !result.assets[0]) return;
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert("خطأ", "فشل في قراءة الصورة");
+        return;
+      }
+      setUploadingLogo(true);
+      const ext = asset.uri.split(".").pop() ?? "jpg";
+      const mimeType = asset.mimeType ?? `image/${ext}`;
+      const filename = `logo_${Date.now()}.${ext}`;
+      const { url } = await uploadLogoMutation.mutateAsync({
+        base64: asset.base64,
+        mimeType,
+        filename,
+      });
+      setForm(f => ({ ...f, logoUrl: url }));
+    } catch (err: any) {
+      Alert.alert("خطأ في رفع الشعار", err?.message ?? "حاول مرة أخرى");
+    } finally {
+      setUploadingLogo(false);
+    }
   };
 
   const handleSave = () => {
@@ -287,11 +332,16 @@ export default function PartnersScreen() {
             <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {/* Top row */}
               <View style={styles.cardTop}>
-                <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
-                  <Text style={[styles.avatarText, { color: colors.primary }]}>
-                    {item.companyName.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
+                {/* Avatar / Logo */}
+                {item.logoUrl ? (
+                  <Image source={{ uri: item.logoUrl }} style={[styles.avatar, { borderRadius: 23 }]} resizeMode="cover" />
+                ) : (
+                  <View style={[styles.avatar, { backgroundColor: colors.primary + "20" }]}>
+                    <Text style={[styles.avatarText, { color: colors.primary }]}>
+                      {item.companyName.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
                 <View style={styles.cardInfo}>
                   <Text style={[styles.companyName, { color: colors.foreground }]} numberOfLines={1}>
                     {item.companyName}
@@ -363,6 +413,30 @@ export default function PartnersScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView style={[styles.modalBody, { backgroundColor: colors.background }]} contentContainerStyle={{ paddingBottom: 40 }}>
+            {/* Logo Upload Field */}
+            <View style={styles.fieldContainer}>
+              <Text style={[styles.fieldLabel, { color: colors.muted }]}>{t.logoLabel}</Text>
+              <TouchableOpacity
+                style={[styles.logoPickerBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={handlePickLogo}
+                disabled={uploadingLogo}
+              >
+                {uploadingLogo ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : form.logoUrl ? (
+                  <View style={styles.logoPreviewRow}>
+                    <Image source={{ uri: form.logoUrl }} style={styles.logoPreview} resizeMode="cover" />
+                    <Text style={[styles.logoChangeText, { color: colors.primary }]}>{t.logoChange}</Text>
+                  </View>
+                ) : (
+                  <View style={styles.logoPlaceholder}>
+                    <IconSymbol name="photo.fill" size={28} color={colors.muted} />
+                    <Text style={[styles.logoUploadText, { color: colors.muted }]}>{t.logoUpload}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+
             <FormField label={t.companyName} value={form.companyName} onChangeText={(v: any) => setForm(f => ({ ...f, companyName: v }))} colors={colors} isRTL={isRTL} />
             <FormField label={t.contactName} value={form.contactName} onChangeText={(v: any) => setForm(f => ({ ...f, contactName: v }))} colors={colors} isRTL={isRTL} />
             <FormField label={t.contactEmail} value={form.contactEmail} onChangeText={(v: any) => setForm(f => ({ ...f, contactEmail: v }))} colors={colors} isRTL={isRTL} keyboardType="email-address" />
@@ -463,4 +537,11 @@ const styles = StyleSheet.create({
   statusRow: { flexDirection: "row", gap: 8 },
   statusOption: { flex: 1, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, alignItems: "center" },
   statusOptionText: { fontSize: 13, fontWeight: "600" },
+  // Logo upload
+  logoPickerBtn: { borderWidth: 1.5, borderRadius: 12, borderStyle: "dashed", minHeight: 80, alignItems: "center", justifyContent: "center", padding: 12 },
+  logoPlaceholder: { alignItems: "center", gap: 8 },
+  logoUploadText: { fontSize: 13, fontWeight: "500" },
+  logoPreviewRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  logoPreview: { width: 60, height: 60, borderRadius: 8 },
+  logoChangeText: { fontSize: 14, fontWeight: "600" },
 });
