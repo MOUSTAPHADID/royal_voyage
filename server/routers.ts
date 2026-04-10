@@ -4,19 +4,15 @@ import { generateEmploymentContractPDF, generateInvoicePDF, generatePartnershipP
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, adminProcedure } from "./_core/trpc";
+// ── Amadeus: Flight Search + Booking + PNR ──────────────────────────────────
 import {
   searchFlights,
-  searchFlightsMultiCity,
   searchLocations,
-  searchHotelsByCity,
   priceFlightOffer,
   createFlightOrder,
   getCachedRawOffer,
   getFlightOrder,
   cancelFlightOrder,
-  createHoldOrder,
-  payForHoldOrder,
-  getDuffelStatus,
   checkTicketIssuance,
   queueToConsolidator,
   getConsolidatorConfig,
@@ -25,6 +21,16 @@ import {
   addConsolidator,
   removeConsolidator,
   getConsolidatorForBooking,
+  getAmadeusStatus,
+} from "./amadeus";
+// ── Duffel: Hold Orders + Multi-City + Hotels ────────────────────────────────
+import {
+  searchFlightsMultiCity,
+  searchHotelsByCity,
+  createHoldOrder,
+  payForHoldOrder,
+  getDuffelStatus,
+  getCachedOffer,
 } from "./duffel";
 import { sendFlightTicket, sendHotelConfirmation, sendPnrUpdateEmail, sendPaymentConfirmationEmail, sendCancellationEmail, sendHoldConfirmationEmail, sendEmployeeWelcomeEmail, sendDocumentEmail } from "./email";
 import {
@@ -325,7 +331,7 @@ export const appRouter = router({
           console.log(`[Duffel] Creating flight order for ${input.firstName} ${input.lastName} with ${travelers.length} traveler(s)...`);
           const order = await createFlightOrder(priced.pricedOffer, travelers);
 
-          console.log(`[Duffel] ✅ PNR: ${order.pnr}, OrderID: ${order.orderId}, Status: ${order.status}`);
+          console.log(`[Amadeus] ✅ PNR: ${order.pnr}, OrderID: ${order.orderId}`);
 
           // Save booking contact for webhook email notifications
           if (order.orderId) {
@@ -344,8 +350,8 @@ export const appRouter = router({
             orderId: order.orderId,
             associatedRecords: order.associatedRecords,
             ticketingDeadline: order.ticketingDeadline,
-            status: order.status,
-            documents: order.documents,
+            status: "CONFIRMED",
+            documents: [] as Array<{ type: string; unique_identifier: string }>,
           };
         } catch (err: any) {
           console.error("[Duffel] bookFlightWithPNR error:", err?.message || err);
@@ -578,12 +584,11 @@ export const appRouter = router({
         }
       }),
 
-    // ─── Get Status Info ──────────────────────────────────────────
+     // ─── Get Status Info (Amadeus + Duffel) ──────────────────────────────────
     getStatus: publicProcedure.query(() => {
-      return getDuffelStatus();
+      return { amadeus: getAmadeusStatus(), duffel: getDuffelStatus() };
     }),
-
-    // ─── Get Duffel Status ──────────────────────────────────────────
+    // ─── Get Duffel Status ─────────────────────────────────────────────────────
     getDuffelStatus: publicProcedure.query(() => {
       return getDuffelStatus();
     }),

@@ -1561,3 +1561,5 @@
 - [ ] Visualizzazione recensioni dinamiche dalla DB nella landing page (sostituisce dati mock)
 - [x] Sezione feedback clienti con modulo valutazioni a stelle (DB + tRPC + UI nella landing page)
 - [ ] بحث الرحلات متعددة المدن (Multi-city flight search)
+- [ ] استبدال HBX بـ Amadeus Hotel Search API لبحث الفنادق
+- [x] دمج Amadeus API مع Duffel لبحث وحجز الطيران (Amadeus للبحث + Duffel للحجز)
