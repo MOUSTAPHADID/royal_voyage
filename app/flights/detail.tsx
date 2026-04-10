@@ -50,6 +50,11 @@ export default function FlightDetailScreen() {
     passengerPricingJson: string;
     airlineCode: string;
     baggageAllowanceJson: string;
+    allFlightNumbers: string; // JSON array
+    stopCodes: string; // JSON array
+    operatingAirlines: string; // JSON array
+    // Segments JSON: [{from, to, dep, arr, duration, flightNum, carrier, operatingCarrier}]
+    segmentsJson: string;
   }>();
 
   // If params have flight data (from Duffel), use them; otherwise fall back to mock
@@ -212,11 +217,11 @@ export default function FlightDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>معلومات الرحلة</Text>
           {[
-            { label: "رقم الرحلة", value: flight.flightNumber },
+            { label: "رقم الرحلة", value: params.allFlightNumbers ? (() => { try { return JSON.parse(params.allFlightNumbers).join(' · '); } catch { return flight.flightNumber; } })() : flight.flightNumber },
             { label: "شركة الطيران", value: flight.airline },
             { label: "الدرجة", value: flight.class },
             { label: "مدة الرحلة", value: flight.duration },
-            { label: "التوقفات", value: flight.stops === 0 ? "مباشر" : `${flight.stops} توقف` },
+            { label: "التوقفات", value: flight.stops === 0 ? "مباشر" : `${flight.stops} توقف${params.stopCodes ? (() => { try { const c = JSON.parse(params.stopCodes); return c.length > 0 ? ` (عبر ${c.join(' · ')})` : ''; } catch { return ''; } })() : ''}` },
             { label: "المقاعد المتاحة", value: `${flight.seatsLeft} مقعد` },
           ].map((item) => (
             <View key={item.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
@@ -226,6 +231,88 @@ export default function FlightDetailScreen() {
           ))}
         </View>
 
+        {/* Segments Timeline — shown when there are stops or multiple flight numbers */}
+        {(() => {
+          // Try to parse segmentsJson if passed, else build from available params
+          type Segment = { from: string; to: string; dep: string; arr: string; duration: string; flightNum: string; carrier: string; operatingCarrier?: string };
+          let segments: Segment[] = [];
+          if (params.segmentsJson) {
+            try { segments = JSON.parse(params.segmentsJson); } catch { /* ignore */ }
+          }
+          // Fallback: build single segment from basic params
+          if (segments.length === 0 && flight.originCode && flight.destinationCode) {
+            const allNums: string[] = params.allFlightNumbers ? (() => { try { return JSON.parse(params.allFlightNumbers); } catch { return [flight.flightNumber]; } })() : [flight.flightNumber];
+            const stopCodes: string[] = params.stopCodes ? (() => { try { return JSON.parse(params.stopCodes); } catch { return []; } })() : [];
+            const opAirlines: string[] = params.operatingAirlines ? (() => { try { return JSON.parse(params.operatingAirlines); } catch { return []; } })() : [];
+            if (stopCodes.length > 0) {
+              // Multi-segment: origin → stop1 → ... → destination
+              const points = [flight.originCode, ...stopCodes, flight.destinationCode];
+              for (let i = 0; i < points.length - 1; i++) {
+                segments.push({
+                  from: points[i], to: points[i + 1],
+                  dep: i === 0 ? flight.departureTime : '—',
+                  arr: i === points.length - 2 ? flight.arrivalTime : '—',
+                  duration: '—',
+                  flightNum: allNums[i] || flight.flightNumber,
+                  carrier: params.airlineCode || '',
+                  operatingCarrier: opAirlines[i] || '',
+                });
+              }
+            } else {
+              segments = [{ from: flight.originCode, to: flight.destinationCode, dep: flight.departureTime, arr: flight.arrivalTime, duration: flight.duration, flightNum: flight.flightNumber, carrier: params.airlineCode || '', operatingCarrier: '' }];
+            }
+          }
+          if (segments.length <= 1 && flight.stops === 0) return null; // hide for simple direct flights
+          return (
+            <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>جدول المقاطع</Text>
+              {segments.map((seg, idx) => (
+                <View key={idx}>
+                  {/* Segment row */}
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10, paddingVertical: 10 }}>
+                    {/* Timeline dot + line */}
+                    <View style={{ alignItems: 'center', width: 28 }}>
+                      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colors.primary, marginTop: 4 }} />
+                      {idx < segments.length - 1 && <View style={{ width: 2, flex: 1, backgroundColor: colors.border, minHeight: 40, marginTop: 4 }} />}
+                    </View>
+                    {/* Segment info */}
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                        {seg.carrier ? (
+                          <Image source={{ uri: `https://images.kiwi.com/airlines/64/${seg.carrier}.png` }} style={{ width: 20, height: 20, borderRadius: 3 }} resizeMode="contain" />
+                        ) : null}
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: colors.foreground }}>{seg.flightNum}</Text>
+                        {seg.operatingCarrier && seg.operatingCarrier !== seg.carrier && (
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.warning + '15', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                            <Image source={{ uri: `https://images.kiwi.com/airlines/64/${seg.operatingCarrier}.png` }} style={{ width: 14, height: 14, borderRadius: 2 }} resizeMode="contain" />
+                            <Text style={{ fontSize: 10, color: colors.warning, fontWeight: '600' }}>{seg.operatingCarrier}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.primary }}>{seg.from}</Text>
+                        <Text style={{ fontSize: 12, color: colors.muted }}>{seg.dep}</Text>
+                        <MaterialIcons name="arrow-forward" size={14} color={colors.muted} />
+                        <Text style={{ fontSize: 16, fontWeight: '800', color: colors.secondary }}>{seg.to}</Text>
+                        <Text style={{ fontSize: 12, color: colors.muted }}>{seg.arr}</Text>
+                      </View>
+                      {seg.duration !== '—' && (
+                        <Text style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>مدة المقطع: {seg.duration}</Text>
+                      )}
+                    </View>
+                  </View>
+                  {/* Layover badge between segments */}
+                  {idx < segments.length - 1 && (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 38, marginBottom: 4 }}>
+                      <MaterialIcons name="access-time" size={13} color={colors.warning} />
+                      <Text style={{ fontSize: 11, color: colors.warning, fontWeight: '600' }}>توقف في {segments[idx].to}</Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          );
+        })()}
 
         {/* Baggage Policy */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

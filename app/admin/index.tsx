@@ -17,9 +17,9 @@ export default function IndexScreen() {
 
   if (!employee) {
     // @ts-ignore
-    return <Redirect href="/login" />;
+    return <Redirect href="/admin/login" />;
   }
 
   // @ts-ignore
-  return <Redirect href="/(tabs)" />;
+  return <Redirect href="/admin/(tabs)" />;
 }

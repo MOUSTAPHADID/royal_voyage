@@ -78,10 +78,10 @@ export default function DashboardScreen() {
   const recentBookings = useMemo(() => (bookingsData ?? []).slice(0, 8), [bookingsData]);
 
   const quickActions = [
-    { icon: "calendar.badge.checkmark" as const, label: t.manageBookings, route: "/(tabs)/bookings" },
-    { icon: "person.3.fill" as const, label: t.manageEmployees, route: "/(tabs)/employees" },
-    { icon: "chart.bar.fill" as const, label: t.reports, route: "/(tabs)/reports" },
-    { icon: "gear" as const, label: t.settings, route: "/(tabs)/settings" },
+    { icon: "calendar.badge.checkmark" as const, label: t.manageBookings, route: "/admin/(tabs)/bookings" },
+    { icon: "person.3.fill" as const, label: t.manageEmployees, route: "/admin/(tabs)/employees" },
+    { icon: "chart.bar.fill" as const, label: t.reports, route: "/admin/(tabs)/reports" },
+    { icon: "gear" as const, label: t.settings, route: "/admin/(tabs)/settings" },
   ];
 
   return (
@@ -143,7 +143,7 @@ export default function DashboardScreen() {
           <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={[styles.sectionHeader, { flexDirection: isRTL ? "row-reverse" : "row" }]}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t.recentBookings}</Text>
-              <TouchableOpacity onPress={() => router.push("/(tabs)/bookings" as any)}>
+              <TouchableOpacity onPress={() => router.push("/admin/(tabs)/bookings" as any)}>
                 <Text style={[styles.viewAll, { color: colors.primary }]}>{t.viewAll}</Text>
               </TouchableOpacity>
             </View>
@@ -161,7 +161,7 @@ export default function DashboardScreen() {
                 <TouchableOpacity
                   key={booking.id}
                   style={[styles.bookingRow, { borderBottomColor: colors.border }]}
-                  onPress={() => router.push({ pathname: "/booking-detail/[id]" as any, params: { id: booking.duffelOrderId } })}
+                  onPress={() => router.push({ pathname: "/admin/booking-detail/[id]" as any, params: { id: booking.duffelOrderId } })}
                   activeOpacity={0.7}
                 >
                   <View style={[styles.bookingIcon, { backgroundColor: colors.primary + "15" }]}>

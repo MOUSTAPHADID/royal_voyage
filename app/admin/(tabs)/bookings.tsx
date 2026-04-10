@@ -127,7 +127,7 @@ export default function BookingsScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               style={[styles.bookingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => router.push({ pathname: "/booking-detail/[id]" as any, params: { id: item.duffelOrderId } })}
+              onPress={() => router.push({ pathname: "/admin/booking-detail/[id]" as any, params: { id: item.duffelOrderId } })}
               activeOpacity={0.75}
             >
               <View style={[styles.cardIcon, { backgroundColor: item.pnr ? "#22C55E18" : "#F59E0B18" }]}>

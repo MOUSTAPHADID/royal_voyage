@@ -34,7 +34,7 @@ export default function EmployeesScreen() {
     <ScreenContainer>
       <View style={[styles.header, { backgroundColor: colors.primary }]}>
         <Text style={styles.headerTitle}>{t.title}</Text>
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]} onPress={() => router.push("/employee-form/new" as any)}>
+        <TouchableOpacity style={[styles.addBtn, { backgroundColor: "rgba(255,255,255,0.2)" }]} onPress={() => router.push("/admin/employee-form/new" as any)}>
           <IconSymbol name="plus.circle.fill" size={20} color="#fff" />
           <Text style={styles.addBtnText}>{t.add}</Text>
         </TouchableOpacity>
@@ -71,7 +71,7 @@ export default function EmployeesScreen() {
               </View>
               <View style={styles.actions}>
                 <View style={[styles.statusDot, { backgroundColor: item.status === "active" ? "#22C55E" : colors.muted }]} />
-                <TouchableOpacity onPress={() => router.push({ pathname: "/employee-form/[id]" as any, params: { id: item.id } })}>
+                <TouchableOpacity onPress={() => router.push({ pathname: "/admin/employee-form/[id]" as any, params: { id: item.id } })}>
                   <IconSymbol name="pencil" size={18} color={colors.primary} />
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => handleDelete(item.id, item.fullName)}>

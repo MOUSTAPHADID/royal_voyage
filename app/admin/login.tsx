@@ -67,7 +67,7 @@ export default function LoginScreen() {
           role: data.employee.role,
           token: `emp_${data.employee.id}_${Date.now()}`,
         });
-        router.replace("/(tabs)");
+        router.replace("/admin/(tabs)" as any);
       } else {
         addLogMutation.mutate({
           identifier: email.trim().toLowerCase(),

@@ -9,6 +9,8 @@ import {
   ListRenderItemInfo,
   Image,
   Animated,
+  Modal,
+  ScrollView,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
@@ -104,9 +106,23 @@ export default function FlightResultsScreen() {
   const [filterBags, setFilterBags] = useState<number | null>(null); // null = All
   const [filterDirectOnly, setFilterDirectOnly] = useState(false);
   const [activeSection, setActiveSection] = useState<"outbound" | "return">("outbound");
+  const [filterAirline, setFilterAirline] = useState<string>("All"); // airline filter
+  const [filterStops, setFilterStops] = useState<number | null>(null); // null = All stops
   const [showPriceFilter, setShowPriceFilter] = useState(false);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 999999]);
   const [priceRangeInitialized, setPriceRangeInitialized] = useState(false);
+  // Compare feature: up to 2 flights
+  const [compareList, setCompareList] = useState<AnyFlight[]>([]);
+  const [showCompare, setShowCompare] = useState(false);
+
+  const toggleCompare = (flight: AnyFlight) => {
+    setCompareList((prev) => {
+      const exists = prev.find((f) => f.id === flight.id);
+      if (exists) return prev.filter((f) => f.id !== flight.id);
+      if (prev.length >= 2) return [prev[1], flight]; // replace oldest
+      return [...prev, flight];
+    });
+  };
 
   // Always use Duffel Production API — useMock is kept for emergency fallback only
   const useMock = false;const classes = ["All", "ECONOMY", "BUSINESS", "FIRST"];
@@ -206,6 +222,15 @@ export default function FlightResultsScreen() {
     setPriceRangeInitialized(false);
   }, [activeSection]);
 
+  // Collect unique airlines from active flights
+  const uniqueAirlines = useMemo(() => {
+    const codes = new Map<string, string>(); // code -> name
+    activeFlights.forEach((f) => {
+      if (f.airlineCode) codes.set(f.airlineCode, f.airline);
+    });
+    return Array.from(codes.entries()).map(([code, name]) => ({ code, name }));
+  }, [activeFlights]);
+
   const filteredFlights = useMemo(() => {
     return activeFlights
       .filter((f) => filterClass === "All" || f.class === filterClass)
@@ -215,13 +240,20 @@ export default function FlightResultsScreen() {
       })
       .filter((f) => {
         if (filterBags === null) return true;
-        // Filter by checked baggage quantity
         const checkedQty = f.baggageAllowance?.checked?.quantity ?? 1;
         return checkedQty >= filterBags;
       })
       .filter((f) => {
         if (!filterDirectOnly) return true;
         return f.stops === 0;
+      })
+      .filter((f) => {
+        if (filterAirline === "All") return true;
+        return f.airlineCode === filterAirline;
+      })
+      .filter((f) => {
+        if (filterStops === null) return true;
+        return f.stops === filterStops;
       })
       .sort((a, b) => {
         if (sortBy === "price") return getFlightTotalMRU(a) - getFlightTotalMRU(b);
@@ -471,6 +503,24 @@ export default function FlightResultsScreen() {
             {item.seatsLeft} {t.flights.seatsLeft}
           </Text>
         </View>
+        {/* Compare toggle button */}
+        <Pressable
+          style={({ pressed }) => [{
+            width: 36, height: 36, borderRadius: 10,
+            backgroundColor: compareList.find(f => f.id === item.id) ? colors.warning + "30" : colors.border + "60",
+            borderWidth: 1,
+            borderColor: compareList.find(f => f.id === item.id) ? colors.warning : colors.border,
+            alignItems: "center", justifyContent: "center",
+            opacity: pressed ? 0.7 : 1,
+          }]}
+          onPress={() => toggleCompare(item)}
+        >
+          <MaterialIcons
+            name={compareList.find(f => f.id === item.id) ? "compare-arrows" : "compare"}
+            size={18}
+            color={compareList.find(f => f.id === item.id) ? colors.warning : colors.muted}
+          />
+        </Pressable>
         <Pressable
           style={({ pressed }) => [
             styles.selectBtn,
@@ -503,6 +553,10 @@ export default function FlightResultsScreen() {
                   returnDate: params.returnDate || "",
                   passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",
                  baggageAllowanceJson: item.baggageAllowance ? JSON.stringify(item.baggageAllowance) : "",
+                 allFlightNumbers: item.allFlightNumbers ? JSON.stringify(item.allFlightNumbers) : "",
+                 stopCodes: item.stopCodes ? JSON.stringify(item.stopCodes) : "",
+                 operatingAirlines: item.operatingAirlines ? JSON.stringify(item.operatingAirlines) : "",
+                 segmentsJson: "",
                 },
              })
            }
@@ -512,7 +566,7 @@ export default function FlightResultsScreen() {
       </View>
     </Pressable>
   );
-  }, [colors, router, params, totalPassengers, cheapestPrice, filteredFlights, fmt, t]);
+  }, [colors, router, params, totalPassengers, cheapestPrice, filteredFlights, fmt, t, compareList, toggleCompare]);
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
@@ -805,6 +859,54 @@ export default function FlightResultsScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* Stops filter row */}
+        <View style={[styles.classRow, { marginTop: 4 }]}>
+          <MaterialIcons name="connecting-airports" size={18} color={colors.muted} style={{ marginRight: 4 }} />
+          {([null, 0, 1, 2] as (number | null)[]).map((n) => {
+            const label = n === null ? "الكل" : n === 0 ? "مباشر" : n === 1 ? "توقف 1" : "توقف 2+";
+            const isActive = filterStops === n;
+            return (
+              <Pressable
+                key={String(n)}
+                style={[styles.classChip, isActive && { backgroundColor: colors.primary + "30", borderColor: colors.primary }]}
+                onPress={() => setFilterStops(n)}
+              >
+                <Text style={[styles.classChipText, { color: isActive ? colors.primary : colors.muted, fontWeight: isActive ? "700" : "400" }]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Airline filter row — shown only when multiple airlines available */}
+        {uniqueAirlines.length > 1 && (
+          <View style={[styles.classRow, { marginTop: 4, flexWrap: "wrap" }]}>
+            <MaterialIcons name="flight" size={18} color={colors.muted} style={{ marginRight: 4 }} />
+            <Pressable
+              style={[styles.classChip, filterAirline === "All" && { backgroundColor: colors.primary + "30", borderColor: colors.primary }]}
+              onPress={() => setFilterAirline("All")}
+            >
+              <Text style={[styles.classChipText, { color: filterAirline === "All" ? colors.primary : colors.muted }]}>الكل</Text>
+            </Pressable>
+            {uniqueAirlines.map(({ code, name }) => {
+              const isActive = filterAirline === code;
+              return (
+                <Pressable
+                  key={code}
+                  style={[styles.classChip, isActive && { backgroundColor: colors.primary + "30", borderColor: colors.primary }, { flexDirection: "row", alignItems: "center", gap: 4 }]}
+                  onPress={() => setFilterAirline(isActive ? "All" : code)}
+                >
+                  <Image source={{ uri: `https://images.kiwi.com/airlines/64/${code}.png` }} style={{ width: 16, height: 16, borderRadius: 2 }} resizeMode="contain" />
+                  <Text style={[styles.classChipText, { color: isActive ? colors.primary : colors.muted, fontWeight: isActive ? "700" : "400" }]}>
+                    {name.length > 12 ? name.slice(0, 12) + "…" : name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
       </View>
 
       {/* Loading / Error / Results count */}
@@ -854,6 +956,123 @@ export default function FlightResultsScreen() {
           </Animated.View>
         </>
       )}
+
+      {/* Compare Bar — shown when 1 or 2 flights selected */}
+      {compareList.length > 0 && (
+        <View style={[compareStyles.bar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <View style={compareStyles.barLeft}>
+            <MaterialIcons name="compare" size={20} color={colors.primary} />
+            <Text style={[compareStyles.barText, { color: colors.foreground }]}>
+              {compareList.length === 1 ? "اختر رحلة ثانية للمقارنة" : "جاهز للمقارنة"}
+            </Text>
+          </View>
+          <View style={compareStyles.barRight}>
+            {compareList.length === 2 && (
+              <Pressable
+                style={[compareStyles.compareBtn, { backgroundColor: colors.primary }]}
+                onPress={() => setShowCompare(true)}
+              >
+                <Text style={compareStyles.compareBtnText}>قارن</Text>
+              </Pressable>
+            )}
+            <Pressable
+              style={[compareStyles.clearBtn, { borderColor: colors.border }]}
+              onPress={() => setCompareList([])}
+            >
+              <MaterialIcons name="close" size={16} color={colors.muted} />
+            </Pressable>
+          </View>
+        </View>
+      )}
+
+      {/* Compare Modal */}
+      <Modal visible={showCompare} animationType="slide" transparent onRequestClose={() => setShowCompare(false)}>
+        <View style={compareStyles.modalOverlay}>
+          <View style={[compareStyles.modalSheet, { backgroundColor: colors.surface }]}>
+            {/* Modal Header */}
+            <View style={[compareStyles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[compareStyles.modalTitle, { color: colors.foreground }]}>مقارنة الرحلات</Text>
+              <Pressable onPress={() => setShowCompare(false)}>
+                <MaterialIcons name="close" size={24} color={colors.muted} />
+              </Pressable>
+            </View>
+            {/* Comparison Table */}
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {compareList.length === 2 && (() => {
+                const [a, b] = compareList;
+                const aPrice = getFlightTotalMRU(a);
+                const bPrice = getFlightTotalMRU(b);
+                const aDur = a.duration;
+                const bDur = b.duration;
+                const rows: { label: string; aVal: string; bVal: string; aWin?: boolean; bWin?: boolean }[] = [
+                  { label: "الناقلة", aVal: a.airline, bVal: b.airline },
+                  { label: "رقم الرحلة", aVal: a.flightNumber, bVal: b.flightNumber },
+                  { label: "الإقلاع", aVal: a.departureTime, bVal: b.departureTime },
+                  { label: "الوصول", aVal: a.arrivalTime, bVal: b.arrivalTime },
+                  { label: "المدة", aVal: aDur, bVal: bDur, aWin: aDur < bDur, bWin: bDur < aDur },
+                  { label: "التوقفات", aVal: a.stops === 0 ? "مباشر" : `${a.stops} توقف`, bVal: b.stops === 0 ? "مباشر" : `${b.stops} توقف`, aWin: a.stops < b.stops, bWin: b.stops < a.stops },
+                  { label: "الدرجة", aVal: a.class, bVal: b.class },
+                  { label: "المقاعد المتبقية", aVal: `${a.seatsLeft}`, bVal: `${b.seatsLeft}`, aWin: a.seatsLeft > b.seatsLeft, bWin: b.seatsLeft > a.seatsLeft },
+                  { label: "السعر الإجمالي", aVal: `${fmt(aPrice)} MRU`, bVal: `${fmt(bPrice)} MRU`, aWin: aPrice < bPrice, bWin: bPrice < aPrice },
+                ];
+                return (
+                  <View style={{ padding: 16 }}>
+                    {/* Airline logos header */}
+                    <View style={compareStyles.compareHeader}>
+                      <View style={compareStyles.compareCol}>
+                        <Image source={{ uri: `https://images.kiwi.com/airlines/64/${a.airlineCode}.png` }} style={compareStyles.compareLogo} resizeMode="contain" />
+                        <Text style={[compareStyles.compareAirline, { color: colors.foreground }]} numberOfLines={1}>{a.airline}</Text>
+                        <Text style={[compareStyles.compareRoute, { color: colors.muted }]}>{a.originCode} → {a.destinationCode}</Text>
+                      </View>
+                      <View style={compareStyles.vsCol}>
+                        <Text style={[compareStyles.vsText, { color: colors.muted }]}>VS</Text>
+                      </View>
+                      <View style={compareStyles.compareCol}>
+                        <Image source={{ uri: `https://images.kiwi.com/airlines/64/${b.airlineCode}.png` }} style={compareStyles.compareLogo} resizeMode="contain" />
+                        <Text style={[compareStyles.compareAirline, { color: colors.foreground }]} numberOfLines={1}>{b.airline}</Text>
+                        <Text style={[compareStyles.compareRoute, { color: colors.muted }]}>{b.originCode} → {b.destinationCode}</Text>
+                      </View>
+                    </View>
+                    {/* Rows */}
+                    {rows.map((row, i) => (
+                      <View key={i} style={[compareStyles.compareRow, { borderBottomColor: colors.border, backgroundColor: i % 2 === 0 ? colors.background : colors.surface }]}>
+                        <Text style={[compareStyles.rowLabel, { color: colors.muted }]}>{row.label}</Text>
+                        <Text style={[compareStyles.rowVal, { color: row.aWin ? colors.success : colors.foreground, fontWeight: row.aWin ? "700" : "400" }]}>
+                          {row.aWin ? "✓ " : ""}{row.aVal}
+                        </Text>
+                        <Text style={[compareStyles.rowVal, { color: row.bWin ? colors.success : colors.foreground, fontWeight: row.bWin ? "700" : "400" }]}>
+                          {row.bWin ? "✓ " : ""}{row.bVal}
+                        </Text>
+                      </View>
+                    ))}
+                    {/* Action buttons */}
+                    <View style={compareStyles.compareActions}>
+                      <Pressable
+                        style={[compareStyles.selectFlight, { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          setShowCompare(false);
+                          router.push({ pathname: "/flights/detail" as any, params: { id: a.id, airline: a.airline, airlineCode: a.airlineCode || "", flightNumber: a.flightNumber, originCode: a.originCode, origin: a.origin, destinationCode: a.destinationCode, destination: a.destination, departureTime: a.departureTime, arrivalTime: a.arrivalTime, duration: a.duration, stops: String(a.stops), price: String(a.price), currency: a.currency || "USD", class: a.class, seatsLeft: String(a.seatsLeft), passengers: params.passengers || "1", children: params.children || "0", infants: params.infants || "0", tripType: params.tripType || "oneway", returnDate: params.returnDate || "" } });
+                        }}
+                      >
+                        <Text style={compareStyles.selectFlightText}>اختر الأولى</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[compareStyles.selectFlight, { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          setShowCompare(false);
+                          router.push({ pathname: "/flights/detail" as any, params: { id: b.id, airline: b.airline, airlineCode: b.airlineCode || "", flightNumber: b.flightNumber, originCode: b.originCode, origin: b.origin, destinationCode: b.destinationCode, destination: b.destination, departureTime: b.departureTime, arrivalTime: b.arrivalTime, duration: b.duration, stops: String(b.stops), price: String(b.price), currency: b.currency || "USD", class: b.class, seatsLeft: String(b.seatsLeft), passengers: params.passengers || "1", children: params.children || "0", infants: params.infants || "0", tripType: params.tripType || "oneway", returnDate: params.returnDate || "" } });
+                        }}
+                      >
+                        <Text style={compareStyles.selectFlightText}>اختر الثانية</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                );
+              })()}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -1101,4 +1320,38 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
+});
+
+const compareStyles = StyleSheet.create({
+  bar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+  },
+  barLeft: { flexDirection: "row", alignItems: "center", gap: 8 },
+  barText: { fontSize: 14, fontWeight: "600" },
+  barRight: { flexDirection: "row", alignItems: "center", gap: 8 },
+  compareBtn: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 10 },
+  compareBtnText: { color: "#FFF", fontSize: 14, fontWeight: "700" },
+  clearBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" },
+  modalSheet: { borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "90%", minHeight: "60%" },
+  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", padding: 16, borderBottomWidth: 1 },
+  modalTitle: { fontSize: 18, fontWeight: "700" },
+  compareHeader: { flexDirection: "row", alignItems: "center", marginBottom: 16, gap: 8 },
+  compareCol: { flex: 1, alignItems: "center", gap: 6 },
+  vsCol: { width: 32, alignItems: "center" },
+  vsText: { fontSize: 14, fontWeight: "700" },
+  compareLogo: { width: 48, height: 48, borderRadius: 8 },
+  compareAirline: { fontSize: 13, fontWeight: "700", textAlign: "center" },
+  compareRoute: { fontSize: 11, textAlign: "center" },
+  compareRow: { flexDirection: "row", alignItems: "center", paddingVertical: 10, paddingHorizontal: 4, borderBottomWidth: 0.5 },
+  rowLabel: { width: 90, fontSize: 12, fontWeight: "600" },
+  rowVal: { flex: 1, fontSize: 13, textAlign: "center" },
+  compareActions: { flexDirection: "row", gap: 12, marginTop: 20, paddingBottom: 20 },
+  selectFlight: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: "center" },
+  selectFlightText: { color: "#FFF", fontSize: 15, fontWeight: "700" },
 });
