@@ -8,8 +8,86 @@ import { trpc } from "@/lib/trpc";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 
 const T = {
-  ar: { title: "تفاصيل الحجز", pnr: "رقم PNR", ref: "المرجع", passenger: "المسافر", route: "المسار", price: "السعر الإجمالي", status: "الحالة", confirmed: "مؤكد", pending: "معلق", setPnr: "تعيين PNR", pnrPlaceholder: "أدخل رقم PNR...", save: "حفظ", cancel: "إلغاء", mru: "أوق", back: "رجوع", editPnr: "تعديل PNR", email: "البريد الإلكتروني", phone: "الهاتف", notFound: "الحجز غير موجود", loading: "جاري التحميل..." },
-  fr: { title: "Détails réservation", pnr: "PNR", ref: "Référence", passenger: "Passager", route: "Itinéraire", price: "Prix total", status: "Statut", confirmed: "Confirmé", pending: "En attente", setPnr: "Définir PNR", pnrPlaceholder: "Entrer le PNR...", save: "Enregistrer", cancel: "Annuler", mru: "MRU", back: "Retour", editPnr: "Modifier PNR", email: "E-mail", phone: "Téléphone", notFound: "Réservation introuvable", loading: "Chargement..." },
+  ar: {
+    title: "تفاصيل الحجز",
+    pnr: "رقم PNR",
+    ref: "المرجع",
+    passenger: "المسافر",
+    route: "المسار",
+    price: "السعر الإجمالي",
+    status: "الحالة",
+    confirmed: "مؤكد",
+    pending: "في الانتظار",
+    setPnr: "تعيين PNR",
+    pnrPlaceholder: "أدخل رقم PNR...",
+    save: "حفظ",
+    cancel: "إلغاء",
+    cancelBooking: "إلغاء الحجز",
+    cancelConfirmTitle: "تأكيد الإلغاء",
+    cancelConfirmMsg: "هل أنت متأكد من إلغاء هذا الحجز؟ سيتم إلغاؤه من Amadeus وحذفه من السجلات.",
+    cancelConfirmYes: "نعم، إلغاء",
+    cancelConfirmNo: "لا",
+    cancelSuccess: "تم إلغاء الحجز بنجاح",
+    cancelError: "فشل إلغاء الحجز",
+    mru: "أوق",
+    back: "رجوع",
+    editPnr: "تعديل PNR",
+    email: "البريد الإلكتروني",
+    phone: "الهاتف",
+    notFound: "الحجز غير موجود",
+    loading: "جاري التحميل...",
+    ticketStatus: "حالة التذكرة",
+    checkTicket: "التحقق من التذكرة",
+    checking: "جاري التحقق...",
+    ticketIssued: "تم إصدار التذكرة",
+    ticketPending: "التذكرة في الانتظار",
+    ticketCancelled: "التذكرة ملغاة",
+    orderId: "رقم الطلب",
+    createdAt: "تاريخ الحجز",
+    sendTicket: "إرسال التذكرة للعميل",
+    sendTicketSuccess: "تم إرسال التذكرة بنجاح",
+    sendTicketError: "فشل إرسال التذكرة",
+  },
+  fr: {
+    title: "Détails réservation",
+    pnr: "PNR",
+    ref: "Référence",
+    passenger: "Passager",
+    route: "Itinéraire",
+    price: "Prix total",
+    status: "Statut",
+    confirmed: "Confirmé",
+    pending: "En attente",
+    setPnr: "Définir PNR",
+    pnrPlaceholder: "Entrer le PNR...",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    cancelBooking: "Annuler la réservation",
+    cancelConfirmTitle: "Confirmer l'annulation",
+    cancelConfirmMsg: "Voulez-vous annuler cette réservation? Elle sera annulée sur Amadeus et supprimée des enregistrements.",
+    cancelConfirmYes: "Oui, annuler",
+    cancelConfirmNo: "Non",
+    cancelSuccess: "Réservation annulée avec succès",
+    cancelError: "Échec de l'annulation",
+    mru: "MRU",
+    back: "Retour",
+    editPnr: "Modifier PNR",
+    email: "E-mail",
+    phone: "Téléphone",
+    notFound: "Réservation introuvable",
+    loading: "Chargement...",
+    ticketStatus: "Statut du billet",
+    checkTicket: "Vérifier le billet",
+    checking: "Vérification...",
+    ticketIssued: "Billet émis",
+    ticketPending: "Billet en attente",
+    ticketCancelled: "Billet annulé",
+    orderId: "ID commande",
+    createdAt: "Date de réservation",
+    sendTicket: "Envoyer le billet au client",
+    sendTicketSuccess: "Billet envoyé avec succès",
+    sendTicketError: "Échec de l'envoi du billet",
+  },
 };
 
 export default function BookingDetailScreen() {
@@ -21,18 +99,101 @@ export default function BookingDetailScreen() {
 
   const [editingPnr, setEditingPnr] = useState(false);
   const [pnrInput, setPnrInput] = useState("");
+  const [ticketStatus, setTicketStatus] = useState<string | null>(null);
+  const [checkingTicket, setCheckingTicket] = useState(false);
 
   const { data: bookingsData, isLoading, refetch } = trpc.bookingContacts.list.useQuery();
   const updatePnrMutation = trpc.bookingContacts.updatePnr.useMutation({
     onSuccess: () => { setEditingPnr(false); refetch(); },
     onError: (err) => Alert.alert("Error", err.message),
   });
+  const cancelAndDeleteMutation = trpc.bookingContacts.cancelAndDelete.useMutation({
+    onSuccess: () => {
+      Alert.alert("✅", t.cancelSuccess, [{ text: "OK", onPress: () => router.back() }]);
+    },
+    onError: (err) => Alert.alert(t.cancelError, err.message),
+  });
+  const checkTicketMutation = trpc.duffel.checkTicketIssuance.useMutation();
+  const sendTicketMutation = trpc.email.sendFlightTicket.useMutation();
 
   const booking = bookingsData?.find(b => b.duffelOrderId === id || String(b.id) === id);
 
   const handleSavePnr = () => {
     if (!pnrInput.trim() || !booking) return;
     updatePnrMutation.mutate({ id: booking.id, pnr: pnrInput.trim().toUpperCase() });
+  };
+
+  const handleCancelBooking = () => {
+    if (!booking) return;
+    Alert.alert(t.cancelConfirmTitle, t.cancelConfirmMsg, [
+      { text: t.cancelConfirmNo, style: "cancel" },
+      {
+        text: t.cancelConfirmYes,
+        style: "destructive",
+        onPress: () => {
+          cancelAndDeleteMutation.mutate({
+            id: booking.id,
+            duffelOrderId: booking.duffelOrderId,
+          });
+        },
+      },
+    ]);
+  };
+
+  const handleCheckTicket = async () => {
+    if (!booking?.duffelOrderId) return;
+    setCheckingTicket(true);
+    try {
+      const result = await checkTicketMutation.mutateAsync({ orderId: booking.duffelOrderId });
+      if ((result as any).issued) {
+        setTicketStatus("issued");
+      } else if ((result as any).cancelled) {
+        setTicketStatus("cancelled");
+      } else {
+        setTicketStatus("pending");
+      }
+    } catch {
+      setTicketStatus("pending");
+    } finally {
+      setCheckingTicket(false);
+    }
+  };
+
+  const handleSendTicket = () => {
+    if (!booking) return;
+    const email = (booking as any).passengerEmail;
+    if (!email) {
+      Alert.alert("تنبيه", "لا يوجد بريد إلكتروني للمسافر");
+      return;
+    }
+    const routeParts = ((booking as any).routeSummary ?? "").split("→");
+    const origin = routeParts[0]?.trim() ?? "—";
+    const destination = routeParts[1]?.trim() ?? "—";
+    sendTicketMutation.mutate(
+      {
+        passengerName: (booking as any).passengerName ?? "Passenger",
+        passengerEmail: email,
+        bookingRef: (booking as any).bookingRef ?? booking.duffelOrderId,
+        pnr: booking.pnr ?? "PENDING",
+        origin,
+        originCity: origin,
+        destination,
+        destinationCity: destination,
+        departureDate: "—",
+        departureTime: "—",
+        arrivalTime: "—",
+        airline: "—",
+        flightNumber: "—",
+        cabinClass: "Economy",
+        passengers: 1,
+        totalPrice: (booking as any).totalPrice ?? "0",
+        currency: (booking as any).currency ?? "MRU",
+      },
+      {
+        onSuccess: () => Alert.alert("✅", t.sendTicketSuccess),
+        onError: (err) => Alert.alert(t.sendTicketError, err.message),
+      }
+    );
   };
 
   if (isLoading) return (
@@ -42,7 +203,7 @@ export default function BookingDetailScreen() {
   if (!booking) return (
     <ScreenContainer>
       <View style={styles.center}>
-        <IconSymbol name="xmark.circle.fill" size={48} color={colors.error} />
+        <IconSymbol name="xmark.circle.fill" size={48} color="#EF4444" />
         <Text style={[styles.notFound, { color: colors.muted }]}>{t.notFound}</Text>
         <TouchableOpacity onPress={() => router.back()} style={[styles.backBtn, { backgroundColor: colors.primary }]}>
           <Text style={styles.backBtnText}>{t.back}</Text>
@@ -52,6 +213,12 @@ export default function BookingDetailScreen() {
   );
 
   const isConfirmed = !!booking.pnr;
+  const createdDate = booking.createdAt
+    ? new Date(booking.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" })
+    : "—";
+
+  const ticketStatusColor = ticketStatus === "issued" ? "#22C55E" : ticketStatus === "cancelled" ? "#EF4444" : "#F59E0B";
+  const ticketStatusLabel = ticketStatus === "issued" ? t.ticketIssued : ticketStatus === "cancelled" ? t.ticketCancelled : t.ticketPending;
 
   return (
     <ScreenContainer>
@@ -73,15 +240,16 @@ export default function BookingDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           {[
             { label: t.ref, value: (booking as any).bookingRef ?? booking.duffelOrderId },
+            { label: t.orderId, value: booking.duffelOrderId },
             { label: t.passenger, value: (booking as any).passengerName ?? "—" },
-            { label: t.email, value: (booking as any).email ?? "—" },
-            { label: t.phone, value: (booking as any).phone ?? "—" },
+            { label: t.email, value: (booking as any).passengerEmail ?? "—" },
             { label: t.route, value: (booking as any).routeSummary ?? "—" },
             { label: t.price, value: (booking as any).totalPrice ? `${parseFloat((booking as any).totalPrice).toLocaleString()} ${t.mru}` : "—" },
+            { label: t.createdAt, value: createdDate },
           ].map(row => (
             <View key={row.label} style={[styles.infoRow, { borderBottomColor: colors.border }]}>
               <Text style={[styles.infoLabel, { color: colors.muted }]}>{row.label}</Text>
-              <Text style={[styles.infoValue, { color: colors.foreground }]} selectable>{row.value}</Text>
+              <Text style={[styles.infoValue, { color: colors.foreground }]} selectable numberOfLines={1}>{row.value}</Text>
             </View>
           ))}
         </View>
@@ -128,6 +296,63 @@ export default function BookingDetailScreen() {
             </TouchableOpacity>
           )}
         </View>
+
+        {/* Ticket Status Section */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.pnrHeader}>
+            <Text style={[styles.pnrTitle, { color: colors.foreground }]}>{t.ticketStatus}</Text>
+            {ticketStatus && (
+              <View style={[styles.ticketStatusBadge, { backgroundColor: ticketStatusColor + "20" }]}>
+                <Text style={[styles.ticketStatusText, { color: ticketStatusColor }]}>{ticketStatusLabel}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.ticketActions}>
+            <TouchableOpacity
+              style={[styles.checkTicketBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}
+              onPress={handleCheckTicket}
+              disabled={checkingTicket}
+            >
+              {checkingTicket ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <IconSymbol name="checkmark.seal.fill" size={18} color={colors.primary} />
+              )}
+              <Text style={[styles.checkTicketText, { color: colors.primary }]}>
+                {checkingTicket ? t.checking : t.checkTicket}
+              </Text>
+            </TouchableOpacity>
+
+            {(booking as any).passengerEmail && (
+              <TouchableOpacity
+                style={[styles.sendTicketBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E" }]}
+                onPress={handleSendTicket}
+                disabled={sendTicketMutation.isPending}
+              >
+                {sendTicketMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#22C55E" />
+                ) : (
+                  <IconSymbol name="paperplane.fill" size={18} color="#22C55E" />
+                )}
+                <Text style={[styles.checkTicketText, { color: "#22C55E" }]}>{t.sendTicket}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Cancel Booking */}
+        <TouchableOpacity
+          style={[styles.cancelBookingBtn, { borderColor: "#EF4444" }]}
+          onPress={handleCancelBooking}
+          disabled={cancelAndDeleteMutation.isPending}
+        >
+          {cancelAndDeleteMutation.isPending ? (
+            <ActivityIndicator size="small" color="#EF4444" />
+          ) : (
+            <IconSymbol name="xmark.circle.fill" size={18} color="#EF4444" />
+          )}
+          <Text style={[styles.cancelBookingText, { color: "#EF4444" }]}>{t.cancelBooking}</Text>
+        </TouchableOpacity>
       </ScrollView>
     </ScreenContainer>
   );
@@ -143,7 +368,7 @@ const styles = StyleSheet.create({
   notFound: { fontSize: 16 },
   backBtn: { paddingHorizontal: 20, paddingVertical: 10, borderRadius: 12 },
   backBtnText: { color: "#fff", fontWeight: "600" },
-  content: { padding: 16, gap: 16 },
+  content: { padding: 16, gap: 16, paddingBottom: 32 },
   card: { borderRadius: 16, borderWidth: 1, overflow: "hidden" },
   infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 0.5 },
   infoLabel: { fontSize: 13 },
@@ -161,4 +386,13 @@ const styles = StyleSheet.create({
   cancelBtnText: { fontWeight: "600" },
   setPnrBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, margin: 16, marginTop: 4, paddingVertical: 12, borderRadius: 12 },
   setPnrBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  ticketStatusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  ticketStatusText: { fontSize: 12, fontWeight: "700" },
+  ticketActions: { padding: 16, paddingTop: 4, gap: 10 },
+  checkTicketBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
+  sendTicketBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12, borderWidth: 1 },
+  checkTicketText: { fontWeight: "700", fontSize: 14 },
+  cancelBookingBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: 14, borderWidth: 1.5, marginBottom: 8 },
+  cancelBookingText: { fontWeight: "700", fontSize: 15 },
+  errorColor: { color: "#EF4444" },
 });

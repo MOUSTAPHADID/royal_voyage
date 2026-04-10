@@ -586,6 +586,13 @@ export async function updateBookingContactPnrById(id: number, pnr: string): Prom
   await db.update(bookingContacts).set({ pnr }).where(eq(bookingContacts.id, id));
 }
 
+// ─── Admin: Delete Booking Contact ──────────────────────────────────────────
+export async function deleteBookingContact(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(bookingContacts).where(eq(bookingContacts.id, id));
+}
+
 // ─── Customer Feedback ────────────────────────────────────────────────────────
 export async function createFeedback(data: { name: string; email?: string; rating: number; comment: string; travelType?: string; destination?: string; language?: string }): Promise<number> {
   const db = await getDb();

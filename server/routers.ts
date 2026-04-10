@@ -70,6 +70,7 @@ import {
   deleteEmployee,
   verifyPassword,
   upsertBookingContact,
+  deleteBookingContact,
   getTopUpRequests,
   getTopUpRequestsByAccount,
   getTopUpRequestById,
@@ -701,6 +702,37 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           await upsertBookingContact(input);
+
+          // ─── Send push notification to admin ───────────────────────────────────────────────
+          const adminToken = (global as any).__adminPushToken;
+          if (adminToken) {
+            const pnrInfo = input.pnr && input.pnr !== "PENDING" ? ` | PNR: ${input.pnr}` : "";
+            const priceInfo = input.totalPrice ? ` | ${parseFloat(input.totalPrice).toLocaleString()} ${input.currency ?? "MRU"}` : "";
+            const routeInfo = input.routeSummary ? ` | ${input.routeSummary}` : "";
+            try {
+              await fetch("https://exp.host/--/api/v2/push/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Accept": "application/json" },
+                body: JSON.stringify({
+                  to: adminToken,
+                  sound: "default",
+                  title: `✈️ حجز جديد: ${input.passengerName}`,
+                  body: `${input.bookingRef}${routeInfo}${priceInfo}${pnrInfo}`,
+                  data: {
+                    type: "new_booking",
+                    bookingRef: input.bookingRef,
+                    duffelOrderId: input.duffelOrderId,
+                    pnr: input.pnr ?? "",
+                  },
+                  channelId: "bookings",
+                }),
+              });
+              console.log(`[AdminNotif] ✅ Sent new booking notification for ${input.bookingRef}`);
+            } catch (notifErr: any) {
+              console.warn("[AdminNotif] Failed to send push:", notifErr?.message);
+            }
+          }
+
           return { success: true };
         } catch (err: any) {
           console.error("[DB] registerBookingContact error:", err?.message);
@@ -1986,6 +2018,25 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), pnr: z.string() }))
       .mutation(async ({ input }) => {
         await updateBookingContactPnrById(input.id, input.pnr);
+        return { success: true };
+      }),
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteBookingContact(input.id);
+        return { success: true };
+      }),
+    cancelAndDelete: adminProcedure
+      .input(z.object({ id: z.number(), duffelOrderId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          // Try to cancel on Amadeus first
+          await cancelFlightOrder(input.duffelOrderId);
+          console.log(`[Admin] ✅ Cancelled Amadeus order: ${input.duffelOrderId}`);
+        } catch (err: any) {
+          console.warn(`[Admin] Could not cancel Amadeus order ${input.duffelOrderId}:`, err?.message);
+        }
+        await deleteBookingContact(input.id);
         return { success: true };
       }),
   }),
