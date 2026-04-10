@@ -1563,3 +1563,6 @@
 - [ ] بحث الرحلات متعددة المدن (Multi-city flight search)
 - [ ] استبدال HBX بـ Amadeus Hotel Search API لبحث الفنادق
 - [x] دمج Amadeus API مع Duffel لبحث وحجز الطيران (Amadeus للبحث + Duffel للحجز)
+- [ ] تفعيل AMADEUS_OFFICE_ID لإصدار التذاكر عبر Amadeus مباشرة
+- [ ] تفعيل Amadeus Hotel APIs (Hotel Search + Hotel Offers)
+- [ ] اختبار حجز حقيقي NKC→CDG والتحقق من PNR

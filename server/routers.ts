@@ -22,11 +22,11 @@ import {
   removeConsolidator,
   getConsolidatorForBooking,
   getAmadeusStatus,
+  searchHotelsByCity,
 } from "./amadeus";
-// ── Duffel: Hold Orders + Multi-City + Hotels ────────────────────────────────
+// ── Duffel: Hold Orders + Multi-City ────────────────────────────────────────
 import {
   searchFlightsMultiCity,
-  searchHotelsByCity,
   createHoldOrder,
   payForHoldOrder,
   getDuffelStatus,
