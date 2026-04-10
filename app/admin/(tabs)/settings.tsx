@@ -42,6 +42,30 @@ const T = {
     inactivity: "الخروج التلقائي",
     inactivityNote: "يتم تسجيل الخروج تلقائياً بعد 15 دقيقة من عدم النشاط",
     roles: { manager: "مدير", accountant: "محاسب", booking_agent: "وكيل حجز", support: "دعم" } as Record<string, string>,
+    // Consolidators
+    consolidators: "وكالات إصدار التذاكر (Consolidators)",
+    consolidatorActive: "نشط",
+    consolidatorActivate: "تفعيل",
+    consolidatorDelete: "حذف",
+    consolidatorAdd: "إضافة Consolidator",
+    consolidatorOfficeId: "رقم المكتب (Office ID)",
+    consolidatorCurrency: "العملة",
+    consolidatorOfficeIdPlaceholder: "مثال: NKC262203",
+    consolidatorCurrencyPlaceholder: "مثال: MRU",
+    consolidatorAdded: "تمت الإضافة بنجاح",
+    consolidatorActivated: "تم التفعيل بنجاح",
+    consolidatorDeleted: "تم الحذف",
+    consolidatorDeleteConfirm: "هل تريد حذف هذا الـ Consolidator؟",
+    consolidatorEnvNote: "ملاحظة: يتم حفظ التغييرات مؤقتاً حتى إعادة تشغيل الخادم. لحفظ دائم، أضف المتغير البيئي.",
+    consolidatorAgencyId: "رقم مكتب الوكالة (Agency Office ID)",
+    consolidatorEnv: "البيئة",
+    consolidatorMode: "وضع الإصدار",
+    noConsolidators: "لا توجد consolidators مضافة",
+    add: "إضافة",
+    adding: "جاري الإضافة...",
+    activating: "جاري التفعيل...",
+    deleting: "جاري الحذف...",
+    refresh: "تحديث",
   },
   fr: {
     title: "Paramètres",
@@ -75,6 +99,30 @@ const T = {
     inactivity: "Déconnexion automatique",
     inactivityNote: "Déconnexion automatique après 15 minutes d'inactivité",
     roles: { manager: "Directeur", accountant: "Comptable", booking_agent: "Agent réservation", support: "Support" } as Record<string, string>,
+    // Consolidators
+    consolidators: "Consolidateurs (Émission de billets)",
+    consolidatorActive: "Actif",
+    consolidatorActivate: "Activer",
+    consolidatorDelete: "Supprimer",
+    consolidatorAdd: "Ajouter un Consolidateur",
+    consolidatorOfficeId: "ID Bureau (Office ID)",
+    consolidatorCurrency: "Devise",
+    consolidatorOfficeIdPlaceholder: "Ex: NKC262203",
+    consolidatorCurrencyPlaceholder: "Ex: MRU",
+    consolidatorAdded: "Ajouté avec succès",
+    consolidatorActivated: "Activé avec succès",
+    consolidatorDeleted: "Supprimé",
+    consolidatorDeleteConfirm: "Voulez-vous supprimer ce consolidateur ?",
+    consolidatorEnvNote: "Note: Les changements sont temporaires jusqu'au redémarrage du serveur.",
+    consolidatorAgencyId: "ID Bureau Agence (Agency Office ID)",
+    consolidatorEnv: "Environnement",
+    consolidatorMode: "Mode d'émission",
+    noConsolidators: "Aucun consolidateur configuré",
+    add: "Ajouter",
+    adding: "Ajout...",
+    activating: "Activation...",
+    deleting: "Suppression...",
+    refresh: "Actualiser",
   },
 };
 
@@ -99,7 +147,6 @@ export default function SettingsScreen() {
   const [retentionDuration, setRetentionDuration] = useState<string>("");
   const [settingsLoaded, setSettingsLoaded] = useState(false);
 
-  // Load settings into local state once
   React.useEffect(() => {
     if (settingsQuery.data && !settingsLoaded) {
       setRetentionFee(String(settingsQuery.data.priceRetentionFee));
@@ -121,6 +168,55 @@ export default function SettingsScreen() {
     });
   };
 
+  // ─── Consolidators ───────────────────────────────────────────────────────
+  const consolidatorQuery = trpc.duffel.getConsolidatorConfig.useQuery(undefined, {
+    refetchInterval: 10000,
+  });
+  const setActiveMutation = trpc.duffel.setActiveConsolidator.useMutation({
+    onSuccess: () => {
+      Alert.alert(t.consolidatorActivated);
+      consolidatorQuery.refetch();
+    },
+    onError: (e) => Alert.alert("خطأ", e.message),
+  });
+  const addConsolidatorMutation = trpc.duffel.addConsolidator.useMutation({
+    onSuccess: () => {
+      Alert.alert(t.consolidatorAdded);
+      setNewOfficeId("");
+      setNewCurrency("");
+      consolidatorQuery.refetch();
+    },
+    onError: (e) => Alert.alert("خطأ", e.message),
+  });
+  const removeConsolidatorMutation = trpc.duffel.removeConsolidator.useMutation({
+    onSuccess: () => {
+      Alert.alert(t.consolidatorDeleted);
+      consolidatorQuery.refetch();
+    },
+    onError: (e) => Alert.alert("خطأ", e.message),
+  });
+
+  const [newOfficeId, setNewOfficeId] = useState("");
+  const [newCurrency, setNewCurrency] = useState("MRU");
+
+  const handleAddConsolidator = () => {
+    const id = newOfficeId.trim().toUpperCase();
+    const cur = newCurrency.trim().toUpperCase() || "MRU";
+    if (!id) return Alert.alert("خطأ", "أدخل رقم المكتب (Office ID)");
+    addConsolidatorMutation.mutate({ officeId: id, currency: cur });
+  };
+
+  const handleDeleteConsolidator = (index: number, officeId: string) => {
+    Alert.alert(t.consolidatorDeleteConfirm, officeId, [
+      { text: t.no, style: "cancel" },
+      {
+        text: t.consolidatorDelete,
+        style: "destructive",
+        onPress: () => removeConsolidatorMutation.mutate({ index }),
+      },
+    ]);
+  };
+
   const handleLogout = () => {
     Alert.alert(t.confirmLogout, "", [
       { text: t.no, style: "cancel" },
@@ -135,6 +231,8 @@ export default function SettingsScreen() {
       hour: "2-digit", minute: "2-digit",
     });
   };
+
+  const config = consolidatorQuery.data;
 
   return (
     <ScreenContainer>
@@ -187,6 +285,155 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* ─── Consolidators Panel ─────────────────────────────────────────── */}
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <Text style={[styles.sectionTitle, { color: colors.muted }]}>{t.consolidators}</Text>
+            <TouchableOpacity onPress={() => consolidatorQuery.refetch()} style={{ padding: 4 }}>
+              <IconSymbol name="arrow.clockwise" size={16} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Agency Info */}
+          {config && (
+            <View style={[styles.agencyRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.agencyLabel, { color: colors.muted }]}>{t.consolidatorAgencyId}</Text>
+                <Text style={[styles.agencyValue, { color: colors.foreground }]}>{config.agencyOfficeId || "—"}</Text>
+              </View>
+              <View style={[styles.envBadge, { backgroundColor: config.environment === "production" ? colors.success + "20" : colors.warning + "20" }]}>
+                <Text style={[styles.envBadgeText, { color: config.environment === "production" ? colors.success : colors.warning }]}>
+                  {config.environment === "production" ? "PROD" : "TEST"}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* Consolidators List */}
+          {consolidatorQuery.isLoading ? (
+            <ActivityIndicator color={colors.primary} style={{ marginVertical: 12 }} />
+          ) : config && config.consolidators && config.consolidators.length > 0 ? (
+            <View style={{ gap: 10 }}>
+              {config.consolidators.map((c: any, index: number) => (
+                <View
+                  key={c.officeId + index}
+                  style={[
+                    styles.consolidatorCard,
+                    {
+                      backgroundColor: c.isActive ? colors.primary + "10" : colors.background,
+                      borderColor: c.isActive ? colors.primary : colors.border,
+                      borderWidth: c.isActive ? 2 : 1,
+                    },
+                  ]}
+                >
+                  {/* Active Badge */}
+                  {c.isActive && (
+                    <View style={[styles.activeBadge, { backgroundColor: colors.primary }]}>
+                      <Text style={styles.activeBadgeText}>✓ {t.consolidatorActive}</Text>
+                    </View>
+                  )}
+
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.consolidatorId, { color: colors.foreground }]}>{c.officeId}</Text>
+                      <Text style={[styles.consolidatorLabel, { color: colors.muted }]}>{c.label}</Text>
+                      <View style={[styles.currencyBadge, { backgroundColor: colors.primary + "15" }]}>
+                        <Text style={[styles.currencyText, { color: colors.primary }]}>{c.currency}</Text>
+                      </View>
+                    </View>
+
+                    <View style={{ gap: 8, alignItems: "flex-end" }}>
+                      {/* Activate Button */}
+                      {!c.isActive && (
+                        <TouchableOpacity
+                          style={[styles.activateBtn, { backgroundColor: colors.primary }]}
+                          onPress={() => setActiveMutation.mutate({ index })}
+                          disabled={setActiveMutation.isPending}
+                          activeOpacity={0.8}
+                        >
+                          {setActiveMutation.isPending ? (
+                            <ActivityIndicator color="#fff" size="small" />
+                          ) : (
+                            <Text style={styles.activateBtnText}>{t.consolidatorActivate}</Text>
+                          )}
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Delete Button (not for active) */}
+                      {!c.isActive && (
+                        <TouchableOpacity
+                          style={[styles.deleteBtn, { borderColor: colors.error + "60" }]}
+                          onPress={() => handleDeleteConsolidator(index, c.officeId)}
+                          disabled={removeConsolidatorMutation.isPending}
+                          activeOpacity={0.8}
+                        >
+                          <IconSymbol name="trash" size={14} color={colors.error} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View style={styles.emptyConsolidators}>
+              <IconSymbol name="ticket" size={32} color={colors.muted} />
+              <Text style={[styles.emptyText, { color: colors.muted }]}>{t.noConsolidators}</Text>
+            </View>
+          )}
+
+          {/* Add New Consolidator */}
+          <View style={[styles.addSection, { borderColor: colors.border, backgroundColor: colors.background }]}>
+            <Text style={[styles.addTitle, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>
+              {t.consolidatorAdd}
+            </Text>
+            <View style={{ flexDirection: isRTL ? "row-reverse" : "row", gap: 10 }}>
+              <TextInput
+                style={[styles.addInput, { flex: 2, borderColor: colors.border, backgroundColor: colors.surface, color: colors.foreground }]}
+                value={newOfficeId}
+                onChangeText={setNewOfficeId}
+                placeholder={t.consolidatorOfficeIdPlaceholder}
+                placeholderTextColor={colors.muted}
+                autoCapitalize="characters"
+                textAlign={isRTL ? "right" : "left"}
+              />
+              <TextInput
+                style={[styles.addInput, { flex: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.foreground }]}
+                value={newCurrency}
+                onChangeText={setNewCurrency}
+                placeholder={t.consolidatorCurrencyPlaceholder}
+                placeholderTextColor={colors.muted}
+                autoCapitalize="characters"
+                maxLength={3}
+                textAlign="center"
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.addBtn, { backgroundColor: colors.primary, opacity: addConsolidatorMutation.isPending ? 0.7 : 1 }]}
+              onPress={handleAddConsolidator}
+              disabled={addConsolidatorMutation.isPending}
+              activeOpacity={0.85}
+            >
+              {addConsolidatorMutation.isPending ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <>
+                  <IconSymbol name="plus" size={16} color="#fff" />
+                  <Text style={styles.addBtnText}>{t.add}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          {/* Env Note */}
+          <View style={[styles.noteBox, { backgroundColor: colors.warning + "15", borderColor: colors.warning + "40" }]}>
+            <IconSymbol name="info.circle" size={14} color={colors.warning} />
+            <Text style={[styles.noteText, { color: colors.warning, textAlign: isRTL ? "right" : "left" }]}>
+              {t.consolidatorEnvNote}
+            </Text>
+          </View>
+        </View>
+
         {/* Price Retention Settings */}
         <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.muted }]}>{t.priceRetention}</Text>
@@ -195,7 +442,6 @@ export default function SettingsScreen() {
             <ActivityIndicator color={colors.primary} />
           ) : (
             <>
-              {/* Fee Amount */}
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>{t.retentionFee}</Text>
                 <TextInput
@@ -208,7 +454,6 @@ export default function SettingsScreen() {
                 />
               </View>
 
-              {/* Fee Type */}
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>{t.retentionType}</Text>
                 <View style={styles.typeRow}>
@@ -226,7 +471,6 @@ export default function SettingsScreen() {
                 </View>
               </View>
 
-              {/* Duration */}
               <View style={styles.fieldGroup}>
                 <Text style={[styles.fieldLabel, { color: colors.foreground, textAlign: isRTL ? "right" : "left" }]}>{t.retentionDuration}</Text>
                 <TextInput
@@ -239,7 +483,6 @@ export default function SettingsScreen() {
                 />
               </View>
 
-              {/* Save Button */}
               <TouchableOpacity
                 style={[styles.saveBtn, { backgroundColor: colors.primary, opacity: updateSettingsMutation.isPending ? 0.7 : 1 }]}
                 onPress={handleSaveSettings}
@@ -264,7 +507,7 @@ export default function SettingsScreen() {
             onPress={() => setShowLogs(true)}
             activeOpacity={0.8}
           >
-            <IconSymbol name="list.bullet" size={18} color={colors.primary} />
+            <IconSymbol name="list.bullet" size={16} color={colors.primary} />
             <Text style={[styles.viewLogsBtnText, { color: colors.primary }]}>{t.viewLogs}</Text>
           </TouchableOpacity>
         </View>
@@ -373,4 +616,29 @@ const styles = StyleSheet.create({
   logBadgeText: { fontSize: 11, fontWeight: "700" },
   emptyLogs: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, paddingTop: 60 },
   emptyLogsText: { fontSize: 15 },
+  // Consolidators
+  agencyRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 12, borderRadius: 10, borderWidth: 1 },
+  agencyLabel: { fontSize: 11, fontWeight: "600", marginBottom: 2 },
+  agencyValue: { fontSize: 15, fontWeight: "700", letterSpacing: 0.5 },
+  envBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  envBadgeText: { fontSize: 11, fontWeight: "800" },
+  consolidatorCard: { borderRadius: 14, padding: 14, gap: 8 },
+  activeBadge: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20, marginBottom: 4 },
+  activeBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  consolidatorId: { fontSize: 17, fontWeight: "800", letterSpacing: 0.5 },
+  consolidatorLabel: { fontSize: 12, marginTop: 2 },
+  currencyBadge: { alignSelf: "flex-start", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, marginTop: 6 },
+  currencyText: { fontSize: 12, fontWeight: "700" },
+  activateBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 10, minWidth: 80, alignItems: "center" },
+  activateBtnText: { color: "#fff", fontSize: 13, fontWeight: "700" },
+  deleteBtn: { width: 34, height: 34, borderRadius: 10, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  emptyConsolidators: { alignItems: "center", gap: 8, paddingVertical: 16 },
+  emptyText: { fontSize: 13 },
+  addSection: { borderRadius: 12, padding: 14, borderWidth: 1, gap: 10 },
+  addTitle: { fontSize: 13, fontWeight: "700" },
+  addInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 },
+  addBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, borderRadius: 12 },
+  addBtnText: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  noteBox: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 10, borderRadius: 10, borderWidth: 1 },
+  noteText: { fontSize: 11, flex: 1, lineHeight: 16 },
 });

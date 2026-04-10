@@ -132,6 +132,12 @@ const MAPPING = {
   "briefcase.fill": "work",
   "message.fill": "chat",
   "binoculars.fill": "explore",
+  "arrow.clockwise": "refresh",
+  "ticket": "confirmation-number",
+  "trash": "delete-outline",
+  "plus": "add",
+  "info.circle": "info-outline",
+  "lock.fill": "lock",
 } as unknown as IconMapping;
 
 /**
