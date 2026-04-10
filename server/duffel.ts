@@ -648,7 +648,19 @@ export type PricedFlightOffer = {
 };
 
 export async function priceFlightOffer(rawOffer: any): Promise<PricedFlightOffer> {
-  // In Duffel, we get the latest offer by its ID
+  // If rawOffer is a full Duffel offer object (has total_amount, passengers, slices), use it directly
+  // This avoids re-fetching from Duffel API which may fail if offer has expired
+  if (rawOffer && typeof rawOffer === "object" && rawOffer.total_amount && rawOffer.passengers && rawOffer.slices) {
+    console.log(`[Duffel] priceFlightOffer: Using provided rawOffer directly (ID: ${rawOffer.id})`);
+    return {
+      pricedOffer: rawOffer,
+      totalPrice: parseFloat(rawOffer.total_amount || "0"),
+      currency: rawOffer.total_currency || "USD",
+      lastTicketingDate: rawOffer.expires_at || undefined,
+    };
+  }
+
+  // Otherwise, try to get the offer by ID from Duffel API
   const offerId = rawOffer?.id || rawOffer;
 
   try {

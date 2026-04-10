@@ -12,13 +12,13 @@ type CurrencyContextType = {
 };
 
 const CurrencyContext = createContext<CurrencyContextType>({
-  currency: "USD",
+  currency: "MRU",
   setCurrency: () => {},
-  fmt: (a) => `$${(a / 40.08).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+  fmt: (a) => `${Math.round(a).toLocaleString("en-US")} MRU`,
 });
 
 export function CurrencyProvider({ children }: { children: React.ReactNode }) {
-  const [currency, setCurrencyState] = useState<AppCurrency>("USD");
+  const [currency, setCurrencyState] = useState<AppCurrency>("MRU");
 
   // تحميل العملة المحفوظة عند بدء التطبيق
   useEffect(() => {

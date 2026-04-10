@@ -57,6 +57,7 @@ type AnyFlight = {
     cabin: { quantity: number; maxWeightKg?: number } | null;
     checked: { quantity: number; maxWeightKg?: number } | null;
   };
+  rawOffer?: unknown;
 };
 
 export default function FlightResultsScreen() {
@@ -324,6 +325,7 @@ export default function FlightResultsScreen() {
               returnDate: params.returnDate || "",
               passengerPricingJson: item.passengerPricing ? JSON.stringify(item.passengerPricing) : "",
               baggageAllowanceJson: item.baggageAllowance ? JSON.stringify(item.baggageAllowance) : "",
+              rawOffer: (item as any).rawOffer ? JSON.stringify((item as any).rawOffer) : "",
             },
          })
        }
@@ -557,6 +559,7 @@ export default function FlightResultsScreen() {
                  stopCodes: item.stopCodes ? JSON.stringify(item.stopCodes) : "",
                  operatingAirlines: item.operatingAirlines ? JSON.stringify(item.operatingAirlines) : "",
                  segmentsJson: "",
+                 rawOffer: item.rawOffer ? JSON.stringify(item.rawOffer) : "",
                 },
              })
            }
@@ -1051,7 +1054,7 @@ export default function FlightResultsScreen() {
                         style={[compareStyles.selectFlight, { backgroundColor: colors.primary }]}
                         onPress={() => {
                           setShowCompare(false);
-                          router.push({ pathname: "/flights/detail" as any, params: { id: a.id, airline: a.airline, airlineCode: a.airlineCode || "", flightNumber: a.flightNumber, originCode: a.originCode, origin: a.origin, destinationCode: a.destinationCode, destination: a.destination, departureTime: a.departureTime, arrivalTime: a.arrivalTime, duration: a.duration, stops: String(a.stops), price: String(a.price), currency: a.currency || "USD", class: a.class, seatsLeft: String(a.seatsLeft), passengers: params.passengers || "1", children: params.children || "0", infants: params.infants || "0", tripType: params.tripType || "oneway", returnDate: params.returnDate || "" } });
+                          router.push({ pathname: "/flights/detail" as any, params: { id: a.id, airline: a.airline, airlineCode: a.airlineCode || "", flightNumber: a.flightNumber, originCode: a.originCode, origin: a.origin, destinationCode: a.destinationCode, destination: a.destination, departureTime: a.departureTime, arrivalTime: a.arrivalTime, duration: a.duration, stops: String(a.stops), price: String(a.price), currency: a.currency || "USD", class: a.class, seatsLeft: String(a.seatsLeft), passengers: params.passengers || "1", children: params.children || "0", infants: params.infants || "0", tripType: params.tripType || "oneway", returnDate: params.returnDate || "", rawOffer: a.rawOffer ? JSON.stringify(a.rawOffer) : "" } });
                         }}
                       >
                         <Text style={compareStyles.selectFlightText}>اختر الأولى</Text>
@@ -1060,7 +1063,7 @@ export default function FlightResultsScreen() {
                         style={[compareStyles.selectFlight, { backgroundColor: colors.primary }]}
                         onPress={() => {
                           setShowCompare(false);
-                          router.push({ pathname: "/flights/detail" as any, params: { id: b.id, airline: b.airline, airlineCode: b.airlineCode || "", flightNumber: b.flightNumber, originCode: b.originCode, origin: b.origin, destinationCode: b.destinationCode, destination: b.destination, departureTime: b.departureTime, arrivalTime: b.arrivalTime, duration: b.duration, stops: String(b.stops), price: String(b.price), currency: b.currency || "USD", class: b.class, seatsLeft: String(b.seatsLeft), passengers: params.passengers || "1", children: params.children || "0", infants: params.infants || "0", tripType: params.tripType || "oneway", returnDate: params.returnDate || "" } });
+                          router.push({ pathname: "/flights/detail" as any, params: { id: b.id, airline: b.airline, airlineCode: b.airlineCode || "", flightNumber: b.flightNumber, originCode: b.originCode, origin: b.origin, destinationCode: b.destinationCode, destination: b.destination, departureTime: b.departureTime, arrivalTime: b.arrivalTime, duration: b.duration, stops: String(b.stops), price: String(b.price), currency: b.currency || "USD", class: b.class, seatsLeft: String(b.seatsLeft), passengers: params.passengers || "1", children: params.children || "0", infants: params.infants || "0", tripType: params.tripType || "oneway", returnDate: params.returnDate || "", rawOffer: b.rawOffer ? JSON.stringify(b.rawOffer) : "" } });
                         }}
                       >
                         <Text style={compareStyles.selectFlightText}>اختر الثانية</Text>
@@ -1127,7 +1130,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 12,
   },
-  airlineRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  airlineRow: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, marginRight: 8 },
   airlineIconBox: {
     width: 44,
     height: 44,
@@ -1143,8 +1146,8 @@ const styles = StyleSheet.create({
   },
   airlineName: { fontSize: 15, fontWeight: "600" },
   flightNumber: { fontSize: 12, marginTop: 2 },
-  priceBox: { alignItems: "flex-end" },
-  price: { fontSize: 22, fontWeight: "700" },
+  priceBox: { alignItems: "flex-end", flexShrink: 0, minWidth: 90 },
+  price: { fontSize: 18, fontWeight: "700" },
   perPerson: { fontSize: 11 },
   perPersonDetail: { fontSize: 10, marginTop: 1 },
   bestPriceBadge: {

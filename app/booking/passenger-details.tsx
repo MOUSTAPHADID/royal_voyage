@@ -57,6 +57,7 @@ export default function PassengerDetailsScreen() {
     guests?: string;
     roomType?: string;
     roomPrice?: string;
+    rawOffer?: string; // JSON string of Duffel raw offer
   }>();
 
   const isFlight = params.type === "flight";
@@ -205,6 +206,7 @@ export default function PassengerDetailsScreen() {
         guests: params.guests,
         roomType: params.roomType,
         roomPrice: params.roomPrice,
+        rawOffer: params.rawOffer || "",
       },
     });
   };

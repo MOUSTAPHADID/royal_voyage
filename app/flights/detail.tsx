@@ -55,6 +55,7 @@ export default function FlightDetailScreen() {
     operatingAirlines: string; // JSON array
     // Segments JSON: [{from, to, dep, arr, duration, flightNum, carrier, operatingCarrier}]
     segmentsJson: string;
+    rawOffer: string; // JSON string of Duffel raw offer
   }>();
 
   // If params have flight data (from Duffel), use them; otherwise fall back to mock
@@ -556,6 +557,7 @@ export default function FlightDetailScreen() {
                 children: String(childCount),
                 infants: String(infantCount),
                 childDobs: params.childDobs || "[]",
+                rawOffer: params.rawOffer || "",
               },
             })
           }

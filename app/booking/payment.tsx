@@ -163,6 +163,7 @@ export default function PaymentScreen() {
     roomPrice?: string;
     businessAccountId?: string;
     businessCommission?: string;
+    rawOffer?: string; // JSON string of Duffel raw offer
   }>();
 
   const isFlight = params.type === "flight";
@@ -413,8 +414,19 @@ export default function PaymentScreen() {
           }
         }
 
+        // Parse rawOffer if available (to avoid cache expiry issues)
+        let parsedRawOffer: any = undefined;
+        if (params.rawOffer) {
+          try {
+            parsedRawOffer = JSON.parse(params.rawOffer);
+          } catch (e) {
+            console.warn("[Payment] Failed to parse rawOffer:", e);
+          }
+        }
+
         const bookingParams = {
           offerId: params.id,
+          rawOffer: parsedRawOffer,
           firstName: params.firstName ?? "GUEST",
           lastName: params.lastName ?? "PASSENGER",
           dateOfBirth: params.dateOfBirth ?? "1990-01-01",

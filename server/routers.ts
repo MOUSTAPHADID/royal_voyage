@@ -222,6 +222,7 @@ export const appRouter = router({
       .input(
         z.object({
           offerId: z.string(),
+          rawOffer: z.any().optional(), // Full Duffel offer object passed directly from client (avoids cache expiry)
           firstName: z.string(),
           lastName: z.string(),
           dateOfBirth: z.string(),
@@ -249,12 +250,13 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          // Step 1: Get cached offer
-          const rawOffer = getCachedRawOffer(input.offerId);
+          // Step 1: Get offer — prefer rawOffer passed directly from client, fallback to cache
+          const rawOffer: any = input.rawOffer || getCachedRawOffer(input.offerId);
           if (!rawOffer) {
-            console.warn(`[Duffel] No cached offer for ID: ${input.offerId}`);
+            console.warn(`[Duffel] No offer found for ID: ${input.offerId} (not in cache, not passed directly)`);
             return { success: false, pnr: null, error: "OFFER_EXPIRED" };
           }
+          console.log(`[Duffel] Using ${input.rawOffer ? 'client-provided' : 'cached'} rawOffer for ID: ${input.offerId}`);
 
           // Step 2: Price the offer (refresh)
           console.log(`[Duffel] Pricing offer ${input.offerId}...`);
@@ -401,6 +403,7 @@ export const appRouter = router({
       .input(
         z.object({
           offerId: z.string(),
+          rawOffer: z.any().optional(), // Full Duffel offer object passed directly from client (avoids cache expiry)
           firstName: z.string(),
           lastName: z.string(),
           dateOfBirth: z.string(),
@@ -428,8 +431,16 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          // Step 1: Price the offer (refresh to get latest price)
-          const priced = await priceFlightOffer(input.offerId);
+          // Step 1: Get offer — prefer rawOffer passed directly from client, fallback to cache
+          const offerToUse: any = input.rawOffer || getCachedRawOffer(input.offerId);
+          if (!offerToUse) {
+            console.warn(`[Duffel] No offer found for ID: ${input.offerId} (not in cache, not passed directly)`);
+            return { success: false, pnr: null, error: "OFFER_EXPIRED" };
+          }
+          console.log(`[Duffel] holdFlightOrder: Using ${input.rawOffer ? 'client-provided' : 'cached'} rawOffer for ID: ${input.offerId}`);
+
+          // Step 2: Price the offer (refresh to get latest price)
+          const priced = await priceFlightOffer(offerToUse);
           if (!priced || !priced.pricedOffer) {
             return { success: false, pnr: null, error: "OFFER_UNAVAILABLE" };
           }
