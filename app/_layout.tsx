@@ -21,7 +21,7 @@ import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-run
 import { AppProvider } from "@/lib/app-context";
 import { CurrencyProvider } from "@/lib/currency-context";
 import { I18nProvider } from "@/lib/i18n";
-import { loadPricingSettings } from "@/lib/pricing-settings";
+import { loadPricingSettings, fetchLiveExchangeRates, savePricingSettings, getPricingSettings } from "@/lib/pricing-settings";
 import { setupNotificationChannel } from "@/lib/push-notifications";
 import { StripeProviderWrapper } from "@/lib/stripe-provider";
 
@@ -43,7 +43,19 @@ export default function RootLayout() {
   useEffect(() => {
     initManusRuntime();
     // تحميل إعدادات الأسعار عند بدء التطبيق
-    loadPricingSettings();
+    loadPricingSettings().then(async () => {
+      // تحديث أسعار الصرف الحية تلقائياً عند كل فتح للتطبيق
+      try {
+        const liveRates = await fetchLiveExchangeRates();
+        if (liveRates) {
+          const current = getPricingSettings();
+          await savePricingSettings({ ...current, ...liveRates });
+          console.log("[ExchangeRates] ✅ Updated live rates:", liveRates.usdToMRU, "USD/MRU");
+        }
+      } catch (e) {
+        console.warn("[ExchangeRates] ⚠️ Failed to fetch live rates, using cached values");
+      }
+    });
     // إعداد قناة إشعارات الحجز
     setupNotificationChannel().catch(() => {});
   }, []);

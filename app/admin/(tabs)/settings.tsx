@@ -3,6 +3,9 @@ import {
   View, Text, TouchableOpacity, ScrollView, StyleSheet, Alert,
   TextInput, ActivityIndicator, FlatList, Modal,
 } from "react-native";
+import {
+  fetchLiveExchangeRates, savePricingSettings, getPricingSettings, loadPricingSettings,
+} from "@/lib/pricing-settings";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useAdmin } from "@/lib/admin-context";
@@ -66,6 +69,17 @@ const T = {
     activating: "جاري التفعيل...",
     deleting: "جاري الحذف...",
     refresh: "تحديث",
+    // Exchange Rates
+    exchangeRates: "أسعار الصرف",
+    exchangeRatesNote: "يتم التحديث تلقائياً عند فتح التطبيق",
+    lastUpdated: "آخر تحديث",
+    neverUpdated: "لم يتم التحديث بعد",
+    updateRates: "تحديث الآن",
+    updatingRates: "جاري التحديث...",
+    ratesUpdated: "تم تحديث أسعار الصرف بنجاح",
+    ratesFailed: "فشل تحديث الأسعار",
+    usdRate: "1 USD =",
+    eurRate: "1 EUR =",
   },
   fr: {
     title: "Paramètres",
@@ -123,6 +137,17 @@ const T = {
     activating: "Activation...",
     deleting: "Suppression...",
     refresh: "Actualiser",
+    // Exchange Rates
+    exchangeRates: "Taux de change",
+    exchangeRatesNote: "Mis à jour automatiquement à l'ouverture de l'application",
+    lastUpdated: "Dernière mise à jour",
+    neverUpdated: "Jamais mis à jour",
+    updateRates: "Mettre à jour",
+    updatingRates: "Mise à jour...",
+    ratesUpdated: "Taux mis à jour avec succès",
+    ratesFailed: "Échec de la mise à jour",
+    usdRate: "1 USD =",
+    eurRate: "1 EUR =",
   },
 };
 
@@ -166,6 +191,34 @@ export default function SettingsScreen() {
       priceRetentionType: retentionType,
       priceRetentionDurationHours: duration,
     });
+  };
+
+  // ─── Exchange Rates ──────────────────────────────────────────────────────
+  const [isUpdatingRates, setIsUpdatingRates] = useState(false);
+  const [currentRates, setCurrentRates] = useState(() => getPricingSettings());
+
+  React.useEffect(() => {
+    loadPricingSettings().then((s) => setCurrentRates(s));
+  }, []);
+
+  const handleUpdateRates = async () => {
+    setIsUpdatingRates(true);
+    try {
+      const liveRates = await fetchLiveExchangeRates();
+      if (liveRates) {
+        const current = getPricingSettings();
+        const updated = { ...current, ...liveRates };
+        await savePricingSettings(updated);
+        setCurrentRates(updated);
+        Alert.alert("✅", t.ratesUpdated);
+      } else {
+        Alert.alert("⚠️", t.ratesFailed);
+      }
+    } catch {
+      Alert.alert("⚠️", t.ratesFailed);
+    } finally {
+      setIsUpdatingRates(false);
+    }
   };
 
   // ─── Consolidators ───────────────────────────────────────────────────────
@@ -497,6 +550,57 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             </>
           )}
+        </View>
+
+        {/* Exchange Rates */}
+        <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={{ flexDirection: isRTL ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+            <Text style={[styles.sectionTitle, { color: colors.muted, marginBottom: 0 }]}>{t.exchangeRates}</Text>
+            <TouchableOpacity
+              style={[styles.saveBtn, { backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 8, marginTop: 0, opacity: isUpdatingRates ? 0.7 : 1, flexDirection: "row", alignItems: "center", gap: 6 }]}
+              onPress={handleUpdateRates}
+              disabled={isUpdatingRates}
+              activeOpacity={0.85}
+            >
+              {isUpdatingRates ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <IconSymbol name="arrow.clockwise" size={14} color="#fff" />
+              )}
+              <Text style={[styles.saveBtnText, { fontSize: 13 }]}>
+                {isUpdatingRates ? t.updatingRates : t.updateRates}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12, textAlign: isRTL ? "right" : "left" }}>
+            {t.exchangeRatesNote}
+          </Text>
+
+          {/* Current Rates Display */}
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+            <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{t.usdRate}</Text>
+              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>
+                {currentRates.usdToMRU.toFixed(2)}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>MRU</Text>
+            </View>
+            <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.border }}>
+              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{t.eurRate}</Text>
+              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>
+                {currentRates.eurToMRU.toFixed(2)}
+              </Text>
+              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>MRU</Text>
+            </View>
+          </View>
+
+          {/* Last Updated */}
+          <Text style={{ fontSize: 11, color: colors.muted, textAlign: isRTL ? "right" : "left" }}>
+            {t.lastUpdated}: {currentRates.ratesLastUpdated
+              ? new Date(currentRates.ratesLastUpdated).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+              : t.neverUpdated}
+          </Text>
         </View>
 
         {/* Login Logs */}
