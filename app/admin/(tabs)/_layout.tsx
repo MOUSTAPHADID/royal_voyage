@@ -7,8 +7,8 @@ import { useColors } from "@/hooks/use-colors";
 import { useAdmin } from "@/lib/admin-context";
 
 const LABELS = {
-  ar: { dashboard: "الرئيسية", bookings: "الحجوزات", employees: "الموظفون", reports: "التقارير", settings: "الإعدادات" },
-  fr: { dashboard: "Accueil", bookings: "Réservations", employees: "Employés", reports: "Rapports", settings: "Paramètres" },
+  ar: { dashboard: "الرئيسية", bookings: "الحجوزات", employees: "الموظفون", reports: "التقارير", settings: "الإعدادات", activityLog: "سجل النشاط" },
+  fr: { dashboard: "Accueil", bookings: "Réservations", employees: "Employés", reports: "Rapports", settings: "Paramètres", activityLog: "Journal" },
 };
 
 export default function TabLayout() {
@@ -40,6 +40,7 @@ export default function TabLayout() {
       <Tabs.Screen name="employees" options={{ title: labels.employees, tabBarIcon: ({ color }) => <IconSymbol size={26} name="person.3.fill" color={color} /> }} />
       <Tabs.Screen name="reports" options={{ title: labels.reports, tabBarIcon: ({ color }) => <IconSymbol size={26} name="chart.bar.fill" color={color} /> }} />
       <Tabs.Screen name="settings" options={{ title: labels.settings, tabBarIcon: ({ color }) => <IconSymbol size={26} name="gear" color={color} /> }} />
+      <Tabs.Screen name="activity-log" options={{ title: labels.activityLog, tabBarIcon: ({ color }) => <IconSymbol size={26} name="list.bullet.clipboard" color={color} /> }} />
     </Tabs>
   );
 }

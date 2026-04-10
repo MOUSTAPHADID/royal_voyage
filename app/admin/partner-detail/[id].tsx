@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, Pressable, StyleSheet, Alert, ActivityIndicator, Image } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
@@ -81,9 +81,15 @@ export default function PartnerDetailScreen() {
             <IconSymbol name="chevron.left" size={20} color="#fff" />
           </Pressable>
           <View style={styles.headerContent}>
-            <View style={[styles.logoCircle, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
-              <Text style={styles.logoText}>{partner.companyName?.charAt(0)?.toUpperCase() ?? "P"}</Text>
-            </View>
+            {partner.logoUrl ? (
+              <View style={styles.logoCircle}>
+                <Image source={{ uri: partner.logoUrl }} style={styles.logoImage} resizeMode="cover" />
+              </View>
+            ) : (
+              <View style={[styles.logoCircle, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
+                <Text style={styles.logoText}>{partner.companyName?.charAt(0)?.toUpperCase() ?? "P"}</Text>
+              </View>
+            )}
             <Text style={styles.companyName}>{partner.companyName}</Text>
             <Text style={styles.contactName}>{partner.contactName}</Text>
             <View style={[styles.statusBadge, {
@@ -202,8 +208,9 @@ const styles = StyleSheet.create({
   header: { paddingTop: 16, paddingBottom: 24, paddingHorizontal: 16 },
   backBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   headerContent: { alignItems: "center", gap: 6 },
-  logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
+  logoCircle: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   logoText: { fontSize: 28, fontWeight: "700", color: "#fff" },
+  logoImage: { width: 72, height: 72, borderRadius: 36 },
   companyName: { fontSize: 20, fontWeight: "700", color: "#fff", textAlign: "center" },
   contactName: { fontSize: 14, color: "rgba(255,255,255,0.8)", textAlign: "center" },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20, marginTop: 4 },

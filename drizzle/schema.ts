@@ -280,3 +280,28 @@ export const customerFeedback = mysqlTable("customer_feedback", {
 });
 export type CustomerFeedback = typeof customerFeedback.$inferSelect;
 export type InsertCustomerFeedback = typeof customerFeedback.$inferInsert;
+
+// ─── Activity Logs (سجل النشاط) ───────────────────────────────────────────────
+// Tracks all admin/employee actions: create, update, delete on any entity
+export const activityLogs = mysqlTable("activity_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Employee ID who performed the action (null = system/admin) */
+  employeeId: int("employeeId"),
+  /** Employee full name (snapshot at time of action) */
+  employeeName: varchar("employeeName", { length: 255 }),
+  /** Employee role at time of action */
+  employeeRole: varchar("employeeRole", { length: 64 }),
+  /** Action type: create | update | delete | login | other */
+  action: mysqlEnum("action", ["create", "update", "delete", "login", "other"]).notNull(),
+  /** Entity type: employee | partner | booking | pricing | pnr | status | payment */
+  entityType: varchar("entityType", { length: 64 }).notNull(),
+  /** Entity ID (optional) */
+  entityId: int("entityId"),
+  /** Human-readable description of the action */
+  description: varchar("description", { length: 512 }).notNull(),
+  /** Extra JSON metadata (old/new values, etc.) */
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = typeof activityLogs.$inferInsert;

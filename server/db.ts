@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument, customerFeedback, CustomerFeedback } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument, customerFeedback, CustomerFeedback, activityLogs, ActivityLog } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -625,4 +625,54 @@ export async function deleteFeedback(id: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await (db as any).delete(customerFeedback).where(eq(customerFeedback.id, id));
+}
+
+// ─── Activity Logs (سجل النشاط) ───────────────────────────────────────────────
+
+export async function createActivityLog(data: {
+  employeeId?: number | null;
+  employeeName?: string | null;
+  employeeRole?: string | null;
+  action: "create" | "update" | "delete" | "login" | "other";
+  entityType: string;
+  entityId?: number | null;
+  description: string;
+  metadata?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) return; // silently skip if DB unavailable
+  try {
+    await (db as any).insert(activityLogs).values({
+      employeeId: data.employeeId ?? null,
+      employeeName: data.employeeName ?? null,
+      employeeRole: data.employeeRole ?? null,
+      action: data.action,
+      entityType: data.entityType,
+      entityId: data.entityId ?? null,
+      description: data.description,
+      metadata: data.metadata ?? null,
+    });
+  } catch (err) {
+    console.warn("[ActivityLog] Failed to write log:", err);
+  }
+}
+
+export async function getActivityLogs(options?: {
+  limit?: number;
+  offset?: number;
+  employeeId?: number;
+  entityType?: string;
+  action?: string;
+}): Promise<ActivityLog[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    let q = (db as any).select().from(activityLogs).orderBy(desc(activityLogs.createdAt));
+    if (options?.limit) q = q.limit(options.limit);
+    if (options?.offset) q = q.offset(options.offset);
+    return await q;
+  } catch (err) {
+    console.warn("[ActivityLog] Failed to read logs:", err);
+    return [];
+  }
 }

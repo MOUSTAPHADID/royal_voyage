@@ -94,6 +94,8 @@ import {
   getAllFeedback,
   approveFeedback,
   deleteFeedback,
+  createActivityLog,
+  getActivityLogs,
 } from "./db";
 
 export const appRouter = router({
@@ -1179,8 +1181,10 @@ export const appRouter = router({
         logoUrl: z.string().max(1024).optional(),
         website: z.string().max(512).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const id = await createBusinessAccount(input);
+        const emp = (ctx as any).employee;
+        createActivityLog({ employeeId: emp?.id ?? null, employeeName: emp?.fullName ?? "المدير", employeeRole: emp?.role ?? "admin", action: "create", entityType: "partner", entityId: id, description: `تم إضافة شريك جديد: ${input.companyName}` }).catch(() => {});
         return { success: true, id };
       }),
 
@@ -1201,16 +1205,20 @@ export const appRouter = router({
         logoUrl: z.string().max(1024).optional(),
         website: z.string().max(512).optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
         await updateBusinessAccount(id, data);
+        const emp = (ctx as any).employee;
+        createActivityLog({ employeeId: emp?.id ?? null, employeeName: emp?.fullName ?? "المدير", employeeRole: emp?.role ?? "admin", action: "update", entityType: "partner", entityId: id, description: `تم تعديل بيانات الشريك #${id}` }).catch(() => {});
         return { success: true };
       }),
 
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         await deleteBusinessAccount(input.id);
+        const emp = (ctx as any).employee;
+        createActivityLog({ employeeId: emp?.id ?? null, employeeName: emp?.fullName ?? "المدير", employeeRole: emp?.role ?? "admin", action: "delete", entityType: "partner", entityId: input.id, description: `تم حذف الشريك #${input.id}` }).catch(() => {});
         return { success: true };
       }),
   }),
@@ -1243,7 +1251,7 @@ export const appRouter = router({
         department: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         // Check if email already exists
         const existing = await getEmployeeByEmail(input.email);
         if (existing) {
@@ -1258,6 +1266,9 @@ export const appRouter = router({
           role: input.role,
           department: input.department,
         }).catch((e) => console.warn("[Email] Failed to send employee welcome:", e));
+        // Log activity
+        const emp = (ctx as any).employee;
+        createActivityLog({ employeeId: emp?.id ?? null, employeeName: emp?.fullName ?? "المدير", employeeRole: emp?.role ?? "admin", action: "create", entityType: "employee", entityId: id, description: `تم إضافة موظف جديد: ${input.fullName} (${input.role})` }).catch(() => {});
         return { success: true, id };
       }),
 
@@ -1274,16 +1285,20 @@ export const appRouter = router({
         department: z.string().optional(),
         notes: z.string().optional(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         const { id, ...data } = input;
         await updateEmployee(id, data);
+        const emp = (ctx as any).employee;
+        createActivityLog({ employeeId: emp?.id ?? null, employeeName: emp?.fullName ?? "المدير", employeeRole: emp?.role ?? "admin", action: "update", entityType: "employee", entityId: id, description: `تم تعديل بيانات الموظف #${id}` }).catch(() => {});
         return { success: true };
       }),
 
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
         await deleteEmployee(input.id);
+        const emp = (ctx as any).employee;
+        createActivityLog({ employeeId: emp?.id ?? null, employeeName: emp?.fullName ?? "المدير", employeeRole: emp?.role ?? "admin", action: "delete", entityType: "employee", entityId: input.id, description: `تم حذف الموظف #${input.id}` }).catch(() => {});
         return { success: true };
       }),
 
@@ -2019,7 +2034,7 @@ export const appRouter = router({
       }),
   }),
 
-  // ─── Logo Upload ────────────────────────────────────────────────────
+  //  // ─── Logo Upload ────────────────────────────────────────────────
   uploadLogo: router({
     upload: adminProcedure
       .input(z.object({
@@ -2032,6 +2047,51 @@ export const appRouter = router({
         const key = `logos/${Date.now()}_${input.filename}`;
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
+      }),
+  }),
+
+  // ─── Activity Log (سجل النشاط) ──────────────────────────────────────────
+  activityLog: router({
+    // Write a log entry (called from admin actions)
+    log: adminProcedure
+      .input(z.object({
+        action: z.enum(["create", "update", "delete", "login", "other"]),
+        entityType: z.string(),
+        entityId: z.number().optional(),
+        description: z.string(),
+        metadata: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const emp = (ctx as any).employee;
+        await createActivityLog({
+          employeeId: emp?.id ?? null,
+          employeeName: emp?.fullName ?? "المدير",
+          employeeRole: emp?.role ?? "admin",
+          action: input.action,
+          entityType: input.entityType,
+          entityId: input.entityId ?? null,
+          description: input.description,
+          metadata: input.metadata ?? null,
+        });
+        return { success: true };
+      }),
+
+    // Get activity logs (admin only)
+    list: adminProcedure
+      .input(z.object({
+        limit: z.number().min(1).max(200).default(100),
+        offset: z.number().min(0).default(0),
+        entityType: z.string().optional(),
+        action: z.string().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const logs = await getActivityLogs({
+          limit: input?.limit ?? 100,
+          offset: input?.offset ?? 0,
+          entityType: input?.entityType,
+          action: input?.action,
+        });
+        return logs;
       }),
   }),
 });
