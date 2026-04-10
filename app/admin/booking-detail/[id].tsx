@@ -101,6 +101,7 @@ export default function BookingDetailScreen() {
   const [pnrInput, setPnrInput] = useState("");
   const [ticketStatus, setTicketStatus] = useState<string | null>(null);
   const [checkingTicket, setCheckingTicket] = useState(false);
+  const [showPaymentMethods, setShowPaymentMethods] = useState(false);
 
   const { data: bookingsData, isLoading, refetch } = trpc.bookingContacts.list.useQuery();
   const updatePnrMutation = trpc.bookingContacts.updatePnr.useMutation({
@@ -115,6 +116,14 @@ export default function BookingDetailScreen() {
   });
   const checkTicketMutation = trpc.duffel.checkTicketIssuance.useMutation();
   const sendTicketMutation = trpc.email.sendFlightTicket.useMutation();
+  const confirmPaymentMutation = trpc.bookingContacts.confirmPayment.useMutation({
+    onSuccess: () => {
+      setShowPaymentMethods(false);
+      refetch();
+      Alert.alert("✅", language === "ar" ? "تم تأكيد الدفع وإرسال بريد التأكيد للعميل" : "Paiement confirmé et email envoyé au client");
+    },
+    onError: (err) => Alert.alert("❌", err.message),
+  });
 
   const booking = bookingsData?.find(b => b.duffelOrderId === id || String(b.id) === id);
 
@@ -213,6 +222,19 @@ export default function BookingDetailScreen() {
   );
 
   const isConfirmed = !!booking.pnr;
+  const isPaymentConfirmed = (booking as any).paymentStatus === "confirmed";
+  const paymentConfirmedAt = (booking as any).paymentConfirmedAt
+    ? new Date((booking as any).paymentConfirmedAt).toLocaleString("ar-MR", { dateStyle: "short", timeStyle: "short" })
+    : null;
+  const paymentMethods = [
+    { key: "cash", label: language === "ar" ? "نقداً" : "Espèces" },
+    { key: "bank_transfer", label: language === "ar" ? "تحويل بنكي" : "Virement bancaire" },
+    { key: "bankily", label: "Bankily" },
+    { key: "masrvi", label: "Masrvi" },
+    { key: "sedad", label: "Sedad" },
+    { key: "multicaixa", label: "Multicaixa Express" },
+    { key: "stripe", label: "Stripe" },
+  ];
   const createdDate = booking.createdAt
     ? new Date(booking.createdAt).toLocaleDateString("ar-SA", { year: "numeric", month: "short", day: "numeric" })
     : "—";
@@ -338,6 +360,93 @@ export default function BookingDetailScreen() {
               </TouchableOpacity>
             )}
           </View>
+        </View>
+
+        {/* Payment Confirmation Section */}
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: isPaymentConfirmed ? "#22C55E" : colors.border }]}>
+          <View style={styles.pnrHeader}>
+            <Text style={[styles.pnrTitle, { color: colors.foreground }]}>
+              {language === "ar" ? "حالة الدفع" : "Statut du paiement"}
+            </Text>
+            <View style={[styles.ticketStatusBadge, { backgroundColor: isPaymentConfirmed ? "#22C55E20" : "#F59E0B20" }]}>
+              <Text style={[styles.ticketStatusText, { color: isPaymentConfirmed ? "#22C55E" : "#F59E0B" }]}>
+                {isPaymentConfirmed
+                  ? (language === "ar" ? "مدفوع" : "Payé")
+                  : (language === "ar" ? "في الانتظار" : "En attente")}
+              </Text>
+            </View>
+          </View>
+
+          {isPaymentConfirmed ? (
+            <View style={{ paddingHorizontal: 16, paddingBottom: 16, gap: 6 }}>
+              {(booking as any).paymentMethod && (
+                <Text style={{ color: colors.muted, fontSize: 13 }}>
+                  {language === "ar" ? "طريقة الدفع: " : "Méthode: "}
+                  <Text style={{ color: colors.foreground, fontWeight: "700" }}>{(booking as any).paymentMethod}</Text>
+                </Text>
+              )}
+              {paymentConfirmedAt && (
+                <Text style={{ color: colors.muted, fontSize: 13 }}>
+                  {language === "ar" ? "تاريخ التأكيد: " : "Confirmé le: "}
+                  <Text style={{ color: "#22C55E", fontWeight: "600" }}>{paymentConfirmedAt}</Text>
+                </Text>
+              )}
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 4 }}>
+                <IconSymbol name="checkmark.seal.fill" size={16} color="#22C55E" />
+                <Text style={{ color: "#22C55E", fontSize: 13, fontWeight: "700" }}>
+                  {language === "ar" ? "تم إرسال بريد التأكيد للعميل" : "Email de confirmation envoyé"}
+                </Text>
+              </View>
+            </View>
+          ) : (
+            <View style={{ padding: 16, paddingTop: 4, gap: 10 }}>
+              {!showPaymentMethods ? (
+                <TouchableOpacity
+                  style={[styles.checkTicketBtn, { backgroundColor: "#22C55E15", borderColor: "#22C55E" }]}
+                  onPress={() => setShowPaymentMethods(true)}
+                >
+                  <IconSymbol name="checkmark.seal.fill" size={18} color="#22C55E" />
+                  <Text style={[styles.checkTicketText, { color: "#22C55E" }]}>
+                    {language === "ar" ? "تأكيد الدفع" : "Confirmer le paiement"}
+                  </Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={{ gap: 8 }}>
+                  <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 4 }}>
+                    {language === "ar" ? "اختر طريقة الدفع:" : "Choisir la méthode de paiement:"}
+                  </Text>
+                  {paymentMethods.map(pm => (
+                    <TouchableOpacity
+                      key={pm.key}
+                      style={[styles.checkTicketBtn, { backgroundColor: colors.primary + "15", borderColor: colors.primary }]}
+                      onPress={() => {
+                        if (!booking) return;
+                        confirmPaymentMutation.mutate({
+                          duffelOrderId: booking.duffelOrderId,
+                          paymentMethod: pm.label,
+                        });
+                      }}
+                      disabled={confirmPaymentMutation.isPending}
+                    >
+                      {confirmPaymentMutation.isPending ? (
+                        <ActivityIndicator size="small" color={colors.primary} />
+                      ) : (
+                        <Text style={[styles.checkTicketText, { color: colors.primary }]}>{pm.label}</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                  <TouchableOpacity
+                    style={[styles.cancelBtn, { borderColor: colors.border }]}
+                    onPress={() => setShowPaymentMethods(false)}
+                  >
+                    <Text style={[styles.cancelBtnText, { color: colors.muted }]}>
+                      {language === "ar" ? "إلغاء" : "Annuler"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Cancel Booking */}

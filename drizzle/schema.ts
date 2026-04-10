@@ -123,6 +123,12 @@ export const bookingContacts = mysqlTable("booking_contacts", {
   totalPrice: varchar("totalPrice", { length: 32 }),
   /** Currency */
   currency: varchar("currency", { length: 8 }),
+  /** Payment status: pending | confirmed | refunded */
+  paymentStatus: varchar("paymentStatus", { length: 32 }).default("pending"),
+  /** Timestamp when admin confirmed payment */
+  paymentConfirmedAt: timestamp("paymentConfirmedAt"),
+  /** Payment method used */
+  paymentMethod: varchar("paymentMethod", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

@@ -71,6 +71,13 @@
       "when": 1775838319548,
       "tag": "0009_talented_kronos",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1775850610926,
+      "tag": "0010_fresh_micromax",
+      "breakpoints": true
     }
   ]
 }

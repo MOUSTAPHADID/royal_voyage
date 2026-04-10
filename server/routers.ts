@@ -71,6 +71,7 @@ import {
   verifyPassword,
   upsertBookingContact,
   deleteBookingContact,
+  confirmBookingPayment,
   getTopUpRequests,
   getTopUpRequestsByAccount,
   getTopUpRequestById,
@@ -2038,6 +2039,51 @@ export const appRouter = router({
         }
         await deleteBookingContact(input.id);
         return { success: true };
+      }),
+
+    confirmPayment: adminProcedure
+      .input(z.object({
+        duffelOrderId: z.string(),
+        paymentMethod: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const booking = await confirmBookingPayment(input.duffelOrderId, input.paymentMethod);
+        if (!booking) throw new Error("Booking not found");
+
+        // Send payment confirmation email to passenger
+        if (booking.passengerEmail) {
+          const routeParts = (booking.routeSummary ?? "").split("→");
+          const emailSent = await sendPaymentConfirmationEmail({
+            passengerName: booking.passengerName,
+            passengerEmail: booking.passengerEmail,
+            bookingRef: booking.bookingRef,
+            pnr: booking.pnr ?? undefined,
+            bookingType: "flight",
+            origin: routeParts[0]?.trim(),
+            destination: routeParts[1]?.trim(),
+            totalAmount: booking.totalPrice ? `${parseFloat(booking.totalPrice).toLocaleString()} ${booking.currency ?? "MRU"}` : undefined,
+            paymentMethod: input.paymentMethod,
+            confirmedAt: new Date().toISOString(),
+          });
+          console.log(`[Admin] Payment confirmation email sent: ${emailSent}`);
+        }
+
+        // Send push notification to customer if token available
+        if (booking.customerPushToken) {
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: booking.customerPushToken,
+              sound: "default",
+              title: "✅ Payment Confirmed",
+              body: `Your booking ${booking.bookingRef} has been confirmed.`,
+              data: { type: "payment_confirmed", bookingRef: booking.bookingRef },
+            }),
+          }).catch(() => {});
+        }
+
+        return { success: true, booking };
       }),
   }),
     // ─── Customer Feedback ──────────────────────────────────────────────

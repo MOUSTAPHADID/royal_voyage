@@ -345,6 +345,19 @@ export async function updateBookingContactPnr(duffelOrderId: string, pnr: string
   await db.update(bookingContacts).set({ pnr }).where(eq(bookingContacts.duffelOrderId, duffelOrderId));
 }
 
+export async function confirmBookingPayment(duffelOrderId: string, paymentMethod?: string): Promise<BookingContact | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  await db.update(bookingContacts)
+    .set({
+      paymentStatus: "confirmed",
+      paymentConfirmedAt: new Date(),
+      ...(paymentMethod ? { paymentMethod } : {}),
+    })
+    .where(eq(bookingContacts.duffelOrderId, duffelOrderId));
+  return getBookingContactByOrderId(duffelOrderId);
+}
+
 
 // ─── Top-Up Requests (طلبات شحن الرصيد) ──────────────────────────────────────
 
