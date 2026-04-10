@@ -80,6 +80,15 @@ const T = {
     ratesFailed: "فشل تحديث الأسعار",
     usdRate: "1 USD =",
     eurRate: "1 EUR =",
+    gbpRate: "1 GBP =",
+    sarRate: "1 SAR =",
+    aedRate: "1 AED =",
+    aoaRate: "1 AOA =",
+    manualEdit: "تعديل يدوي",
+    manualEditNote: "أدخل سعر الصرف مباشرة أو اضغط 'تحديث الآن' لجلب الأسعار الحية",
+    saveRates: "حفظ أسعار الصرف",
+    savingRates: "جاري الحفظ...",
+    ratesSaved: "تم حفظ أسعار الصرف بنجاح",
   },
   fr: {
     title: "Paramètres",
@@ -148,6 +157,15 @@ const T = {
     ratesFailed: "Échec de la mise à jour",
     usdRate: "1 USD =",
     eurRate: "1 EUR =",
+    gbpRate: "1 GBP =",
+    sarRate: "1 SAR =",
+    aedRate: "1 AED =",
+    aoaRate: "1 AOA =",
+    manualEdit: "Saisie manuelle",
+    manualEditNote: "Entrez le taux manuellement ou appuyez sur 'Mettre à jour' pour les taux en direct",
+    saveRates: "Enregistrer les taux",
+    savingRates: "Enregistrement...",
+    ratesSaved: "Taux enregistrés avec succès",
   },
 };
 
@@ -195,11 +213,62 @@ export default function SettingsScreen() {
 
   // ─── Exchange Rates ──────────────────────────────────────────────────────
   const [isUpdatingRates, setIsUpdatingRates] = useState(false);
+  const [isSavingRates, setIsSavingRates] = useState(false);
   const [currentRates, setCurrentRates] = useState(() => getPricingSettings());
 
+  // Manual input fields for exchange rates
+  const [inputUSD, setInputUSD] = useState("");
+  const [inputEUR, setInputEUR] = useState("");
+  const [inputGBP, setInputGBP] = useState("");
+  const [inputSAR, setInputSAR] = useState("");
+  const [inputAED, setInputAED] = useState("");
+  const [inputAOA, setInputAOA] = useState("");
+
   React.useEffect(() => {
-    loadPricingSettings().then((s) => setCurrentRates(s));
+    loadPricingSettings().then((s) => {
+      setCurrentRates(s);
+      setInputUSD(s.usdToMRU.toFixed(2));
+      setInputEUR(s.eurToMRU.toFixed(2));
+      setInputGBP(s.gbpToMRU.toFixed(2));
+      setInputSAR(s.sarToMRU.toFixed(2));
+      setInputAED(s.aedToMRU.toFixed(2));
+      setInputAOA(s.aoaToMRU.toFixed(4));
+    });
   }, []);
+
+  const handleSaveRates = async () => {
+    const usd = parseFloat(inputUSD);
+    const eur = parseFloat(inputEUR);
+    const gbp = parseFloat(inputGBP);
+    const sar = parseFloat(inputSAR);
+    const aed = parseFloat(inputAED);
+    const aoa = parseFloat(inputAOA);
+    if ([usd, eur, gbp, sar, aed, aoa].some((v) => isNaN(v) || v <= 0)) {
+      Alert.alert("خطأ", "تأكد من صحة جميع أسعار الصرف");
+      return;
+    }
+    setIsSavingRates(true);
+    try {
+      const current = getPricingSettings();
+      const updated = {
+        ...current,
+        usdToMRU: usd,
+        eurToMRU: eur,
+        gbpToMRU: gbp,
+        sarToMRU: sar,
+        aedToMRU: aed,
+        aoaToMRU: aoa,
+        ratesLastUpdated: new Date().toISOString(),
+      };
+      await savePricingSettings(updated);
+      setCurrentRates(updated);
+      Alert.alert("✅", t.ratesSaved);
+    } catch {
+      Alert.alert("⚠️", t.ratesFailed);
+    } finally {
+      setIsSavingRates(false);
+    }
+  };
 
   const handleUpdateRates = async () => {
     setIsUpdatingRates(true);
@@ -210,6 +279,13 @@ export default function SettingsScreen() {
         const updated = { ...current, ...liveRates };
         await savePricingSettings(updated);
         setCurrentRates(updated);
+        // Update input fields with new live rates
+        if (liveRates.usdToMRU) setInputUSD(liveRates.usdToMRU.toFixed(2));
+        if (liveRates.eurToMRU) setInputEUR(liveRates.eurToMRU.toFixed(2));
+        if (liveRates.gbpToMRU) setInputGBP(liveRates.gbpToMRU.toFixed(2));
+        if (liveRates.sarToMRU) setInputSAR(liveRates.sarToMRU.toFixed(2));
+        if (liveRates.aedToMRU) setInputAED(liveRates.aedToMRU.toFixed(2));
+        if (liveRates.aoaToMRU) setInputAOA(liveRates.aoaToMRU.toFixed(4));
         Alert.alert("✅", t.ratesUpdated);
       } else {
         Alert.alert("⚠️", t.ratesFailed);
@@ -573,30 +649,95 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 12, textAlign: isRTL ? "right" : "left" }}>
-            {t.exchangeRatesNote}
+          <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 14, textAlign: isRTL ? "right" : "left" }}>
+            {t.manualEditNote}
           </Text>
 
-          {/* Current Rates Display */}
+          {/* Manual Rate Inputs — Row 1: USD + EUR */}
           <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
-            <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{t.usdRate}</Text>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>
-                {currentRates.usdToMRU.toFixed(2)}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>MRU</Text>
-            </View>
-            <View style={{ flex: 1, backgroundColor: colors.background, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: colors.border }}>
-              <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{t.eurRate}</Text>
-              <Text style={{ fontSize: 18, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>
-                {currentRates.eurToMRU.toFixed(2)}
-              </Text>
-              <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>MRU</Text>
-            </View>
+            {[
+              { label: t.usdRate, value: inputUSD, onChange: setInputUSD },
+              { label: t.eurRate, value: inputEUR, onChange: setInputEUR },
+            ].map((field) => (
+              <View key={field.label} style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{field.label}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.background, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8 }}>
+                  <TextInput
+                    style={{ flex: 1, fontSize: 16, fontWeight: "700", color: colors.foreground, paddingVertical: 10, textAlign: "center" }}
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
+                    placeholderTextColor={colors.muted}
+                  />
+                  <Text style={{ fontSize: 11, color: colors.muted }}>MRU</Text>
+                </View>
+              </View>
+            ))}
           </View>
 
+          {/* Manual Rate Inputs — Row 2: GBP + SAR */}
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 10 }}>
+            {[
+              { label: t.gbpRate, value: inputGBP, onChange: setInputGBP },
+              { label: t.sarRate, value: inputSAR, onChange: setInputSAR },
+            ].map((field) => (
+              <View key={field.label} style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{field.label}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.background, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8 }}>
+                  <TextInput
+                    style={{ flex: 1, fontSize: 16, fontWeight: "700", color: colors.foreground, paddingVertical: 10, textAlign: "center" }}
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
+                    placeholderTextColor={colors.muted}
+                  />
+                  <Text style={{ fontSize: 11, color: colors.muted }}>MRU</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Manual Rate Inputs — Row 3: AED + AOA */}
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 14 }}>
+            {[
+              { label: t.aedRate, value: inputAED, onChange: setInputAED },
+              { label: t.aoaRate, value: inputAOA, onChange: setInputAOA },
+            ].map((field) => (
+              <View key={field.label} style={{ flex: 1 }}>
+                <Text style={{ fontSize: 11, color: colors.muted, marginBottom: 4, textAlign: "center" }}>{field.label}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: colors.background, borderRadius: 10, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8 }}>
+                  <TextInput
+                    style={{ flex: 1, fontSize: 16, fontWeight: "700", color: colors.foreground, paddingVertical: 10, textAlign: "center" }}
+                    value={field.value}
+                    onChangeText={field.onChange}
+                    keyboardType="decimal-pad"
+                    returnKeyType="done"
+                    placeholderTextColor={colors.muted}
+                  />
+                  <Text style={{ fontSize: 11, color: colors.muted }}>MRU</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+
+          {/* Save Rates Button */}
+          <TouchableOpacity
+            style={[styles.saveBtn, { backgroundColor: colors.success, opacity: isSavingRates ? 0.7 : 1 }]}
+            onPress={handleSaveRates}
+            disabled={isSavingRates}
+            activeOpacity={0.85}
+          >
+            {isSavingRates ? (
+              <ActivityIndicator color="#fff" size="small" />
+            ) : (
+              <Text style={styles.saveBtnText}>{t.saveRates}</Text>
+            )}
+          </TouchableOpacity>
+
           {/* Last Updated */}
-          <Text style={{ fontSize: 11, color: colors.muted, textAlign: isRTL ? "right" : "left" }}>
+          <Text style={{ fontSize: 11, color: colors.muted, textAlign: isRTL ? "right" : "left", marginTop: 10 }}>
             {t.lastUpdated}: {currentRates.ratesLastUpdated
               ? new Date(currentRates.ratesLastUpdated).toLocaleString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
               : t.neverUpdated}
