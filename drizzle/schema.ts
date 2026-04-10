@@ -255,3 +255,28 @@ export const generatedDocuments = mysqlTable("generated_documents", {
 });
 export type GeneratedDocument = typeof generatedDocuments.$inferSelect;
 export type InsertGeneratedDocument = typeof generatedDocuments.$inferInsert;
+
+// ─── Customer Feedback (تقييمات العملاء) ─────────────────────────────────────
+// Public reviews submitted via the landing page feedback form
+export const customerFeedback = mysqlTable("customer_feedback", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Reviewer full name */
+  name: varchar("name", { length: 255 }).notNull(),
+  /** Reviewer email (optional) */
+  email: varchar("email", { length: 320 }),
+  /** Star rating 1-5 */
+  rating: int("rating").notNull(),
+  /** Review comment */
+  comment: text("comment").notNull(),
+  /** Travel type: flight, hotel, activity, general */
+  travelType: varchar("travelType", { length: 32 }).default("general").notNull(),
+  /** Destination mentioned */
+  destination: varchar("destination", { length: 255 }),
+  /** Approved by admin for public display */
+  approved: boolean("approved").default(false).notNull(),
+  /** Language of the review */
+  language: varchar("language", { length: 8 }).default("ar").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CustomerFeedback = typeof customerFeedback.$inferSelect;
+export type InsertCustomerFeedback = typeof customerFeedback.$inferInsert;

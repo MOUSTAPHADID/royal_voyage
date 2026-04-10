@@ -1554,3 +1554,9 @@
 
 ## Google Analytics
 - [x] إضافة Google Analytics (G-L9C4EJXPG6) إلى الموقع
+
+## Sezione Feedback Clienti
+- [ ] Modulo feedback con valutazione a stelle (1-5) e commento nella landing page
+- [ ] Backend tRPC route per salvare i feedback nel database PostgreSQL
+- [ ] Visualizzazione recensioni dinamiche dalla DB nella landing page (sostituisce dati mock)
+- [x] Sezione feedback clienti con modulo valutazioni a stelle (DB + tRPC + UI nella landing page)

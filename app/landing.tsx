@@ -223,6 +223,52 @@ export default function LandingPage() {
 
   const isAr = lang === "ar";
 
+  // Feedback form state
+  const [fbName, setFbName] = useState("");
+  const [fbEmail, setFbEmail] = useState("");
+  const [fbRating, setFbRating] = useState(0);
+  const [fbComment, setFbComment] = useState("");
+  const [fbTravelType, setFbTravelType] = useState<"flight" | "hotel" | "activity" | "general">("general");
+  const [fbSubmitting, setFbSubmitting] = useState(false);
+  const [fbSuccess, setFbSuccess] = useState(false);
+  const [fbError, setFbError] = useState("");
+
+  const submitFeedbackMutation = trpc.feedback.submit.useMutation();
+  const { data: approvedReviews } = trpc.feedback.listApproved.useQuery();
+
+  const handleFeedbackSubmit = async () => {
+    if (!fbName.trim() || fbName.trim().length < 2) {
+      setFbError(isAr ? "يرجى إدخال اسمك (حرفان على الأقل)" : "Please enter your name (at least 2 characters)");
+      return;
+    }
+    if (fbRating === 0) {
+      setFbError(isAr ? "يرجى اختيار تقييم من 1 إلى 5 نجوم" : "Please select a rating from 1 to 5 stars");
+      return;
+    }
+    if (!fbComment.trim() || fbComment.trim().length < 5) {
+      setFbError(isAr ? "يرجى كتابة تعليق (5 أحرف على الأقل)" : "Please write a comment (at least 5 characters)");
+      return;
+    }
+    setFbError("");
+    setFbSubmitting(true);
+    try {
+      await submitFeedbackMutation.mutateAsync({
+        name: fbName.trim(),
+        email: fbEmail.trim() || undefined,
+        rating: fbRating,
+        comment: fbComment.trim(),
+        travelType: fbTravelType,
+        language: isAr ? "ar" : "en",
+      });
+      setFbSuccess(true);
+      setFbName(""); setFbEmail(""); setFbRating(0); setFbComment(""); setFbTravelType("general");
+    } catch (e: any) {
+      setFbError(isAr ? "حدث خطأ، يرجى المحاولة مرة أخرى" : "An error occurred, please try again");
+    } finally {
+      setFbSubmitting(false);
+    }
+  };
+
   // Show promo popup after 3s for first-time visitors
   useEffect(() => {
     if (!isWeb) return;
@@ -775,6 +821,185 @@ export default function LandingPage() {
           </View>
         </View>
 
+        {/* ── FEEDBACK SECTION ── */}
+        <View style={[styles.feedbackSection, { paddingHorizontal: sectionPadding }]}>
+          <View style={{ maxWidth: contentMaxWidth as any, alignSelf: "center", width: "100%" }}>
+            {/* Section header */}
+            <View style={{ alignItems: isAr ? "flex-end" : "flex-start", marginBottom: 8 }}>
+              <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                <MaterialIcons name="star" size={20} color="#F59E0B" />
+                <Text style={[styles.sectionLabel, { color: "#F59E0B" }]}>
+                  {isAr ? "آراء العملاء" : "Customer Reviews"}
+                </Text>
+              </View>
+              <Text style={[styles.sectionTitle, { textAlign: isAr ? "right" : "left", fontSize: isDesktop ? 26 : 20 }]}>
+                {isAr ? "شاركنا تجربتك" : "Share Your Experience"}
+              </Text>
+              <Text style={[styles.sectionSubtitle, { textAlign: isAr ? "right" : "left" }]}>
+                {isAr ? "تقييمك يساعدنا على تحسين خدماتنا ويفيد المسافرين الآخرين" : "Your review helps us improve and assists other travelers"}
+              </Text>
+            </View>
+
+            {/* Approved reviews list */}
+            {approvedReviews && approvedReviews.length > 0 && (
+              <View style={{ marginBottom: 28 }}>
+                <Text style={[styles.feedbackSubhead, { textAlign: isAr ? "right" : "left" }]}>
+                  {isAr ? "ما يقوله عملاؤنا" : "What our clients say"}
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -8 }}>
+                  <View style={{ flexDirection: "row", gap: 14, paddingHorizontal: 8, paddingBottom: 8 }}>
+                    {approvedReviews.map((rev) => (
+                      <View key={rev.id} style={styles.fbReviewCard}>
+                        <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 10, alignItems: "center", marginBottom: 10 }}>
+                          <View style={styles.fbAvatar}>
+                            <Text style={styles.fbAvatarText}>{rev.name.charAt(0).toUpperCase()}</Text>
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={[styles.fbReviewerName, { textAlign: isAr ? "right" : "left" }]}>{rev.name}</Text>
+                            <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 2 }}>
+                              {[1,2,3,4,5].map(s => (
+                                <MaterialIcons key={s} name="star" size={13} color={s <= rev.rating ? "#F59E0B" : "#E5E7EB"} />
+                              ))}
+                            </View>
+                          </View>
+                        </View>
+                        <Text style={[styles.fbReviewText, { textAlign: isAr ? "right" : "left" }]} numberOfLines={4}>
+                          {rev.comment}
+                        </Text>
+                        {rev.destination ? (
+                          <View style={[styles.fbDestTag, { alignSelf: isAr ? "flex-end" : "flex-start" }]}>
+                            <MaterialIcons name="place" size={11} color="#1B6CA8" />
+                            <Text style={styles.fbDestTagText}>{rev.destination}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Feedback form */}
+            <View style={styles.fbFormCard}>
+              {fbSuccess ? (
+                <View style={{ alignItems: "center", paddingVertical: 28, gap: 12 }}>
+                  <MaterialIcons name="check-circle" size={52} color="#22C55E" />
+                  <Text style={{ fontSize: 17, fontWeight: "700", color: "#22C55E", textAlign: "center" }}>
+                    {isAr ? "شكراً لمشاركتك!" : "Thank you for your feedback!"}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: "#666", textAlign: "center", lineHeight: 20 }}>
+                    {isAr ? "سيتم مراجعة تقييمك ونشره قريباً" : "Your review will be reviewed and published soon"}
+                  </Text>
+                  <Pressable style={styles.fbSubmitBtn} onPress={() => setFbSuccess(false)}>
+                    <Text style={styles.fbSubmitBtnText}>{isAr ? "إضافة تقييم آخر" : "Add another review"}</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <>
+                  <Text style={[styles.fbFormTitle, { textAlign: isAr ? "right" : "left" }]}>
+                    {isAr ? "اترك تقييمك" : "Leave a Review"}
+                  </Text>
+
+                  {/* Star rating */}
+                  <View style={{ alignItems: isAr ? "flex-end" : "flex-start", marginBottom: 16 }}>
+                    <Text style={[styles.fbLabel, { textAlign: isAr ? "right" : "left", marginBottom: 8 }]}>
+                      {isAr ? "تقييمك *" : "Your Rating *"}
+                    </Text>
+                    <View style={{ flexDirection: isAr ? "row-reverse" : "row", gap: 8 }}>
+                      {[1,2,3,4,5].map(star => (
+                        <Pressable key={star} onPress={() => setFbRating(star)} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>
+                          <MaterialIcons name="star" size={36} color={star <= fbRating ? "#F59E0B" : "#D1D5DB"} />
+                        </Pressable>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Travel type */}
+                  <Text style={[styles.fbLabel, { textAlign: isAr ? "right" : "left", marginBottom: 8 }]}>
+                    {isAr ? "نوع الخدمة" : "Service Type"}
+                  </Text>
+                  <View style={{ flexDirection: isAr ? "row-reverse" : "row", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                    {(["flight", "hotel", "activity", "general"] as const).map(type => {
+                      const labels: Record<string, {ar: string, en: string}> = {
+                        flight: {ar: "رحلة جوية", en: "Flight"},
+                        hotel: {ar: "فندق", en: "Hotel"},
+                        activity: {ar: "نشاط", en: "Activity"},
+                        general: {ar: "عام", en: "General"},
+                      };
+                      const isSelected = fbTravelType === type;
+                      return (
+                        <Pressable
+                          key={type}
+                          onPress={() => setFbTravelType(type)}
+                          style={({ pressed }) => [styles.fbTypeChip, isSelected && styles.fbTypeChipActive, { opacity: pressed ? 0.8 : 1 }]}
+                        >
+                          <Text style={[styles.fbTypeChipText, isSelected && styles.fbTypeChipTextActive]}>
+                            {isAr ? labels[type].ar : labels[type].en}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+
+                  {/* Name */}
+                  <Text style={[styles.fbLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "الاسم *" : "Name *"}</Text>
+                  <TextInput
+                    style={[styles.fbInput, { textAlign: isAr ? "right" : "left" }]}
+                    placeholder={isAr ? "اسمك الكامل" : "Your full name"}
+                    placeholderTextColor="#9CA3AF"
+                    value={fbName}
+                    onChangeText={setFbName}
+                    returnKeyType="next"
+                  />
+
+                  {/* Email (optional) */}
+                  <Text style={[styles.fbLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "البريد الإلكتروني (اختياري)" : "Email (optional)"}</Text>
+                  <TextInput
+                    style={[styles.fbInput, { textAlign: isAr ? "right" : "left" }]}
+                    placeholder={isAr ? "بريدك الإلكتروني" : "your@email.com"}
+                    placeholderTextColor="#9CA3AF"
+                    value={fbEmail}
+                    onChangeText={setFbEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    returnKeyType="next"
+                  />
+
+                  {/* Comment */}
+                  <Text style={[styles.fbLabel, { textAlign: isAr ? "right" : "left" }]}>{isAr ? "تعليقك *" : "Your Comment *"}</Text>
+                  <TextInput
+                    style={[styles.fbInput, styles.fbTextarea, { textAlign: isAr ? "right" : "left" }]}
+                    placeholder={isAr ? "شاركنا تجربتك مع Royal Voyage..." : "Share your experience with Royal Voyage..."}
+                    placeholderTextColor="#9CA3AF"
+                    value={fbComment}
+                    onChangeText={setFbComment}
+                    multiline
+                    numberOfLines={4}
+                    returnKeyType="done"
+                  />
+
+                  {fbError ? <Text style={styles.fbError}>{fbError}</Text> : null}
+
+                  <Pressable
+                    style={({ pressed }) => [styles.fbSubmitBtn, { opacity: pressed || fbSubmitting ? 0.8 : 1 }]}
+                    onPress={handleFeedbackSubmit}
+                    disabled={fbSubmitting}
+                  >
+                    {fbSubmitting ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <View style={{ flexDirection: isAr ? "row-reverse" : "row", alignItems: "center", gap: 8 }}>
+                        <MaterialIcons name="send" size={18} color="#fff" />
+                        <Text style={styles.fbSubmitBtnText}>{isAr ? "إرسال التقييم" : "Submit Review"}</Text>
+                      </View>
+                    )}
+                  </Pressable>
+                </>
+              )}
+            </View>
+          </View>
+        </View>
+
         {/* ── FOOTER ── */}
         <View style={styles.footerContainer}>
           <View style={[styles.footerTop, { flexDirection: isDesktop ? (isAr ? "row-reverse" : "row") : "column", paddingHorizontal: sectionPadding }]}>
@@ -1138,4 +1363,26 @@ const styles = StyleSheet.create({
   popupSkip: { fontSize: 12, color: "#aaa", textDecorationLine: "underline" },
   popupSuccess: { alignItems: "center", gap: 12, paddingVertical: 16 },
   popupSuccessText: { fontSize: 15, color: "#22C55E", fontWeight: "700", lineHeight: 22 },
+  // Feedback Section
+  feedbackSection: { paddingVertical: 44, backgroundColor: "#f0f7ff" },
+  feedbackSubhead: { fontSize: 15, fontWeight: "700", color: "#1a1a2e", marginBottom: 14 },
+  fbReviewCard: { width: 260, backgroundColor: "#fff", borderRadius: 14, padding: 16, borderWidth: 1, borderColor: "#e0e8f0", shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6, elevation: 2 },
+  fbAvatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#1B6CA8", justifyContent: "center", alignItems: "center" },
+  fbAvatarText: { fontSize: 16, fontWeight: "700", color: "#fff" },
+  fbReviewerName: { fontSize: 13, fontWeight: "700", color: "#1a1a2e", marginBottom: 2 },
+  fbReviewText: { fontSize: 13, color: "#555", lineHeight: 20, fontStyle: "italic", marginBottom: 10 },
+  fbDestTag: { flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: "#EFF6FF", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12 },
+  fbDestTagText: { fontSize: 11, color: "#1B6CA8", fontWeight: "600" },
+  fbFormCard: { backgroundColor: "#fff", borderRadius: 18, padding: 22, borderWidth: 1, borderColor: "#e0e8f0", shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+  fbFormTitle: { fontSize: 18, fontWeight: "800", color: "#1a1a2e", marginBottom: 18 },
+  fbLabel: { fontSize: 13, fontWeight: "600", color: "#374151", marginBottom: 6 },
+  fbInput: { borderWidth: 1.5, borderColor: "#D1D5DB", borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, color: "#1a1a2e", backgroundColor: "#F9FAFB", marginBottom: 14 },
+  fbTextarea: { height: 110, textAlignVertical: "top", paddingTop: 12 },
+  fbTypeChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: "#D1D5DB", backgroundColor: "#F9FAFB" },
+  fbTypeChipActive: { borderColor: "#1B6CA8", backgroundColor: "#EFF6FF" },
+  fbTypeChipText: { fontSize: 13, color: "#6B7280", fontWeight: "600" },
+  fbTypeChipTextActive: { color: "#1B6CA8" },
+  fbError: { fontSize: 12, color: "#EF4444", marginBottom: 10, textAlign: "center" },
+  fbSubmitBtn: { backgroundColor: "#1B6CA8", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 6 },
+  fbSubmitBtnText: { color: "#fff", fontWeight: "800", fontSize: 15 },
 });

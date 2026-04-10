@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument, customerFeedback, CustomerFeedback } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -584,4 +584,45 @@ export async function updateBookingContactPnrById(id: number, pnr: string): Prom
   const db = await getDb();
   if (!db) return;
   await db.update(bookingContacts).set({ pnr }).where(eq(bookingContacts.id, id));
+}
+
+// ─── Customer Feedback ────────────────────────────────────────────────────────
+export async function createFeedback(data: { name: string; email?: string; rating: number; comment: string; travelType?: string; destination?: string; language?: string }): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await (db as any).insert(customerFeedback).values({
+    name: data.name,
+    email: data.email ?? null,
+    rating: data.rating,
+    comment: data.comment,
+    travelType: data.travelType ?? "general",
+    destination: data.destination ?? null,
+    language: data.language ?? "ar",
+    approved: false,
+  });
+  return result[0]?.insertId ?? 0;
+}
+
+export async function getApprovedFeedback(): Promise<CustomerFeedback[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return (db as any).select().from(customerFeedback).where(eq(customerFeedback.approved, true)).orderBy(desc(customerFeedback.createdAt)).limit(20);
+}
+
+export async function getAllFeedback(): Promise<CustomerFeedback[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return (db as any).select().from(customerFeedback).orderBy(desc(customerFeedback.createdAt));
+}
+
+export async function approveFeedback(id: number, approved: boolean): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(customerFeedback).set({ approved }).where(eq(customerFeedback.id, id));
+}
+
+export async function deleteFeedback(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).delete(customerFeedback).where(eq(customerFeedback.id, id));
 }

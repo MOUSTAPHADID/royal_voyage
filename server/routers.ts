@@ -82,6 +82,11 @@ import {
   getAllBookingContacts,
   updateBookingContactPnrById,
   getBookingContactByOrderId,
+  createFeedback,
+  getApprovedFeedback,
+  getAllFeedback,
+  approveFeedback,
+  deleteFeedback,
 } from "./db";
 
 export const appRouter = router({
@@ -1924,7 +1929,52 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
-  // ─── Logo Upload ──────────────────────────────────────────────────────────
+    // ─── Customer Feedback ──────────────────────────────────────────────
+  feedback: router({
+    // Public: submit a new review
+    submit: publicProcedure
+      .input(z.object({
+        name: z.string().min(2).max(255),
+        email: z.string().email().optional(),
+        rating: z.number().int().min(1).max(5),
+        comment: z.string().min(5).max(2000),
+        travelType: z.enum(["flight", "hotel", "activity", "general"]).default("general"),
+        destination: z.string().max(255).optional(),
+        language: z.string().max(8).default("ar"),
+      }))
+      .mutation(async ({ input }) => {
+        const id = await createFeedback(input);
+        return { success: true, id };
+      }),
+
+    // Public: get approved reviews for landing page
+    listApproved: publicProcedure.query(async () => {
+      return await getApprovedFeedback();
+    }),
+
+    // Admin: get all reviews
+    listAll: adminProcedure.query(async () => {
+      return await getAllFeedback();
+    }),
+
+    // Admin: approve or reject a review
+    approve: adminProcedure
+      .input(z.object({ id: z.number(), approved: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await approveFeedback(input.id, input.approved);
+        return { success: true };
+      }),
+
+    // Admin: delete a review
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await deleteFeedback(input.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Logo Upload ────────────────────────────────────────────────────
   uploadLogo: router({
     upload: adminProcedure
       .input(z.object({
