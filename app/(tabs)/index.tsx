@@ -1313,6 +1313,83 @@ export default function HomeScreen() {
           />
         </View>
 
+        {/* eSIM Go Featured Plans */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {isRTL ? "خطط eSIM مميزة" : "Featured eSIM Plans"}
+            </Text>
+            <Pressable onPress={() => router.push("/(tabs)/esim" as any)}>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
+            </Pressable>
+          </View>
+          <FlatList
+            horizontal
+            scrollEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+            keyExtractor={(item) => item.id}
+            data={[
+              { id: "e1", country: "UAE", data: "10GB", price: "$15", days: "30", color: "#0EA5E9", icon: "🇦🇪" },
+              { id: "e2", country: "France", data: "15GB", price: "$18", days: "30", color: "#06B6D4", icon: "🇫🇷" },
+              { id: "e3", country: "Spain", data: "12GB", price: "$16", days: "30", color: "#0891B2", icon: "🇪🇸" },
+            ]}
+            renderItem={({ item }) => (
+              <Pressable
+                style={({ pressed }) => [{
+                  width: 140,
+                  borderRadius: 14,
+                  backgroundColor: item.color + "15",
+                  borderWidth: 1.5,
+                  borderColor: item.color + "40",
+                  padding: 12,
+                  gap: 8,
+                  opacity: pressed ? 0.9 : 1,
+                }]}
+                onPress={() => router.push("/(tabs)/esim" as any)}
+              >
+                <Text style={{ fontSize: 28 }}>{item.icon}</Text>
+                <Text style={{ fontSize: 12, fontWeight: "700", color: colors.foreground }}>{item.country}</Text>
+                <View style={{ gap: 4 }}>
+                  <Text style={{ fontSize: 10, color: colors.muted }}>{isRTL ? "البيانات" : "Data"}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: item.color }}>{item.data}</Text>
+                </View>
+                <View style={{ gap: 4 }}>
+                  <Text style={{ fontSize: 10, color: colors.muted }}>{isRTL ? "السعر" : "Price"}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>{item.price}</Text>
+                </View>
+              </Pressable>
+            )}
+          />
+        </View>
+
+        {/* Airline Partners */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground, marginHorizontal: 20, marginBottom: 12 }]}>
+            {isRTL ? "شركاء الطيران" : "Airline Partners"}
+          </Text>
+          <Image
+            source={{ uri: "https://d2xsxph8kpxj0f.cloudfront.net/310519663457917822/dCSeDyLMxwR8uDkjtk8yd3/airlines-logos-EKadGXWViUxQgVGsKTjN89.webp" }}
+            style={{ width: "100%", height: 120, marginHorizontal: 20, borderRadius: 12 }}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Duffel Partner */}
+        <View style={[styles.section, { alignItems: "center", paddingVertical: 16 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground, marginBottom: 12 }]}>
+            {isRTL ? "شريك الحجز" : "Booking Partner"}
+          </Text>
+          <Image
+            source={{ uri: "https://d2xsxph8kpxj0f.cloudfront.net/310519663457917822/dCSeDyLMxwR8uDkjtk8yd3/duffel-logo-UeDvFEmE2aNwm3wBRiXPvk.webp" }}
+            style={{ width: 140, height: 60, marginBottom: 8 }}
+            resizeMode="contain"
+          />
+          <Text style={{ fontSize: 11, color: colors.muted, textAlign: "center" }}>
+            {isRTL ? "منصة حجز الرحلات الموثوقة" : "Trusted Flight Booking Platform"}
+          </Text>
+        </View>
+
         {/* Why Book With Us */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
@@ -1339,7 +1416,7 @@ export default function HomeScreen() {
               title: isRTL ? "دعم 24/7" : "24/7 Support",
               desc: isRTL ? "فريقنا جاهز لمساعدتك دائما" : "Our team is always here for you",
             },
-          ].map((item) => (
+          ].map((item, idx) => (
             <View
               key={item.title}
               style={[styles.dealCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 14 }]}
