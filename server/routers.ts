@@ -255,7 +255,7 @@ export const companiesRouter = router({
   updateMember: publicProcedure
     .input(z.object({
       id: z.number(),
-      role: z.enum(["owner", "manager", "booking_agent", "accountant", "viewer"]).optional(),
+      role: z.enum(["manager", "accountant", "booking_agent", "support"]).optional(),
     }))
     .mutation(async ({ input }) => {
       await updateCompanyMember(input.id, { role: input.role });
@@ -2422,7 +2422,7 @@ export const appRouter = router({
             destination: routeParts[1]?.trim(),
             totalAmount: booking.totalPrice ? `${parseFloat(booking.totalPrice).toLocaleString()} ${booking.currency ?? "MRU"}` : undefined,
             paymentMethod: input.paymentMethod,
-            confirmedAt: new Date().toISOString(),
+            createdAt: new Date(),
           });
           console.log(`[Admin] Payment confirmation email sent: ${emailSent}`);
         }
