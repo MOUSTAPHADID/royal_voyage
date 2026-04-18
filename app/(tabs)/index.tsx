@@ -1173,105 +1173,99 @@ export default function HomeScreen() {
           />
         </View>
 
-        {/* Today's Deals Banner */}
-        <Pressable
-          style={({ pressed }) => [{
-            flexDirection: "row",
-            alignItems: "center",
-            marginHorizontal: 20,
-            marginBottom: 16,
-            padding: 14,
-            borderRadius: 14,
-            backgroundColor: "#EF4444" + "12",
-            borderWidth: 1,
-            borderColor: "#EF4444" + "25",
-            gap: 12,
-            opacity: pressed ? 0.85 : 1,
-          }]}
-          onPress={() => router.push("/deals" as any)}
-        >
-          <Text style={{ fontSize: 28 }}>{"\uD83D\uDD25"}</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{isRTL ? "عروض خاصة" : "Special Offers"}</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "استكشف أفضل العروض على الرحلات والفنادق" : "Discover the best deals on flights and hotels"}</Text>
-          </View>
-          <IconSymbol name="chevron.right" size={18} color={"#EF4444"} />
-        </Pressable>
+        {/* Services Grid Section */}
+        <View style={[styles.section, { marginBottom: 24 }]}>
+          <Text style={[styles.sectionTitle, { color: colors.foreground, marginHorizontal: 20, marginBottom: 16 }]}>{isRTL ? "الخدمات الرئيسية" : "Main Services"}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 16, gap: 12 }}>
+            {/* Special Offers */}
+            <Pressable
+              style={({ pressed }) => [{
+                flex: 1,
+                minWidth: "48%",
+                backgroundColor: "#EF4444" + "15",
+                borderColor: "#EF4444" + "40",
+                borderWidth: 1.5,
+                borderRadius: 16,
+                padding: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={() => router.push("/deals" as any)}
+            >
+              <Text style={{ fontSize: 36 }}>🔥</Text>
+              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{isRTL ? "عروض خاصة" : "Special Offers"}</Text>
+              <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center" }}>{isRTL ? "أفضل الأسعار" : "Best Prices"}</Text>
+            </Pressable>
 
-        {/* PNR Status Lookup */}
-        <Pressable
-          style={({ pressed }) => [{
-            flexDirection: "row",
-            alignItems: "center",
-            marginHorizontal: 20,
-            marginBottom: 16,
-            padding: 14,
-            borderRadius: 14,
-            backgroundColor: "#6366F1" + "12",
-            borderWidth: 1,
-            borderColor: "#6366F1" + "25",
-            gap: 12,
-            opacity: pressed ? 0.85 : 1,
-          }]}
-          onPress={() => router.push("/pnr-status" as any)}
-        >
-          <IconSymbol name="doc.text.magnifyingglass" size={24} color="#6366F1" />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{isRTL ? "حالة الحجز" : "Booking Status"}</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "تحقق من حالة حجزك برقم المرجع" : "Check your booking status by reference number"}</Text>
-          </View>
-          <IconSymbol name="chevron.right" size={18} color="#6366F1" />
-        </Pressable>
+            {/* PNR Status */}
+            <Pressable
+              style={({ pressed }) => [{
+                flex: 1,
+                minWidth: "48%",
+                backgroundColor: "#6366F1" + "15",
+                borderColor: "#6366F1" + "40",
+                borderWidth: 1.5,
+                borderRadius: 16,
+                padding: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={() => router.push("/pnr-status" as any)}
+            >
+              <IconSymbol name="doc.text.magnifyingglass" size={32} color="#6366F1" />
+              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{isRTL ? "حالة الحجز" : "Booking Status"}</Text>
+              <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center" }}>{isRTL ? "تتبع حجزك" : "Track Booking"}</Text>
+            </Pressable>
 
-        {/* eSIM Go Button */}
-        <Pressable
-          style={({ pressed }) => [{
-            flexDirection: "row",
-            alignItems: "center",
-            marginHorizontal: 20,
-            marginBottom: 16,
-            padding: 14,
-            borderRadius: 14,
-            backgroundColor: "#0EA5E9" + "12",
-            borderWidth: 1,
-            borderColor: "#0EA5E9" + "25",
-            gap: 12,
-            opacity: pressed ? 0.85 : 1,
-          }]}
-          onPress={() => router.push("/(tabs)/esim" as any)}
-        >
-          <IconSymbol name="globe" size={24} color="#0EA5E9" />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>eSIM Go</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "اتصل بالعالم بسهولة مع بطاقات eSIM" : "Stay connected worldwide with eSIM cards"}</Text>
-          </View>
-          <IconSymbol name="chevron.right" size={18} color="#0EA5E9" />
-        </Pressable>
+            {/* eSIM Go */}
+            <Pressable
+              style={({ pressed }) => [{
+                flex: 1,
+                minWidth: "48%",
+                backgroundColor: "#0EA5E9" + "15",
+                borderColor: "#0EA5E9" + "40",
+                borderWidth: 1.5,
+                borderRadius: 16,
+                padding: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={() => router.push("/(tabs)/esim" as any)}
+            >
+              <IconSymbol name="globe" size={32} color="#0EA5E9" />
+              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>eSIM Go</Text>
+              <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center" }}>{isRTL ? "اتصال عالمي" : "Global Connect"}</Text>
+            </Pressable>
 
-        {/* Activities Button */}
-        <Pressable
-          style={({ pressed }) => [{
-            flexDirection: "row",
-            alignItems: "center",
-            marginHorizontal: 20,
-            marginBottom: 16,
-            padding: 14,
-            borderRadius: 14,
-            backgroundColor: "#10B981" + "12",
-            borderWidth: 1,
-            borderColor: "#10B981" + "25",
-            gap: 12,
-            opacity: pressed ? 0.85 : 1,
-          }]}
-          onPress={() => router.push("/activities" as any)}
-        >
-          <IconSymbol name="binoculars.fill" size={24} color="#10B981" />
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground }}>{isRTL ? "الأنشطة السياحية" : "Tourist Activities"}</Text>
-            <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>{isRTL ? "اكتشف أفضل الأنشطة والجولات في وجهتك" : "Discover the best activities and tours"}</Text>
+            {/* Activities */}
+            <Pressable
+              style={({ pressed }) => [{
+                flex: 1,
+                minWidth: "48%",
+                backgroundColor: "#10B981" + "15",
+                borderColor: "#10B981" + "40",
+                borderWidth: 1.5,
+                borderRadius: 16,
+                padding: 16,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                opacity: pressed ? 0.8 : 1,
+              }]}
+              onPress={() => router.push("/activities" as any)}
+            >
+              <IconSymbol name="binoculars.fill" size={32} color="#10B981" />
+              <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground, textAlign: "center" }}>{isRTL ? "الأنشطة" : "Activities"}</Text>
+              <Text style={{ fontSize: 10, color: colors.muted, textAlign: "center" }}>{isRTL ? "جولات وتجارب" : "Tours & Exp"}</Text>
+            </Pressable>
           </View>
-          <IconSymbol name="chevron.right" size={18} color="#10B981" />
-        </Pressable>
+        </View>
 
         {/* Popular Activities */}
         <View style={styles.section}>
