@@ -417,41 +417,30 @@ export const esimRouter = router({
 
   createOrder: publicProcedure
     .input(z.object({
-      userId: z.string(),
-      packageId: z.string(),
-      packageName: z.string(),
-      dataGb: z.number(),
-      validityDays: z.number(),
-      countries: z.string(),
-      priceUsd: z.string(),
+      destination: z.string(),
+      planName: z.string(),
       priceMru: z.string(),
-      paymentMethod: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const id = await createEsimOrder({
-        ...input,
-        status: "pending",
-      });
+        userId: 'user123',
+        destination: input.destination,
+        planName: input.planName,
+        priceMru: input.priceMru,
+        status: 'pending',
+      } as any);
       return { id };
     }),
 
   updateOrder: publicProcedure
     .input(z.object({
       id: z.number(),
-      status: z.enum(["pending", "processing", "active", "expired", "cancelled", "failed"]).optional(),
+      status: z.enum(['pending', 'active', 'expired', 'cancelled', 'failed']).optional(),
       iccid: z.string().optional(),
-      activationCode: z.string().optional(),
-      qrCodeUrl: z.string().optional(),
-      activatedAt: z.string().optional(),
-      expiresAt: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
-      await updateEsimOrder(id, {
-        ...data,
-        activatedAt: data.activatedAt ? new Date(data.activatedAt) : undefined,
-        expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
-      });
+      await updateEsimOrder(id, data as any);
       return { success: true };
     }),
 });
