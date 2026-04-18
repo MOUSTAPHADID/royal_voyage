@@ -18,6 +18,7 @@ function SidebarNav() {
   const tabs = [
     { name: "/(tabs)/", label: isRTL ? "الرئيسية" : "Accueil", icon: "house.fill" as const },
     { name: "/(tabs)/explore", label: isRTL ? "استكشف" : "Explorer", icon: "map.fill" as const },
+    { name: "/(tabs)/esim", label: isRTL ? "eSIM" : "eSIM", icon: "globe" as const },
     { name: "/(tabs)/bookings", label: isRTL ? "حجوزاتي" : "Réservations", icon: "calendar.badge.checkmark" as const },
     { name: "/(tabs)/profile", label: isRTL ? "ملفي" : "Profil", icon: "person.fill" as const },
   ];
@@ -82,6 +83,7 @@ export default function TabLayout() {
           >
             <Tabs.Screen name="index" />
             <Tabs.Screen name="explore" />
+            <Tabs.Screen name="esim" />
             <Tabs.Screen name="bookings" />
             <Tabs.Screen name="profile" />
           </Tabs>
@@ -125,6 +127,13 @@ export default function TabLayout() {
         options={{
           title: isRTL ? "استكشف" : "Explore",
           tabBarIcon: ({ color }) => <IconSymbol size={26} name="map.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="esim"
+        options={{
+          title: "eSIM",
+          tabBarIcon: ({ color }) => <IconSymbol size={26} name="globe" color={color} />,
         }}
       />
       <Tabs.Screen
