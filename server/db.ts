@@ -1,6 +1,6 @@
 import { eq, desc, like, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument, customerFeedback, CustomerFeedback, activityLogs, ActivityLog } from "../drizzle/schema";
+import { InsertUser, users, businessAccounts, InsertBusinessAccount, BusinessAccount, employees, InsertEmployee, Employee, bookingContacts, BookingContact, InsertBookingContact, topUpRequests, TopUpRequest, InsertTopUpRequest, balanceTransactions, BalanceTransaction, InsertBalanceTransaction, activityReviews, ActivityReview, InsertActivityReview, loginLogs, LoginLog, generatedDocuments, GeneratedDocument, InsertGeneratedDocument, customerFeedback, CustomerFeedback, activityLogs, ActivityLog, companies, Company, InsertCompany, companyMembers, CompanyMember, InsertCompanyMember, companyTravelers, CompanyTraveler, InsertCompanyTraveler, companyDocuments, CompanyDocument, InsertCompanyDocument, companyBookings, CompanyBooking, InsertCompanyBooking, invoices, Invoice, InsertInvoice, notifications, Notification, InsertNotification, esimOrders, EsimOrder, InsertEsimOrder, stripePayments, StripePayment, InsertStripePayment } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import * as crypto from "crypto";
 
@@ -706,4 +706,263 @@ export async function getActivityLogs(options?: {
     console.warn("[ActivityLog] Failed to read logs:", err);
     return [];
   }
+}
+
+// ─── Companies ────────────────────────────────────────────────────────────────
+
+export async function getCompaniesByOwner(ownerUserId: string): Promise<Company[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(companies).where(eq(companies.ownerUserId, ownerUserId)).orderBy(desc(companies.createdAt));
+  } catch (err) { console.warn("[Companies] getCompaniesByOwner:", err); return []; }
+}
+
+export async function getCompanyById(id: number): Promise<Company | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  try {
+    const rows = await (db as any).select().from(companies).where(eq(companies.id, id)).limit(1);
+    return rows[0];
+  } catch (err) { return undefined; }
+}
+
+export async function getAllCompanies(): Promise<Company[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(companies).orderBy(desc(companies.createdAt));
+  } catch (err) { return []; }
+}
+
+export async function createCompany(data: InsertCompany): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(companies).values(data);
+  return result[0].insertId;
+}
+
+export async function updateCompany(id: number, data: Partial<InsertCompany>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(companies).set(data).where(eq(companies.id, id));
+}
+
+export async function updateCompanyStatus(id: number, status: Company["status"], reason?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  const upd: Partial<InsertCompany> = { status };
+  if (status === "rejected" && reason) upd.rejectionReason = reason;
+  if (status === "approved") upd.approvalDate = new Date();
+  await (db as any).update(companies).set(upd).where(eq(companies.id, id));
+}
+
+// ─── Company Members ──────────────────────────────────────────────────────────
+
+export async function getCompanyMembers(companyId: number): Promise<CompanyMember[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(companyMembers).where(eq(companyMembers.companyId, companyId));
+  } catch (err) { return []; }
+}
+
+export async function addCompanyMember(data: InsertCompanyMember): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(companyMembers).values(data);
+  return result[0].insertId;
+}
+
+export async function updateCompanyMember(id: number, data: Partial<InsertCompanyMember>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(companyMembers).set(data).where(eq(companyMembers.id, id));
+}
+
+export async function removeCompanyMember(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).delete(companyMembers).where(eq(companyMembers.id, id));
+}
+
+// ─── Company Travelers ────────────────────────────────────────────────────────
+
+export async function getCompanyTravelers(companyId: number): Promise<CompanyTraveler[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(companyTravelers).where(eq(companyTravelers.companyId, companyId)).orderBy(desc(companyTravelers.createdAt));
+  } catch (err) { return []; }
+}
+
+export async function createCompanyTraveler(data: InsertCompanyTraveler): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(companyTravelers).values(data);
+  return result[0].insertId;
+}
+
+export async function updateCompanyTraveler(id: number, data: Partial<InsertCompanyTraveler>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(companyTravelers).set(data).where(eq(companyTravelers.id, id));
+}
+
+export async function deleteCompanyTraveler(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).delete(companyTravelers).where(eq(companyTravelers.id, id));
+}
+
+// ─── Company Documents ────────────────────────────────────────────────────────
+
+export async function getCompanyDocuments(companyId: number): Promise<CompanyDocument[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(companyDocuments).where(eq(companyDocuments.companyId, companyId));
+  } catch (err) { return []; }
+}
+
+export async function createCompanyDocument(data: InsertCompanyDocument): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(companyDocuments).values(data);
+  return result[0].insertId;
+}
+
+export async function updateCompanyDocumentStatus(id: number, status: CompanyDocument["verificationStatus"], note?: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(companyDocuments).set({ verificationStatus: status, reviewerNote: note }).where(eq(companyDocuments.id, id));
+}
+
+// ─── Company Bookings ─────────────────────────────────────────────────────────
+
+export async function getCompanyBookings(companyId: number): Promise<CompanyBooking[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(companyBookings).where(eq(companyBookings.companyId, companyId)).orderBy(desc(companyBookings.createdAt));
+  } catch (err) { return []; }
+}
+
+export async function createCompanyBooking(data: InsertCompanyBooking): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(companyBookings).values(data);
+  return result[0].insertId;
+}
+
+// ─── Invoices ─────────────────────────────────────────────────────────────────
+
+export async function getCompanyInvoices(companyId: number): Promise<Invoice[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(invoices).where(eq(invoices.companyId, companyId)).orderBy(desc(invoices.createdAt));
+  } catch (err) { return []; }
+}
+
+export async function getAllInvoices(): Promise<Invoice[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(invoices).orderBy(desc(invoices.createdAt));
+  } catch (err) { return []; }
+}
+
+export async function createInvoice(data: InsertInvoice): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(invoices).values(data);
+  return result[0].insertId;
+}
+
+export async function updateInvoiceStatus(id: number, status: Invoice["status"]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(invoices).set({ status }).where(eq(invoices.id, id));
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+export async function getUserNotifications(userId: string): Promise<Notification[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt)).limit(50);
+  } catch (err) { return []; }
+}
+
+export async function createNotification(data: InsertNotification): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  try { await (db as any).insert(notifications).values(data); } catch (err) { console.warn("[Notifications]", err); }
+}
+
+export async function markNotificationRead(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(notifications).set({ isRead: true }).where(eq(notifications.id, id));
+}
+
+export async function markAllNotificationsRead(userId: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(notifications).set({ isRead: true }).where(eq(notifications.userId, userId));
+}
+
+export async function deleteNotification(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).delete(notifications).where(eq(notifications.id, id));
+}
+
+// ─── eSIM Orders ──────────────────────────────────────────────────────────────
+
+export async function getUserEsimOrders(userId: string): Promise<EsimOrder[]> {
+  const db = await getDb();
+  if (!db) return [];
+  try {
+    return await (db as any).select().from(esimOrders).where(eq(esimOrders.userId, userId)).orderBy(desc(esimOrders.createdAt));
+  } catch (err) { return []; }
+}
+
+export async function createEsimOrder(data: InsertEsimOrder): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(esimOrders).values(data);
+  return result[0].insertId;
+}
+
+export async function updateEsimOrder(id: number, data: Partial<InsertEsimOrder>): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(esimOrders).set(data).where(eq(esimOrders.id, id));
+}
+
+export async function getEsimOrderById(id: number): Promise<EsimOrder | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  try {
+    const rows = await (db as any).select().from(esimOrders).where(eq(esimOrders.id, id)).limit(1);
+    return rows[0];
+  } catch (err) { return undefined; }
+}
+
+// ─── Stripe Payments ──────────────────────────────────────────────────────────
+
+export async function createStripePaymentRecord(data: InsertStripePayment): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await (db as any).insert(stripePayments).values(data);
+  return result[0].insertId;
+}
+
+export async function updateStripePaymentStatus(paymentIntentId: string, status: StripePayment["status"]): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await (db as any).update(stripePayments).set({ status }).where(eq(stripePayments.paymentIntentId, paymentIntentId));
 }

@@ -311,3 +311,253 @@ export const activityLogs = mysqlTable("activity_logs", {
 });
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = typeof activityLogs.$inferInsert;
+
+// ─── Companies (شركات مسجلة للحجز التجاري) ───────────────────────────────────
+// Full company registration with approval workflow
+export const companies = mysqlTable("companies", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Owner user ID (from users table) */
+  ownerUserId: varchar("ownerUserId", { length: 64 }).notNull(),
+  /** Company legal name */
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  /** Trading/brand name */
+  tradingName: varchar("tradingName", { length: 255 }),
+  /** Business email */
+  businessEmail: varchar("businessEmail", { length: 320 }).notNull(),
+  /** Phone number */
+  phoneNumber: varchar("phoneNumber", { length: 32 }),
+  /** Country */
+  country: varchar("country", { length: 128 }),
+  /** City */
+  city: varchar("city", { length: 128 }),
+  /** Business address */
+  businessAddress: text("businessAddress"),
+  /** Website */
+  website: varchar("website", { length: 512 }),
+  /** Business type */
+  businessType: mysqlEnum("businessType", ["company", "travel_agency", "ngo", "school", "government", "other"]).default("company").notNull(),
+  /** Registration number */
+  registrationNumber: varchar("registrationNumber", { length: 128 }),
+  /** Tax ID */
+  taxId: varchar("taxId", { length: 64 }),
+  /** IATA number */
+  iataNumber: varchar("iataNumber", { length: 32 }),
+  /** Contact person full name */
+  contactPersonFullName: varchar("contactPersonFullName", { length: 255 }),
+  /** Job title */
+  jobTitle: varchar("jobTitle", { length: 128 }),
+  /** Contact email */
+  contactEmail: varchar("contactEmail", { length: 320 }),
+  /** Contact phone */
+  contactPhone: varchar("contactPhone", { length: 32 }),
+  /** Company logo URL */
+  logoUrl: varchar("logoUrl", { length: 1024 }),
+  /** Approval status */
+  status: mysqlEnum("status", ["pending_review", "more_documents_required", "approved", "rejected", "suspended"]).default("pending_review").notNull(),
+  /** Rejection reason */
+  rejectionReason: text("rejectionReason"),
+  /** Review notes (JSON array) */
+  reviewNotes: text("reviewNotes"),
+  /** Commission percentage for bookings */
+  commissionPercent: decimal("commissionPercent", { precision: 5, scale: 2 }).default("0.00"),
+  /** Submission date */
+  submissionDate: timestamp("submissionDate").defaultNow().notNull(),
+  /** Approval date */
+  approvalDate: timestamp("approvalDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Company = typeof companies.$inferSelect;
+export type InsertCompany = typeof companies.$inferInsert;
+
+// ─── Company Members (أعضاء الشركة) ──────────────────────────────────────────
+export const companyMembers = mysqlTable("company_members", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  /** User ID (openId from OAuth) */
+  userId: varchar("userId", { length: 64 }).notNull(),
+  /** Member role */
+  role: mysqlEnum("role", ["owner", "admin", "booker", "viewer"]).default("viewer").notNull(),
+  /** Invite status */
+  inviteStatus: mysqlEnum("inviteStatus", ["pending", "accepted", "rejected"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CompanyMember = typeof companyMembers.$inferSelect;
+export type InsertCompanyMember = typeof companyMembers.$inferInsert;
+
+// ─── Company Travelers (مسافرو الشركة) ───────────────────────────────────────
+export const companyTravelers = mysqlTable("company_travelers", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  dateOfBirth: varchar("dateOfBirth", { length: 16 }),
+  gender: mysqlEnum("gender", ["male", "female"]),
+  nationality: varchar("nationality", { length: 64 }),
+  passportNumber: varchar("passportNumber", { length: 64 }),
+  passportExpiryDate: varchar("passportExpiryDate", { length: 16 }),
+  frequentFlyerNumber: varchar("frequentFlyerNumber", { length: 64 }),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CompanyTraveler = typeof companyTravelers.$inferSelect;
+export type InsertCompanyTraveler = typeof companyTravelers.$inferInsert;
+
+// ─── Company Documents (وثائق الشركة) ────────────────────────────────────────
+export const companyDocuments = mysqlTable("company_documents", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  documentType: varchar("documentType", { length: 64 }).notNull(),
+  fileUrl: varchar("fileUrl", { length: 1024 }).notNull(),
+  verificationStatus: mysqlEnum("verificationStatus", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewerNote: text("reviewerNote"),
+  uploadedAt: timestamp("uploadedAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CompanyDocument = typeof companyDocuments.$inferSelect;
+export type InsertCompanyDocument = typeof companyDocuments.$inferInsert;
+
+// ─── Company Bookings (حجوزات الشركة) ────────────────────────────────────────
+export const companyBookings = mysqlTable("company_bookings", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  /** Booking reference (PNR or local ref) */
+  bookingReference: varchar("bookingReference", { length: 64 }),
+  /** Traveler ID from companyTravelers */
+  travelerId: int("travelerId"),
+  /** User who created the booking */
+  createdByUserId: varchar("createdByUserId", { length: 64 }),
+  /** Route summary (e.g., NKC → CMN) */
+  route: varchar("route", { length: 255 }),
+  /** Travel date */
+  travelDate: varchar("travelDate", { length: 32 }),
+  /** Total amount */
+  totalAmount: decimal("totalAmount", { precision: 12, scale: 2 }),
+  /** Currency */
+  currency: varchar("currency", { length: 8 }).default("MRU"),
+  /** Payment status */
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "confirmed", "refunded", "failed"]).default("pending").notNull(),
+  /** Booking status */
+  bookingStatus: mysqlEnum("bookingStatus", ["pending", "confirmed", "cancelled", "completed"]).default("pending").notNull(),
+  /** Extra metadata (JSON) */
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CompanyBooking = typeof companyBookings.$inferSelect;
+export type InsertCompanyBooking = typeof companyBookings.$inferInsert;
+
+// ─── Invoices (الفواتير) ──────────────────────────────────────────────────────
+export const invoices = mysqlTable("invoices", {
+  id: int("id").autoincrement().primaryKey(),
+  companyId: int("companyId").notNull(),
+  /** Booking ID */
+  bookingId: int("bookingId"),
+  /** Invoice number (e.g., INV-2026-0001) */
+  invoiceNumber: varchar("invoiceNumber", { length: 64 }).notNull().unique(),
+  /** Amount */
+  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+  /** Currency */
+  currency: varchar("currency", { length: 8 }).default("MRU"),
+  /** Issue date */
+  issueDate: timestamp("issueDate").defaultNow().notNull(),
+  /** Due date */
+  dueDate: timestamp("dueDate"),
+  /** Status */
+  status: mysqlEnum("status", ["draft", "sent", "paid", "overdue", "cancelled"]).default("draft").notNull(),
+  /** PDF URL */
+  pdfUrl: varchar("pdfUrl", { length: 1024 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Invoice = typeof invoices.$inferSelect;
+export type InsertInvoice = typeof invoices.$inferInsert;
+
+// ─── Notifications (الإشعارات) ────────────────────────────────────────────────
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  /** User ID (openId) */
+  userId: varchar("userId", { length: 64 }).notNull(),
+  /** Company ID (optional) */
+  companyId: int("companyId"),
+  /** Notification type */
+  type: varchar("type", { length: 64 }).notNull(),
+  /** Title */
+  title: varchar("title", { length: 255 }).notNull(),
+  /** Body */
+  body: text("body").notNull(),
+  /** Related entity type */
+  relatedEntityType: varchar("relatedEntityType", { length: 64 }),
+  /** Related entity ID */
+  relatedEntityId: int("relatedEntityId"),
+  /** Is read */
+  isRead: boolean("isRead").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
+
+// ─── eSIM Orders (طلبات eSIM) ─────────────────────────────────────────────────
+export const esimOrders = mysqlTable("esim_orders", {
+  id: int("id").autoincrement().primaryKey(),
+  /** User ID (openId) */
+  userId: varchar("userId", { length: 64 }).notNull(),
+  /** Company ID (optional) */
+  companyId: int("companyId"),
+  /** eSIM Go order ID */
+  providerOrderId: varchar("providerOrderId", { length: 128 }),
+  /** Plan name */
+  planName: varchar("planName", { length: 255 }).notNull(),
+  /** Destination */
+  destination: varchar("destination", { length: 128 }).notNull(),
+  /** Data amount (e.g., "5GB") */
+  dataAmount: varchar("dataAmount", { length: 32 }),
+  /** Validity in days */
+  validityDays: int("validityDays"),
+  /** Price in MRU */
+  priceMru: decimal("priceMru", { precision: 10, scale: 2 }).notNull(),
+  /** Original price in USD */
+  priceUsd: decimal("priceUsd", { precision: 10, scale: 2 }),
+  /** ICCID */
+  iccid: varchar("iccid", { length: 64 }),
+  /** QR code data */
+  qrCode: text("qrCode"),
+  /** Activation instructions */
+  activationInstructions: text("activationInstructions"),
+  /** Order status */
+  status: mysqlEnum("status", ["pending", "processing", "active", "expired", "cancelled", "failed"]).default("pending").notNull(),
+  /** Payment status */
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "paid", "refunded"]).default("pending").notNull(),
+  /** Stripe payment intent ID */
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 128 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type EsimOrder = typeof esimOrders.$inferSelect;
+export type InsertEsimOrder = typeof esimOrders.$inferInsert;
+
+// ─── Stripe Payments (مدفوعات Stripe) ────────────────────────────────────────
+export const stripePayments = mysqlTable("stripe_payments", {
+  id: int("id").autoincrement().primaryKey(),
+  /** User ID (openId) */
+  userId: varchar("userId", { length: 64 }).notNull(),
+  /** Stripe payment intent ID */
+  paymentIntentId: varchar("paymentIntentId", { length: 128 }).notNull().unique(),
+  /** Amount in smallest currency unit (cents) */
+  amount: int("amount").notNull(),
+  /** Currency (usd, eur, etc.) */
+  currency: varchar("currency", { length: 8 }).notNull(),
+  /** Status */
+  status: mysqlEnum("status", ["requires_payment_method", "requires_confirmation", "requires_action", "processing", "succeeded", "cancelled"]).default("requires_payment_method").notNull(),
+  /** Related entity type (flight, esim, activity) */
+  entityType: varchar("entityType", { length: 32 }),
+  /** Related entity ID */
+  entityId: int("entityId"),
+  /** Metadata (JSON) */
+  metadata: text("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type StripePayment = typeof stripePayments.$inferSelect;
+export type InsertStripePayment = typeof stripePayments.$inferInsert;

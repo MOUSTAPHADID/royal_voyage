@@ -71,6 +71,7 @@ export default function ProfileScreen() {
         { icon: "person.fill", label: t.profile.editProfile, value: "", onPress: () => router.push("/profile/edit" as any) },
         { icon: "creditcard.fill", label: t.profile.paymentMethods, value: "", onPress: () => router.push("/profile/payment-methods" as any) },
         { icon: "shield.fill", label: t.profile.security, value: "", onPress: () => {} },
+        { icon: "building.2.fill", label: language === "ar" ? "الحساب التجاري" : language === "fr" ? "Compte Professionnel" : "Business Account", value: "", onPress: () => router.push("/business/dashboard" as any) },
       ],
     },
     {

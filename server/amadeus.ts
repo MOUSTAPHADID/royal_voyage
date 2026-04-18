@@ -427,7 +427,8 @@ export type TravelerInput = {
  */
 export async function createFlightOrder(
   pricedOffer: unknown,
-  travelers: TravelerInput[]
+  travelers: TravelerInput[],
+  remarks?: string
 ): Promise<FlightOrderResult> {
   const travelerData = travelers.map((t) => ({
     id: t.id,
@@ -460,6 +461,7 @@ export async function createFlightOrder(
           subType: "GENERAL_MISCELLANEOUS",
           text: "ONLINE BOOKING FROM ROYAL VOYAGE",
         },
+        ...(remarks ? [{ subType: "GENERAL_MISCELLANEOUS", text: remarks.toUpperCase().slice(0, 200) }] : []),
       ],
     },
     ticketingAgreement: CONSOLIDATOR_OFFICE_ID

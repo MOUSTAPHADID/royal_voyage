@@ -72,6 +72,7 @@ export default function PassengerDetailsScreen() {
   const [nationality, setNationality] = useState(user?.nationality ?? "");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [dobError, setDobError] = useState("");
+  const [specialRequests, setSpecialRequests] = useState("");
 
   const childrenCount = parseInt(params.children ?? "0", 10);
   const infantCount = parseInt(params.infants ?? "0", 10);
@@ -207,6 +208,7 @@ export default function PassengerDetailsScreen() {
         roomType: params.roomType,
         roomPrice: params.roomPrice,
         rawOffer: params.rawOffer || "",
+        specialRequests: specialRequests.trim() || "",
       },
     });
   };
@@ -531,6 +533,40 @@ export default function PassengerDetailsScreen() {
               ))}
             </View>
           )}
+
+          {/* Special Requests */}
+          <View style={[styles.section, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>طلبات خاصة (اختياري)</Text>
+            <Text style={{ fontSize: 12, color: colors.muted, marginBottom: 10, lineHeight: 18 }}>
+              يمكنك إضافة طلبات خاصة مثل: وجبة خاصة، مساعدة للتنقل، مقعد محدد، أو أي تعليمات أخرى لشركة الطيران.
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  color: colors.foreground,
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  height: 90,
+                  textAlignVertical: "top",
+                  paddingTop: 10,
+                }
+              ]}
+              placeholder="مثال: وجبة نباتية، مساعدة كرسي متحرك، مقعد نافذة..."
+              placeholderTextColor={colors.muted}
+              value={specialRequests}
+              onChangeText={setSpecialRequests}
+              multiline
+              numberOfLines={3}
+              maxLength={300}
+              returnKeyType="default"
+            />
+            {specialRequests.length > 0 && (
+              <Text style={{ fontSize: 10, color: colors.muted, textAlign: "right", marginTop: 4 }}>
+                {specialRequests.length}/300
+              </Text>
+            )}
+          </View>
 
           {/* Security note */}
           <View style={[styles.termsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>

@@ -404,22 +404,34 @@ export default function FlightDetailScreen() {
 
           {/* سعر البالغين */}
           <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.infoLabel, { color: colors.muted }]}>
-              {adultCount} بالغ{adultCount > 1 ? "ين" : ""}
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.infoLabel, { color: colors.muted }]}>
+                {adultCount} بالغ{adultCount > 1 ? "ين" : ""}
+              </Text>
+              {adultPricing && (
+                <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
+                  سعر الشخص: {fmt(adultPerPersonMRU)} × {adultCount}
+                </Text>
+              )}
+            </View>
             <Text style={[styles.infoValue, { color: colors.foreground }]}>
-              {fmt(adultPerPersonMRU)} × {adultCount}
+              {fmt(adultPerPersonMRU * adultCount)}
             </Text>
           </View>
 
           {/* سعر الأطفال */}
           {childCount > 0 && (
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.infoLabel, { color: colors.muted }]}>
-                {childCount} طفل{childCount > 1 ? "" : ""}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoLabel, { color: colors.muted }]}>
+                  {childCount} طفل{childCount > 1 ? "" : ""}
+                </Text>
+                <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
+                  سعر الشخص: {fmt(childPerPersonMRU)} × {childCount}
+                </Text>
+              </View>
               <Text style={[styles.infoValue, { color: colors.foreground }]}>
-                {fmt(childPerPersonMRU)} × {childCount}
+                {fmt(childPerPersonMRU * childCount)}
               </Text>
             </View>
           )}
@@ -427,14 +439,44 @@ export default function FlightDetailScreen() {
           {/* سعر الرضع */}
           {infantCount > 0 && (
             <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
-              <Text style={[styles.infoLabel, { color: colors.muted }]}>
-                {infantCount} رضيع{infantCount > 1 ? "" : ""}
-              </Text>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.infoLabel, { color: colors.muted }]}>
+                  {infantCount} رضيع{infantCount > 1 ? "" : ""}
+                </Text>
+                <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>
+                  سعر الشخص: {fmt(infantPerPersonMRU)} × {infantCount}
+                </Text>
+              </View>
               <Text style={[styles.infoValue, { color: colors.success }]}>
-                {fmt(infantPerPersonMRU)} × {infantCount}
+                {fmt(infantPerPersonMRU * infantCount)}
               </Text>
             </View>
           )}
+
+          {/* الضرائب والرسوم (تقديري) */}
+          {(() => {
+            // تقدير الضرائب: عادةً 15-25% من سعر التذكرة
+            // نستخدم 18% كتقدير متوسط
+            const estimatedTaxRate = 0.18;
+            const subtotalMRU = adultPerPersonMRU * adultCount + childPerPersonMRU * childCount + infantPerPersonMRU * infantCount;
+            const estimatedTax = Math.round(subtotalMRU * estimatedTaxRate);
+            const estimatedBase = subtotalMRU - estimatedTax;
+            return (
+              <>
+                <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+                  <Text style={[styles.infoLabel, { color: colors.muted }]}>سعر التذكرة الأساسي</Text>
+                  <Text style={[styles.infoValue, { color: colors.foreground }]}>{fmt(estimatedBase)}</Text>
+                </View>
+                <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.infoLabel, { color: colors.muted }]}>ضرائب ورسوم مطار</Text>
+                    <Text style={{ fontSize: 10, color: colors.muted, marginTop: 2 }}>تقديري — قد تختلف حسب شركة الطيران</Text>
+                  </View>
+                  <Text style={[styles.infoValue, { color: colors.warning }]}>~{fmt(estimatedTax)}</Text>
+                </View>
+              </>
+            );
+          })()}
 
           {/* نوع الرحلة */}
           {isRoundTrip && (
@@ -444,12 +486,22 @@ export default function FlightDetailScreen() {
             </View>
           )}
 
+          {/* فاصل */}
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4 }} />
+
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: colors.foreground }]}>
               الإجمالي{isRoundTrip ? " (شامل الذهاب والإياب)" : ""}
             </Text>
             <Text style={[styles.totalValue, { color: colors.primary }]}>
               {fmt(totalMRU)}
+            </Text>
+          </View>
+
+          {/* تنبيه السعر شامل كل شيء */}
+          <View style={{ marginTop: 8, padding: 10, borderRadius: 8, backgroundColor: colors.success + "15" }}>
+            <Text style={{ fontSize: 11, color: colors.success, lineHeight: 17 }}>
+              ✔ السعر المعروض شامل جميع الرسوم والضرائب وجاهز للدفع المباشر
             </Text>
           </View>
           </View>

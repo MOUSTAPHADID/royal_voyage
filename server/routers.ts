@@ -99,8 +99,364 @@ import {
   deleteFeedback,
   createActivityLog,
   getActivityLogs,
+  getCompaniesByOwner,
+  getCompanyById,
+  getAllCompanies,
+  createCompany,
+  updateCompany,
+  updateCompanyStatus,
+  getCompanyMembers,
+  addCompanyMember,
+  updateCompanyMember,
+  removeCompanyMember,
+  getCompanyTravelers,
+  createCompanyTraveler,
+  updateCompanyTraveler,
+  deleteCompanyTraveler,
+  getCompanyDocuments,
+  createCompanyDocument,
+  updateCompanyDocumentStatus,
+  getCompanyBookings,
+  createCompanyBooking,
+  getCompanyInvoices,
+  getAllInvoices,
+  createInvoice,
+  updateInvoiceStatus,
+  getUserNotifications,
+  createNotification,
+  markNotificationRead,
+  markAllNotificationsRead,
+  deleteNotification,
+  getUserEsimOrders,
+  createEsimOrder,
+  updateEsimOrder,
+  getEsimOrderById,
+  createStripePaymentRecord,
+  updateStripePaymentStatus,
 } from "./db";
 
+// ─── Companies Router ─────────────────────────────────────────────────────────
+export const companiesRouter = router({
+  // Get my companies (for logged-in user)
+  myCompanies: publicProcedure
+    .input(z.object({ ownerUserId: z.string() }))
+    .query(async ({ input }) => {
+      return await getCompaniesByOwner(input.ownerUserId);
+    }),
+
+  // Get company by ID
+  getById: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return await getCompanyById(input.id);
+    }),
+
+  // Get all companies (admin)
+  all: adminProcedure
+    .query(async () => {
+      return await getAllCompanies();
+    }),
+
+  // Register a new company
+  register: publicProcedure
+    .input(z.object({
+      ownerUserId: z.string(),
+      ownerName: z.string(),
+      ownerEmail: z.string().email(),
+      ownerPhone: z.string().optional(),
+      companyName: z.string().min(2),
+      companyType: z.enum(["travel_agency", "corporate", "tour_operator", "other"]).default("travel_agency"),
+      registrationNumber: z.string().optional(),
+      taxNumber: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      country: z.string().optional(),
+      website: z.string().optional(),
+      logoUrl: z.string().optional(),
+      discountPercent: z.string().default("0"),
+      creditLimit: z.string().default("0"),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const id = await createCompany({
+        ownerUserId: input.ownerUserId,
+        ownerName: input.ownerName,
+        ownerEmail: input.ownerEmail,
+        ownerPhone: input.ownerPhone,
+        companyName: input.companyName,
+        companyType: input.companyType,
+        registrationNumber: input.registrationNumber,
+        taxNumber: input.taxNumber,
+        address: input.address,
+        city: input.city,
+        country: input.country,
+        website: input.website,
+        logoUrl: input.logoUrl,
+        discountPercent: input.discountPercent,
+        creditLimit: input.creditLimit,
+        notes: input.notes,
+        status: "pending",
+      });
+      return { id };
+    }),
+
+  // Update company
+  update: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      data: z.object({
+        companyName: z.string().optional(),
+        address: z.string().optional(),
+        city: z.string().optional(),
+        country: z.string().optional(),
+        website: z.string().optional(),
+        logoUrl: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      await updateCompany(input.id, input.data);
+      return { success: true };
+    }),
+
+  // Approve/reject company (admin)
+  updateStatus: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(["pending", "approved", "rejected", "suspended"]),
+      reason: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      await updateCompanyStatus(input.id, input.status, input.reason);
+      return { success: true };
+    }),
+
+  // ── Members ──
+  getMembers: publicProcedure
+    .input(z.object({ companyId: z.number() }))
+    .query(async ({ input }) => {
+      return await getCompanyMembers(input.companyId);
+    }),
+
+  addMember: publicProcedure
+    .input(z.object({
+      companyId: z.number(),
+      userId: z.string(),
+      role: z.enum(["owner", "manager", "booking_agent", "accountant", "viewer"]).default("viewer"),
+      name: z.string().optional(),
+      email: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const id = await addCompanyMember(input);
+      return { id };
+    }),
+
+  updateMember: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      role: z.enum(["owner", "manager", "booking_agent", "accountant", "viewer"]).optional(),
+    }))
+    .mutation(async ({ input }) => {
+      await updateCompanyMember(input.id, { role: input.role });
+      return { success: true };
+    }),
+
+  removeMember: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await removeCompanyMember(input.id);
+      return { success: true };
+    }),
+
+  // ── Travelers ──
+  getTravelers: publicProcedure
+    .input(z.object({ companyId: z.number() }))
+    .query(async ({ input }) => {
+      return await getCompanyTravelers(input.companyId);
+    }),
+
+  addTraveler: publicProcedure
+    .input(z.object({
+      companyId: z.number(),
+      firstName: z.string(),
+      lastName: z.string(),
+      dateOfBirth: z.string().optional(),
+      nationality: z.string().optional(),
+      passportNumber: z.string().optional(),
+      passportExpiry: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      gender: z.enum(["male", "female"]).optional(),
+      notes: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const id = await createCompanyTraveler({
+        ...input,
+        dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : undefined,
+        passportExpiry: input.passportExpiry ? new Date(input.passportExpiry) : undefined,
+      });
+      return { id };
+    }),
+
+  updateTraveler: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      data: z.object({
+        firstName: z.string().optional(),
+        lastName: z.string().optional(),
+        passportNumber: z.string().optional(),
+        passportExpiry: z.string().optional(),
+        email: z.string().optional(),
+        phone: z.string().optional(),
+        notes: z.string().optional(),
+      }),
+    }))
+    .mutation(async ({ input }) => {
+      await updateCompanyTraveler(input.id, input.data);
+      return { success: true };
+    }),
+
+  deleteTraveler: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await deleteCompanyTraveler(input.id);
+      return { success: true };
+    }),
+
+  // ── Bookings ──
+  getBookings: publicProcedure
+    .input(z.object({ companyId: z.number() }))
+    .query(async ({ input }) => {
+      return await getCompanyBookings(input.companyId);
+    }),
+
+  // ── Invoices ──
+  getInvoices: publicProcedure
+    .input(z.object({ companyId: z.number() }))
+    .query(async ({ input }) => {
+      return await getCompanyInvoices(input.companyId);
+    }),
+
+  allInvoices: adminProcedure
+    .query(async () => {
+      return await getAllInvoices();
+    }),
+
+  createInvoice: publicProcedure
+    .input(z.object({
+      companyId: z.number(),
+      invoiceNumber: z.string(),
+      amount: z.string(),
+      currency: z.string().default("MRU"),
+      description: z.string().optional(),
+      dueDate: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const id = await createInvoice({
+        ...input,
+        dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
+        status: "pending",
+      });
+      return { id };
+    }),
+
+  updateInvoiceStatus: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(["pending", "paid", "overdue", "cancelled"]),
+    }))
+    .mutation(async ({ input }) => {
+      await updateInvoiceStatus(input.id, input.status);
+      return { success: true };
+    }),
+});
+
+// ─── Notifications Router ─────────────────────────────────────────────────────
+export const notificationsRouter = router({
+  list: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input }) => {
+      return await getUserNotifications(input.userId);
+    }),
+
+  markRead: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await markNotificationRead(input.id);
+      return { success: true };
+    }),
+
+  markAllRead: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .mutation(async ({ input }) => {
+      await markAllNotificationsRead(input.userId);
+      return { success: true };
+    }),
+
+  delete: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      await deleteNotification(input.id);
+      return { success: true };
+    }),
+});
+
+// ─── eSIM Router ──────────────────────────────────────────────────────────────
+export const esimRouter = router({
+  myOrders: publicProcedure
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input }) => {
+      return await getUserEsimOrders(input.userId);
+    }),
+
+  getOrder: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      return await getEsimOrderById(input.id);
+    }),
+
+  createOrder: publicProcedure
+    .input(z.object({
+      userId: z.string(),
+      packageId: z.string(),
+      packageName: z.string(),
+      dataGb: z.number(),
+      validityDays: z.number(),
+      countries: z.string(),
+      priceUsd: z.string(),
+      priceMru: z.string(),
+      paymentMethod: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const id = await createEsimOrder({
+        ...input,
+        status: "pending",
+      });
+      return { id };
+    }),
+
+  updateOrder: publicProcedure
+    .input(z.object({
+      id: z.number(),
+      status: z.enum(["pending", "processing", "active", "expired", "cancelled", "failed"]).optional(),
+      iccid: z.string().optional(),
+      activationCode: z.string().optional(),
+      qrCodeUrl: z.string().optional(),
+      activatedAt: z.string().optional(),
+      expiresAt: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const { id, ...data } = input;
+      await updateEsimOrder(id, {
+        ...data,
+        activatedAt: data.activatedAt ? new Date(data.activatedAt) : undefined,
+        expiresAt: data.expiresAt ? new Date(data.expiresAt) : undefined,
+      });
+      return { success: true };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
 export const appRouter = router({
   system: systemRouter,
 
@@ -246,6 +602,7 @@ export const appRouter = router({
               dateOfBirth: z.string(),
             })
           ).optional(),
+          remarks: z.string().optional(), // Special requests / remarks from passenger
         })
       )
       .mutation(async ({ input }) => {
@@ -336,7 +693,7 @@ export const appRouter = router({
 
           // Step 4: Create the order with instant confirmation
           console.log(`[Duffel] Creating flight order for ${input.firstName} ${input.lastName} with ${travelers.length} traveler(s)...`);
-          const order = await createFlightOrder(priced.pricedOffer, travelers);
+          const order = await createFlightOrder(priced.pricedOffer, travelers, input.remarks);
 
           console.log(`[Amadeus] ✅ PNR: ${order.pnr}, OrderID: ${order.orderId}`);
 
@@ -2201,6 +2558,10 @@ export const appRouter = router({
   }),
 
   // ─── Activity Log (سجل النشاط) ──────────────────────────────────────────
+  companies: companiesRouter,
+  notifications: notificationsRouter,
+  esim: esimRouter,
+
   activityLog: router({
     // Write a log entry (called from admin actions)
     log: adminProcedure
@@ -2245,4 +2606,4 @@ export const appRouter = router({
       }),
   }),
 });
-export type AppRouter = typeof appRouter;
+

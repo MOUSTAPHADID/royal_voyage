@@ -78,6 +78,13 @@
       "when": 1775850610926,
       "tag": "0010_fresh_micromax",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1776542438169,
+      "tag": "0011_calm_thena",
+      "breakpoints": true
     }
   ]
 }

@@ -164,6 +164,7 @@ export default function PaymentScreen() {
     businessAccountId?: string;
     businessCommission?: string;
     rawOffer?: string; // JSON string of Duffel raw offer
+    specialRequests?: string; // Optional special requests from passenger
   }>();
 
   const isFlight = params.type === "flight";
@@ -438,6 +439,7 @@ export default function PaymentScreen() {
           children: childCount,
           childDetails: childDetails.length > 0 ? childDetails : undefined,
           infantDetails: infantDetails.length > 0 ? infantDetails : undefined,
+          remarks: params.specialRequests || undefined,
         };
 
         if (needsHoldOrder) {
