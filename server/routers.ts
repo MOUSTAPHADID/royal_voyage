@@ -356,7 +356,7 @@ export const companiesRouter = router({
       const id = await createInvoice({
         ...input,
         dueDate: input.dueDate ? new Date(input.dueDate) : undefined,
-        status: "pending",
+        status: "draft",
       });
       return { id };
     }),
@@ -364,7 +364,7 @@ export const companiesRouter = router({
   updateInvoiceStatus: adminProcedure
     .input(z.object({
       id: z.number(),
-      status: z.enum(["pending", "paid", "overdue", "cancelled"]),
+      status: z.enum(["draft", "sent", "paid", "overdue", "cancelled"]),
     }))
     .mutation(async ({ input }) => {
       await updateInvoiceStatus(input.id, input.status);
