@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, TextInput } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useColors } from '@/hooks/use-colors';
 import { useRouter } from 'expo-router';
+import { trpc } from '@/lib/trpc';
 
 const T = {
   ar: {
@@ -63,8 +64,29 @@ export default function EsimScreen() {
   const t = T['ar'];
 
   const [activeTab, setActiveTab] = useState<'plans' | 'myEsims'>('plans');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredPlans, setFilteredPlans] = useState<EsimPlan[]>([]);
 
-  const popularPlans: EsimPlan[] = [
+  // استدعاء API للحصول على الخطط
+  const { data: plansData, isLoading: plansLoading } = trpc.esim.searchPlans.useQuery(
+    { query: searchQuery || '' },
+    { enabled: true }
+  );
+
+  // استدعاء API للحصول على eSIMs الخاصة بي
+  const { data: myEsimsData, isLoading: myEsimsLoading } = trpc.esim.getMyEsims.useQuery(
+    { userId: 'user123' },
+    { enabled: true }
+  );
+
+  useEffect(() => {
+    if (plansData) {
+      setFilteredPlans(plansData as any);
+    }
+  }, [plansData]);
+
+  // استخدام البيانات من API أو البيانات الافتراضية
+  const defaultPlans: EsimPlan[] = [
     { id: '1', destination: 'فرنسا', data: 5, validity: 7, price: 15, flag: '🇫🇷' },
     { id: '2', destination: 'إسبانيا', data: 10, validity: 14, price: 25, flag: '🇪🇸' },
     { id: '3', destination: 'إيطاليا', data: 5, validity: 7, price: 15, flag: '🇮🇹' },
@@ -73,7 +95,7 @@ export default function EsimScreen() {
     { id: '6', destination: 'هولندا', data: 10, validity: 14, price: 26, flag: '🇳🇱' },
   ];
 
-  const myEsims: MyEsim[] = [
+  const myEsims: MyEsim[] = (myEsimsData as any) || [
     { id: '1', destination: 'فرنسا', data: 10, dataUsed: 3.5, status: 'active', expiresAt: '2026-05-18' },
     { id: '2', destination: 'إسبانيا', data: 5, dataUsed: 5, status: 'expired', expiresAt: '2026-04-10' },
   ];
@@ -201,22 +223,45 @@ export default function EsimScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Search Bar */}
+        {activeTab === 'plans' && (
+          <View style={styles.searchContainer}>
+            <TextInput
+              style={[styles.searchInput, { backgroundColor: colors.surface, color: colors.foreground }]}
+              placeholder={t.searchPlans}
+              placeholderTextColor={colors.muted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        )}
+
         {/* Content */}
         {activeTab === 'plans' ? (
           <View style={styles.content}>
-            <FlatList
-              data={popularPlans}
-              renderItem={({ item }) => renderPlanCard(item)}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              numColumns={1}
-              columnWrapperStyle={{ gap: 12 }}
-              contentContainerStyle={{ gap: 12 }}
-            />
+            {plansLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : (
+              <FlatList
+                data={filteredPlans.length > 0 ? filteredPlans : defaultPlans}
+                renderItem={({ item }) => renderPlanCard(item)}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                numColumns={1}
+                columnWrapperStyle={{ gap: 12 }}
+                contentContainerStyle={{ gap: 12 }}
+              />
+            )}
           </View>
         ) : (
           <View style={styles.content}>
-            {myEsims.length > 0 ? (
+            {myEsimsLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : myEsims.length > 0 ? (
               <FlatList
                 data={myEsims}
                 renderItem={({ item }) => renderEsimCard(item)}
@@ -241,6 +286,9 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 16, paddingVertical: 20, marginBottom: 16 },
   title: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginBottom: 4 },
   subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.8)' },
+  searchContainer: { paddingHorizontal: 16, marginBottom: 12 },
+  searchInput: { borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, borderWidth: 1, borderColor: '#e0e0e0' },
+  loadingContainer: { paddingVertical: 40, alignItems: 'center', justifyContent: 'center' },
   tabsContainer: { flexDirection: 'row', paddingHorizontal: 16, marginBottom: 16, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' },
   tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
   tabText: { fontSize: 14 },
