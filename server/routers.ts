@@ -4,6 +4,7 @@ import { generateEmploymentContractPDF, generateInvoicePDF, generatePartnershipP
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router, adminProcedure } from "./_core/trpc";
+import { activityRouter } from "./activity-router";
 // ── Amadeus: Flight Search + Booking + PNR ──────────────────────────────────
 import {
   searchFlights,
@@ -2550,6 +2551,7 @@ export const appRouter = router({
   companies: companiesRouter,
   notifications: notificationsRouter,
   esim: esimRouter,
+  activity: activityRouter,
 
   activityLog: router({
     // Write a log entry (called from admin actions)
