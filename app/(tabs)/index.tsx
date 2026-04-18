@@ -1390,6 +1390,93 @@ export default function HomeScreen() {
           </Text>
         </View>
 
+        {/* Customer Reviews */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>
+              {isRTL ? "تقييمات العملاء" : "Customer Reviews"}
+            </Text>
+            <Pressable>
+              <Text style={[styles.seeAll, { color: colors.primary }]}>{t.seeAll}</Text>
+            </Pressable>
+          </View>
+          <FlatList
+            horizontal
+            scrollEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
+            keyExtractor={(item) => item.id}
+            data={[
+              {
+                id: "r1",
+                name: isRTL ? "أحمد محمد" : "Ahmed Mohamed",
+                rating: 5,
+                comment: isRTL ? "خدمة ممتازة وأسعار رائعة! حجزت رحلتي بسهولة وسرعة." : "Excellent service and great prices! Booked my flight easily.",
+                avatar: "👨‍💼",
+                verified: true,
+              },
+              {
+                id: "r2",
+                name: isRTL ? "فاطمة علي" : "Fatima Ali",
+                rating: 5,
+                comment: isRTL ? "دعم العملاء رائع جداً! ساعدوني في كل خطوة من الحجز." : "Amazing customer support! They helped me every step.",
+                avatar: "👩‍💼",
+                verified: true,
+              },
+              {
+                id: "r3",
+                name: isRTL ? "محمود حسن" : "Mahmoud Hassan",
+                rating: 5,
+                comment: isRTL ? "أفضل تطبيق للحجز! استخدمته عدة مرات وكل مرة تجربة رائعة." : "Best booking app! Used it multiple times, always great.",
+                avatar: "👨‍🔧",
+                verified: true,
+              },
+              {
+                id: "r4",
+                name: isRTL ? "سارة محمود" : "Sarah Mahmoud",
+                rating: 5,
+                comment: isRTL ? "أسعار منافسة جداً وخيارات متنوعة. ممتاز جداً!" : "Competitive prices and great options. Highly recommended!",
+                avatar: "👩‍🎓",
+                verified: true,
+              },
+            ]}
+            renderItem={({ item }) => (
+              <View
+                style={{
+                  width: 280,
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                  borderWidth: 1,
+                  borderRadius: 14,
+                  padding: 14,
+                  gap: 10,
+                }}
+              >
+                {/* Header with avatar and name */}
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <Text style={{ fontSize: 36 }}>{item.avatar}</Text>
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                      <Text style={{ fontSize: 13, fontWeight: "700", color: colors.foreground }}>{item.name}</Text>
+                      {item.verified && <Text style={{ fontSize: 12, color: "#10B981" }}>✓</Text>}
+                    </View>
+                    {/* Stars */}
+                    <View style={{ flexDirection: "row", gap: 2, marginTop: 2 }}>
+                      {[...Array(item.rating)].map((_, i) => (
+                        <Text key={i} style={{ fontSize: 12, color: "#F59E0B" }}>★</Text>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+                {/* Comment */}
+                <Text style={{ fontSize: 12, color: colors.muted, lineHeight: 18 }}>
+                  "{item.comment}"
+                </Text>
+              </View>
+            )}
+          />
+        </View>
+
         {/* Why Book With Us */}
         <View style={[styles.section, { paddingBottom: 32 }]}>
           <View style={styles.sectionHeader}>
@@ -1416,7 +1503,7 @@ export default function HomeScreen() {
               title: isRTL ? "دعم 24/7" : "24/7 Support",
               desc: isRTL ? "فريقنا جاهز لمساعدتك دائما" : "Our team is always here for you",
             },
-          ].map((item, idx) => (
+          ].map((item) => (
             <View
               key={item.title}
               style={[styles.dealCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: 14 }]}
