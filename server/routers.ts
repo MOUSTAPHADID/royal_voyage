@@ -26,7 +26,8 @@ import {
   searchHotelsByCity,
 } from "./amadeus";
 // ── Duffel: Hold Orders + Multi-City ────────────────────────────────────────
-import {
+import { getEsimCatalogue, createEsimGoOrder, getEsimDetails } from "./esimgo";
+  import {
   searchFlightsMultiCity,
   createHoldOrder,
   payForHoldOrder,
@@ -416,6 +417,11 @@ export const esimRouter = router({
       return await getEsimOrderById(input.id);
     }),
 
+  catalogue: publicProcedure
+    .query(async () => {
+      return await getEsimCatalogue();
+    }),
+
   createOrder: publicProcedure
     .input(z.object({
       destination: z.string(),
@@ -423,14 +429,30 @@ export const esimRouter = router({
       priceMru: z.string(),
     }))
     .mutation(async ({ input }) => {
+      const esimGoOrder = await createEsimGoOrder({
+        destination: input.destination,
+        planName: input.planName,
+      });
+
       const id = await createEsimOrder({
         userId: 'user123',
         destination: input.destination,
         planName: input.planName,
         priceMru: input.priceMru,
         status: 'pending',
+        iccid: esimGoOrder?.iccid,
       } as any);
-      return { id };
+
+      return {
+        id,
+        esimGoOrder,
+      };
+    }),
+
+  getEsimDetails: publicProcedure
+    .input(z.object({ iccid: z.string() }))
+    .query(async ({ input }) => {
+      return await getEsimDetails(input.iccid);
     }),
 
   updateOrder: publicProcedure
@@ -445,19 +467,6 @@ export const esimRouter = router({
       return { success: true };
     }),
 });
-
-export type AppRouter = typeof appRouter;
-export const appRouter = router({
-  system: systemRouter,
-
-  auth: router({
-    me: publicProcedure.query((opts) => opts.ctx.user),
-    logout: publicProcedure.mutation(({ ctx }) => {
-      const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return { success: true } as const;
-    }),
-  }),
 
   // ─── Flight & Hotel API (Duffel) ──────────────────────────────────────────
   duffel: router({
