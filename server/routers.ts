@@ -449,7 +449,7 @@ export const esimRouter = router({
       };
     }),
 
-  getEsimDetails: publicProcedure
+  esimDetails: publicProcedure
     .input(z.object({ iccid: z.string() }))
     .query(async ({ input }) => {
       return await getEsimDetails(input.iccid);
