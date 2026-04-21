@@ -1,10 +1,10 @@
-
 import axios from "axios";
+import { ENV } from "./_core/env";
 
 export const esimGoApi = axios.create({
-  baseURL: process.env.ESIMGO_BASE_URL || "https://api.esim-go.com/v2.5",
+  baseURL: ENV.esimGoBaseUrl || "https://api.esim-go.com/v2.4",
   headers: {
-    "X-API-Key": process.env.ESIMGO_API_KEY || "",
+    "X-API-Key": ENV.esimGoApiKey,
     "Content-Type": "application/json",
   },
 });
